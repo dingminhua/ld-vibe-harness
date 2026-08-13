@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { Activity, ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, Hash, Lightbulb, ListChecks, ShieldCheck, Target } from 'lucide-react';
+import { Activity, ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, Lightbulb, ListChecks, ShieldCheck, Target } from 'lucide-react';
 import ObjectIdentityActions from '@/components/ObjectIdentityActions';
 import StatusBadge from '@/components/StatusBadge';
 import WorkCaseCapabilityStatusBadge from '@/components/WorkCaseCapabilityStatusBadge';
@@ -9,7 +9,6 @@ import WorkCaseProgressFilter from '@/components/WorkCaseProgressFilter';
 import WorkCaseProgressTrack from '@/components/WorkCaseProgressTrack';
 import ObjectPriorityFilter from '@/components/ObjectPriorityFilter';
 import PriorityIcon from '@/components/PriorityIcon';
-import SegmentedControl from '@/components/SegmentedControl';
 import ObjectUpdatedMeta from '@/components/ObjectUpdatedMeta';
 import SummaryText from '@/components/SummaryText';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
@@ -34,7 +33,6 @@ import {
 
 type Translate = ReturnType<typeof useI18n>['t'];
 type StatusReason = { label: string; text: string; missing?: boolean };
-type ObjectListSort = 'updated_desc' | 'id_desc';
 
 const WORKCASE_SECTION_ICON_SIZE = 14;
 /** Shared vertical rhythm between a semantic card title and its first body block. */
@@ -1204,10 +1202,8 @@ function contributionTargetTitle(detail: ObjectDetail | null, readMeta: ReturnTy
   return getLocalizedObjectTitle(detail.data as { title?: string; title_en?: string; title_zh?: string }, locale);
 }
 
-function sortObjectsForList(items: ObjectItem[], sort: ObjectListSort): ObjectItem[] {
+function sortObjectsForList(items: ObjectItem[]): ObjectItem[] {
   return [...items].sort((a, b) => {
-    if (sort === 'id_desc') return b.id.localeCompare(a.id);
-
     const updatedDelta = compareRfc3339Timestamps(b.updated, a.updated);
     if (updatedDelta !== 0) return updatedDelta;
     return b.id.localeCompare(a.id);
@@ -1589,60 +1585,6 @@ function StudyCardContent({ obj }: { obj: ObjectItem }) {
   return null;
 }
 
-function ToolbarExtras({
-  idGapCount,
-  isIdGapTooltipOpen,
-  setIsIdGapTooltipOpen,
-  activeSort,
-  handleSortChange,
-  t,
-}: {
-  idGapCount: number;
-  isIdGapTooltipOpen: boolean;
-  setIsIdGapTooltipOpen: (open: boolean) => void;
-  activeSort: ObjectListSort;
-  handleSortChange: (sort: ObjectListSort) => void;
-  t: Translate;
-}) {
-  return (
-    <div className="flex shrink-0 items-center gap-2">
-      {idGapCount > 0 && (
-        <span className="relative inline-flex shrink-0">
-          <span
-            aria-describedby="object-list-id-gap-tooltip"
-            className="ldvh-meta-muted cursor-default select-none focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/45"
-            onBlur={() => setIsIdGapTooltipOpen(false)}
-            onFocus={() => setIsIdGapTooltipOpen(true)}
-            onMouseEnter={() => setIsIdGapTooltipOpen(true)}
-            onMouseLeave={() => setIsIdGapTooltipOpen(false)}
-            tabIndex={0}
-          >
-            {t('objectList.idGapCount', { count: String(idGapCount) })}
-          </span>
-          {isIdGapTooltipOpen && (
-            <span
-              id="object-list-id-gap-tooltip"
-              role="tooltip"
-              className="pointer-events-none absolute right-0 top-full z-20 mt-1 w-64 rounded-md border border-ldvh-border bg-ldvh-panel px-2 py-1 text-[10px] font-medium leading-4 text-ldvh-text-primary shadow-md"
-            >
-              {t('objectList.idGapHint', { count: String(idGapCount) })}
-            </span>
-          )}
-        </span>
-      )}
-      <SegmentedControl
-        ariaLabel={t('objectList.sort')}
-        value={activeSort}
-        onValueChange={handleSortChange}
-        items={[
-          { value: 'updated_desc', label: t('objectList.sortUpdatedDesc'), icon: <Clock3 size={14} aria-hidden="true" /> },
-          { value: 'id_desc', label: t('objectList.sortIdDesc'), icon: <Hash size={14} aria-hidden="true" /> },
-        ]}
-      />
-    </div>
-  );
-}
-
 export default function ObjectList() {
   const { type } = useParams<{ type: string }>();
   const navigate = useNavigate();
@@ -1653,8 +1595,6 @@ export default function ObjectList() {
   const [progressOptions, setProgressOptions] = useState<WorkCaseProgressOption[]>([]);
   const [priorityOptions, setPriorityOptions] = useState<ObjectStatusOption[]>([]);
   const [statusTotal, setStatusTotal] = useState(0);
-  const [idGapCount, setIdGapCount] = useState(0);
-  const [isIdGapTooltipOpen, setIsIdGapTooltipOpen] = useState(false);
   const [coverageStatus, setCoverageStatus] = useState<FactCoverageStatus>('complete');
   const [coverageProblemCount, setCoverageProblemCount] = useState(0);
   const [coverageProblems, setCoverageProblems] = useState<FactListProblem[]>([]);
@@ -1670,10 +1610,6 @@ export default function ObjectList() {
     ? progressParam as WorkCaseListGroup
     : null;
   const priorityParam = searchParams.get('priority');
-  const sortParam = searchParams.get('sort');
-  const activeSort: ObjectListSort = sortParam === 'id_desc'
-    ? sortParam
-    : 'updated_desc';
   const supportsPriorityNavigation = currentType === 'spark' || currentType === 'workcase';
   const activePriority = supportsPriorityNavigation && ['P0', 'P1', 'P2', 'P3'].includes(priorityParam ?? '')
     ? priorityParam
@@ -1701,7 +1637,6 @@ export default function ObjectList() {
     setProgressOptions([]);
     setPriorityOptions([]);
     setStatusTotal(0);
-    setIdGapCount(0);
     setCoverageStatus('complete');
     setCoverageProblemCount(0);
     setCoverageProblems([]);
@@ -1715,7 +1650,6 @@ export default function ObjectList() {
         setProgressOptions(result.data?.progressOptions ?? []);
         setPriorityOptions(result.data?.priorityOptions ?? []);
         setStatusTotal(result.data?.statusTotal ?? nextItems.length);
-        setIdGapCount(result.data?.id_gaps?.length ?? 0);
         setCoverageStatus(result.data?.coverage_status ?? 'complete');
         const nextCoverageProblems = result.data?.collection_issues ?? [];
         setCoverageProblems(nextCoverageProblems);
@@ -1725,7 +1659,7 @@ export default function ObjectList() {
       .finally(() => setLoading(false));
   }, [currentType, activeStatus, activePriority, activeProgressGroup, statusParam]);
 
-  const sortedItems = sortObjectsForList(items, activeSort);
+  const sortedItems = sortObjectsForList(items);
 
   const handleStatusChange = (status: string | null) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -1753,13 +1687,6 @@ export default function ObjectList() {
     } else {
       nextParams.delete('priority');
     }
-    setSearchParams(nextParams);
-  };
-
-  const handleSortChange = (sort: ObjectListSort) => {
-    const nextParams = new URLSearchParams(searchParams);
-    if (sort === 'updated_desc') nextParams.delete('sort');
-    else nextParams.set('sort', sort);
     setSearchParams(nextParams);
   };
 
@@ -1927,14 +1854,6 @@ export default function ObjectList() {
               loading={loading}
               coverageStatus={coverageStatus}
             />
-            <ToolbarExtras
-              idGapCount={idGapCount}
-              isIdGapTooltipOpen={isIdGapTooltipOpen}
-              setIsIdGapTooltipOpen={setIsIdGapTooltipOpen}
-              activeSort={activeSort}
-              handleSortChange={handleSortChange}
-              t={t}
-            />
           </div>
         )}
         <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-1.5">
@@ -1965,16 +1884,6 @@ export default function ObjectList() {
               </>
             )}
           </div>
-          {!(supportsPriorityNavigation && isPriorityApplicable) && (
-            <ToolbarExtras
-              idGapCount={idGapCount}
-              isIdGapTooltipOpen={isIdGapTooltipOpen}
-              setIsIdGapTooltipOpen={setIsIdGapTooltipOpen}
-              activeSort={activeSort}
-              handleSortChange={handleSortChange}
-              t={t}
-            />
-          )}
         </div>
       </div>
 

@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from ldvh.facts.contracts import LAYOUTS
-from ldvh.facts.creation import CreationBoundary, FactCoordinationUnavailable, allocation_lock
+from ldvh.facts.creation import CreationBoundary, FactCoordinationUnavailable, fact_write_lock
 from ldvh.facts.schema import project_fact_schemas
 from ldvh.facts.uncommitted_signature_normalization import (
     UncommittedSignatureNormalizationCommand,
@@ -140,7 +140,7 @@ def _execute(
         expected_head_content_fingerprint=domain.expected_head_content_fingerprint,
     )
     try:
-        with allocation_lock(boundary, LAYOUTS[domain.fact_ref.fact_type_key]):
+        with fact_write_lock(boundary, LAYOUTS[domain.fact_ref.fact_type_key]):
             result = apply_uncommitted_signature_normalization_locked(command)
     except (FactCoordinationUnavailable, OSError) as error:
         return OperationExecution(

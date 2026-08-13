@@ -149,5 +149,6 @@ def test_create_contract_closes_single_attempt_result_and_change_matrix() -> Non
     ):
         assert f"`{field}`" in section
     assert "不得包含 `candidate_object_id`" in section
-    assert "`result` 不要求 counter 或顺序编号状态" in section
-    assert "旧顺序路径只读，不得由新建写入" in section
+    assert "旧顺序命名空间矩阵已经退役" in section
+    assert "不再授权任何 legacy 创建或兼容写操作" in section
+    assert "旧顺序路径仅保留只读兼容，不得新建或重新分配编号" in section

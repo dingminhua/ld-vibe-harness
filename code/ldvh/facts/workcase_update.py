@@ -15,7 +15,7 @@ from typing import Any, Literal
 
 from ldvh.facts.carriers.yaml_object import parse_yaml_object
 from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS
-from ldvh.facts.creation import CreationBoundary, allocation_lock, serialize_fact_object
+from ldvh.facts.creation import CreationBoundary, fact_write_lock, serialize_fact_object
 from ldvh.facts.head_change_log import head_change_log_state
 from ldvh.facts.models import FactIssue
 from ldvh.facts.project_validation import stabilize_project_index
@@ -1228,7 +1228,7 @@ def apply_workcase_write(command: WorkCaseWriteCommand) -> WorkCaseWriteResult:
         return _result(command, "durability_unavailable")
     completed: WorkCaseWriteResult | None = None
     try:
-        with allocation_lock(command.boundary, LAYOUTS["workcase"]):
+        with fact_write_lock(command.boundary, LAYOUTS["workcase"]):
             completed = apply_workcase_write_locked(command)
     except OSError:
         if completed is None:

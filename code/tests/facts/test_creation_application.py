@@ -11,7 +11,7 @@ import pytest
 
 from ldvh.facts import creation_application
 from ldvh.facts.contracts import LAYOUTS
-from ldvh.facts.creation import AllocationCommitResult, CreationBoundary, creation_lock, serialize_fact_object
+from ldvh.facts.creation import CreationBoundary, fact_write_lock, serialize_fact_object
 from ldvh.facts.creation_application import (
     FactCreationCommand,
     FactCreationResult,
@@ -516,7 +516,7 @@ def test_prepared_creation_can_run_under_one_external_creation_lock(
 
     assert isinstance(prepared, PreparedFactCreation)
     assert not (command.boundary.git_common_dir / "ldvh").exists()
-    with creation_lock(command.boundary, LAYOUTS["spark"]):
+    with fact_write_lock(command.boundary, LAYOUTS["spark"]):
         result = create_fact_object_locked(prepared)
 
     assert result.status == "created"
@@ -557,7 +557,7 @@ def test_created_result_survives_coordination_release_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     command = _command(current_fact_schemas, tmp_path)
-    actual_lock = creation_application.creation_lock
+    actual_lock = creation_application.fact_write_lock
 
     @contextmanager
     def release_fails(boundary: CreationBoundary, layout):
@@ -565,7 +565,7 @@ def test_created_result_survives_coordination_release_failure(
             yield
         raise OSError("simulated lock release failure")
 
-    monkeypatch.setattr(creation_application, "creation_lock", release_fails)
+    monkeypatch.setattr(creation_application, "fact_write_lock", release_fails)
 
     result = create_fact_object(command, observed_at="2026-07-26T13:00:00+08:00")
 
@@ -595,7 +595,7 @@ def test_non_success_creation_result_survives_coordination_release_failure(
         issues=(FactIssue("schema", "forced final rejection"),),
         actual_id="spark-01KZXN5TXNEBSRC6HHGTBQKAJ4",
     )
-    monkeypatch.setattr(creation_application, "creation_lock", release_fails)
+    monkeypatch.setattr(creation_application, "fact_write_lock", release_fails)
     monkeypatch.setattr(creation_application, "create_fact_object_locked", lambda *_args: expected)
 
     result = create_fact_object(command, observed_at="2026-07-26T13:00:00+08:00")
@@ -619,7 +619,7 @@ def test_prepared_creation_defensively_freezes_nested_supplied_values(
 
     command.supplied["title"] = "mutated"
     command.supplied["urls"][0]["ref"] = "https://example.invalid/mutated"
-    with creation_lock(command.boundary, LAYOUTS["spark"]):
+    with fact_write_lock(command.boundary, LAYOUTS["spark"]):
         result = create_fact_object_locked(prepared)
 
     assert result.status == "created"
@@ -640,7 +640,7 @@ def test_caller_supplied_observation_time_binds_both_managed_timestamps(
 
     assert isinstance(prepared, PreparedFactCreation)
     assert prepared.observed_at == canonical_observed_at
-    with creation_lock(command.boundary, LAYOUTS["spark"]):
+    with fact_write_lock(command.boundary, LAYOUTS["spark"]):
         result = create_fact_object_locked(prepared)
     assert result.status == "created"
     assert result.read is not None and result.read.fields is not None
@@ -737,7 +737,7 @@ def test_missing_stabilized_candidate_result_is_reported_as_a_check_gap(
     assert result.issues == (FactIssue("reference", "项目级关系检查未返回当前候选的稳定检查结果"),)
 
 
-def test_durability_rejection_precedes_allocation_lock(
+def test_durability_rejection_precedes_fact_write_lock(
     current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
     monkeypatch,
@@ -773,7 +773,7 @@ def test_locked_creation_stops_after_one_known_target_conflict(
         conflict_once,
     )
 
-    with creation_lock(command.boundary, LAYOUTS["spark"]):
+    with fact_write_lock(command.boundary, LAYOUTS["spark"]):
         result = create_fact_object_locked(prepared)
 
     assert result.status == "creation_conflict"
@@ -783,78 +783,6 @@ def test_locked_creation_stops_after_one_known_target_conflict(
     assert target_attempts == 1
     assert not tuple((command.boundary.git_common_dir / "ldvh/fact-id-allocators").glob("*.counter"))
     assert not (command.boundary.worktree_root / "facts").exists()
-
-
-@pytest.mark.parametrize(
-    ("counter_status", "expected_status"),
-    [("stale", "allocation_stale"), ("unavailable", "allocation_unavailable")],
-)
-@pytest.mark.skip(reason="顺序编号 counter 契约已取消")
-def test_pre_atomic_counter_recheck_failure_does_not_form_an_attempted_identity(
-    current_fact_schemas: Mapping[str, FactSchema],
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    counter_status: str,
-    expected_status: str,
-) -> None:
-    command = _command(current_fact_schemas, tmp_path)
-    target_create_called = False
-
-    def pre_atomic_failure(*_args, **_kwargs) -> AllocationCommitResult:
-        return AllocationCommitResult(counter_status, None)
-
-    def forbidden_target_create(*_args, **_kwargs) -> AtomicWriteResult:
-        nonlocal target_create_called
-        target_create_called = True
-        raise AssertionError("target creation must not start before a counter atomic advance")
-
-    monkeypatch.setattr(creation_application, "commit_object_id_locked", pre_atomic_failure)
-    monkeypatch.setattr(creation_application, "atomic_create_text", forbidden_target_create)
-
-    result = create_fact_object(command, observed_at="2026-07-26T13:00:00+08:00")
-
-    assert result.status == expected_status
-    assert result.actual_id is None
-    assert result.allocation_consumed is False
-    assert result.allocation_result == AllocationCommitResult(counter_status, None)
-    assert result.creation_result is None
-    assert target_create_called is False
-
-
-@pytest.mark.skip(reason="顺序编号 counter 契约已取消")
-def test_allocator_commit_uncertainty_preserves_attempted_identity_without_starting_target_create(
-    current_fact_schemas: Mapping[str, FactSchema],
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    command = _command(current_fact_schemas, tmp_path)
-    counter_write = AtomicWriteResult.uncertain()
-    expected_allocation = AllocationCommitResult("uncertain", None, counter_write)
-    target_create_called = False
-
-    def uncertain_allocation(*_args, **_kwargs) -> AllocationCommitResult:
-        return expected_allocation
-
-    def forbidden_target_create(*_args, **_kwargs) -> AtomicWriteResult:
-        nonlocal target_create_called
-        target_create_called = True
-        raise AssertionError("target creation must not start while allocator state is uncertain")
-
-    monkeypatch.setattr(creation_application, "commit_object_id_locked", uncertain_allocation)
-    monkeypatch.setattr(creation_application, "atomic_create_text", forbidden_target_create)
-
-    result = create_fact_object(command, observed_at="2026-07-26T13:00:00+08:00")
-
-    assert result.status == "allocation_unavailable"
-    assert result.actual_id == "spark-0001"
-    assert result.allocation_status == "uncertain"
-    assert result.allocation_consumed is None
-    assert result.allocation_result is expected_allocation
-    assert result.creation_result is None
-    assert result.residual_readback is not None
-    assert result.residual_readback.check_status == "not_found"
-    assert target_create_called is False
-    assert not (command.boundary.worktree_root / "ldvh-base/sparks/spark-0001.yaml").exists()
 
 
 def test_target_namespace_uncertainty_preserves_allocator_and_fresh_target_residual(
@@ -914,7 +842,7 @@ def test_failed_creation_rollback_fresh_reads_the_actual_external_residual(
 ) -> None:
     command = _command(current_fact_schemas, tmp_path)
     actual_project_read = creation_application._project_read
-    actual_lock = creation_application.creation_lock
+    actual_lock = creation_application.fact_write_lock
     read_calls = 0
 
     @contextmanager
@@ -944,7 +872,7 @@ def test_failed_creation_rollback_fresh_reads_the_actual_external_residual(
 
     monkeypatch.setattr(creation_application, "_project_read", failing_readback)
     monkeypatch.setattr(creation_application, "rollback_created_text", conflicting_rollback)
-    monkeypatch.setattr(creation_application, "creation_lock", release_fails)
+    monkeypatch.setattr(creation_application, "fact_write_lock", release_fails)
 
     result = create_fact_object(command, observed_at="2026-07-26T13:00:00+08:00")
 

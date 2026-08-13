@@ -15,7 +15,7 @@ from conftest import HELPER_EXECUTABLE, assert_common_response
 
 from ldvh.facts import creation_application
 from ldvh.facts.contracts import LAYOUTS
-from ldvh.facts.creation import AllocationCommitResult, FactCoordinationUnavailable, serialize_fact_object
+from ldvh.facts.creation import FactCoordinationUnavailable, serialize_fact_object
 from ldvh.facts.creation_application import FactCreationResult
 from ldvh.facts.identity import object_uid_from_locator
 from ldvh.facts.models import FactIssue
@@ -925,7 +925,7 @@ def test_helper_preserves_created_result_when_coordination_release_is_uncertain(
 ) -> None:
     workspace, project = _fixture(tmp_path)
     basis = _prepare(workspace, project)
-    actual_lock = creation_application.creation_lock
+    actual_lock = creation_application.fact_write_lock
 
     @contextmanager
     def release_fails(boundary, layout):
@@ -933,7 +933,7 @@ def test_helper_preserves_created_result_when_coordination_release_is_uncertain(
             yield
         raise OSError("simulated lock release failure")
 
-    monkeypatch.setattr(creation_application, "creation_lock", release_fails)
+    monkeypatch.setattr(creation_application, "fact_write_lock", release_fails)
     payload = json.loads(_create_payload(workspace, project, basis, _spark()))
     payload["response_profile"] = "diagnostic"
 
@@ -953,217 +953,6 @@ def test_helper_preserves_created_result_when_coordination_release_is_uncertain(
     assert response["diagnostics"][0]["details"]["stage"] == "common_dir_lock_release"
     assert response["follow_up"]["resume_conditions"]
     assert (project / response["result"]["target_namespace"]["canonical_path"]).is_file()
-
-
-@pytest.mark.skip(reason="顺序编号 counter 契约已取消")
-def test_helper_preserves_allocation_consumed_rejection_when_lock_release_is_uncertain(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    workspace, project = _fixture(tmp_path)
-    basis = _prepare(workspace, project)
-
-    @contextmanager
-    def release_fails(*_args, **_kwargs):
-        yield Path("unused-counter")
-        raise OSError("simulated lock release failure")
-
-    expected = FactCreationResult(
-        "final_rejected",
-        issues=(FactIssue("schema", "forced final rejection"),),
-        actual_id="spark-0001",
-        allocation_consumed=True,
-        allocation_status="committed",
-        allocation_result=AllocationCommitResult("committed", "spark-0001"),
-    )
-    monkeypatch.setattr(creation_application, "allocation_lock", release_fails)
-    monkeypatch.setattr(creation_application, "create_fact_object_locked", lambda *_args: expected)
-    payload = json.loads(_create_payload(workspace, project, basis, _spark()))
-    payload["response_profile"] = "diagnostic"
-
-    response = handle_request("call", "create-fact-object", json.dumps(payload)).response
-
-    assert_common_response(response)
-    assert response["outcome"] == "rejected"
-    _assert_creation_result_matrix(response)
-    assert response["scope"]["completed"] == []
-    assert response["scope"]["not_completed"] == response["scope"]["requested"]
-    assert [change["status"] for change in response["changes"]] == [
-        "counter-consumed",
-        "target-not-attempted",
-    ]
-    assert response["result"]["allocation"]["counter_state"] == "committed"
-    canonical_path = response["result"]["target_namespace"]["canonical_path"]
-    assert response["result"]["target_namespace"] == {
-        "canonical_path": canonical_path,
-        "create_namespace_state": "not_attempted",
-        "post_create_readback": "not_run",
-        "rollback_state": "not_applicable",
-        "final_observation": "not_required",
-    }
-    release_gap = next(gap for gap in response["gaps"] if "共同锁释放" in gap["summary"])
-    assert "status=final_rejected" in release_gap["summary"]
-    assert "code" not in release_gap
-    assert "code" not in response["diagnostics"][0]
-    assert response["diagnostics"][0]["details"]["creation_result_status"] == "final_rejected"
-    assert response["follow_up"]["resume_conditions"]
-    assert "controlled_write_lock_release_uncertain" not in json.dumps(response, ensure_ascii=False)
-
-
-@pytest.mark.skip(reason="顺序编号 counter 契约已取消")
-def test_helper_separates_uncertain_allocator_from_unstarted_target_creation(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    workspace, project = _fixture(tmp_path)
-    basis = _prepare(workspace, project)
-    expected_allocation = AllocationCommitResult(
-        "uncertain",
-        None,
-        AtomicWriteResult.uncertain(),
-    )
-    target_create_called = False
-
-    def uncertain_allocation(*_args, **_kwargs) -> AllocationCommitResult:
-        return expected_allocation
-
-    def forbidden_target_create(*_args, **_kwargs) -> AtomicWriteResult:
-        nonlocal target_create_called
-        target_create_called = True
-        raise AssertionError("target creation must not start while allocator state is uncertain")
-
-    monkeypatch.setattr(creation_application, "commit_object_id_locked", uncertain_allocation)
-    monkeypatch.setattr(creation_application, "atomic_create_text", forbidden_target_create)
-
-    response = handle_request(
-        "call",
-        "create-fact-object",
-        _create_payload(workspace, project, basis, _spark()),
-    ).response
-
-    assert response["outcome"] == "unavailable"
-    _assert_creation_result_matrix(response)
-    assert response["summary"] == ("身份分配 counter 的提交或回读状态无法确认；本次没有开始目标原子创建")
-    assert [change["status"] for change in response["changes"]] == [
-        "counter-advance-uncertain",
-        "target-not-attempted",
-    ]
-    assert response["changes"][0]["target"] == "spark-0001"
-    assert response["changes"][1]["target"] == "ldvh-base/sparks/spark-0001.yaml"
-    assert "重新读取确认实际事实对象载体的预期位置不存在" in response["changes"][1]["summary"]
-    assert response["result"] == {
-        "requested_candidate_id": "spark-0001",
-        "allocation": {
-            "attempted_object_uid": response["result"]["allocation"]["attempted_object_uid"],
-            "attempted_object_id": "spark-0001",
-            "allocated_object_id": None,
-            "counter_state": "uncertain",
-            "allocation_consumed": None,
-        },
-        "target_namespace": {
-            "canonical_path": "ldvh-base/sparks/spark-0001.yaml",
-            "create_namespace_state": "not_attempted",
-            "post_create_readback": "not_run",
-            "rollback_state": "not_applicable",
-            "final_observation": "not_found",
-        },
-    }
-    assert response["gaps"]
-    assert response["verification"][0]["status"] == "failed"
-    assert target_create_called is False
-    assert not (project / "ldvh-base/sparks/spark-0001.yaml").exists()
-
-
-@pytest.mark.parametrize("counter_status", ["stale", "unavailable"])
-@pytest.mark.skip(reason="顺序编号 counter 契约已取消")
-def test_helper_reports_known_counter_noncommit_and_unstarted_target(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    counter_status: str,
-) -> None:
-    workspace, project = _fixture(tmp_path)
-    basis = _prepare(workspace, project)
-    target_create_called = False
-
-    def counter_not_committed(*_args, **_kwargs) -> AllocationCommitResult:
-        return AllocationCommitResult(
-            counter_status,
-            None,
-            AtomicWriteResult.not_committed("unavailable"),
-        )
-
-    def forbidden_target_create(*_args, **_kwargs) -> AtomicWriteResult:
-        nonlocal target_create_called
-        target_create_called = True
-        raise AssertionError("target creation must not start after a known counter non-commit")
-
-    monkeypatch.setattr(creation_application, "commit_object_id_locked", counter_not_committed)
-    monkeypatch.setattr(creation_application, "atomic_create_text", forbidden_target_create)
-
-    response = handle_request(
-        "call",
-        "create-fact-object",
-        _create_payload(workspace, project, basis, _spark()),
-    ).response
-
-    assert response["outcome"] == "unavailable"
-    _assert_creation_result_matrix(response)
-    assert [change["status"] for change in response["changes"]] == [
-        "counter-not-advanced",
-        "target-not-attempted",
-    ]
-    assert response["result"] == {
-        "requested_candidate_id": "spark-0001",
-        "allocation": {
-            "attempted_object_uid": response["result"]["allocation"]["attempted_object_uid"],
-            "attempted_object_id": "spark-0001",
-            "allocated_object_id": None,
-            "counter_state": "not_committed",
-            "allocation_consumed": False,
-        },
-        "target_namespace": {
-            "canonical_path": "ldvh-base/sparks/spark-0001.yaml",
-            "create_namespace_state": "not_attempted",
-            "post_create_readback": "not_run",
-            "rollback_state": "not_applicable",
-            "final_observation": "not_required",
-        },
-    }
-    assert target_create_called is False
-
-
-@pytest.mark.parametrize("counter_status", ["stale", "unavailable"])
-@pytest.mark.skip(reason="顺序编号 counter 契约已取消")
-def test_helper_keeps_result_null_when_counter_recheck_fails_before_atomic_advance(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    counter_status: str,
-) -> None:
-    workspace, project = _fixture(tmp_path)
-    basis = _prepare(workspace, project)
-    target_create_called = False
-
-    def pre_atomic_failure(*_args, **_kwargs) -> AllocationCommitResult:
-        return AllocationCommitResult(counter_status, None)
-
-    def forbidden_target_create(*_args, **_kwargs) -> AtomicWriteResult:
-        nonlocal target_create_called
-        target_create_called = True
-        raise AssertionError("target creation must not start before a counter atomic advance")
-
-    monkeypatch.setattr(creation_application, "commit_object_id_locked", pre_atomic_failure)
-    monkeypatch.setattr(creation_application, "atomic_create_text", forbidden_target_create)
-
-    response = handle_request(
-        "call",
-        "create-fact-object",
-        _create_payload(workspace, project, basis, _spark()),
-    ).response
-
-    assert response["outcome"] == "unavailable"
-    assert response["result"] is None
-    assert response["changes"] == []
-    assert target_create_called is False
 
 
 def test_helper_separates_consumed_allocator_from_uncertain_target_residual(
@@ -1499,7 +1288,7 @@ def test_failed_write_back_reports_residue_when_exact_rollback_fails(
 ) -> None:
     workspace, project = _fixture(tmp_path)
     basis = _prepare(workspace, project)
-    actual_lock = creation_application.creation_lock
+    actual_lock = creation_application.fact_write_lock
 
     @contextmanager
     def release_fails(boundary, layout):
@@ -1526,7 +1315,7 @@ def test_failed_write_back_reports_residue_when_exact_rollback_fails(
             else AtomicWriteResult.not_committed("unavailable")
         ),
     )
-    monkeypatch.setattr(creation_application, "creation_lock", release_fails)
+    monkeypatch.setattr(creation_application, "fact_write_lock", release_fails)
     payload = json.loads(_create_payload(workspace, project, basis, _spark()))
     payload["response_profile"] = "diagnostic"
 

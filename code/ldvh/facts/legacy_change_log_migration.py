@@ -9,7 +9,7 @@ from typing import Literal
 from ldvh.facts.carriers.study_markdown import parse_study_markdown
 from ldvh.facts.carriers.yaml_object import parse_yaml_object
 from ldvh.facts.contracts import LAYOUTS
-from ldvh.facts.creation import CreationBoundary, allocation_lock, serialize_fact_object
+from ldvh.facts.creation import CreationBoundary, fact_write_lock, serialize_fact_object
 from ldvh.facts.models import FactIssue
 from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.relations import ProjectFactIndex
@@ -239,7 +239,7 @@ def apply_legacy_change_log_migration(
     if not native_atomic_fact_writes_supported():
         return LegacyChangeLogMigrationResult("replacement_unavailable", command.event_at)
     try:
-        with allocation_lock(command.boundary, LAYOUTS[command.fact_type_key]):
+        with fact_write_lock(command.boundary, LAYOUTS[command.fact_type_key]):
             return apply_legacy_change_log_migration_locked(command)
     except OSError:
         return LegacyChangeLogMigrationResult("replacement_unavailable", command.event_at)

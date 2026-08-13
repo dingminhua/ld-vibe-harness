@@ -157,7 +157,7 @@ def test_committed_generic_update_result_survives_coordination_release_failure(
         yield Path("unused-lock-counter")
         raise OSError("simulated lock release failure")
 
-    monkeypatch.setattr(update_application, "allocation_lock", release_fails)
+    monkeypatch.setattr(update_application, "fact_write_lock", release_fails)
 
     result = apply_fact_update(command)
 
@@ -189,7 +189,7 @@ def test_rejected_generic_update_result_survives_coordination_release_failure(
         command.event_at,
         issues=(FactIssue("schema", "forced candidate rejection"),),
     )
-    monkeypatch.setattr(update_application, "allocation_lock", release_fails)
+    monkeypatch.setattr(update_application, "fact_write_lock", release_fails)
     monkeypatch.setattr(update_application, "apply_fact_update_locked", lambda *_args: expected)
 
     result = apply_fact_update(command)
@@ -245,7 +245,7 @@ def test_no_change_does_not_require_successor_or_rewrite(
     )
     original = fact.read_bytes()
     inode = fact.stat().st_ino
-    actual_lock = update_application.allocation_lock
+    actual_lock = update_application.fact_write_lock
 
     @contextmanager
     def release_fails(boundary: CreationBoundary, layout):
@@ -253,7 +253,7 @@ def test_no_change_does_not_require_successor_or_rewrite(
             yield counter_path
         raise OSError("simulated lock release failure")
 
-    monkeypatch.setattr(update_application, "allocation_lock", release_fails)
+    monkeypatch.setattr(update_application, "fact_write_lock", release_fails)
 
     result = apply_fact_update(no_change)
 
@@ -513,7 +513,7 @@ def test_failed_generic_rollback_fresh_reads_the_actual_external_residual(
     command, fact = _command(current_fact_schemas, tmp_path)
     actual_project_read = update_application._project_read
     actual_replace = update_application.atomic_replace_text_if_unchanged
-    actual_lock = update_application.allocation_lock
+    actual_lock = update_application.fact_write_lock
     read_calls = 0
     replace_calls = 0
     candidate_text = ""
@@ -552,7 +552,7 @@ def test_failed_generic_rollback_fresh_reads_the_actual_external_residual(
 
     monkeypatch.setattr(update_application, "_project_read", failing_readback)
     monkeypatch.setattr(update_application, "atomic_replace_text_if_unchanged", conflicting_rollback)
-    monkeypatch.setattr(update_application, "allocation_lock", release_fails)
+    monkeypatch.setattr(update_application, "fact_write_lock", release_fails)
 
     result = apply_fact_update(command)
 

@@ -377,9 +377,9 @@ def _execute(
         event_at=context.event_at,
     )
     try:
-        from ldvh.facts.creation import allocation_lock
+        from ldvh.facts.creation import fact_write_lock
 
-        with allocation_lock(boundary, LAYOUTS[domain.fact_ref.fact_type_key]):
+        with fact_write_lock(boundary, LAYOUTS[domain.fact_ref.fact_type_key]):
             result = apply_legacy_change_log_migration_locked(command)
     except FactCoordinationUnavailable as error:
         return OperationExecution(

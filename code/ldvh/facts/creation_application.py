@@ -16,7 +16,7 @@ from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.creation import (
     CreationBoundary,
     atomic_create_text,
-    creation_lock,
+    fact_write_lock,
     rollback_created_text,
     serialize_fact_object,
 )
@@ -406,7 +406,7 @@ def create_fact_object(command: FactCreationCommand, *, observed_at: str | None 
     layout = LAYOUTS[command.fact_type_key]
     completed: FactCreationResult | None = None
     try:
-        with creation_lock(command.boundary, layout):
+        with fact_write_lock(command.boundary, layout):
             completed = create_fact_object_locked(prepared)
     except OSError:
         if completed is None:

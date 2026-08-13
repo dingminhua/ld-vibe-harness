@@ -14,7 +14,7 @@ from typing import Any, Literal
 from ldvh.facts.carriers.study_markdown import parse_study_markdown
 from ldvh.facts.carriers.yaml_object import parse_yaml_object
 from ldvh.facts.contracts import LAYOUTS, is_legacy_spark_object
-from ldvh.facts.creation import CreationBoundary, allocation_lock, serialize_fact_object
+from ldvh.facts.creation import CreationBoundary, fact_write_lock, serialize_fact_object
 from ldvh.facts.head_change_log import head_change_log_state
 from ldvh.facts.models import FactIssue
 from ldvh.facts.project_validation import stabilize_project_index
@@ -395,7 +395,7 @@ def apply_fact_update(command: FactUpdateCommand) -> FactUpdateResult:
     layout = LAYOUTS[command.fact_type_key]
     completed: FactUpdateResult | None = None
     try:
-        with allocation_lock(command.boundary, layout):
+        with fact_write_lock(command.boundary, layout):
             completed = apply_fact_update_locked(command)
     except OSError:
         if completed is None:

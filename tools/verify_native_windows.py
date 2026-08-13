@@ -46,8 +46,6 @@ POLICY_PROBES = {
     "test_native_public_create_and_update_are_unavailable_without_side_effects": "public_write_fail_closed",
 }
 APPROVED_PROBES = {
-    "test_native_six_process_allocator_contiguous_ids": "allocator_six_process_contiguous_ids",
-    "test_native_linked_worktree_shared_counter": "main_linked_shared_counter",
     "test_native_conditional_update_single_winner": "conditional_update_single_winner",
 }
 FUTURE_WRITE_PROBES = tuple(APPROVED_PROBES.values())

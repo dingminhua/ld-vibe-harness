@@ -998,7 +998,7 @@ def test_committed_workcase_result_survives_coordination_release_failure(
         yield Path("unused-lock-counter")
         raise OSError(f"simulated {release_stage} failure")
 
-    monkeypatch.setattr(workcase_update, "allocation_lock", release_fails)
+    monkeypatch.setattr(workcase_update, "fact_write_lock", release_fails)
 
     result = apply_workcase_write(command)
 
@@ -1034,7 +1034,7 @@ def test_rejected_workcase_result_survives_coordination_release_failure(
         command.event_at,
         issues=(FactIssue("schema", "forced candidate rejection"),),
     )
-    monkeypatch.setattr(workcase_update, "allocation_lock", release_fails)
+    monkeypatch.setattr(workcase_update, "fact_write_lock", release_fails)
     monkeypatch.setattr(workcase_update, "apply_workcase_write_locked", lambda *_args: expected)
 
     result = apply_workcase_write(command)
@@ -2362,7 +2362,7 @@ def test_conditional_rollback_does_not_overwrite_a_newer_external_source_write(
     before = _closing("workcase-0001", outcome="not-achieved", target=snapshot)
     source_path = _write(project, before)
     actual_guard = workcase_update.validate_workcase_route_target_snapshots
-    actual_lock = workcase_update.allocation_lock
+    actual_lock = workcase_update.fact_write_lock
     calls = 0
 
     @contextmanager
@@ -2398,7 +2398,7 @@ def test_conditional_rollback_does_not_overwrite_a_newer_external_source_write(
         return actual_guard(*args, **kwargs)
 
     monkeypatch.setattr(workcase_update, "validate_workcase_route_target_snapshots", conflicting_guard)
-    monkeypatch.setattr(workcase_update, "allocation_lock", release_fails)
+    monkeypatch.setattr(workcase_update, "fact_write_lock", release_fails)
 
     result = apply_workcase_write(
         _command(
@@ -2595,7 +2595,7 @@ def test_identical_closed_after_returns_no_change_only_after_current_target_chec
     source["updated_at"] = "2026-07-26T12:00:00+08:00"
     path = _write(project, source)
     original = path.read_bytes()
-    actual_lock = workcase_update.allocation_lock
+    actual_lock = workcase_update.fact_write_lock
 
     @contextmanager
     def release_fails(boundary: CreationBoundary, layout):
@@ -2603,7 +2603,7 @@ def test_identical_closed_after_returns_no_change_only_after_current_target_chec
             yield counter_path
         raise OSError("simulated lock release failure")
 
-    monkeypatch.setattr(workcase_update, "allocation_lock", release_fails)
+    monkeypatch.setattr(workcase_update, "fact_write_lock", release_fails)
 
     result = apply_workcase_write(
         _command(

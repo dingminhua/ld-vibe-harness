@@ -11,7 +11,6 @@ from ldvh.filesystem import (
     AtomicWriteResult,
     atomic_create_relative,
     atomic_replace_relative_if_equal,
-    atomic_store_relative,
     native_atomic_fact_writes_supported,
     remove_relative_if_equal,
 )
@@ -99,22 +98,6 @@ def test_create_rejects_linked_parent_without_touching_external_target(tmp_path:
     assert result.namespace_state == "not_committed"
     assert not (outside / "sparks/spark-0001.yaml").exists()
 
-def test_store_rejects_symlink_counter_without_replacing_or_following_it(tmp_path: Path) -> None:
-    outside = tmp_path / "outside.counter"
-    outside.write_bytes(b"outside\n")
-    counter = tmp_path / "ldvh/fact-id-allocators/sample.counter"
-    counter.parent.mkdir(parents=True)
-    try:
-        counter.symlink_to(outside)
-    except OSError:
-        pytest.skip("symlinks are unavailable")
-
-    result = atomic_store_relative(tmp_path, "ldvh/fact-id-allocators/sample.counter", b"1\n")
-
-    assert result.outcome == "unavailable"
-    assert result.namespace_state == "not_committed"
-    assert outside.read_bytes() == b"outside\n"
-    assert counter.is_symlink()
 
 def test_file_sync_failure_before_create_commit_leaves_no_target(
     tmp_path: Path,
@@ -255,24 +238,6 @@ def test_create_reconciles_a_link_that_committed_before_error_return(
     
     assert (tmp_path / "ldvh-base/sparks/spark-0001.yaml").read_bytes() == b"first\n"
 
-@_POSIX_ONLY
-def test_store_reconciles_replace_that_committed_before_error_return(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    real_replace = os.replace
-
-    def commit_then_fail(*args: object, **kwargs: object) -> None:
-        real_replace(*args, **kwargs)
-        raise OSError("simulated post-commit replace error")
-
-    monkeypatch.setattr(filesystem.os, "replace", commit_then_fail)
-
-    result = atomic_store_relative(tmp_path, "ldvh/fact-id-allocators/sample.counter", b"1\n")
-
-    assert result.outcome == "stored"
-    assert result.namespace_state == "committed"
-    assert (tmp_path / "ldvh/fact-id-allocators/sample.counter").read_bytes() == b"1\n"
 
 def test_replace_conflict_preserves_current_bytes(tmp_path: Path) -> None:
     target = tmp_path / "ldvh-base/sparks/spark-0001.yaml"
@@ -388,13 +353,6 @@ def test_windows_candidate_create_and_replace_are_file_only_without_posix_backen
         platform_name="nt",
         allow_file_only=True,
     )
-    stored = atomic_store_relative(
-        tmp_path,
-        "ldvh/fact-id-allocators/sample.counter",
-        b"1\n",
-        platform_name="nt",
-        allow_file_only=True,
-    )
     removed = remove_relative_if_equal(
         tmp_path,
         relative,
@@ -405,10 +363,8 @@ def test_windows_candidate_create_and_replace_are_file_only_without_posix_backen
 
     assert (created.outcome, created.namespace_state) == ("created", "committed")
     assert (replaced.outcome, replaced.namespace_state) == ("replaced", "committed")
-    assert (stored.outcome, stored.namespace_state) == ("stored", "committed")
     assert (removed.outcome, removed.namespace_state) == ("removed", "committed")
     assert not (tmp_path / relative).exists()
-    assert (tmp_path / "ldvh/fact-id-allocators/sample.counter").read_bytes() == b"1\n"
 
 def test_remove_missing_path_does_not_create_parent_directories(tmp_path: Path) -> None:
     result = remove_relative_if_equal(tmp_path, "ldvh-base/sparks/spark-0001.yaml", b"missing\n")
