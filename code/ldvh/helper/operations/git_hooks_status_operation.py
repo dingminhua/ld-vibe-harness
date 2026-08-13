@@ -113,7 +113,9 @@ def _run_git(worktree: Path, *args: str) -> str | None:
 
 def _skill_check(skill_path: str, platform: str) -> dict[str, Any]:
     target = Path(skill_path)
-    project_skill = Path(__file__).resolve().parents[3] / _PROJECT_SKILL_REL
+    # 本文件位于 code/ldvh/helper/operations/，parents[4] 为仓库根；
+    # canonical Skill 源是仓库根下的 skill/SKILL.md（09 §5.2），不是 code/skill/SKILL.md。
+    project_skill = Path(__file__).resolve().parents[4] / _PROJECT_SKILL_REL
     target_exists = target.is_file()
     project_exists = project_skill.is_file()
     aligned = False
