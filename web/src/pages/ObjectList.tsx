@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { Activity, ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, Lightbulb, ListChecks, ShieldCheck, Target } from 'lucide-react';
+import { Activity, ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, History, Lightbulb, ListChecks, Search, ShieldCheck, Target } from 'lucide-react';
 import ObjectIdentityActions from '@/components/ObjectIdentityActions';
 import StatusBadge from '@/components/StatusBadge';
 import WorkCaseCapabilityStatusBadge from '@/components/WorkCaseCapabilityStatusBadge';
@@ -1229,21 +1229,28 @@ export function ObjectCardFrame({
       ? getSparkImplementedPresentationStatus(obj.factAssociations)
       : obj.status);
   const typeColor = CATEGORY_COLORS[obj.type] || CATEGORY_COLORS.other;
+  const activityCount = Array.isArray(obj.change_log) ? obj.change_log.length : 0;
   const nonActiveReason = getNonActiveReason(obj, t);
   return (
     <div
       className="flex min-w-0 flex-col gap-2 rounded-lg border border-ldvh-border bg-ldvh-panel p-3 text-left"
     >
       <div className="flex min-w-0 items-center justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-1.5">
+        <div className="flex min-w-0 items-center gap-2">
           <span
-            className="ldvh-chip shrink-0 rounded px-2 py-0.5"
-            style={{ backgroundColor: `${typeColor}18`, color: typeColor }}
+            className="ldvh-chip inline-flex h-[18px] shrink-0 items-center justify-center rounded-md border px-1.5 text-[10px] font-medium leading-3"
+            style={{ backgroundColor: `${typeColor}18`, borderColor: `${typeColor}55`, color: typeColor }}
           >
             {getTypeLabel(obj.type, locale)}
           </span>
-          <span className="ldvh-meta-muted min-w-0 truncate">{obj.short_ref ?? obj.id}</span>
           <PriorityIcon source={obj} type={obj.type} locale={locale} size="xs" />
+          <span
+            className="ldvh-chip inline-flex h-[18px] shrink-0 items-center justify-center gap-1 rounded-md border border-ldvh-accent/25 bg-ldvh-accent/5 px-[5px] text-[10px] font-medium leading-3 text-ldvh-accent"
+            title={t('cognition.recent.activityCount', { count: String(activityCount) })}
+          >
+            <History size={12} aria-hidden="true" />
+            <span>{activityCount}</span>
+          </span>
         </div>
         {/* List cards expose a stable object identity, not an exact-read source path. */}
         <ObjectIdentityActions
@@ -1255,6 +1262,7 @@ export function ObjectCardFrame({
           statusLeadingBadges={<WorkCaseCapabilityStatusBadge source={obj} />}
           copyLabel={t('common.copyObjectId')}
           copiedLabel={t('common.copiedObjectId')}
+          compact
         />
       </div>
       {/* Keep a neutral title tray for card hierarchy; semantic colour belongs to the icon, never the tray border. */}
@@ -1267,7 +1275,7 @@ export function ObjectCardFrame({
           event.preventDefault();
           onOpen(obj.id);
         }}
-        className="ldvh-object-title-tray -mx-1 flex min-w-0 cursor-pointer items-center gap-1.5 px-2.5 py-2 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
+        className="ldvh-object-title-tray ldvh-object-title-tray-compact -mx-1 flex min-w-0 cursor-pointer items-center gap-1.5 px-2.5 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
       >
         <ObjectTypeIcon type={obj.type} size={14} className="shrink-0" style={{ color: typeColor }} />
         <h2 className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words">
@@ -1278,7 +1286,7 @@ export function ObjectCardFrame({
       {children}
       <FactAssociationsCardContent associations={obj.factAssociations} />
       {/* Keep the identity → title → update rhythm stable; grid stretch leaves any spare space below. */}
-      <div className="flex min-w-0 items-center justify-end pt-0.5 text-right">
+      <div className="-mt-0.5 flex min-w-0 items-center justify-end text-right opacity-70">
         <ObjectUpdatedMeta source={obj} updatedAt={obj.updated} />
       </div>
     </div>
@@ -1349,7 +1357,7 @@ function FactAssociationsCardContent({ associations }: { associations?: FactCard
   if (visibleAssociations.length === 0) return null;
 
   return (
-    <section onClick={(event) => event.stopPropagation()} className="min-w-0 border-t border-ldvh-border/60 pt-2">
+    <section onClick={(event) => event.stopPropagation()} className="min-w-0 border-t border-ldvh-border/60 pt-1.5">
       <div className="divide-y divide-ldvh-border/45">
         {visibleAssociations.map((association, index) => <FactAssociationCardRow key={`${association.target && 'objectUid' in association.target ? association.target.objectUid : `${association.target?.governedProjectId ?? 'unavailable'}:${association.target?.factTypeKey ?? 'unknown'}:${association.target?.objectId ?? index}`}:${index}`} association={association} locale={locale} unavailableLabel={t('objectList.associationUnavailable')} />)}
       </div>
@@ -1418,7 +1426,7 @@ function FactAssociationCardRow({ association, locale, unavailableLabel }: { ass
       className={`group flex min-w-0 items-center gap-2 rounded-md px-1.5 py-2 text-left transition-colors ${isDiscarded ? 'text-slate-400/70 dark:text-slate-500/70' : ''} ${canOpen ? (isDiscarded ? 'cursor-pointer hover:bg-slate-500/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-400/30' : 'cursor-pointer hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50') : 'cursor-default'}`}
     >
       <ObjectTypeIcon type={legacyTarget?.factTypeKey} size={13} className={`shrink-0 ${isDiscarded ? 'text-slate-400/65 dark:text-slate-500/60' : ''}`} style={isDiscarded ? undefined : { color: typeColor }} />
-      <span className={`ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words ${isDiscarded ? 'text-slate-400/65 dark:text-slate-500/60' : 'text-ldvh-text-secondary/85 group-hover:text-ldvh-accent'}`}>{title}</span>
+      <span className={`ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words ${isDiscarded ? 'text-slate-400/65 dark:text-slate-500/60' : 'text-ldvh-text-secondary/95 group-hover:text-ldvh-accent'}`}>{title}</span>
       {associationState !== null && associationStateTooltip !== null && <FactAssociationStateIcon state={associationState} tooltip={associationStateTooltip} />}
     </div>
   );
@@ -1582,6 +1590,8 @@ export default function ObjectList() {
   const [coverageStatus, setCoverageStatus] = useState<FactCoverageStatus>('complete');
   const [coverageProblemCount, setCoverageProblemCount] = useState(0);
   const [coverageProblems, setCoverageProblems] = useState<FactListProblem[]>([]);
+  const [objectSearch, setObjectSearch] = useState('');
+  const [isObjectSearchOpen, setIsObjectSearchOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { t, locale } = useI18n();
@@ -1644,6 +1654,14 @@ export default function ObjectList() {
   }, [currentType, activeStatus, activePriority, activeProgressGroup, statusParam]);
 
   const sortedItems = sortObjectsForList(items);
+  const normalizedObjectSearch = objectSearch.trim().toLowerCase();
+  const filteredItems = normalizedObjectSearch
+    ? sortedItems.filter((item) => {
+      const title = getLocalizedObjectTitle(item, locale).toLowerCase();
+      const shortRef = typeof item.short_ref === 'string' ? item.short_ref.toLowerCase() : '';
+      return title.includes(normalizedObjectSearch) || shortRef.includes(normalizedObjectSearch);
+    })
+    : sortedItems;
 
   const handleStatusChange = (status: string | null) => {
     const nextParams = new URLSearchParams(searchParams);
@@ -1681,6 +1699,41 @@ export default function ObjectList() {
       state: { from: returnToListPath },
     });
   };
+
+  const renderObjectSearch = () => (
+    <div className="z-30 ml-auto shrink-0">
+      {isObjectSearchOpen ? (
+        <label className="relative flex w-60 items-center">
+          <Search size={14} className="pointer-events-none absolute left-2.5 text-ldvh-text-secondary" aria-hidden="true" />
+          <input
+            autoFocus
+            type="search"
+            value={objectSearch}
+            onChange={(event) => setObjectSearch(event.target.value)}
+            onBlur={() => setIsObjectSearchOpen(false)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                event.currentTarget.blur();
+              }
+            }}
+            aria-label={t('objectList.searchLabel')}
+            placeholder={t('objectList.searchPlaceholder')}
+            className="h-[26px] w-full rounded-md border border-ldvh-border bg-ldvh-panel py-1 pl-8 pr-2 text-xs leading-4 text-ldvh-text-primary outline-none placeholder:text-ldvh-text-secondary/70 focus:border-ldvh-accent/60 focus:ring-1 focus:ring-ldvh-accent/30"
+          />
+        </label>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setIsObjectSearchOpen(true)}
+          aria-label={t('objectList.searchLabel')}
+          aria-expanded={false}
+          className={`ldvh-tab-button h-[26px] w-[26px] justify-center !px-0 !py-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50 ${normalizedObjectSearch ? 'ldvh-tab-button-active' : 'ldvh-tab-button-idle'}`}
+        >
+          <Search size={15} aria-hidden="true" />
+        </button>
+      )}
+    </div>
+  );
 
   const renderObjectCard = (obj: ObjectItem) => {
 
@@ -1838,9 +1891,10 @@ export default function ObjectList() {
               loading={loading}
               coverageStatus={coverageStatus}
             />
+            {renderObjectSearch()}
           </div>
         )}
-        <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-1.5">
+        <div className="relative flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-1.5">
           <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1.5">
             {currentType === 'workcase' ? (
               <>
@@ -1868,6 +1922,7 @@ export default function ObjectList() {
               </>
             )}
           </div>
+          {!(supportsPriorityNavigation && isPriorityApplicable) && renderObjectSearch()}
         </div>
       </div>
 
@@ -1953,21 +2008,25 @@ export default function ObjectList() {
         <div className="ldvh-body-muted py-20 text-center">
           {t(currentType === 'workcase' ? 'objectList.workcaseCoverageUnavailableEmpty' : 'objectList.coverageUnavailableEmpty')}
         </div>
-      ) : sortedItems.length === 0 && coverageStatus === 'partial' ? (
+      ) : filteredItems.length === 0 && normalizedObjectSearch ? (
+        <div className="ldvh-body-muted py-20 text-center">
+          {t('objectList.searchNoResults')}
+        </div>
+      ) : filteredItems.length === 0 && coverageStatus === 'partial' ? (
         <div className="ldvh-body-muted py-20 text-center">
           {t(currentType === 'workcase' ? 'objectList.workcaseCoveragePartialEmpty' : 'objectList.coveragePartialEmpty')}
         </div>
-      ) : sortedItems.length === 0 && coverageProblemCount > 0 ? (
+      ) : filteredItems.length === 0 && coverageProblemCount > 0 ? (
         <div className="ldvh-body-muted py-20 text-center">
           {t(currentType === 'workcase' ? 'objectList.workcaseObjectProblemsEmpty' : 'objectList.objectProblemsEmpty')}
         </div>
-      ) : sortedItems.length === 0 ? (
+      ) : filteredItems.length === 0 ? (
         <div className="ldvh-body-muted py-20 text-center">
           {t('objectList.noObjects', { type: currentType })}
         </div>
       ) : (
         <div className="ldvh-section-grid">
-          {sortedItems.map((obj) => renderObjectCard(obj))}
+          {filteredItems.map((obj) => renderObjectCard(obj))}
         </div>
       )}
     </div>
