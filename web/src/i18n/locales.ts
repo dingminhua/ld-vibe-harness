@@ -568,7 +568,7 @@ const CATEGORY_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
   docs: { zh: '文档', en: 'Docs' }, style: { zh: '样式', en: 'Style' },
   refactor: { zh: '重构', en: 'Refactor' }, test: { zh: '测试', en: 'Test' },
   chore: { zh: '杂项', en: 'Chore' }, perf: { zh: '性能', en: 'Perf' },
-  release: { zh: '发布', en: 'Release' },
+  merge: { zh: '合并', en: 'Merge' }, release: { zh: '发布', en: 'Release' },
   ci: { zh: 'CI', en: 'CI' }, build: { zh: '构建', en: 'Build' },
   spec: { zh: '规范', en: 'Spec' }, rule: { zh: '规则', en: 'Rule' },
   adr: { zh: '决策', en: 'ADR' }, other: { zh: '其他', en: 'Other' },
@@ -577,7 +577,7 @@ const CATEGORY_LABEL_LOCALES: Record<string, { zh: string; en: string }> = {
 const COMMIT_TYPE_ZH: Record<string, string> = {
   feat: '新增功能', fix: '问题修复', docs: '文档修改', style: '格式调整',
   refactor: '代码重构', perf: '性能优化', test: '测试修改', build: '构建系统',
-  ci: '持续集成', chore: '维护杂项', release: '版本发布', revert: '回退变更',
+  ci: '持续集成', chore: '维护杂项', merge: '合并提交', release: '版本发布', revert: '回退变更',
 };
 
 const COMMIT_SCOPE_LOCALES: Record<string, { zh: string; en: string }> = {

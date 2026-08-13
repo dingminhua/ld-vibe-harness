@@ -32,6 +32,7 @@ function tableTokens(header: 'type' | 'scope'): string[] {
 test('current Web commit labels stay synchronized with 03.Att.01 tables', () => {
   assert.deepEqual([...CURRENT_COMMIT_TYPES], tableTokens('type'));
   assert.deepEqual([...CURRENT_COMMIT_SCOPES], tableTokens('scope'));
+  assert.equal(getCommitTypeLabel('merge', 'zh'), '合并提交');
 });
 
 test('historical or unknown tokens use raw fallback without becoming current tokens', () => {
