@@ -205,7 +205,11 @@ def test_real_cli_local_edit_candidates_supports_rule_and_study_modes() -> None:
         "work_object_locators": ["."],
         "arguments": {
             "source_kind": "study",
-            "fact_ref": {"governed_project_id": "ldvh", "fact_type_key": "study", "object_id": "study-0030"},
+            "fact_ref": {
+                "governed_project_id": "ldvh",
+                "fact_type_key": "study",
+                "object_id": "study-01KZXN5TXNFV8T3AQS1QCPAQ8B",
+            },
             "body_heading": "建议",
         },
     }

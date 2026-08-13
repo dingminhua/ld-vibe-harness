@@ -1,0 +1,145 @@
+status: closed
+title: 撞号处置程序规范增补（跨 clone/多机事实对象身份冲突）
+goal: 把跨 clone/多机场景下“同 ID 不同内容”事实对象的发现、判定、处置与验证程序增补进规范本体（05 为主），使 mac↔Windows 双机与多 worktree 协作有明确可执行规则，承接 spark-0022 的处置方向。
+scope: 含：01 §13 门槛判断与逐条核对记录；05 最小充分增量（合并前身份扫描操作化、A/B 判定、合并路径、改号路径、引用重定向、验证闭环，仅用当前机械边界表达）；spark-0022 承接范围据实记录；spark-0055 待判断项输入（三层必要性结论与全库审计实测基线）；spark-0004 方向记录（Windows 工作放到 Windows 上做）。不含：任何 Code/tests 变更、提交 Gate 前置拦截实现、Windows 实测与验收矩阵执行、Skill/Git Hook 部署、09 §6.3 平台声明修订。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 05 中存在可机械定位的增补条文，覆盖发现/判定/合并/改号/引用重定向/验证六环节，且完成 01 §13.5 独立复核（复核记录载体为 item-03 的 result_summary，不嵌入 05 正文）。
+- criterion_id: criterion-02
+  statement: item-01 记录门槛结论（属 05 既有责任边界内补充）与逐条核对表，证明增补与现有条款无重复转述。
+- criterion_id: criterion-03
+  statement: spark-0022 承接范围据实记录（预期保持 open 并写明残留：Gate 前置拦截实现与远端观察边界），spark-0055 吸收本次结论、spark-0004 记录方向，三者更新均经同一 worktree 回读确认。
+- criterion_id: criterion-04
+  statement: 修订经 30 模板受控提交、Git Gate 通过，commit 路径闭集仅含本 WorkCase 实际变更，提交后 check-fact-integrity 外层 ok 且 result.status=complete。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 05 §9.4 新增条文经 Helper L3 精确回读定位（行 329–341），覆盖发现/判定/合并/改号/引用重定向/验证六环节；§13.5 独立复核（changes_required）与全部处置记录于 item-03 result_summary。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: item-01 result_summary 含门槛结论（05 既有责任边界内补充）与 R1–R7 逐条核对表，证明无重复转述。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: spark-0022 保持 open 并写明残留（Gate 前置拦截实现）、spark-0055 吸收结论、spark-0004 记录方向，三者均 related-to workcase-0060 并经同一 worktree 回读确认。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: commit 44d00c93a 经 30 模板与真实 Git Gate 通过；Index 路径闭集仅含本 WorkCase 变更与 Human 批准并入项；提交后 check-fact-integrity complete（151 对象）。
+result_summary: 全部 5 个 item completed，4 项成功标准均 satisfied：05 §9.4 撞号处置程序落文并经独立复核处置；三火花据实承接；受控提交 44d00c93a 经 Git Gate 通过，提交范围精确、审计 complete。
+validation_summary: 验证覆盖：全部事实写入经 Helper 受控操作并逐次精确回读；05 §9.4 经 Helper L3 两次回读（落文后、复核处置修订后）；提交前 precheck-git-commit passed；真实 commit 44d00c93a 触发 Git Gate passed；提交后 check-fact-integrity complete（151 对象、0 问题）；三火花与 WC 回读均 ok。未验证范围：无。
+change_log:
+- signature:
+    agent_id: kimi
+    host_environment: Kimi
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-05T23:16:43.435078+08:00'
+  summary: 受控创建本 WorkCase（plan_version=1）：经独立只读 Reviewer 方案复核（changes_required：1 blocking、2 major、4 minor/nit）并完成 Controller 全部处置，等待 Human Gate 1 执行决定
+- signature:
+    agent_id: kimi
+    host_environment: Kimi
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-05T23:29:15.529864+08:00'
+  summary: Gate 1：Human 批准执行（含 dirty 树处置选 b），写入 execution_approval 并进入 executing；移除 Human waiting
+- signature:
+    agent_id: kimi
+    host_environment: Kimi
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-05T23:31:59.649813+08:00'
+  summary: item-01 完成：01 §13 门槛判断（05 既有责任边界内补充）与候选规则逐条核对记录
+- signature:
+    agent_id: kimi
+    host_environment: Kimi
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-05T23:34:11.834248+08:00'
+  summary: item-02 完成：05 §9.4 增补落文并经 Helper 机械校验回读；item-03 进入 §13.5 独立复核委派
+- signature:
+    agent_id: kimi
+    host_environment: Kimi
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-05T23:41:22.363958+08:00'
+  summary: item-03 完成：§13.5 独立复核（changes_required，1 major+1 minor+2 nit）并全部处置，条文修订后回读通过
+- signature:
+    agent_id: kimi
+    host_environment: Kimi
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-05T23:47:05.594890+08:00'
+  summary: item-05 完成：三火花承接处置（0022 承接现状、0055 吸收结论、0004 方向决定），两遗留对象先受控迁移 change_log；item-04 进入受控提交
+- signature:
+    agent_id: kimi
+    host_environment: Kimi
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-06T00:05:23.520705+08:00'
+  summary: item-04 完成：受控提交 44d00c93a 经 Git Gate 通过；全部 item terminal，进入 controller_checking
+- signature:
+    agent_id: kimi
+    host_environment: Kimi
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-06T00:07:55.045353+08:00'
+  summary: controller_checking：补全验证摘要，冻结 result projection
+- signature:
+    agent_id: kimi
+    host_environment: Kimi
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-06T00:08:28.323296+08:00'
+  summary: 进入 independent_reviewing：按 quality_gates 委派独立结果复核（authorization-04）
+- signature:
+    agent_id: kimi
+    host_environment: Kimi
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-06T00:26:51.540041+08:00'
+  summary: authorization-05：回写独立结果复核（pass，1 nit 已处置），四项成功标准证据逐项核对在案
+- signature:
+    agent_id: kimi
+    host_environment: Kimi
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-06T00:27:37.412219+08:00'
+  summary: closure_preparing：终态保留审查完成（结果与验证事实已由 result_summary/criterion_results/validation_summary 无损承载），形成关闭提案（completed，原 scope 无剩余责任）
+- signature:
+    agent_id: kimi
+    host_environment: Kimi
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-06T00:28:25.811995+08:00'
+  summary: 进入 human_closure_confirming：等待 Human Gate 2 关闭决定
+- signature:
+    agent_id: kimi
+    host_environment: Kimi
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-06T00:37:04.937194+08:00'
+  summary: Gate 2：Human 决定关闭，原子形成 closed（outcome=completed，原 scope 无剩余责任）
+- at: '2026-08-10T08:56:05.376349Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Kimi Work -> Kimi; 1: Kimi Work -> Kimi; 2: Kimi Work -> Kimi; 3: Kimi Work -> Kimi; 4: Kimi Work -> Kimi; 5: Kimi Work -> Kimi; 6: Kimi Work -> Kimi; 7: Kimi Work -> Kimi; 8: Kimi Work -> Kimi; 9: Kimi Work -> Kimi; 10: Kimi Work -> Kimi; 11: Kimi Work -> Kimi; 12: Kimi Work -> Kimi。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-explicit-signature-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:30.053446Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+closure_outcome: completed
+disposition_summary: 全部成功标准 satisfied，原 scope 内无剩余责任；范围外后续由既有 open 火花分别承载：spark-0022（撞号提交 Gate 前置拦截实现与远端观察边界）、spark-0055（流程复杂度待判断项：模板激活层数、规范交叉引用层数、80/20 倒置处置）、spark-0004（Windows 实测验收矩阵执行）。本 WorkCase 交付（05 §9.4 条文、火花承接更新）已随 commit 44d00c93a 固化。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-73ff-a52e-432df71a367f
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-74ac-b57f-8adf8ea11892
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7cf6-be06-10ffe049c192
+object_id: workcase-01KZXN5TXNF768MZZ1HKMV0T8Z
+object_uid: 019ffb52-ebb5-79cc-8a7f-e18ce9b0691f
+fact_type_key: workcase
+created_at: '2026-08-05T23:16:43.435078+08:00'
+updated_at: '2026-08-13T15:03:57Z'

@@ -1,0 +1,33 @@
+title: 为获批 WorkCase 增加执行续跑守卫
+status: implemented
+intent: 需要确定如何把获批 WorkCase 的执行模板从指导性约定升级为可机械检查的续跑约束：在仍有已授权且依赖满足的工作项时，执行者能否被阻止把检查点当作完成交还；若不跨行动保留该问题，后续会反复把中间进度误判为可停止状态，并增加定位、重新分析、分流和复核负担。
+summary: "## 现象\n\n一次已获 Gate 1 批准的 WorkCase 在进入 `executing`、记录首个检查点后被交还，仍存在可执行 item，却没有合法 blocked 状态、结果链或 Gate 2。\n\n## 根因\n\n行动模板已被读取，但缺少在准备交还、结束一轮执行或恢复上下文时强制检查的机制；`in_progress` 检查点被错误当作可停止信号。\n\n## 拟议机制\n\n- 引入 `execution-continuation` 守卫：Gate 1 已批准且仍有 pending/in_progress item 时，只有合法 blocked 或结果链才可交还。\n- 若存在依赖满足、授权覆盖的下一 item，返回 `continuation_required` 与唯一 `resume_from`，拒绝成功结束。\n- 把 `in_progress + current_summary + resume_from` 明确为续跑点，不是终止条件。\n- 对长期停留在 executing 且未推进 terminal、blocked 或结果链的对象标记 `execution_stalled`；恢复时先执行守卫。\n\n## 待判断\n\n守卫应位于模板、Helper 任务交还入口、WorkCase 状态校验还是三者组合；还需定义如何避免把真正的能力缺口误判为可继续。"
+disposition_summary: workcase-0042 已以明确目标、范围、成功标准、获批前计划和完整 execution_authorization 承接本 Spark 关于获批 WorkCase 检查点误作停止、Controller 续跑以及 Reviewer 后连续受控写回的全部问题，并明确否决把 continuation_required 或 execution_stalled 持久化到 YAML、让 Code 替 AI 判断授权或完成的倾向。本 Spark 不再作为待判断入口，也不跟踪该 WorkCase 后续 phase、结果或关闭；是否执行、验证或关闭由 workcase-0042 自身生命周期决定。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-71b8-a543-1cb569543bb5
+change_log:
+- at: '2026-08-11T13:58:03.002463Z'
+  summary: 经逐条 Human 授权，历史 routed Spark 迁移为 implemented；旧 routed-to 已转为 related-to。
+  signature:
+    agent_workbench: Cindy
+    model_id: glm-5.2
+  session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:24.287229Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+object_id: spark-01KZXN5TXNFNJBPKNCPFMJYC76
+object_uid: 019ffb52-ebb5-7d64-bb4e-acb3e92f30e6
+fact_type_key: spark
+created_at: '2026-08-02T01:34:05.207410+08:00'
+updated_at: '2026-08-13T15:03:57Z'

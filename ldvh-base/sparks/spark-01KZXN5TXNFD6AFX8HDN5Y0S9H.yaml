@@ -1,0 +1,59 @@
+title: 话题漂移中遗漏事实类型判断导致材料直写
+status: implemented
+disposition_summary: 31 号模板新增授权附件 31.Att.01（产出可沉淀材料时的类型判断），将 §5.3.B 的对象化与类型判断操作化为快速检查清单：包含触发条件、三步类型判断、各类型准入速查与操作指引；31 号模板 YAML authorized_attachments 与 §5.3.B 正文引用同步更新。经两轮 subagent 审核修正 5 项问题（类型优先级改为逐一排除互斥、补 05 回指、速查标注非完整、补归口说明、positioning 改写），并将 20–25 统一修正为 20–24、查重条件统一为「已检索，无重复」。
+intent: AI 在对话话题从'解释文本'漂移为'调研审计'时，未能触发事实类型判断仪式，导致可沉淀的调研材料被直写为临时文档而非受控事实对象；若不跨行动保留该缺口观察，后续类似场景仍会重复发生路径依赖、定性错误和模板绕行。
+summary: "**当前判断**\n\n- 本次会话从'解释一句话'开始，话题自然漂移为'整理规范残留'；整理过程产出了包含发现问题、证据、分析和建议的完整材料。\n- AI 未在话题漂移时重新确认 LDVH 规则适用，也未在生成持久文档前判断事实类型，直接将材料写入 `docs/`（临时文档路径），而非经 31 号模板受控创建为 Study。\n- 该行为符合 24 §4 的 Study 准入条件（已完成、可独立引用、跨行动复读价值），但 AI 因路径惯性和定性错误而错过了对象化判断。\n\n**根因**\n\n1. 路径依赖：默认将产出放入 `docs/`，未触发 `ldvh-base/` 判断。\n2. 定性错误：因材料含'建议'而排除 Study，误解了 Study 可含建议分流的边界。\n3. 未重新确认规则适用：话题漂移后未按 SKILL.md 重新取得规则引导。\n4. 未走 31 号模板：未执行召回查重、Schema 校验和受控写入。\n\n**待判断**\n\n- 是否应将本次观察沉淀为 Pitfall 或工作流改进；\n- 是否需要在 SKILL.md 或规范中增加'话题漂移检测'的显式提示；\n- 是否建立'产出可沉淀材料时的自动类型判断'检查清单。"
+change_log:
+- signature:
+    agent_id: kimi
+    host_environment: Kimi
+  session_id: wd_ld-vibe-harness-v4_24baa608d511
+  at: '2026-08-05T15:39:01.121979+08:00'
+  summary: Human 授权创建 Spark，记录话题漂移中遗漏事实类型判断的问题。
+- signature:
+    agent_id: deepseek-v4-pro
+    host_environment: Trae
+  session_id: spark0056-closure
+  at: '2026-08-09T19:30:00+08:00'
+  summary: 收口：31 号模板新增授权附件 31.Att.01（产出可沉淀材料时的类型判断），提供触发条件、三步类型判断、各类型准入速查与操作指引；经两轮 subagent 审核修正后定稿，Spark-0056 待判断项第 3 条已落实。
+- at: '2026-08-10T08:47:06.388791Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 1: TRAE -> Trae。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T08:55:43.364025Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Kimi Work -> Kimi。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-explicit-signature-migration-20260810
+- at: '2026-08-10T09:27:18.913361Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Kimi Work -> kimi。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-kimi-model-id-migration
+- at: '2026-08-10T09:31:13.937799Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 1: DeepSeek -> deepseek-v4-pro。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:02:01.538324Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+object_id: spark-01KZXN5TXNFD6AFX8HDN5Y0S9H
+object_uid: 019ffb52-ebb5-7b4c-a7f5-116d4be06531
+fact_type_key: spark
+created_at: '2026-08-05T15:39:01.121979+08:00'
+updated_at: '2026-08-13T15:03:57Z'

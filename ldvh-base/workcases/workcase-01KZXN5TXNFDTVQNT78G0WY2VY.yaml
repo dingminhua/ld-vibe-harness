@@ -1,0 +1,164 @@
+title: 建立遗留事实对象 change_log 受控迁移能力并收口 spark-0044
+goal: 为当前可读取但普通 update-fact-object 因缺失 change_log 而拒绝追加第一条受控流水的遗留事实对象，建立长期可发现、严格单对象、不可批量自动补全的受控 migration Helper 能力；仅在本 WorkCase 内用该能力处理 spark-0044，再使用迁移后的新 fingerprint 将该 Spark 从 open 转为 implemented。全程不伪造原始形成历史、签名、session、created_at 或时间，不绕过 Helper 直接写 ldvh-base，不执行 Git 提交。
+scope: 唯一实际 worktree 为 /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4，git common-dir 为 /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v2/.git，governed_project_id=ldvh。唯一事实写入目标为 spark-0044；WorkCase-0052 自身按其生命周期受控写回。允许修改的规则/行动模板/Helper/Code/tests 路径仅为：specs/05-事实模型基础规范.md、specs/32-事实对象生命周期变更与承接处置行动模板.md、code/ldvh/facts/legacy_change_log_migration.py、code/ldvh/helper/operations/legacy_change_log_migration_operation.py、code/ldvh/helper/operations/legacy_change_log_migration_request.py、code/ldvh/helper/operations/__init__.py、code/tests/facts/test_legacy_change_log_migration.py、code/tests/helper/test_legacy_change_log_migration_operation.py、code/tests/helper/test_legacy_change_log_migration_request.py、code/tests/helper/test_cli_process.py、code/tests/helper/test_service.py、code/tests/packaging/test_distribution_lifecycle.py。本案可以实现长期可发现的单对象 migration 操作，但实际迁移仅限 spark-0044；其它 legacy 对象只读盘点和报告，不自动写入。当前创建前 dirty baseline 必须原样保护，不得修改、删除、暂存或提交：code/ldvh/facts/transitions.py；code/ldvh/facts/workcase_update.py；code/ldvh/helper/operations/fact_creation_operation.py；code/tests/facts/test_workcase_application.py；code/tests/helper/test_fact_candidate_operation.py；code/tests/helper/test_fact_creation_operation.py；code/tests/helper/test_fact_update_operation.py；code/tests/packaging/test_distribution_lifecycle.py；specs/08-Web 呈现与交互规范.md；specs/attachments/08.Att.01-Web API 阅读契约字段表.md；web/api/routes/cognition.ts；web/docs/01-全局设计约束.md；web/docs/02-CognitionCenter.md；web/docs/04-ObjectDetail.md；web/docs/10-Web开发现状与设计语言基线.md；web/shared/workcaseDetailProjection.ts；web/src/components/WorkCaseProgressTrack.tsx；web/src/components/reading-panel/PanelContent.tsx；web/src/i18n/locales.ts；web/src/pages/CognitionCenter.tsx；web/src/pages/ObjectDetail.tsx；web/src/pages/cognition/CommitHotspotGraph.tsx；web/src/pages/object-detail/FactReadingLayouts.tsx；web/src/pages/object-detail/WorkCaseReadingLayout.tsx；web/src/utils/api.ts；web/tests/api/cognition-inbox-contract.test.ts；web/tests/api/workcase-detail-current-contract.test.ts；ldvh-base/sparks/spark-0049.yaml；ldvh-base/sparks/spark-0050.yaml；ldvh-base/studies/study-0020.md；ldvh-base/workcases/workcase-0048.yaml；web/tests/api/change-log-reading-node-contract.test.ts；web/tests/api/detail-secondary-reading-parity-contract.test.ts。不扩展到其它项目/worktree、其它事实、FileAsset 退役、Web/产品功能、Git commit/push/PR/release 或外部系统。
+success_criterion_definitions:
+- criterion_id: criterion-migration-contract
+  statement: 当前规则和事实生命周期行动模板可回指长期单对象 legacy change_log migration operation；capabilities 能发现其稳定 operation_key、输入/结果、授权、单对象、非批量、失败/回读/回滚和审计边界。
+- criterion_id: criterion-migration-implementation
+  statement: Helper/Code 实现只接受当前机械有效且确实缺失 change_log 的对象，绑定 fact_ref/fingerprint、共享锁、CAS、真实 event_at/session/signature，保留非托管字段，并通过正负、并发、替换后回读失败和条件回滚测试；不伪造原始历史。
+- criterion_id: criterion-target-migration
+  statement: 仅 spark-0044 通过受控 migration 建立可信 change_log 起点，保留身份、语义字段、关系、created_at、status=open 和 priority；目标精确回读且 check-fact-integrity 为 complete，迁移后新 fingerprint 可继续使用。
+- criterion_id: criterion-spark-disposition
+  statement: 仅使用迁移回读的新 fingerprint 通过 update-fact-object 将 spark-0044 转为 implemented，移除 priority、写入当前 summary/evolution/disposition_summary、保留并追加 change_log、不新增 routed-to；目标精确回读且完整性审计为 complete。
+- criterion_id: criterion-validation-isolation
+  statement: 定向及适用回归、两次事实写入验证和 target-only 范围证据如实形成；全量 legacy 缺失清单、未迁移对象、未验证范围、既有 dirty baseline 和测试失败被区分报告；不形成 WorkCase result projection，不执行 Gate 2，不提交。
+success_criterion_results:
+- criterion_id: criterion-migration-contract
+  outcome: satisfied
+  summary: 05 §11.7.1 与 32 §C 已声明 migrate-legacy-change-log；capabilities 可发现、implementation.present=true、输入/结果/失败/回滚/审计边界可回指。
+- criterion_id: criterion-migration-implementation
+  outcome: satisfied
+  summary: 实现仅接受 mechanically_valid 且完全缺少 change_log 的对象；共享锁+CAS、真实 event_at 绑定 updated_at、保留非托管字段；19 项定向测试通过，含并发、残留与条件回滚边界。
+- criterion_id: criterion-target-migration
+  outcome: satisfied
+  summary: 仅 spark-0044 迁移成功：fingerprint c3f6…→41878c…，status/priority/created_at/语义字段保留，精确回读与独立完整性审计均通过。
+- criterion_id: criterion-spark-disposition
+  outcome: satisfied
+  summary: 使用迁移后新 fingerprint 经 update-fact-object 转 implemented：fingerprint 41878c…→a245c1…，priority 移除、disposition_summary 写入、无 routed-to，回读与审计均通过。
+- criterion_id: criterion-validation-isolation
+  outcome: satisfied
+  summary: 定向 19/19、specs 180/180、helper 服务/CLI/打包哨兵通过、ruff 通过；41 个未迁移 legacy 对象与另一会话引起的预检失败已如实区分；未提交。
+result_summary: migrate-legacy-change-log 已作为长期可发现的单对象受控迁移操作落地：05 §11.7.1 声明契约，32 §C 承接行动边界，Helper/Code 实现与三份定向测试建立；spark-0044 经该操作建立可信 change_log 起点后，再由 update-fact-object 转为 implemented。两次事实写入均完成 CAS、精确回读与独立全库完整性审计。
+validation_summary: 定向新增测试 19/19 通过；specs 180/180；test_cli_process/test_service 哨兵通过；test_distribution_lifecycle 打包矩阵通过；ruff check/format 通过；capabilities 复核通过；spark-0044 两次写后完整性审计 complete。未验证范围：41 个 legacy 对象未迁移（非本案目标）；test_installed_source_projection 预检失败源于另一会话未提交改动，不属于本案结果。未执行 Git commit。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7164-9615-e0da0c4c6196
+status: closed
+closure_outcome: completed
+disposition_summary: 本 WorkCase 已在其原 scope 内完成全部责任：单对象 legacy change_log 受控迁移能力已实现并长期可发现，spark-0044 已通过受控迁移建立可信 change_log 起点并转为 implemented；全部 5 项成功标准 satisfied，无未满足或未验证责任。41 个其它缺失 change_log 的 legacy 对象不在本案 scope 内，保持未迁移，作为范围外后续机会交由 Human 日后独立判断。
+spark_suggestions:
+- suggestion_id: suggestion-legacy-migration-opportunity
+  suggestion_kind: follow_up_opportunity
+  summary: 其余 41 个缺失 change_log 的 legacy 事实对象仍可经由 migrate-legacy-change-log 能力逐对象受控迁移
+  follow_up_summary: 若 Human 希望补齐其它 legacy 对象的 change_log 可信起点，可建立新 Spark/WorkCase，逐对象使用 migrate-legacy-change-log 完成迁移，沿用本案的授权、CAS、回读与完整性审计边界。
+change_log:
+- signature:
+    agent_id: glm-5.2
+    host_environment: Claude
+  session_id: c4593fa7-3d0f-458b-a4c7-c10cd8a95318
+  at: '2026-08-03T18:14:57.290810+08:00'
+  summary: 受 Human 当前授权创建本 WorkCase，形成 legacy change_log 迁移能力与 spark-0044 收口计划。
+- signature:
+    agent_id: glm-5.2
+    host_environment: Claude
+  session_id: c4593fa7-3d0f-458b-a4c7-c10cd8a95318
+  at: '2026-08-03T18:21:14.928957+08:00'
+  summary: Human Gate 1 已批准当前 plan_version=1 与 execution_authorization，WorkCase 进入 executing。
+- signature:
+    agent_id: glm-5.2
+    host_environment: Claude
+  session_id: c4593fa7-3d0f-458b-a4c7-c10cd8a95318
+  at: '2026-08-03T18:21:54.774691+08:00'
+  summary: 开始执行 item-baseline-inventory，冻结迁移目标与范围基线。
+- signature:
+    agent_id: glm-5.2
+    host_environment: Claude
+  session_id: c4593fa7-3d0f-458b-a4c7-c10cd8a95318
+  at: '2026-08-03T18:22:55.799523+08:00'
+  summary: 完成 legacy change_log 只读盘点并开始迁移契约实现；确认全量缺失范围不扩大本案 spark-0044 目标。
+- signature:
+    agent_id: glm-5.2
+    host_environment: Claude
+  session_id: c4593fa7-3d0f-458b-a4c7-c10cd8a95318
+  at: '2026-08-03T18:29:42.687185+08:00'
+  summary: 完成单对象 legacy change_log migration Helper 实现并成功迁移 spark-0044，开始其 implemented lifecycle update。
+- signature:
+    agent_id: glm-5.2
+    host_environment: Claude
+  session_id: c4593fa7-3d0f-458b-a4c7-c10cd8a95318
+  at: '2026-08-03T18:30:55.934379+08:00'
+  summary: 完成 spark-0044 migration 与 implemented lifecycle update，开始结果验证和范围隔离检查。
+- signature:
+    agent_id: glm-5.2
+    host_environment: Claude
+  session_id: c4593fa7-3d0f-458b-a4c7-c10cd8a95318
+  at: '2026-08-03T21:03:47.534035+08:00'
+  summary: 完成验证隔离与全部 item，进入 controller_checking 并沉淀 result_version=1。
+- signature:
+    agent_id: glm-5.2
+    host_environment: Claude
+  session_id: c4593fa7-3d0f-458b-a4c7-c10cd8a95318
+  at: '2026-08-03T21:04:19.435746+08:00'
+  summary: 进入 independent_reviewing，委派独立只读结果复核。
+- signature:
+    agent_id: glm-5.2
+    host_environment: Codex
+  session_id: de75c749-a639-498b-87fd-34c662522d19
+  at: '2026-08-03T21:45:17.409779+08:00'
+  summary: 完成独立只读结果复核，result_version=1 conclusion=pass，等待推进至关闭准备。
+- signature:
+    agent_id: glm-5.2
+    host_environment: Codex
+  session_id: de75c749-a639-498b-87fd-34c662522d19
+  at: '2026-08-03T21:45:28.398664+08:00'
+  summary: 推进至 closure_preparing，等待 Human Gate 2 关闭决定。
+- signature:
+    agent_id: glm-5.2
+    host_environment: Codex
+  session_id: de75c749-a639-498b-87fd-34c662522d19
+  at: '2026-08-03T21:56:27.661352+08:00'
+  summary: 在 closure_preparing 形成 completed 关闭提案（含范围外 follow-up suggestion）。
+- signature:
+    agent_id: glm-5.2
+    host_environment: Codex
+  session_id: de75c749-a639-498b-87fd-34c662522d19
+  at: '2026-08-03T21:56:51.326562+08:00'
+  summary: 推进至 human_closure_confirming，提交 completed 关闭提案等待 Human Gate 2。
+- signature:
+    agent_id: glm-5.2
+    host_environment: Codex
+  session_id: de75c749-a639-498b-87fd-34c662522d19
+  at: '2026-08-03T22:11:49.521306+08:00'
+  summary: Human Gate 2 确认关闭，原子关闭为 completed；spark-0044 处置完成，41 个 legacy 对象保持范围外未迁移。
+- at: '2026-08-10T08:47:47.963483Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Claude Code -> Claude; 1: Claude Code -> Claude; 2: Claude Code -> Claude; 3: Claude Code -> Claude; 4: Claude Code -> Claude; 5: Claude Code -> Claude; 6: Claude Code -> Claude; 7: Claude Code -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T09:00:49.172166Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 8: Codex CLI -> Codex; 9: Codex CLI -> Codex; 10: Codex CLI -> Codex; 11: Codex CLI -> Codex; 12: Codex CLI -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-codex-signature-migration-20260810
+- at: '2026-08-10T09:26:48.351261Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: claude-code_2-1-219_agent -> glm-5.2; 1: claude-code_2-1-219_agent -> glm-5.2; 2: claude-code_2-1-219_agent -> glm-5.2; 3: claude-code_2-1-219_agent -> glm-5.2; 4: claude-code_2-1-219_agent -> glm-5.2; 5: claude-code_2-1-219_agent -> glm-5.2; 6: claude-code_2-1-219_agent -> glm-5.2; 7: claude-code_2-1-219_agent -> glm-5.2。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-model-id-migration
+- at: '2026-08-10T09:30:22.584036Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 8: glm-5.2_codex-cli_agent -> glm-5.2; 9: glm-5.2_codex-cli_agent -> glm-5.2; 10: glm-5.2_codex-cli_agent -> glm-5.2; 11: glm-5.2_codex-cli_agent -> glm-5.2; 12: glm-5.2_codex-cli_agent -> glm-5.2。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:06.731440Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+object_id: workcase-01KZXN5TXNFDTVQNT78G0WY2VY
+object_uid: 019ffb52-ebb5-7b75-bbd7-474401cf0b7e
+fact_type_key: workcase
+created_at: '2026-08-03T18:14:57.290810+08:00'
+updated_at: '2026-08-13T15:03:57Z'

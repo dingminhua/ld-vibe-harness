@@ -1,0 +1,179 @@
+status: closed
+title: 局部编辑候选真实运行的可回放证据闭环
+goal: 为 spark-0045 的局部编辑候选建立并验证最小、隐私受限、可回放的运行证据闭环；复用现有测量与只读候选能力，不把事件冒充事实源，不记录事实或候选正文，也不声称捕获宿主完整 Prompt。
+scope: 仅修改 code/ldvh/testing/trial_measurement.py、在 code/ldvh/testing 新增专用 local-edit evidence runner/record 模块及 code/tests/testing 对应测试；必要时可新增 code/tests/helper 专用测试，不改既有 Helper。复用 workcase-0069 测量基础、workcase-0096 只读候选入口，吸收 workcase-0070 任务泄漏与零真实 trial 的 fail-closed 边界。排除规范、公共 Helper 契约/实现、Web、生产遥测、长期存储、告警、正文/完整请求响应/diff/Prompt 链留存、Spark 更新、Study 创建、commit/push/发布、网络与外部系统。
+success_criterion_definitions:
+- criterion_id: criterion-envelope-privacy
+  statement: 闭合 schema 绑定 run/trial、worktree、项目、task、规则、能力与 runner 指纹并区分 delivered/unavailable；hash_subject 仅公开稳定标识或 canonical 高熵任务包，负例拒绝事实/候选正文、diff、完整请求响应/Prompt 链及低熵敏感文本。
+- criterion_id: criterion-traces
+  statement: 冻结 T1 真实 normal（调用上限1/retry0）、T2 真实 stale-reread（上限2/repair1）、T3a 真实 rejected/failure（上限1/retry0）、T3b synthetic timeout、T4a synthetic interruption、T4b synthetic tamper；每条绑定事件、外部状态、验证、fault provenance 与预期投影，越界即 inconclusive。
+- criterion_id: criterion-projection
+  statement: 投影仅 observed/failed/timeout/inconclusive；schema/integrity/readback/boundary 异常、缺失、重复、乱序、篡改、partial、unavailable、身份或指纹漂移优先 inconclusive。事件不证明 Helper 正确、事实写入、任务完成、健康或验收。
+- criterion_id: criterion-recovery
+  statement: 记录仅在本轮经身份/realpath/lstat 校验的仓库外 SafeTrialTempRoot 原子落盘并跨中断重读，保留到恢复、验证和交还完成；未知/无迁移旧版/半迁移/指纹不符/篡改、路径权限、duplicate、cross-worktree/project 异常均 inconclusive，禁止原地修复或长期留存。
+- criterion_id: criterion-real-helper
+  statement: 真实当前 ./ldvh prepare-local-edit-candidates 至少执行 normal、stale-reread、rejected/failure；synthetic fault 只验证 recorder/projector 负向边界，不冒充真实 Helper 证据；指纹漂移即停止。
+- criterion_id: criterion-verification
+  statement: 相关 pytest/Ruff 通过；试跑仅在 SafeTrialTempRoot，交还只汇总方法、调用/修复、bytes、latency、协议层漏报/重复/乱序、限制和未验证范围，不形成效益、正确性、健康、完成、验收、Study 或 Spark 结论。
+success_criterion_results:
+- criterion_id: criterion-envelope-privacy
+  outcome: satisfied
+  summary: v2闭合schema绑定所需身份与输入receipt；fault kind/deadline/event均机械闭合，hash_subject与敏感正文负例通过。旧v1记录不迁移、不按v2解释。
+- criterion_id: criterion-projection
+  outcome: satisfied
+  summary: v2投影仅observed/failed/timeout/inconclusive；partial prefix可作为可读输入但永远inconclusive，版本、完整性、顺序、身份、input unavailable与验证异常均优先inconclusive。
+- criterion_id: criterion-real-helper
+  outcome: not_verified
+  summary: v1唯一套件已观察当前源码Helper的normal1次、stale-reread2次/repair1、rejected1次；但fault/event闭集修正后版本升为v2，批准的真实调用上限已用尽，未执行v2真实套件，故当前端到端v2闭环未验证。
+- criterion_id: criterion-recovery
+  outcome: not_verified
+  summary: SafeTrialTempRoot原子新建、fsync、O_NOFOLLOW身份绑定读取及v2完整性恢复由测试覆盖；v1 T4b实际篡改后inconclusive且不返回record。未获授权重跑v2真实记录，故真实v2恢复闭环未验证。
+- criterion_id: criterion-traces
+  outcome: not_verified
+  summary: v2六轨迹事件、fault origin/kind、调用/repair上限与预期投影已闭合并有负例；synthetic轨迹只支持recorder/projector边界。六轨迹v2真实/合成整套未重新执行，不能称实际闭环已完成。
+- criterion_id: criterion-verification
+  outcome: not_verified
+  summary: Controller执行的精确命令范围共211项pytest通过，Ruff与diff check通过；v1受限套件数据为4次调用、repair1、45977 bytes、4323ms。Reviewer此前只复现24项；且缺少获授权的v2真实套件，因此整体criterion保留not_verified。
+result_summary: 已交付隐私受限证据schema/runner v2、原子临时记录与fail-closed恢复投影，并完成单元与相关回归。唯一真实Helper套件在v1下执行后，独立复核发现fault/event契约需语义升版；v1原始记录未迁移，v2未追加真实调用，因此当前结果只证明实现与负向边界，未完成真实v2端到端证据闭环。
+validation_summary: Controller命令 PYTHONPATH=code .venv/bin/python -m pytest -q code/tests/testing code/tests/helper/test_local_edit_operation.py code/tests/helper/test_local_edit_candidates.py code/tests/helper/test_cli_process.py：211 passed；v2 evidence+trial targeted：55 passed；Ruff与git diff --check通过。v1六个envelope曾落盘；T4b随后实际篡改integrity，回读inconclusive且不返回record。限制：v2真实套件未获上限空间，205/211完整范围尚未被独立Reviewer复现，timeout/interruption/tamper为harness synthetic，未验证宿主硬崩溃、完整Prompt、生产遥测、长期存储或产品效益。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T06:48:04.231364Z'
+  summary: 创建承接 spark-0045 的最小可回放证据闭环 WorkCase；记录 Luna Reviewer 三轮复核与处置，等待 Human Gate1。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T06:59:39.681395Z'
+  summary: 消费 Human Gate 1 批准：冻结计划版本 1 的执行授权并进入 executing；工作项保持原样 pending。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:02:17.016368Z'
+  summary: 开始 item-contract：冻结局部编辑候选证据协议及隐私、版本、轨迹与投影边界。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:07:26.406470Z'
+  summary: 完成 item-contract 并开始 item-record：契约测试与 Ruff 通过，进入临时记录和恢复边界验证。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:08:05.125883Z'
+  summary: 完成 item-record 并开始 item-runner：205 项回归通过，准备执行唯一冻结 trial 套件。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:09:03.278167Z'
+  summary: 完成 item-runner 并开始 item-verify：唯一六轨迹套件按上限完成，进入最终范围与验证收口。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:11:30.795008Z'
+  summary: 完成 item-verify；全部 item terminal，同事务进入 controller_checking 并形成完整结果版本1。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:11:57.820379Z'
+  summary: 完整结果版本1已校验回读，进入 independent_reviewing 并等待 Luna Orca Reviewer。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:15:50.021893Z'
+  summary: 记录结果版本1的 Luna Orca changes_required 复核与 Controller 全部接受处置。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:16:09.923460Z'
+  summary: 结果复核 feedback 已完整处置，返回 controller_checking 准备版本化返工。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:16:36.470017Z'
+  summary: 结果版本1经复核后发生 ResultDelta：升为版本2、清旧 review/projection，重开 item-contract 开始基线内返工。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:19:44.762232Z'
+  summary: 完成v2 fault/event返修与211项回归；因真实调用上限已用尽，全部item终值后进入controller_checking并据实形成部分验证结果版本2。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:20:06.235619Z'
+  summary: 结果版本2完整投影已回读，进入independent_reviewing等待Luna复核。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:22:31.488415Z'
+  summary: 记录Luna Orca对结果版本2的pass复核；Reviewer独立复现211项测试、Ruff和diff check。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:22:53.876237Z'
+  summary: 结果版本2复核通过，返回controller_checking准备关闭提案。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:23:30.388590Z'
+  summary: 进入closure_preparing并形成partial提案：四项not_verified责任统一路由回open的spark-0045。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:23:54.981044Z'
+  summary: 完成终态保留审查并进入human_closure_confirming，等待Human Gate2。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:37:27.026935Z'
+  summary: 消费Human Gate2决定：按结果版本2与当前提案以partial关闭，并将未验证真实v2闭环责任路由回spark-0045。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:09:29.020378Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+closure_outcome: partial
+disposition_summary: 保留已形成的v2隐私schema与fail-closed投影实现；真实v2 Helper轨迹、恢复、整套验证和追加调用授权均未成立，统一路由回仍open的spark-0045继续判断。本WorkCase不补造成功、不追加trial，也无accepted-stop责任。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7048-bfef-5e90fc625a73
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-759c-a4c9-64b091fcc23c
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7ff0-8e78-04c9fd8fb640
+- relation_key: routed-to
+  target:
+    object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
+object_id: workcase-01KZXN5TXNFM3VGXQF301NKECD
+object_uid: 019ffb52-ebb5-7d07-b876-ef180359b98d
+fact_type_key: workcase
+created_at: '2026-08-13T06:48:04.231364Z'
+updated_at: '2026-08-13T15:03:57Z'

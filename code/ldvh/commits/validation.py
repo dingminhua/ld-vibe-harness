@@ -72,6 +72,7 @@ class StagedFactCandidate:
     head_data: bytes | None = None
     head_exists: bool | None = None
     head_observation_issue: str | None = None
+    head_object_id: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -514,9 +515,9 @@ def _fact_trace_issues(
             before_checked = validate_fact_content(
                 layout,
                 schema,
-                candidate.object_id,
+                candidate.head_object_id or candidate.object_id,
                 candidate.head_data,
-                allow_legacy_spark=is_legacy_spark_object(candidate.object_id),
+                allow_legacy_spark=is_legacy_spark_object(candidate.head_object_id or candidate.object_id),
             )
             if before_checked.check_status != "mechanically_valid" or before_checked.fields is None:
                 unavailable.append(

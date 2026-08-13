@@ -1,0 +1,137 @@
+status: closed
+title: 禁止 WorkCase 成功标准吸收后置生命周期关口
+goal: 防止 WorkCase 成功标准把 Controller 自检、独立结果复核、关闭提案或 Gate 2 等后置生命周期关口作为自身 satisfied 的必要条件，消除 canonical result projection 的自引用循环和由此制造的虚假 partial/accepted-stop。
+scope: "覆盖：\n1. 修订 specs/21 中 success criterion 的语义边界、创建与 Gate 1 前 Controller/Reviewer 双重审核、验证表、最低测试和 Stop Conditions：criterion 必须描述可在 canonical result projection 形成前，依据实际技术/交付结果与验证独立判断的验收状态；质量关口只审核结果和证据，不得成为 criterion satisfied 的组成条件。\n2. 明确非法反例包括“独立结果复核确认未引入共享可写状态”、Controller 自检确认、closure proposal 形成和 Gate 2/Human 确认；不泛化禁止测试、扫描、人工检查等可作为技术证据的验证表述。\n3. 同步 specs/31 的 WorkCase 受控创建与 specs/34 的获批执行模板，使创建前同时检查 item 与 criterion；Gate 1 后才发现非法 criterion 时不得改写冻结标准、重开 items 或新增第三 Human Gate，只能形成真实 not_verified 结果并安全收敛，由 Gate 2 决定 residual 的 route/suggestion/accept-stop。\n4. 更新最小规则源/模板交付 contract tests，证明 21/31/34 持续声明该边界及 Gate 1 后安全收敛；测试不声称 Code/NLP 能理解任意自然语言。\n排除：不改 WorkCase phase/transition、Schema、字段登记、Helper operation、Web；不修改、重开或更正 WorkCase-0086/0084；不创建 NLP validator；不提交、push、发布或处理当前其它并行修改。"
+success_criterion_definitions:
+- criterion_id: criterion-outcome-gate-separation
+  statement: 21 将 success criterion 限定为可在 canonical result projection 形成前，由实际技术/交付结果及验证独立判断的验收状态，并明确后置质量关口只审核结果与证据、不能构成 criterion satisfied 的必要条件。
+- criterion_id: criterion-lifecycle-audit-routing
+  statement: 21、31、34 要求创建前 Controller 与 Reviewer 同时检查 item 和 criterion 是否吸收生命周期关口；Gate 1 后发现非法 criterion 时只按冻结基线形成真实 not_verified 并安全收敛至 Gate 2，不改 criteria、不重开 item、不新增 Human Gate。
+- criterion_id: criterion-source-contract-regression
+  statement: 规则源与模板交付回归以精确非法反例覆盖 21、31、34，并明确验证只证明来源持续声明边界，不把自然语言语义判断下放给 Code。
+success_criterion_results:
+- criterion_id: criterion-outcome-gate-separation
+  outcome: satisfied
+  summary: specs/21 将 criterion 限定为 canonical result projection 前可独立判断的技术、交付或责任状态，明确后置 Controller/Reviewer/closure/Human 关口只审核、处置或接受已形成结果；projection 前实际取得的测试、扫描和人工检查仍可作为证据。
+- criterion_id: criterion-lifecycle-audit-routing
+  outcome: satisfied
+  summary: 21、31、34 已要求创建前逐 item/criterion 审核；Gate1 后误建模 criterion 保持冻结、据实 not_verified，经 validation、residual decision 和既有结果链至 Gate2，不重开 item、不递归复核、不新增 Human Gate。
+- criterion_id: criterion-source-contract-regression
+  outcome: satisfied
+  summary: 21、31、34 均持续交付同一精确非法 criterion 反例，31 明确只回指 21 §4.3 而不重定义类型语义；创建/执行模板契约测试实际读取两者并断言该反例，同时保留 AI 语义判断边界。
+result_summary: 已在 specs/21 建立 success criterion 与后置生命周期关口的单一语义边界，并同步 specs/31 的受控创建审核、specs/34 的执行期纠错与安全收敛。result v1 的独立复核反馈已全部返工：三份来源和两个模板现在共同交付精确非法反例，测试计数按实际命令区分。修复不新增状态、字段、Helper 或 NLP validator，也未修改 WorkCase-0086/0084。
+validation_summary: 两份目标测试 code/tests/helper/test_action_template_operation.py 与 code/tests/specs/test_workcase_controller_continuation_contract.py：21 passed；加入 tests/specs/test_repository.py::test_current_v4_sources_form_the_expected_real_combination 的组合：22 passed。Helper read-action-template-content 精确读取 fact-object-controlled-creation 与 workcase-approved-plan-execution 均 outcome=ok，且 source_content 均包含精确非法 criterion；目标测试 Ruff、六个范围文件及 WorkCase-0087 的 git diff --check 均通过；check-fact-integrity complete（200 objects）。未运行 full-v4，未执行 commit、push 或发布。
+change_log:
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T11:33:55.387498Z'
+  summary: Human 要求按已确认方向推进；完成创建前查重、独立方案复核与 Controller 处置，形成等待 Gate 1 的 criterion 生命周期编排修复计划。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T12:12:17.211997Z'
+  summary: Human 在 Gate 1 明确批准当前完整计划与冻结执行授权基线，进入 executing。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T12:12:48.870456Z'
+  summary: 写入 item-rule-boundary 的 in_progress 稳定检查点。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T12:19:06.508744Z'
+  summary: 完成 WorkCase 类型规则与 31/34 模板同步，进入定向回归和来源交付验证检查点。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T12:20:51.635965Z'
+  summary: 完成三项实施与定向验证，形成 canonical result v1 并进入 Controller 结果检查。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T12:21:10.614611Z'
+  summary: canonical result v1 已精确回读并通过事实完整性审计，进入独立结果复核。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T12:24:33.989313Z'
+  summary: 记录独立结果复核 changes_required 并采纳两项反馈，准备返回 Controller 形成 ResultDelta。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T12:24:54.678587Z'
+  summary: result v1 复核反馈已记录并处置，返回 Controller 检查以启动授权范围内返工。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T12:25:46.340418Z'
+  summary: 按 result v1 独立复核反馈启动实际返工；结果版本升至 v2、旧复核失效并重开来源契约回归 item。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T12:27:14.405165Z'
+  summary: 完成 result v1 复核反馈返工与复测，形成 canonical result v2 并进入 Controller 结果检查。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T12:27:35.391295Z'
+  summary: canonical result v2 已精确回读并通过完整性审计，重新进入独立结果复核。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T12:29:13.165224Z'
+  summary: 记录 canonical result v2 独立结果复核 pass；v1 两项反馈均已解决，无新增 ResultDelta。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T12:29:41.412420Z'
+  summary: result v2 独立复核 pass 且无 feedback，形成 completed 关闭提案并进入关闭准备。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T12:30:03.441654Z'
+  summary: 完成终态保留审查；结果、验证和 disposition 已吸收必要事实，进入 Human Gate 2 等待 completed 关闭决定。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T12:34:07.366524Z'
+  summary: Human 在 Gate 2 明确接受 completed 关闭；按当前完整 proposal 形成终态。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:45.779683Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+closure_outcome: completed
+disposition_summary: WorkCase-0087 原 scope 的 criterion 生命周期边界、创建/执行模板同步和 source-contract 回归均已完成；三项成功标准全部 satisfied，result v1 反馈已在 v2 返工并通过独立复核，没有未满足、未验证、需转交或 accepted-stop 的剩余责任。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-74dc-857b-cd76f1c007f4
+object_id: workcase-01KZXN5TXNE20T1FA7G09VN3NY
+object_uid: 019ffb52-ebb5-7081-a0bd-478013ba8ebe
+fact_type_key: workcase
+created_at: '2026-08-09T11:33:55.387498Z'
+updated_at: '2026-08-13T15:03:57Z'

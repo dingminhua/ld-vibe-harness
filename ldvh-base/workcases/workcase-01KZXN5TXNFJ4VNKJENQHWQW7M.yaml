@@ -1,0 +1,176 @@
+status: closed
+title: 收敛 LDVH 原生 Git 提交流程
+goal: 以当前 specs 为唯一权威，把受管辖项目的本地提交收敛为 AI 明确候选文件并审核对应 diff、在真实 Index 上执行必要 LDVH 机械预检、使用原生 git commit 创建本地提交、由真实 commit-msg Hook 作为不可绕过的最终闸门并在提交后回读；保持 LDVH 为源码仓库加薄 Skill 的接入方式，不引入 pip、打包或插件部署。
+scope: 在现有职责体系内最小修改 specs/30，并仅在确有职责缺口时最小修改 specs/03 及其直接规范测试；specs/09 仅作为既有 common-dir Hook 和源码加薄 Skill 依据回读，不修改 00、09 或新增规范。规范先行后，精确删除旧 alternate-index 提交执行链 code/ldvh/commits/candidate_index.py、code/ldvh/commits/execution.py、其 __init__.py 导出和两份直接测试，保留 precheck.py、git_adapter.py、hooks/commit_msg.py、git_hooks/commit_msg.py、验证内核及真实事件 GIT_INDEX_FILE。补足真实 Index、无关 staged 硬停止、临时仓库真实 Hook allow/block 与回读测试。当前 common-dir Hook 只做静态只读核验，本案不部署、不替换、不修改 Hook 或 core.hooksPath。全部前置条件满足后，仅对 AI 已声明且已审核 diff 的精确候选执行一次本地原生 git commit，不使用 --no-verify，不 push。明确排除 0056 的 prepared service、token、witness、challenge、journal、持久事务状态、alternate Index 事务方案、性能预算与 linked-worktree 业务提交；排除 pip、wheel、sdist、editable install、插件部署；排除 Web 改动、spark-0037、spark-0054、workcase-0056 及执行期间出现的任何其它无关 dirty 或 staged 内容。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 03 与 30 在既有职责内明确六项最小提交要求：AI 声明候选文件并审核对应 diff、真实 Index 上的必要机械预检、本地原生 git commit、真实执行 commit-msg Hook、精确隔离且不 push、源码加薄 Skill 且无 pip/打包/插件；09 被正确引用而不复制，00 保持不变，不新增第二权威或新规范。
+- criterion_id: criterion-02
+  statement: 受管辖提交只使用当前真实 Index；真实 Index 必须精确等于 AI 已声明并已审核的候选。若存在无关或未知 staged 内容，流程立即停止且不得碰触、代为 unstage、覆盖或切换 alternate Index。
+- criterion_id: criterion-03
+  statement: 提交消息与精确真实 Index 的 precheck-git-commit 必须返回外层 ok 且机械结论 passed；不可用、失败或不可验证一律停止。当前 common-dir 中有效且可执行的 LDVH commit-msg Hook 必须在提交前静态确认；原生 git commit 不使用 --no-verify并真实触发同一校验内核，提交后完成回读；不 push。
+- criterion_id: criterion-04
+  statement: 仅删除 candidate_index.py、execution.py、对应 commits/__init__.py 导出及两份直接测试所构成的旧 alternate-index 执行链；不得删除合法的 candidate 术语、precheck、git_adapter、Hook 实现、验证内核或真实事件的 GIT_INDEX_FILE。
+- criterion_id: criterion-05
+  statement: 接入模型继续是源码仓库、薄 Skill、管辖配置与 common-dir Hook；当前产品与流程不引入 pip install LDVH、wheel/sdist、editable install、Python distribution 或插件部署。
+- criterion_id: criterion-06
+  statement: 定向与回归测试通过；临时 Git 仓库中的真实 commit-msg Hook allow/block 提交验证通过；最终本地提交仅包含精确候选，真实 Hook 已触发，并回读 HEAD、提交内容、Index、工作树与无关残留，确认未误带且未 push。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 只修改 30 并新增其直接模板测试；30 已明确候选与 diff、真实 Index、必要预检、原生 commit、真实 Hook、精确隔离/no-push 及源码加薄 Skill 边界。03、09、00 未修改，未新增规范或第二权威。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: 正式暂存前真实 Index 为空；stage 后精确路径集合与已声明九项逐项一致，staged diff 与已审核内容一致。spark-0037、spark-0054、workcase-0056 和 Web 改动未 staged、未 unstage、未覆盖，也未使用 alternate Index。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: precheck-git-commit 对同一真实 Index 与完整 message 返回 outcome=ok、mechanical_outcome=passed，候选快照为 sha256:f12770b1a89003d7f76e9e400b6e64db02865cc5263f3563885a873953762750。common-dir Hook 提交前为 managed 且可执行；不带 --no-verify 的原生 git commit 在 Git trace 中明确调用该 commit-msg Hook，提交与写后回读成功；未 push。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: 仅删除 candidate_index.py、execution.py 及两份直接测试，并从 commits/__init__.py 移除对应导出；旧 prepared/alternate-index 符号在 Python Code 中引用清零。precheck.py、git_adapter.py、validation.py、Hook 实现与真实事件 GIT_INDEX_FILE 保持。
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: 30 继续消费 09 的源码仓库、薄 Skill、管辖配置与 common-dir Hook 模型；本案没有 pip install、editable install、wheel/sdist、Python distribution、插件部署或 Hook 部署/修改。
+- criterion_id: criterion-06
+  outcome: satisfied
+  summary: 定向测试、真实 Git Hook 事件测试和全量回归通过；最终 commit 305582cae18da30d47caf6b7cc64028f680c5cce 精确包含九个候选。Git trace 证明 Hook 实际触发；该 commit 创建后的即时回读显示真实 Index 为空、Working Tree 仅有明确排除的无关改动。此后经授权的 WorkCase 结果生命周期写回使 workcase-0057.yaml 成为新的未提交本案事实残留；它未进入该 commit，当前 Index 仍为空，未 push。
+result_summary: LDVH 提交流程已从旧两阶段 alternate-index 方案收敛为一个直接、可验证的原生 Git 流程：AI 声明并审核候选，真实 Index 上执行必要机械预检，再由原生 git commit 真实触发 common-dir commit-msg Hook。旧 alternate-index 执行链及直接测试已精确删除，真实 Hook allow/block 回归已补足。结果以本地 commit 305582cae18da30d47caf6b7cc64028f680c5cce 固定；该 commit 即时回读确认无关改动未误带、Index 为空且未 push。提交完成后，WorkCase 依授权继续写入 result_version 结果链，因此当前 workcase-0057.yaml 是未提交的本案生命周期事实残留，不属于该九路径 commit 的误带或遗漏；接入模型仍为源码加薄 Skill。
+validation_summary: 全量 pytest：1397 passed、10 skipped，跳过项均要求原生 Windows；行动模板与 repository 定向测试 18 passed，真实原生 git commit Hook allow/block 测试通过，commits/Helper precheck/Hook 分片通过。变更存续的三个 Python 文件 Ruff check 与 Ruff format --check 通过，git diff --check 通过，旧链符号检索无残留。整库事实完整性检查 outcome=ok、status=complete；提交预检 outcome=ok、mechanical_outcome=passed。当前 Hook inspect 为 managed 且文件可执行，Git trace 直接记录 commit-msg Hook 调用；commit 305582cae18da30d47caf6b7cc64028f680c5cce 的 HEAD/message/tree/九路径及当时空 Index、无关残留已回读。该即时回读之后的授权 WorkCase 生命周期写回导致当前 workcase-0057.yaml 有未提交本案变化，当前真实 Index 仍为空；不把它表述为 commit 当时的无关残留或已提交内容。整库 Ruff 扫描另观察到 25 个既有范围外错误，未纳入或修改；非 Windows 环境未执行 10 项原生 Windows 测试。独立提交前 diff 审计为 pass；result_version 1 独立结果复核为 pass_with_followups，其时间边界反馈已在本版本处理。
+change_log:
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: codex-workcase-0057-creation
+  at: '2026-08-05T01:27:07.440484+08:00'
+  summary: 根据 Human 对最小原生 Git 提交目标的确认与创建授权，建立 plan_version 1，并记录已处置的独立 creation review。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: codex-workcase-0057-execution
+  at: '2026-08-05T01:29:46.920771+08:00'
+  summary: 记录 Human Gate 1 对 plan_version 1 的明确批准，冻结执行授权基线并进入执行阶段。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: codex-workcase-0057-execution
+  at: '2026-08-05T01:30:22.044397+08:00'
+  summary: 开始 item-01：核对 03、30、09 的现有提交职责和直接规范测试，准备形成最小规范修订。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: codex-workcase-0057-execution
+  at: '2026-08-05T01:36:58.488777+08:00'
+  summary: 完成 item-01：30 的最小提交契约与直接测试已收敛并通过；03、09、00 保持不变。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: codex-workcase-0057-execution
+  at: '2026-08-05T01:37:18.601690+08:00'
+  summary: 开始 item-02：检索并精确清理旧 alternate-index 执行链及直接测试。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: codex-workcase-0057-execution
+  at: '2026-08-05T01:38:33.657803+08:00'
+  summary: 完成 item-02：精确删除旧 alternate-index 执行链、对应导出与直接测试，保留真实 Index 预检和 Hook 内核。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: codex-workcase-0057-execution
+  at: '2026-08-05T01:39:04.258474+08:00'
+  summary: 开始 item-03：补充真实 git commit Hook 事件验证，并执行回归、前置核验与受控本地提交。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: codex-workcase-0057-execution
+  at: '2026-08-05T01:52:06.339357+08:00'
+  summary: 完成 item-03 并进入 Controller 结果检查：原生本地 commit 已真实触发 Hook、精确回读，形成 result_version 1 的完整结果投影。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: codex-workcase-0057-execution
+  at: '2026-08-05T01:52:29.801887+08:00'
+  summary: 完整 result_version 1 已由 Controller 校验并回读，进入独立结果复核。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: codex-workcase-0057-execution
+  at: '2026-08-05T01:55:31.457819+08:00'
+  summary: 记录 result_version 1 的独立复核与 Controller 处置；接受提交后生命周期事实残留的时间边界修正。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: codex-workcase-0057-execution
+  at: '2026-08-05T01:55:41.111597+08:00'
+  summary: 独立结果复核完成并返回 Controller 检查，准备按 review 反馈修正结果投影。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: codex-workcase-0057-execution
+  at: '2026-08-05T01:56:03.842222+08:00'
+  summary: 按独立 review 修正结果叙述的时间边界；result projection 变化使 result_version 升为 2，并清除旧版 review 等待重新复核。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: codex-workcase-0057-execution
+  at: '2026-08-05T01:56:22.692896+08:00'
+  summary: 修正后的 result_version 2 已完整校验并回读，重新进入独立结果复核。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: codex-workcase-0057-execution
+  at: '2026-08-05T01:57:59.444778+08:00'
+  summary: 记录 result_version 2 的独立结果复核：结论 pass，无 feedback，结果投影与时间边界获确认。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: codex-workcase-0057-execution
+  at: '2026-08-05T01:58:12.297393+08:00'
+  summary: result_version 2 独立复核完成，返回 Controller 校验被审投影并准备关闭提案。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: codex-workcase-0057-execution
+  at: '2026-08-05T01:58:31.587988+08:00'
+  summary: 被独立复核的 result_version 2 未变化，形成 completed 关闭提案并进入关闭准备。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: codex-workcase-0057-execution
+  at: '2026-08-05T01:59:15.585028+08:00'
+  summary: 关闭材料、责任处置与终态保留审查完成，进入 Human Gate 2 关闭确认。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: codex-workcase-0057-closure
+  at: '2026-08-05T02:12:20.647651+08:00'
+  summary: 根据 Human Gate 2 明确确认，以 completed 关闭 workcase-0057。
+- at: '2026-08-10T09:23:52.727339Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5; 12: codex -> gpt-5; 13: codex -> gpt-5; 14: codex -> gpt-5; 15: codex -> gpt-5; 16: codex -> gpt-5; 17: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:21.358125Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+closure_outcome: completed
+disposition_summary: 本 WorkCase 按 completed 停止：原 scope 内的最小原生 Git 提交流程、旧 alternate-index 链精确清理、真实 Hook 事件验证及一次受控本地 commit 均已完成并回读，六项成功标准全部 satisfied。当前 WorkCase 不再承担额外实现、追加提交或远端动作，原 scope 内无剩余责任；提交后依法形成的 WorkCase 生命周期事实写回保留为当前未提交本案残留，不要求 amend 或新增 commit。范围外既有 Ruff 错误、原生 Windows 未运行项及其它无关 dirty 仍明确处于本案范围外。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-70be-98b0-0ba048ac1ff6
+object_id: workcase-01KZXN5TXNFJ4VNKJENQHWQW7M
+object_uid: 019ffb52-ebb5-7c89-bace-4eade3cbf0f4
+fact_type_key: workcase
+created_at: '2026-08-05T01:27:07.440484+08:00'
+updated_at: '2026-08-13T15:03:57Z'

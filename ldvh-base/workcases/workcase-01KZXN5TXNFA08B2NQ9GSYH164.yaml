@@ -1,0 +1,136 @@
+title: 签名字段三元组更名与取值校验落地
+goal: 把 LDVH 责任签名字段与 Git 提交 trailer 按「模型id、宿主名称、会话id」三元组语义更名并强化取值校验，使新写入的 change_log 与提交署名取值稳定、可比较、可审计。
+scope: 覆盖规范、事实 Schema、Git footer 契约、Helper 注入链、机械校验和历史口径登记的受控修订计划；不执行实现、不提交 Git、不批量改写历史事实。具体包括：\n\n1. 修订 specs/attachments/05.Att.01 字段登记、取值约定与示例，使用 model_id、host_name、session_id，并去掉宿主示例中的系统名后缀。\n2. 修订事实 Schema 与校验：新条目严格写新字段名，历史旧形状仅宽容读取、不迁移改写。\n3. 修订 specs/03 footer 契约及 code/ldvh/commits/validation.py：Agent-ID→Model-ID、Host-Environment→Host-Name，Session-ID 不变。\n4. 同步 specs/attachments/04.Att.01 与 requests.py、fact_creation、fact_update、workcase_update 的 observed_context.signature 注入字段。\n5. 加入 model_id 命中已知产品别名闭集、host_name 含括号系统后缀的拒绝或警告校验，并补充测试。\n6. 在规范中明确签名是执行会话的声明（attestation），不是已验证身份；模型id的平台可验证注入在当前架构保持 unsupported。\n7. 集中登记历史不一致对象的共存口径，至少覆盖 workcase-0026、spark-0040、spark-0046、spark-0049、spark-0056；不批量追加更正流水。
+success_criterion_definitions:
+- criterion_id: criterion-new-triple
+  statement: 新条目与新提交 trailer 使用 model_id、host_name、session_id 及 Model-ID、Host-Name、Session-ID；三者取值分别为模型id、无系统后缀的宿主名称、会话id，并保持跨载体一致。
+- criterion_id: criterion-dual-read
+  statement: 新条目写入严格使用新字段名，历史旧形状可机械有效地宽容读取且不被批量迁移或改写。
+- criterion_id: criterion-validation
+  statement: 已知模型产品别名与含括号系统后缀的宿主名称触发约定的拒绝或警告，且签名 attestation 定性与 unsupported 边界写入规范。
+- criterion_id: criterion-regression
+  statement: 既有测试全部通过，并新增覆盖双轨读取、字段/trailer 更名和机械排雷的测试。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7354-8d5e-9972faf8c162
+change_log:
+- signature:
+    model_id: gpt-5.6-luna
+    agent_workbench: Cindy
+  session_id: 0ce87d0f-d616-415b-af37-f1b70eb2b865
+  at: '2026-08-09T13:15:07.224961+08:00'
+  summary: Human 已采纳签名字段三元组更名双轨、自报注入加机械排雷、历史共存并集中登记三条方向；本 WorkCase 承接其规范、Schema、footer、Helper 注入链、排雷测试、attestation 边界与历史登记落地，当前仅形成待 Gate 1 审核的计划草案。
+- signature:
+    model_id: k3-256k
+    agent_workbench: Cindy
+  session_id: c78af137-92af-4314-aa14-c0fdfa1d00bd
+  at: '2026-08-09T13:31:55.321906+08:00'
+  summary: 按 Human 当次 Gate 1 批准写入 execution_approval（subject_version=1，baseline_fingerprint 绑定冻结基线），phase human_plan_confirming→executing，移除 Human waiting；保留 authorization、plan、items 与 creation reviews。
+- signature:
+    model_id: gpt-5.6-luna
+    agent_workbench: Cindy
+  session_id: 0ce87d0f-d616-415b-af37-f1b70eb2b865
+  at: '2026-08-09T13:38:33.345230+08:00'
+  summary: 开始执行 item-05-att-01：登记签名三元组新字段及取值约定。
+- signature:
+    model_id: gpt-5.6-luna
+    agent_workbench: Cindy
+  session_id: 0ce87d0f-d616-415b-af37-f1b70eb2b865
+  at: '2026-08-09T13:39:35.822282+08:00'
+  summary: 完成 item-05-att-01，开始执行 item-schema-dual-read。
+- signature:
+    model_id: gpt-5.6-luna
+    agent_workbench: Cindy
+  session_id: 0ce87d0f-d616-415b-af37-f1b70eb2b865
+  at: '2026-08-09T13:51:19.926390+08:00'
+  summary: 完成 Schema、footer、Helper、attestation 与历史登记工作项，开始收敛机械排雷与测试。
+- signature:
+    model_id: gpt-5.6-luna
+    agent_workbench: Cindy
+  session_id: 0ce87d0f-d616-415b-af37-f1b70eb2b865
+  at: '2026-08-09T14:10:04.885030+08:00'
+  summary: 全部 item 已形成终态，进入 controller_checking 并形成 result_version=1；独立结果复核交由 lead。
+- at: '2026-08-09T14:40:36.315228+08:00'
+  summary: phase controller_checking → independent_reviewing：完整结果投影（result_version=1）已形成、校验并回读，投影与版本自此时点冻结，进入独立结果复核。
+  signature:
+    agent_workbench: Cindy
+    model_id: k3-256k
+  session_id: 71a6635c-81de-4a58-b083-ccd4399bdd57
+- at: '2026-08-09T14:40:38.920435+08:00'
+  summary: 写入绑定 result_version=1 的首条 result review（pass_with_followups，4 条 feedback）；结果投影与版本未变，等待 Controller 处置 feedback。
+  signature:
+    agent_workbench: Cindy
+    model_id: k3-256k
+  session_id: 71a6635c-81de-4a58-b083-ccd4399bdd57
+- at: '2026-08-09T15:08:50.751456+08:00'
+  summary: Controller 处置独立复核全部 4 条 feedback：specs/03 双轨改述与 Gate 全缺消息修正已落地并补齐新 trailer 定向测试 8 项（149 通过），陈旧断言与旧路径边界转入关闭提案处置，缩进 nit 已修；结果投影与版本未变。
+  signature:
+    agent_workbench: Cindy
+    model_id: k3-256k
+  session_id: 71a6635c-81de-4a58-b083-ccd4399bdd57
+- at: '2026-08-09T15:08:53.278677+08:00'
+  summary: phase independent_reviewing → closure_preparing：全部 feedback 已有 Controller resolution，投影未变；整体写入完整 closure_proposal（proposed_outcome=partial，1 项 residual_decisions 经 suggest_spark 转交陈旧断言更正，2 项 spark_suggestions）。
+  signature:
+    agent_workbench: Cindy
+    model_id: k3-256k
+  session_id: 71a6635c-81de-4a58-b083-ccd4399bdd57
+- at: '2026-08-09T15:08:55.818285+08:00'
+  summary: phase closure_preparing → human_closure_confirming：完整 proposal 成立（无 route_existing target、无 depends-on、无待吸收终态字段），§6.7 结果一致性与 §6.8 保留核对完成；写 Human waiting，等待 Gate 2 关闭决定。
+  signature:
+    agent_workbench: Cindy
+    model_id: k3-256k
+  session_id: 71a6635c-81de-4a58-b083-ccd4399bdd57
+- at: '2026-08-09T16:22:11.928271+08:00'
+  summary: Human Gate 2 决定：接受冻结提案，本 WC 以 partial 关闭。注记两条建议的后续去向：suggestion-sync-stale-spec-count-assertions 已由 Human 直接指示经提交 e51ac3a4 落地（机械同步 active-spec 数量断言），Controller 复验相关测试 178/0 通过；suggestion-legacy-signature-tripwire 已由 Human 2026-08-09 决定即刻取消旧签名写入路径，按 Human 直接指示直接落地（不建 Spark）。criterion-regression 保持冻结时 not_verified 的如实记录。
+  signature:
+    agent_workbench: Cindy
+    model_id: k3-256k
+  session_id: 71a6635c-81de-4a58-b083-ccd4399bdd57
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:25.457092Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+result_summary: 签名三元组更名、双轨读取、footer/Helper 注入同步、attestation 边界与历史共存登记已形成；机械排雷及定向测试覆盖完成。回归测试主体 1508 项通过、13 项按平台/环境跳过，3 项既有规范数量断言因当前工作树额外 active spec 变更漂移，结果按 partial 保留未验证边界。
+validation_summary: PYTHONPATH=code .venv/bin/python -m pytest -q：1508 passed，13 skipped，3 failed；失败集中于 test_cli_process/test_repository 的硬编码 active spec 数量断言，原因是工作树已有额外 active spec 变更，并非签名实现定向失败。定向 tripwire/dual-read、compileall、git diff --check、read-fact-objects 与 check-fact-integrity 通过；未执行 Git commit/push/release。
+success_criterion_results:
+- criterion_id: criterion-new-triple
+  outcome: satisfied
+  summary: 新 change_log 使用 model_id/host_name，session_id 保持条目顶层；新 footer 读取 Model-ID/Host-Name/Session-ID，model_id 小写、host_name 无系统后缀。
+- criterion_id: criterion-dual-read
+  outcome: satisfied
+  summary: Schema 对新形状严格校验；历史 agent_id/host_environment 形状保持 mechanically_valid 且不迁移改写。
+- criterion_id: criterion-validation
+  outcome: satisfied
+  summary: 写入与提交校验拒绝已知裸产品别名和括号系统后缀；规范记录 attestation 与模型id平台可验证注入 unsupported。
+- criterion_id: criterion-regression
+  outcome: not_verified
+  summary: 1508 项测试通过、13 项跳过；3 项规范文档数量断言受当前工作树额外 active spec 变更影响失败，不能宣称全量回归全绿。
+status: closed
+closure_outcome: partial
+disposition_summary: 本 WC 的签名三元组更名、双轨读取、footer/Helper 注入同步、attestation 边界、历史登记与机械排雷已在冻结 scope 内完成，交付保留于工作树待提交（本 WC 未执行 Git commit/push）；criterion-new-triple、criterion-dual-read、criterion-validation 三项 satisfied 对应交付成立。唯一未闭环项 criterion-regression 的未验证边界源于前序提交 072ff8ef 引入的 3 项 active-spec 数量陈旧断言，与本 WC 改动无关（HEAD 干净 worktree 复跑同样失败），该剩余责任以 constrained Spark 建议 suggestion-sync-stale-spec-count-assertions 转交独立受控更正；旧形状手写签名与旧 trailer 路径无排雷的已知边界以 follow-up 建议 suggestion-legacy-signature-tripwire 保留供后续判断。无 accepted-stop 项。Human 接受后本 WC 以 partial 关闭，无 residual_responsibilities（全部剩余责任经 suggest_spark 转交）。
+spark_suggestions:
+- suggestion_id: suggestion-sync-stale-spec-count-assertions
+  suggestion_kind: constrained_responsibility
+  summary: 机械同步 3 项 active-spec 数量硬编码断言（32→33、22→23、66 与 available_scope 等）并复跑全量 pytest 回绿
+  restriction_reason: 断言陈旧由前序提交 072ff8ef（新增产出类型判断检查清单）引入，不属于本 WC 签名三元组更名的冻结 scope 与授权动作清单
+  impact_summary: 全量 pytest 当前 3 项失败（1508 passed / 13 skipped / 3 failed），criterion-regression 未验证；不影响本 WC 交付的功能正确性，但回归套件保持红色
+  resume_condition: 任一受控更正在独立上下文中将计数断言与当前实际 active 文档数对齐，并复跑全量 pytest 确认回绿
+  follow_up_summary: 建立 Spark 时判断：同步断言的同时，是否审视此类硬编码计数断言的防陈旧机制（如改为派生断言或集中常量）
+- suggestion_id: suggestion-legacy-signature-tripwire
+  suggestion_kind: follow_up_opportunity
+  summary: 旧形状手写签名与旧 trailer 路径的排雷缺口与淘汰节奏
+  follow_up_summary: '判断：update 路径省略 observed_context.signature 手写旧形状签名不受排雷约束（如 spark-0066 第 4 条流水），commit gate 旧 trailer 路径亦无排雷（dcd64c7f 以 Agent-ID: workbuddy 裸别名过闸）；是否及何时收紧旧路径（补排雷覆盖或制定淘汰计划）'
+object_id: workcase-01KZXN5TXNFA08B2NQ9GSYH164
+object_uid: 019ffb52-ebb5-7a80-858a-b74c33e884c4
+fact_type_key: workcase
+created_at: '2026-08-09T13:15:07.224961+08:00'
+updated_at: '2026-08-13T15:03:57Z'

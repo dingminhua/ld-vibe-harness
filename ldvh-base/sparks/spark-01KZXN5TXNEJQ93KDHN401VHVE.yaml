@@ -1,0 +1,39 @@
+title: 无宿主 Hook 时的 WorkCase 行动编排
+intent: 保留在宿主不提供可靠行动 Hook 时，WorkCase Controller 如何仅依靠当前规则、事实快照与显式检查连续推进、正确停止、恢复控制并如实交还的问题。若不跨行动独立保留，后续会反复把环境自动编排能力与模型内主动执行混为一谈，并增加恢复、停止边界和失败处置的重新分析成本。
+status: open
+priority: P2
+summary: "## 问题边界\n\n- 只研究无可靠宿主 Hook 时的 WorkCase 行动编排：如何从当前 WC 快照选择下一控制步骤、在检查点显式写回、遇到 Human Gate 或 Stop Conditions 正确停止，以及在新会话、恢复或上下文压缩后重新取得控制状态。\n- 本议题由 `spark-0018` 的宽泛无 Hook 自约束问题拆出；原先高成本持续约束方案退出，这里只保留低成本显式控制循环、停止、恢复与保证边界。\n- 不追求拦截每次任意文件写入，也不把 watcher、receipt、环境插件或持续后台监控作为必要方案。\n- 不重复 `spark-0065` 的独立复核能力路由与复审循环；本议题关注更一般的 Controller 推进、停止、恢复和缺口交还。\n- 不承接受控写入契约优化；read→update、签名发现和模板启用判断继续由 `spark-0075` 独立讨论。\n\n## 已知依据\n\n- `study-0029` 已表明无环境 Hook 时，低成本的显式检查、事实写后精确回读与完整性审计、以及提交边界 Git Gate 可以分层承担结果校验；高成本 watcher 与范围 receipt 不是当前必要能力。\n- 当前项目已有 WorkCase 类型规则、获批计划执行模板和项目 Stop gate，但仍需判断：没有宿主行动 Hook 或 Stop gate 不可用时，模型内 Controller 的最小可靠循环、失败状态与可接受保证边界应如何定义。\n\n## 待判断\n\n- 一次行动后如何确定下一控制步骤，以及哪些 WC 快照字段足以支持恢复而不依赖对话历史。\n- Human Gate、blocked、unresolved、能力不可用和检查失败分别如何停止或安全交还。\n- 无 Hook 路径需要哪些代表性正向、恢复、压缩、越权和失败场景证据，才能声称编排可用；哪些能力只能保持最佳努力或未验证。"
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7d9e-b5cc-17beecdc5303
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-71cb-be5a-db0dc274de76
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-751c-8041-ba92bae6c7bc
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:24:58.281377Z'
+  summary: 按 Human 当前决定创建独立 Spark，记录无宿主 Hook 时 WorkCase Controller 的行动编排、停止、恢复与交还边界，并关联 study-0029。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:03:02.167966Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+object_id: spark-01KZXN5TXNEJQ93KDHN401VHVE
+object_uid: 019ffb52-ebb5-74ae-91cd-b1a9001dc76e
+fact_type_key: spark
+created_at: '2026-08-13T07:24:58.281377Z'
+updated_at: '2026-08-13T15:03:57Z'

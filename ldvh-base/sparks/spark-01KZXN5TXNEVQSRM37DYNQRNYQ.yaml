@@ -1,0 +1,30 @@
+title: Codex 多 Agent、工作树与角色协作治理
+intent: 保留主控、子 Agent、新对话与隔离 worktree 如何在当前环境中安全协作的问题，避免把历史角色方案、一次环境能力观察或子 Agent 输出误作稳定纪律、事实来源或主控验证结论。后续需判断委派条件、写入边界、回收责任和环境差异。
+status: implemented
+summary: "**当前结论**\n\n- 多 Agent 协作已经形成稳定治理边界：主控负责确定目标与写入范围、选择委派方式、核对原文和实际差异、处理冲突、重跑验证并承担最终整合责任；只读审核、独立复核和隔离 worktree 只在其实际边界内提供证据。\n- 子 Agent、线程、角色和 worktree 仍是运行期协作手段，不成为事实对象；子任务输出和聚合转述不能直接升级为已验证事实，关键断言必须由主控回读或明确标记为未复核。\n- 现行行动模板已经规定委派、接续、结果复核和 Human Gate 的职责分工，同时避免固定角色清单、自动团队或跨客户端能力假设；原议题范围内没有仍需单独承接的协作治理缺口。\n\n**处置边界**\n\n本结论不保证任一平台始终提供相同的多 Agent API，也不替代当次对工具能力、授权和修改范围的实际检查。"
+evolution:
+- at: '2026-07-22T13:54:31+08:00'
+  summary: 迁移复核将 V3 的角色、子 Agent 和 worktree 候选收敛为当前协作治理问题：保留主控最终回收责任与环境差异，移除旧 Git 来源、固定团队和实现断言。
+- at: '2026-07-24T19:43:49+08:00'
+  summary: 术语审核误报事件使“子 Agent 输出可信度”从抽象风险变为实际发生过的判断：新增抽样复核纪律候选及其向 Pitfall、WorkCase 或行动模板的分流方向。
+- at: '2026-08-01T01:58:26+08:00'
+  summary: 协作治理已从待形成的角色与 worktree 纪律收敛为现行规则和执行模板中的主控、委派、复核与接续边界，因此该问题不再需要独立跟踪。
+disposition_summary: 主控责任、委派边界、只读与独立复核、隔离 worktree、子任务结论核验以及运行期状态不进入事实对象等协作纪律，已由现行规则与执行模板直接落实。原议题没有事实承接目标或剩余责任；具体平台能力仍在每次使用时据实验证。
+object_id: spark-01KZXN5TXNEVQSRM37DYNQRNYQ
+object_uid: 019ffb52-ebb5-76ef-9c50-676fab7c57d7
+fact_type_key: spark
+created_at: '2026-07-19T10:28:37.087505+08:00'
+updated_at: '2026-08-13T15:03:57Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:59:48.754887Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。

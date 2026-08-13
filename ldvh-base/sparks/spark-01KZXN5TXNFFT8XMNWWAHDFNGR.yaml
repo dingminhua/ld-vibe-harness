@@ -1,0 +1,52 @@
+title: Web 多管辖项目作用域切换与聚合呈现
+intent: 保留 Web 在多个管辖项目之间如何选择、聚合与标识事实范围的问题，避免把当前单项目读取、某个“全部”入口或页面分组误作跨项目身份、写入边界和对象消歧已经解决。后续需判断合适的作用域模型、可见归属和写入前提。
+status: implemented
+disposition_summary: 本 Spark 的四个待判断点（作用域模型、归属与身份、写入边界、多项目数据来源）已纳入 spark-0025 多项目总入口的统一审视范围；其中归属标识、同号对象消歧、多项目数据来源属跨层问题由 0025 承接；剩余 Web 纯前端实现细节（切换器 UI、归属标识视觉、UI 层写入禁用）属实现期决策，不在 Spark 层保留。
+summary: "**当前问题**\n\n- Web 目前以单一管辖项目为事实读取范围；多项目页面不能只把数据并排展示，还必须让读者知道每项事实属于哪个项目、当前范围是否完整以及对象身份如何消歧。\n- “全部”或项目切换只是消费作用域，不预设新增项目集合对象，也不替代多项目配置、读取或身份模型本身。\n\n**需要决定的呈现与边界**\n\n- 作用域：选择单一项目时，各视图只读该项目事实；选择“全部”时，聚合全部已注册且可读取的项目，但需如实呈现缺失、失败或未覆盖范围。\n- 归属与身份：全部模式应通过项目分组或明确归属标识让卡片和详情可扫描；同号对象的详情定位必须具有足够项目身份，不能只依赖 object ID。\n- 写入：全部模式不能模糊目标项目。创建或其它写操作应禁止，或要求在写入前明确选定目标项目及实际授权。\n- 数据来源：需要判断治理范围解析能否一次提供多项目 worktree，还是 Web 只能在已验证的项目身份上做聚合；两种路径都不能由 UI 猜测补全。\n\n**承接边界**\n\n- V3 的多项目问题只提供“不预设新集合对象”的约束；项目定义、配置拓扑和跨层成熟度仍分别由 `spark-0007` 与 `spark-0025` 承接。\n- 当前只登记问题和待 Human 决定的方向，不实现切换器、不指定视觉位置，也不把任何方案当作已经批准。"
+evolution:
+- at: '2026-07-21T04:07:00+08:00'
+  summary: 与 Human 讨论确认现状为单项目硬编码，识别出四个待决策点（归属标识、ID 冲突、写操作边界、多项目解析数据源）。Human 表示先登记，后续再想如何推进。
+- at: '2026-07-22T13:49:34+08:00'
+  summary: 迁移对照补入 V3 的项目集合约束：Web 的”全部”聚合只是消费作用域，不能反向预设新的项目集合模型；当前摘要据此明确与配置和跨层治理对象的分工。
+- at: '2026-08-09T19:40:00+08:00'
+  summary: 按 Human 决定关闭，待判断点已纳入 spark-0025 多项目总入口的统一审视范围，Web 纯前端实现细节降为实现期决策。
+change_log:
+- signature:
+    agent_id: glm-5.2
+    host_environment: Claude
+  session_id: e63cca84-d0bd-4c0d-88a4-90b729debf85
+  at: '2026-08-09T19:40:00+08:00'
+  summary: 按 Human 决定关闭，待判断点已纳入 spark-0025 多项目总入口的统一审视范围，Web 纯前端实现细节降为实现期决策。
+- at: '2026-08-10T08:46:18.898375Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Claude Code -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+- signature:
+    product_name: Claude Code
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-12T20:40:59.380380Z'
+  summary: '补充 relations: related-to spark:spark-0025'
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:20.354422Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7ce0-8b61-a5bc21ef2469
+object_id: spark-01KZXN5TXNFFT8XMNWWAHDFNGR
+object_uid: 019ffb52-ebb5-7bf4-8ed2-bce2a2d7d618
+fact_type_key: spark
+created_at: '2026-07-21T04:07:00+08:00'
+updated_at: '2026-08-13T15:03:57Z'

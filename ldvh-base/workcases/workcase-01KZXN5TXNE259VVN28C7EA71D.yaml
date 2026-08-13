@@ -1,0 +1,155 @@
+status: closed
+title: 从当前 LDVH 产品面完整退役 FileAsset（完整范围）
+goal: 在保留 Git 历史与 terminal WorkCase/Spark 历史叙事、不改写过去事实的前提下，通过来源定义的受控路径彻底清除当前三个 active FileAsset 及其 namespace，并从当前 LDVH 规则、Helper/Code、Web/API、测试和产品文档中移除 FileAsset 事实类型、目录 carrier、创建/删除/预览能力与关系语义，使当前产品只剩 Spark、WorkCase、ADR、Pitfall、Study 五类事实对象，报告由 Study 承载；全程不绕过 Helper 直接写受管事实。
+scope: 事实写入对象精确限定为 file-asset-0001、file-asset-0002、file-asset-0003、ldvh-base/file-assets namespace 与 workcase-0051 自身生命周期；当前产品消费者写入闭集精确为：specs/03-事实源与信息溯源规范.md、specs/05-事实模型基础规范.md、specs/07-Code 实践与测试规范.md、specs/08-Web 呈现与交互规范.md、specs/09-环境接入规范.md、specs/20-Spark-火花.md、specs/21-WorkCase-工作项.md、specs/25-FileAsset-文件资产.md、specs/31-事实对象判定与受控创建行动模板.md、specs/32-事实对象生命周期变更与承接处置行动模板.md、specs/attachments/01.Att.01-LDVH双语术语表.md、specs/attachments/03.Att.01-来源参考枚举闭集.md、specs/attachments/05.Att.01-事实对象统一字段登记.md、specs/attachments/05.Att.02-事实对象机械校验目录.md、specs/attachments/08.Att.01-Web API 阅读契约字段表.md、specs/attachments/08.Att.02-Web 内容预览安全契约.md、code/ldvh/commits/git_adapter.py、code/ldvh/commits/precheck.py、code/ldvh/commits/validation.py、code/ldvh/facts/candidate_discovery.py、code/ldvh/facts/contracts.py、code/ldvh/facts/creation.py、code/ldvh/facts/file_asset.py、code/ldvh/facts/file_asset_creation.py、code/ldvh/facts/file_asset_deletion.py、code/ldvh/facts/relations.py、code/ldvh/facts/repository.py、code/ldvh/facts/validation.py、code/ldvh/facts/workcase_update.py、code/ldvh/facts/workcase_validation.py、code/ldvh/filesystem.py、code/ldvh/helper/operations/__init__.py、code/ldvh/helper/operations/fact_candidate_operation.py、code/ldvh/helper/operations/fact_candidate_request.py、code/ldvh/helper/operations/fact_creation_request.py、code/ldvh/helper/operations/fact_object_operation.py、code/ldvh/helper/operations/fact_update_request.py、code/ldvh/helper/operations/file_asset_creation_operation.py、code/ldvh/helper/operations/file_asset_creation_request.py、code/ldvh/helper/operations/file_asset_deletion_operation.py、code/ldvh/helper/operations/file_asset_deletion_request.py、code/tests/commits/test_commit_validation.py、code/tests/commits/test_git_adapter.py、code/tests/facts/test_atomic_write.py、code/tests/facts/test_file_asset.py、code/tests/facts/test_relations.py、code/tests/facts/test_safe_scanning.py、code/tests/facts/test_workcase_application.py、code/tests/facts/test_workcase_validation.py、code/tests/git_hooks/test_commit_msg.py、code/tests/helper/test_cli_process.py、code/tests/helper/test_commit_precheck_operation.py、code/tests/helper/test_fact_candidate_operation.py、code/tests/helper/test_fact_creation_operation.py、code/tests/helper/test_fact_integrity_operation.py、code/tests/helper/test_fact_object_operation.py、code/tests/helper/test_fact_update_operation.py、code/tests/helper/test_file_asset_creation_operation.py、code/tests/helper/test_file_asset_deletion_operation.py、code/tests/helper/test_service.py、code/tests/packaging/test_distribution_lifecycle.py、code/tests/specs/test_fact_mechanical_validation_catalog.py、code/tests/specs/test_fact_type_projection.py、code/tests/specs/test_field_registry.py、code/tests/specs/test_repository.py、web/api/routes/objects.ts、web/api/services/factFieldContract.ts、web/api/services/facts.ts、web/api/services/fileAssetPreview.ts、web/api/services/localFactReader.ts、web/api/services/pytools.ts、web/api/services/typeColors.ts、web/docs/10-Web开发现状与设计语言基线.md、web/src/components/ObjectStatusFilter.tsx、web/src/components/SemanticIcon.tsx、web/src/components/Sidebar.tsx、web/src/components/reading-panel/PanelContent.tsx、web/src/i18n/locales.ts、web/src/pages/ObjectDetail.tsx、web/src/pages/ObjectList.tsx、web/src/pages/object-detail/FileAssetReadingLayout.tsx、web/src/pages/object-detail/model.ts、web/src/utils/api.ts、web/src/utils/categoryColors.ts、web/src/utils/commitLabels.ts、web/src/utils/fieldFormats.ts、web/src/utils/listStatus.ts、web/tests/api/fact-field-contract.test.ts、web/tests/api/fact-source-metadata.test.ts、web/tests/api/file-asset-preview.test.ts、web/tests/api/lifecycle-status-tabs-contract.test.ts、web/tests/api/local-facts.test.ts、web/tests/api/navigation-layout-contract.test.ts、web/tests/api/web-design-consistency-contract.test.ts、code/plans/cognition-actionable-items.md、code/plans/workcase-closed-candidate-projection.md、docs/file-asset-ab-consumer-hook-residual-disposition-2026-07-31.md、docs/file-asset-fact-object-proposal.md、docs/ldvh-environment-hook-claim-audit-2026-07-31.md、code/ldvh/facts/creation_application.py、code/ldvh/helper/operations/fact_integrity_operation.py、code/ldvh/helper/operations/fact_object_request.py、code/ldvh/helper/operations/fact_operation_support.py、code/ldvh/testing/fact_integrity.py、code/tests/facts/test_creation_application.py、web/src/utils/panelContext.tsx。临时受控 purge 的新增后删除路径精确为：code/ldvh/facts/file_asset_namespace_retirement.py、code/ldvh/helper/operations/file_asset_namespace_retirement_operation.py、code/ldvh/helper/operations/file_asset_namespace_retirement_request.py、code/tests/facts/test_file_asset_namespace_retirement.py、code/tests/helper/test_file_asset_namespace_retirement_operation.py。执行前必须将该清单及基线回读为证据，扫描命令不构成扩张授权。排除对 terminal 历史事实 spark-0015、spark-0041、workcase-0021、workcase-0022、workcase-0025、workcase-0032、workcase-0033、workcase-0046、workcase-0047、已关闭 workcase-0048 的文字改写，排除 Git 历史重写、任何其它事实删除或语义扩张、FileAsset 到 Study/其它对象的迁移、push、PR、发布、外部消息、其它项目与其它 worktree。新发现命中只读记录并按超界安全收敛，不自动加入写入范围。 `code/tests/testing/test_fact_integrity.py` 经创建前实际 diff 审计确认无需修改，明确排除。创建前 dirty baseline 中 `code/ldvh/facts/transitions.py` 与 `ldvh-base/studies/study-0020.md` 排除；`code/ldvh/facts/workcase_update.py`、`code/tests/facts/test_workcase_application.py`、`code/tests/helper/test_fact_update_operation.py` 虽属于当前消费者写入闭集，但其既有 change_log 相关 hunks 必须逐值保留，不得归因于本案，只允许另行形成可隔离的 FileAsset 窄改。`creation_application.py`、`test_creation_application.py` 及其它共享路径只在实际 diff 证明需要时作窄修改，未证明需要时不得为了消耗范围而改动。
+success_criterion_definitions:
+- criterion_id: criterion-controlled-namespace-purge
+  statement: 在 FileAsset 当前规则仍可读取时，通过一次性、来源定义且经测试的 retire-file-asset-namespace 操作精确处理 file-asset-0001/0002/0003：先完成三对象读取、namespace 成员恰等于这三项、全部 has-file-asset 入向闭包为零、CAS 与 worktree baseline 一致性检查，再以一个原子提交清除三对象与 namespace，不留下 deleted tombstone。操作返回 namespace before/after、CAS、入向闭包、原子提交或失败残留证据并完成精确 absence 回读；不得用普通文件工具直接写受管事实；任一检查、并发或原子性能力不足时零事实写入。
+- criterion_id: criterion-current-rule-retirement
+  statement: 当前 specs 与 attachments 不再声明 FileAsset 类型、specs/25、FileAsset 字段/递归结构、has-file-asset、类型分支、创建/删除/预览或行动模板分支；临时 purge 契约也被移除；当前规则投影与机械目录仅对 Spark、WorkCase、ADR、Pitfall、Study 五类成立。terminal 历史事实文字和 Git 历史明确不在零命中标准内。
+- criterion_id: criterion-helper-code-retirement
+  statement: 当前 Code、Helper、CLI、commit precheck、packaging 和 tests 不再保留 FileAsset carrier、validator、repository、relation、创建、删除或临时 purge 的产品能力；其余五类事实的读取、发现、创建、更新、关系、提交前检查、完整性与分发能力继续通过适用验证。
+- criterion_id: criterion-web-doc-retirement
+  statement: 当前 Web API、UI、preview、字段契约、导航、颜色、状态、详情/列表、产品文档与当前计划不再提供 FileAsset 功能或产品概念；Study 继续承载报告路径；terminal 历史事实仍可显示其原始历史文字。
+- criterion_id: criterion-validation-isolation
+  statement: 形成可回读的基线和精确消费者清单；覆盖 purge 的拒绝、并发、原子失败零写、真实 absence 证明；完成五类剩余事实完整性、规则/字段/机械目录、Python/Helper/CLI/packaging、Web typecheck/lint/tests、当前产品消费者扫描、git diff --check 与 worktree 范围隔离，并把实际通过与既有/范围外失败如实交给独立结果复核。不得将旧 FileAsset 完整性检查在 purge 后的暂时不适用误报为 purge 失败，也不得跳过写后 absence 证明；本案不执行或授权 git commit。
+success_criterion_results:
+- criterion_id: criterion-controlled-namespace-purge
+  outcome: satisfied
+  summary: 一次性来源定义操作完成精确 CAS、namespace equality、零入向、原子撤出、absence 回读与写后完整性审计；三个对象和 namespace 已不存在，未留下 tombstone 或 staging 残留。
+- criterion_id: criterion-current-rule-retirement
+  outcome: satisfied
+  summary: 当前规则、附件、关系和行动模板只投影 Spark、WorkCase、ADR、Pitfall、Study 五类；FileAsset 专属规范、字段、关系、preview 与临时 purge 契约均已退出，terminal 历史未改写。
+- criterion_id: criterion-helper-code-retirement
+  outcome: satisfied
+  summary: 当前 Code、Helper、CLI、commit precheck、packaging 与适用测试已移除 FileAsset 产品能力，其余五类事实能力通过定向、核心和分发验证。
+- criterion_id: criterion-web-doc-retirement
+  outcome: satisfied
+  summary: 当前 Web API、UI、preview、字段契约、导航、状态、产品文档与计划不再提供 FileAsset 功能或概念；Study 报告路径保留，terminal 历史仍可按原文读取。
+- criterion_id: criterion-validation-isolation
+  outcome: satisfied
+  summary: 已形成并复核 purge baseline、真实 absence、当前产品零命中、五类型事实完整性、规则投影、Python/Helper/packaging、Web 与 diff 格式证据。本案精确效果已隔离验证；当前整棵 dirty worktree 另含五个明确排除的并发详情/change_log 路径，以及两个 scope 内文件的泛化阅读 hunk，均未归因于本案。范围外既有/并发测试失败已明确披露。
+result_summary: 三个 active FileAsset 及 canonical namespace 已经受控清除；当前 LDVH 规则、Code/Helper/CLI、Web/API、测试与产品文档已完整退役 FileAsset，产品事实类型收敛为 Spark、WorkCase、ADR、Pitfall、Study。Git 历史和明确排除的 terminal 历史事实保持不变，未执行 commit、push、PR、迁移或其它项目写入。
+validation_summary: 本案精确效果已验证：purge 专项 7 passed；规范/字段/机械目录 18 passed；相关 Python 核心 454 passed，补充子集 142 passed；真实 wheel/sdist 2 passed；Web typecheck 通过且全量 152/152 passed；独立复核另跑 Python 62 passed、Web 定向 17/17 passed；事实完整性 132 objects 零问题；compileall 与 git diff --check 通过；当前产品 FileAsset 扫描零命中。当前 worktree 同时保留五个范围外并发详情/change_log 路径和 ObjectDetail.tsx、PanelContent.tsx 中不归因于本案的泛化阅读 hunk，因此不把整棵 dirty diff 声称为本案唯一变更集。范围外观测：Python 全量（排除 doctor）1412 passed、10 skipped、2 failed，分别是 installed_source_projection 的并发 commit-signature fixture 和 working_tree_capture 的治理 fixture；doctor 旧断言仍期望 20 operations、当前为 17；Web lint 仍有 workcase-presentation-spec-contract.ts:257 的既有 no-regex-spaces 错误及 warnings。这些路径不在本 WorkCase 写入闭集，未修改且不构成本案精确范围内剩余责任。
+change_log:
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 919bd4d2-0ded-4643-89d8-86338951f777
+  at: '2026-08-03T15:23:48.872437+08:00'
+  summary: 创建完整范围的 FileAsset 退役 WorkCase，等待新的 Human Gate 1。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 919bd4d2-0ded-4643-89d8-86338951f777
+  at: '2026-08-03T15:27:13.946250+08:00'
+  summary: 记录 Human Gate 1 批准，进入完整范围 FileAsset 退役执行。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 919bd4d2-0ded-4643-89d8-86338951f777
+  at: '2026-08-03T15:27:43.726593+08:00'
+  summary: 开始不可逆 purge 前的精确 baseline 与并发隔离检查。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 919bd4d2-0ded-4643-89d8-86338951f777
+  at: '2026-08-03T15:29:55.815010+08:00'
+  summary: 完成 purge 前 baseline，开始临时受控 namespace 退役实现。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 919bd4d2-0ded-4643-89d8-86338951f777
+  summary: 受控清除三个 FileAsset 与 namespace 成功，开始退役当前产品消费者。
+  at: '2026-08-03T15:38:51.305606+08:00'
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 919bd4d2-0ded-4643-89d8-86338951f777
+  at: '2026-08-03T16:33:13.173141+08:00'
+  summary: 完成 FileAsset 当前产品面退役与范围隔离验证，形成 result_version=1 的完整结果投影。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 919bd4d2-0ded-4643-89d8-86338951f777
+  at: '2026-08-03T16:33:30.026475+08:00'
+  summary: 完整结果投影回读有效，进入 result_version=1 独立结果复核。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 919bd4d2-0ded-4643-89d8-86338951f777
+  at: '2026-08-03T16:38:16.925967+08:00'
+  summary: 写回 result_version=1 独立只读复核：产品退役本体通过，范围隔离措辞需要修订。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 919bd4d2-0ded-4643-89d8-86338951f777
+  at: '2026-08-03T16:38:42.453430+08:00'
+  summary: 处置 result_version=1 独立复核反馈，确认并发路径排除与混合 hunk 归因边界。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 919bd4d2-0ded-4643-89d8-86338951f777
+  at: '2026-08-03T16:39:04.551072+08:00'
+  summary: 按独立反馈修订范围隔离表述，结果投影升为 result_version=2 并失效旧 review。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 919bd4d2-0ded-4643-89d8-86338951f777
+  at: '2026-08-03T16:39:20.167349+08:00'
+  summary: 发起 result_version=2 独立只读结果复核。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 919bd4d2-0ded-4643-89d8-86338951f777
+  at: '2026-08-03T16:40:26.513158+08:00'
+  summary: 写回 result_version=2 独立复核 pass_with_followups 结论。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 919bd4d2-0ded-4643-89d8-86338951f777
+  at: '2026-08-03T16:40:47.172576+08:00'
+  summary: 处置 result_version=2 非阻断反馈并形成 completed 关闭提案。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 919bd4d2-0ded-4643-89d8-86338951f777
+  at: '2026-08-03T16:41:03.632825+08:00'
+  summary: 完成终态保留审查并进入 Human Gate 2。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 919bd4d2-0ded-4643-89d8-86338951f777
+  at: '2026-08-03T16:54:27.422684+08:00'
+  summary: Human Gate 2 接受 completed 提案，关闭 FileAsset 完整退役 WorkCase。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 919bd4d2-0ded-4643-89d8-86338951f777
+  at: '2026-08-03T17:16:16.460714+08:00'
+  summary: 依据 Human 已选的仅 FileAsset 退役提交范围，移除未提交前案的 related-to，使提交候选保持自包含。
+- at: '2026-08-10T09:23:29.833444Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5; 12: codex -> gpt-5; 13: codex -> gpt-5; 14: codex -> gpt-5; 15: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:03.833515Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+closure_outcome: completed
+disposition_summary: workcase-0051 的精确退役责任已完成，原 scope 内无剩余责任。当前 worktree 的范围外并发详情/change_log 改动与混合 Web 泛化 hunk继续保持排除，不由本案归因、处置或承接。
+object_id: workcase-01KZXN5TXNE259VVN28C7EA71D
+object_uid: 019ffb52-ebb5-708a-9dee-a2430ee51c2d
+fact_type_key: workcase
+created_at: '2026-08-03T15:23:48.872437+08:00'
+updated_at: '2026-08-13T15:03:57Z'

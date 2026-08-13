@@ -1,0 +1,43 @@
+title: 补足创建前自动只读 Reviewer 不二次索权的验收覆盖
+status: closed
+goal: 消除 Human 已清楚要求由项目承担并建立/推进 WorkCase 后，Controller 因计划准备而需要只读 Reviewer/subagent 时被误提示再次请求权限的递达与回归覆盖缺口；将该创建前链与 Gate 1 后授权消费及环境上位 UI 边界分开验证。
+scope: 仅覆盖 specs/attachments/09.Att.02-接入验收行为清单.md、code/tests/docs/test_enablement_docs.py 及其直接规范测试。排除 21/31/34 规则正文和 skill/SKILL.md 的重复改写、运行环境/插件/用户设置、真实外部 UI 操作、外部消息、Git commit、push、PR、发布与破坏性操作。
+success_criterion_definitions:
+- criterion_id: criterion-pre-gate-review-chain
+  statement: B4 明确验证范围清楚的 Human 工作意图直接覆盖 Controller 计划准备与创建前只读 Reviewer 委派；期间不出现专门的 subagent/Reviewer 许可请求，随后才受控创建 WorkCase 并呈交 Gate 1。
+- criterion_id: criterion-two-phase-boundary
+  statement: B4 同时保留 Gate 1 后已列明有界本地动作与只读 Reviewer 委派直接消费授权的检查，并将任何运行环境强制 UI 记录为原文、环境版本和政策依据齐备的上位边界，而非 LDVH 第三 Gate。
+- criterion_id: criterion-regression-and-limits
+  statement: 文档回归锚点与相关规范测试通过；结果不声称已在真实运行环境验证 UI、spawn 能力或 Reviewer 真实独立性。
+success_criterion_results:
+- criterion_id: criterion-pre-gate-review-chain
+  outcome: satisfied
+  summary: B4 now explicitly requires clear Human work intent, automatic read-only creation Reviewer, controlled WorkCase creation, and only then Gate 1 without a separate subagent/Reviewer permission request.
+- criterion_id: criterion-two-phase-boundary
+  outcome: satisfied
+  summary: B4 retains Gate 1 post-approval direct consumption for bounded local action and read-only Reviewer delegation, and classifies mandatory environment UI as an upper boundary rather than an LDVH Gate.
+- criterion_id: criterion-regression-and-limits
+  outcome: satisfied
+  summary: Added direct B4 regression assertions; docs/spec tests passed. Real UI, spawn capability, and Reviewer independence remain unverified.
+result_summary: B4 now covers the complete pre-Gate1 automatic creation Reviewer chain and the existing post-Gate1 authorization-consumption chain, without claiming control over host-environment permissions.
+validation_summary: Passed .venv/bin/pytest -q code/tests/docs/test_enablement_docs.py code/tests/specs/test_repository.py (16 passed in 5.67s) and git diff --check.
+closure_outcome: completed
+disposition_summary: 当前本地责任已完成：B4 已锁定 Human 工作意图直接覆盖创建前自动只读 Reviewer、受控创建和 Gate 1；Gate 1 后已授权动作仍直接消费批准。16 项定向测试及独立只读复核通过。真实环境 UI、spawn 能力和 Reviewer 真实独立性未验证，已保留为非 LDVH 上位边界；无剩余责任、路由目标或 Spark 建议。
+object_id: workcase-01KZXN5TXNEE4RET53KENAVDKK
+object_uid: 019ffb52-ebb5-7389-8768-a39baaadb673
+fact_type_key: workcase
+created_at: '2026-08-02T12:29:48.839236+08:00'
+updated_at: '2026-08-13T15:03:57Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:06:25.969148Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。

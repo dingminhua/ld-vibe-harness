@@ -1,0 +1,68 @@
+object_id: workcase-01KZXN5TXNFKG8FNP19SGETVXZ
+object_uid: 019ffb52-ebb5-7ce0-87d6-c14e60ed6fbf
+fact_type_key: workcase
+title: 将 full-v4 绑定到实际 Working Tree 证据
+created_at: '2026-07-20T08:44:23.509741+08:00'
+updated_at: '2026-08-13T15:03:57Z'
+status: closed
+goal: 让唯一 full-v4 runner 在任何检查前和最后一次已尝试检查后，对实际唯一管辖 Git worktree 按 07.Att.01 固定政策安全采集 before/after manifest，将合法 Working Tree evidence DTO 原样写入单一耐久运行记录；只有输出和终态可回读且 DTO.status=complete 时，顶层运行状态才可为 passed 或 failed。
+scope: 先建立 07 §5 要求的稳定 Code Implementation Plan 入口及本增量规划；实现 code/ldvh/testing 下政策感知、安全 manifest I/O，最小补充 working_tree_evidence.py 的生产消费接口但不复制 DTO；修改 test_runs.py 的 before/after 编排、ldvh-test-run/2、 状态降级和 v1 回读兼容；tools/run_full_tests.py 只做必要 CLI 与退出语义；修改 code/tests/testing 直接测试。复用现有 governance resolver、Git identity 和 filesystem 安全原语，除直接阻断缺陷外不改变其语义。明确排除修改规则源、新增 Helper 操作、Web、 Codex、Human 展示、把 DTO 登记为事实字段、改变 full-v4 五步计划或测试语义、要求 tracked/staged/committed、实施 B/D/E、修改 Sparks，以及 push、PR。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 在任何生产 Code 修改前形成并可从稳定入口定位当前 Code Implementation Plan；其记录实现 起点 ddcff52a、当前 Working Tree 覆盖、模块责任、依赖、接口和 Schema 维护、副作用、 诊断、风险测试与缺口，且不把 Git tracked 或 committed 当有效性前提。
+- criterion_id: criterion-02
+  statement: 采集器按 07.Att.01 精确覆盖实际 worktree 全部普通文件并在下探前应用唯一排除； untracked、ignored、dirty 文件按实际 bytes 纳入，HEAD、Index、status、ls-files 和 Git 分类不参与文件集合或指纹。
+- criterion_id: criterion-03
+  statement: symlink/reparse、非普通条目、枚举或读取失败、读取期路径变化、NFC 冲突均 fail-closed 为 合法 incomplete 与闭集 gap；只有 governance scope 为 governed_single、请求 workspace 精确等于唯一实际 worktree root 且项目、root、common-dir 完整唯一时才启动首个检查。
+- criterion_id: criterion-04
+  statement: ldvh-test-run/2 只用于新 full-v4：运行态 working_tree_evidence 固定为 null，before 耐久 checkpoint 明确不是 DTO；正常 worker 在 finally 尝试 after 并形成合法终态 DTO； before incomplete 仍执行五步并尝试 after，但最终为 unknown。
+- criterion_id: criterion-05
+  statement: v2 状态矩阵唯一成立：全 passed 且 DTO complete 为 passed；确定 failed、其后允许 not_run 且 DTO complete 为 failed；任一步 unknown 或 DTO 非 complete、原始输出或终态不可回读均 为 unknown；步骤状态和已确定 final_exit_code 不因 DTO 降级被抹除。
+- criterion_id: criterion-06
+  statement: reader 同时接受 v1/v2；v1 继续执行既有 worker 丢失和 raw-output 缺失降级规则，不因没有 DTO 被追溯改写或补造，也不支持当前树绑定。新 probe 继续使用 v1，probe passed 永不表示 产品或当前 Working Tree 验证。
+- criterion_id: criterion-07
+  statement: 聚焦正反测试覆盖精确排除、untracked/ignored、特殊文件、读写竞态、NFC collision、管辖 拒绝矩阵、linked worktree、after identity mismatch、stale、incomplete、步骤失败与 unknown、worker 丢失、raw output 缺失、v1 兼容和 probe，且不以单一平台行为证明跨平台语义。
+- criterion_id: criterion-08
+  statement: 新 full-v4 dogfood 可按 run_id 回读合法 DTO，DTO.status=complete 且固定五步通过， manifest 绑定当时实际 Working Tree；范围检查确认未修改规则源、B/D/E、Helper、Web、 Codex、事实 Schema、00、Sparks 或远端，并用该证据重新判断 workcase-0003 的关闭分类。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 稳定 Code Plan 入口及增量规划在生产实现前形成，并记录实现起点、Working Tree 范围、 模块、接口、副作用、诊断和测试风险。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: 采集器按唯一政策对实际 bytes 形成全普通文件 manifest；真实 dogfood 纳入未提交与未跟踪 载体，且不使用 Git 分类决定集合。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: 路径拓扑、特殊条目、读取竞态、规范化与管辖拒绝均 fail-closed，只有唯一实际 worktree 身份成立时才启动检查。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: v2 的 before checkpoint、finally after 和终态 DTO 编排已实现，身份复核与 incomplete 路径均有独立正反测试。
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: passed、failed、unknown，步骤与 exit，DTO 完整性及 raw output 可回读矩阵已机械校验并由 篡改反例覆盖。
+- criterion_id: criterion-06
+  outcome: satisfied
+  summary: reader 保留 v1/probe 回读边界并只对新 full-v4 使用 v2；probe 不表示产品或当前树验证。
+- criterion_id: criterion-07
+  outcome: satisfied
+  summary: 聚焦测试覆盖计划所列正反路径；原生 Windows 语义没有被测试替身冒充为平台实证。
+- criterion_id: criterion-08
+  outcome: satisfied
+  summary: 真实 run 可按 run_id 回读 complete DTO 和固定五步成功结果；范围符合 C，随后恢复 workcase-0003，且没有把 C 的流程写入 dogfood 快照后冒充运行输入。
+result_summary: full-v4 runner 已在检查前后安全采集实际管辖 Working Tree manifest，并把合法 evidence DTO 写入耐久运行记录；v2 编排、状态降级、载体回读和 v1/probe 读取边界均已实现，真实 dogfood 返回 complete DTO、固定五步成功且运行窗口内 Working Tree 前后一致。
+validation_summary: 八项成功标准全部满足。Code Plan、实际 bytes 的政策完整 manifest、管辖与文件系统异常 fail-closed、v2 checkpoint/finally/终态 DTO、状态与输出矩阵、载体交叉引用及 v1/probe 读取边界均已验证。聚焦、Ruff、完整 Code、Web 与 full-v4 验证通过。原生 Windows reparse 行为未在原生平台验证，不以非 Windows test double 扩大声明。
+closure_outcome: completed
+disposition_summary: C 的批准范围、八项成功标准和全部工作项已完成，原范围内没有残余责任或需 routed-to 的 对象。dogfood 只绑定其运行窗口内的 Working Tree；随后产生的事实变化不属于该运行输入。 workcase-0003 可使用该 DTO 继续判断关闭结果。原生 Windows 行为仍为未验证边界，不自动 形成后续责任。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:04:50.216125Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。

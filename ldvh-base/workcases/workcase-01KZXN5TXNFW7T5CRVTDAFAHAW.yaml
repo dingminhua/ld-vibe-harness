@@ -1,0 +1,150 @@
+status: closed
+title: 重设计并重跑无契约泄漏的 A 簇提示卡对照实验
+goal: 在不修改生产 Helper 契约且不预设提示卡收益的前提下，先以可审计的非泄漏任务设计证明 baseline/candidate 的唯一差异是来源绑定提示卡，再对当前本地只读 Helper 执行一批 12 baseline 加 12 candidate 的独立上下文对照，形成仅受正确性约束的方向性摩擦证据或如实停止结论。
+scope: 仅允许修改 code/ldvh/testing/ 与 code/tests/testing/。任务包、gold rubric、baseline/candidate prompt、来源绑定卡、原始响应或转录、hash、record、统计输入和范围 manifest 只能写入每批由 SafeTrialTempRoot 新建并经创建身份、realpath 与 lstat 校验的仓库外临时根。明确排除生产 Helper/调用入口/能力契约、规格、文档、配置、WorkCase-0070 或其它既有事实对象、Git、网络、依赖安装、仓库内运行产物、任务包外操作和未登记的额外 trial。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 在真实调用前冻结 12 个任务、condition-blind gold rubric、baseline prompt、当前来源绑定 candidate card、允许操作、模型/推理/权限/runner/schema/Helper/rule/capability fingerprints、随机种子与条件顺序；共同任务与 gold 不得出现目标操作名、目标嵌套字段名、最小请求形状或等价示例，candidate card 是唯一允许提供该契约的条件差异。
+- criterion_id: criterion-02
+  statement: 测试性 preflight 对冻结材料执行结构化泄漏检查、条件差异检查、来源卡重算和哈希校验；发现目标契约泄漏、来源漂移、gold 非盲、allowlist 外操作或路径验证失败时 fail-closed，禁止任何真实 trial。
+- criterion_id: criterion-03
+  statement: 仅在 criterion-01/02 已通过且独立协议审查无未处置阻断项后，使用独立零历史上下文执行 12 baseline 加 12 candidate 本地只读 trial；每次形成严格 v2 终态 record，包含调用分类、invalid_requests、response_bytes、原始响应或转录 hash、monotonic duration、timeout/failure，且全部材料仅在 SafeTrialTempRoot。
+- criterion_id: criterion-04
+  statement: 预先定义 paired friction、correctness guardrail、terminal failure/missing-data 处置及“仅方向性信号”阈值；只在 candidate 不降低 condition-blind correctness 且 failure 不恶化时报告描述性方向，禁止统计显著性、因果证明或产品净收益主张。
+- criterion_id: criterion-05
+  statement: 独立只读结果复核者能够复算冻结哈希、检查非泄漏门禁、校验来源卡与全部 records、重算描述统计并核对范围 manifest；复核不得新增 trial 或把随机复跑表述为相同结果。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 12 个任务、condition-blind gold、相同 baseline/candidate base prompt、当前来源绑定卡、allowlist、环境 fingerprints、随机 seed/order 与 24 个 condition-specific envelope hashes 已在仓库外 SafeTrialTempRoot 冻结；共同材料未包含当前 protected contract terms。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: 测试性 preflight 已验证任务/gold 泄漏、条件差异、来源卡、哈希与路径边界；runner adapter 在每次 start_trial 前重验 candidate source 和完整环境 fingerprint 集，并在 dispatch 前拒绝 allowlist 外操作。
+- criterion_id: criterion-03
+  outcome: not_satisfied
+  summary: 当前 Codex worker 共享 shell/workspace，无法保证只持有 envelope 与 runner proxy、无法阻止直接 ./ldvh 或读取协议根；因此未启动任何真实 12 baseline 加 12 candidate trial，也没有 records、transcripts 或 scope after manifest。
+- criterion_id: criterion-04
+  outcome: not_verified
+  summary: paired friction、correctness guardrail、failure/missing-data 处置和禁止主张已预定义，但没有受隔离执行面保护的 records，不能计算或报告方向性信号。
+- criterion_id: criterion-05
+  outcome: not_verified
+  summary: 独立协议审查已复核冻结材料和代码，但没有真实 records、统计输入或 scope after manifest 可供独立结果复算；当前环境阻断项已如实保留。
+result_summary: 结果为 partial：非泄漏协议、runner-owned 采集/绑定与漂移门禁形成了稳定测试性基础；但当前环境不提供可限制 worker 仅经 runner proxy 调用 Helper 的受控执行面，无法保证隔离前提。按 fail-closed 边界，本 WorkCase 未执行任何真实 trial，也不主张提示卡收益、负效应、统计显著性、因果或产品净收益。
+validation_summary: 定向试验测量测试与完整 code/tests/testing 套件均实际通过（115 passed）；Ruff 与 git diff --check 通过。最新冻结材料在 /var/folders/gh/szvhx1md1mn9qy9n6p2b2w5h0000gn/T/ldvh-wc0071-0hc2dztr，仅含 protocol 与 scope before；未观察 records、transcripts、analysis 或 scope after，未发起真实 Helper trial。
+change_log:
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0071-planning
+  at: '2026-08-08T06:54:46.961273+08:00'
+  summary: Human 要求建立新的 WorkCase，以重设计并在独立 Gate 1 后重跑 A 簇提示卡对照；不重开或改写已冻结的 WorkCase-0070。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0071-execution
+  at: '2026-08-08T07:24:44.823282+08:00'
+  summary: Human 已批准 Gate 1；进入执行并先实现非泄漏协议门禁。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0071-execution
+  at: '2026-08-08T07:25:03.898978+08:00'
+  summary: item-01 已开始：实现非泄漏冻结协议门禁；尚未执行真实 Helper trial。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0071-execution
+  at: '2026-08-08T07:26:31.805258+08:00'
+  summary: item-01 完成并通过定向测试；item-02 开始构造非泄漏 12-task 冻结协议，尚未执行真实 trial。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0071-protocol-audit
+  at: '2026-08-08T08:23:53.146966+08:00'
+  summary: 独立协议审查返回 changes_required：共同材料未泄漏，但缺少 runner-owned 调用采集、worker envelope/gold 隔离与 trial-boundary 来源漂移检查；在既有测试性授权内修复，未执行真实 trial。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0071-protocol-audit-followup
+  at: '2026-08-08T08:27:29.216083+08:00'
+  summary: 协议审查复核仍为 changes_required：worker 可绕过 adapter；并要求 record 持久化 envelope/runner 绑定及每次 trial 全环境指纹重验。先在授权测试性范围补齐机械审计，再按环境能力 fail-close。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0071-controller-check
+  at: '2026-08-08T08:30:23.531170+08:00'
+  summary: 独立协议审查最终确认当前环境缺少受控 worker 执行面；取消未启动的 trial 与分析 item，形成 partial 结果投影并进入结果复核。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0071-result-review
+  at: '2026-08-08T08:31:46.916111+08:00'
+  summary: 完整 partial 结果投影已回读并通过事实完整性检查；在不变更 result_version=1 或结果口径的前提下进入独立只读结果复核。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0071-result-review
+  at: '2026-08-08T08:33:03.378555+08:00'
+  summary: 独立只读结果复核通过：确认协议根零 records/零真实 trial、当前环境无受控 worker 执行面，partial 结果口径与五项 criterion 一致；无 feedback。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0071-closure-preparing
+  at: '2026-08-08T08:33:26.511547+08:00'
+  summary: 独立结果复核已通过且无 feedback；result_version=1 的结果投影保持不变，进入关闭准备以形成 residual 承接建议。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0071-closure-preparing
+  at: '2026-08-08T08:34:05.537075+08:00'
+  summary: 在 closure_preparing 形成 partial 关闭提案：将受控 worker 执行面缺口 route_existing 至 Spark-0068；不修改 result_version=1 或将零 trial 表述为效果。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0071-gate2-waiting
+  at: '2026-08-08T08:34:28.139952+08:00'
+  summary: 关闭提案、Spark-0068 route target 与目标指纹已回读核对；进入 Human Gate 2，等待当前 partial 提案的关闭决定。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0071-closure
+  at: '2026-08-08T09:12:48.646168+08:00'
+  summary: Human Gate 2 已批准，WorkCase 按当前 partial 关闭提案关闭；受控 worker 执行面缺口仍由 Spark-0068 承接。
+- at: '2026-08-10T08:53:01.863811Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex-desktop -> Codex; 1: codex-desktop -> Codex; 2: codex-desktop -> Codex; 3: codex-desktop -> Codex; 4: codex-desktop -> Codex; 5: codex-desktop -> Codex; 6: codex-desktop -> Codex; 7: codex-desktop -> Codex; 8: codex-desktop -> Codex; 9: codex-desktop -> Codex; 10: codex-desktop -> Codex; 11: codex-desktop -> Codex; 12: codex-desktop -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-workcase-signature-migration-20260810
+- at: '2026-08-10T09:23:17.321698Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5; 12: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:58.953215Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+closure_outcome: partial
+disposition_summary: 停止本 WorkCase 中未满足执行隔离前提的批次；已形成的非泄漏协议、runner-owned 采集/绑定与漂移门禁保留为测试性基础。后续只有在存在受控 worker 执行面（移除 worker 对 Helper、shell 和文件系统的直达，仅暴露 runner proxy）时，才由既有 Spark-0068 决定是否重新设计、重新批准并重跑；不把零 trial 解释为提示卡效果。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-759c-a4c9-64b091fcc23c
+- relation_key: routed-to
+  target:
+    object_uid: 019ffb52-ebb5-715d-bbad-25e9382c3936
+object_id: workcase-01KZXN5TXNFW7T5CRVTDAFAHAW
+object_uid: 019ffb52-ebb5-7f0f-a2b3-1bd354f5455c
+fact_type_key: workcase
+created_at: '2026-08-08T06:54:46.961273+08:00'
+updated_at: '2026-08-13T15:03:57Z'

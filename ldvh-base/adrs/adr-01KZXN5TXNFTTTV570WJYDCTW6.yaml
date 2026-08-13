@@ -1,0 +1,26 @@
+title: 接入默认单一薄 Skill、机械防线归 git Gate
+status: retired
+decision_question: LDVH 向各 AI 开发环境交付与接入时，信息投递、过程检查与机械阻断三层分别应由什么载体承担——单一 Skill、环境插件、行动模板、原生 git Gate 还是 MCP，默认形态与升级条件是什么？
+decision: 在 Human 于 2026-07-29 至 07-30 连续设计讨论中逐项确认并作出最终授权的范围内，决定：一、LDVH 交付物为 pip 发行包与六个 CLI 入口，环境默认接入形态为单一薄引用 Skill——只承担身份告知、启动时经 ldvh-work-context 取得规则引导、动手落入 LDVH 领域时先经 CLI 取当次行动模板的路由纪律；Skill 不复制规则正文、不写死模板清单、保持环境中性（不断言任何环境的自动触发状态）。二、过程检查由行动模板中的明确强制项承载（事实写入后跑事实完整性校验、提交前 Helper 预检、直写 ldvh-base/ 禁令）。三、机械阻断层只由原生 git commit-msg Gate 承担，且须升级事实机械校验后才能成为事实完整性终闸。四、环境插件降级为证据触发的可选加固——仅在再次发生直写污染且跨会话消费、无人值守或多 Agent 链路开始写事实、目标环境无技能机制但有生命周期 Hook、或决定交付 PreToolUse guardrail 时，按 09 规范在对应环境增设。五、不做 MCP。六、既有环境 Hook 知识（09 协议机制、Codex 参考实现、spark-0029 的 guardrail 调查）降级不删除，保留为升级路径依据。本决定记录形态选择，不表示 git Gate 事实校验、SKILL.md 环境中性化与分发、README 与 33 清理中任何一项已经实施。
+applicability: 适用于 LDVH 发行物的交付形态、全部目标 AI 环境的接入方案选择，以及 README、33 行动模板、共享 SKILL.md 与接入面文档的相应修订。已部署且经当次验证的插件（如 Codex Desktop、ZCode 的 SessionStart 注入）继续保持，不因本决定拆除；任一环境的升级触发条件成立时可独立增设插件，不受默认形态限制。明确排除：不改变 git Gate 的既有提交契约职责；不以本决定宣称事实完整性终闸已经存在——spark-0039 第 1 项落地前，一切对外接入表述必须如实保留该缺口；不约束环境 adapter 的独立开发流程（仍按 09 在环境侧仓库进行）。
+rationale: 信息投递层的本质内容是劝告性规则引导——劝告内容走劝告通道（Skill）成本比例才正确；环境 Hook 买到的是同一段劝告的到达必然性与执行痕迹，但需逐环境开发、信任、cold-start 验证，pitfall-0001 实证其可静默失效，成本与价值错配。可逆性不对称：Skill 先行近乎零成本且随时可加插件，插件先行则每个环境形成沉没成本，故默认项选可逆方向。七个环境（Codex Desktop、ZCode、TRAE、Claude Code、Codex-Cindy、WorkBuddy、Kimi Work）的接入分析一致确认技能机制全部可用并推荐 Skill 默认，本决定获得实证支持。约束层 Skill 原理上无法阻断任何行动（直写绕过已在 orientation 在场时实际发生），真阻断只能位于模型之外：git Gate 是 LDVH 完全可控的唯一环境外阻断点；PreToolUse deny 各环境覆盖不完整，且 Codex 的 deny 能力存在报告间矛盾，复核前不对其作假设。MCP 无生命周期语义、与 shell 直调 CLI 等价，不能承载启动注入。未选'插件为默认接入'：逐环境成本与劝告性价值错配；未选'全环境统一形态'：各环境机制禀赋与既有部署不同，分环境答案是设计而非摇摆。
+consequences: 正面：默认接入简化为'装包、放一个 Skill、受管项目装 git hook'；规则权威保持单一，无第二副本；默认路径的安装/部署/接入/验证四层塌缩为 Skill 递达证据一个问题；分环境答案可以共存。负面与限制：启动注入的到达必然性让渡给模型自觉，drift 窗口由行动模板检查、事实完整性校验与读取路径报警压缩而非消除；schema 合法但语义造假的事实为各方案共同残留风险；Skill 递达的长期行为稳定性未验证。后续义务：git Gate 事实机械校验与 fact_integrity 一等化（spark-0039 第 1、2 项，本决定成立的前置义务）；共享 SKILL.md 环境中性化与分发方式落地（静态写死路径或 Helper 生成式渲染，未决）；README 与 33 行动模板按'降级不删除'原则清理环境 Hook 描述；Codex PreToolUse deny 能力的报告矛盾待以当前官方资料复核；WorkBuddy V3 残留插件清理与 stdin 陷阱的 Pitfall 评估。本 ADR 被规范、Code 或行动模板吸收后不自动退休，退出需 Human 另行授权。
+disposition_summary: 决定范围由 adr-0006 整体覆盖：Human 于 2026-07-30 撤回插件可选加固与环境 Hook 知识降级保留，确立单一薄 Skill 为唯一接入载体、过程机械检查必须、git Gate 终局把关，本对象不再约束当前选择。
+object_id: adr-01KZXN5TXNFTTTV570WJYDCTW6
+object_uid: 019ffb52-ebb5-7eb5-ad94-e0e4bcd66b86
+fact_type_key: adr
+created_at: '2026-07-30T13:33:03.425655+08:00'
+updated_at: '2026-08-13T15:03:57Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:58:50.423443Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。

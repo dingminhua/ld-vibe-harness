@@ -1,0 +1,51 @@
+title: Agent-first Harness 成熟度与持续编排
+intent: 保留 LDVH 是否已具备 Agent-first Harness 的可验证成熟度，以及何时才值得进行持续编排实验的问题，避免把若干能力组件、外部研究或局部自动化误作端到端 Harness 已成立。后续需形成可检验维度、最小实验边界和退出条件。
+status: implemented
+summary: "**当前判断**\n\n- Agent-first Harness 的重点不是增加 Agent 数量，而是让仓库知识、工具、约束、验证、观测、恢复和清理机制对 Agent 可发现、可执行、可校验。\n- V4 已有事实源、Helper、确定性 Code、环境接入、Git/Hook Gate、Web 与 Human Gate 等组成部分；这些不能自动证明端到端 Harness、持续编排、自动恢复或隔离 worktree 管理已经成立。\n\n**需要形成的成熟度证据**\n\n- Agent 能否从最小入口发现适用规则与当前事实，调用正确能力并理解失败边界。\n- 验证能否重跑并回指来源；过程结果能否由主控回收而不冒充事实源；中断后能否从稳定对象恢复。\n- 过期事实、规则和派生状态能否被发现并清理。\n\n**实验边界**\n\n- 只有上述前提已有真实证据，才定义最小持续编排实验的准入、停止、验证和退出条件；当前没有成熟度等级或已选路线。\n- 不采用 Symphony、Linear、Codex App Server 或其它特定产品。WorkCase 控制状态由 `spark-0008` 承接，协作纪律由 `spark-0010` 承接。"
+evolution:
+- at: '2026-07-22T13:54:04+08:00'
+  summary: 迁移复核保留 V3 的 Harness 成熟度问题与外部研究线索，但移除 Git 版本和产品方案断言；当前改为要求每一成熟度维度有真实证据后才进入持续编排实验。
+disposition_summary: 本 Spark 的原始议题（Agent-first Harness 成熟度判断与持续编排实验准入）过于抽象，缺乏可执行定义，自 V3 迁移以来未产生实质进展。其核心关注点已由更具体的事实对象承接：行为可观测性与健康投影由 spark-0045 承接；Workflow 脚本编排载体由 spark-0066 承接；WorkCase 控制状态由 spark-0008 承接；协作纪律由 spark-0010 承接。成熟度证据维度作为概念仍有价值，但无需独立 Spark 维持，可在后续具体 WorkCase 中按需评估。
+change_log:
+- signature:
+    product_name: Claude Code
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-12T20:31:29.772440Z'
+  summary: 关闭为 implemented：议题过于抽象，核心关注点已由 spark-0045、spark-0066、spark-0008、spark-0010 分别承接。
+- signature:
+    product_name: Claude Code
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-12T20:40:53.772869Z'
+  summary: '补充 relations: related-to spark:spark-0008, spark:spark-0045, spark:spark-0066, spark:spark-0010'
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:59:45.896294Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7270-bc33-57c7ec37f724
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-74db-86a6-be5416180411
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-76ef-9c50-676fab7c57d7
+object_id: spark-01KZXN5TXNE3VVMYJJRGRSSB5K
+object_uid: 019ffb52-ebb5-70f7-ba7a-52c4319cacb3
+fact_type_key: spark
+created_at: '2026-07-19T10:28:35.563830+08:00'
+updated_at: '2026-08-13T15:03:57Z'

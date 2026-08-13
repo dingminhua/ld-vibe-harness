@@ -1,0 +1,193 @@
+status: closed
+title: WorkCase Gate 1 至 Gate 2 全链合法交还控制
+goal: 将 34 号模板中分散的 WorkCase 继续与合法交还规则统一为 Gate 1 获批后的 pre-yield 控制不变量，使 Controller 在 plan_revising、executing、controller_checking、independent_reviewing、closure_preparing 的每个稳定检查点写回后都消费 fresh resolved projection；Gate 1 后若出现新的 Human 决策需求，不新增 Human Gate，而是据实取消受影响执行分支或在结果链记录未做/未验证并继续收敛，只有 Gate 2、真实外部/能力 blocked、持续 exact-read unresolved 或 closed 才可交还。
+scope: 仅对 specs/34-WorkCase获批计划执行行动模板.md 做最小契约统一，并扩展 code/tests/specs/test_workcase_controller_continuation_contract.py 为 Gate 1 后阶段与合法出口矩阵；必要时只读核对 specs/21-WorkCase-工作项.md、projection 实现及联跑 code/tests/helper/test_action_template_operation.py。使用本 WorkCase 自身的 Helper 更新、精确回读与完整性审计记录执行检查点，并在完整结果形成后执行已授权的只读独立结果复核。计划不修改 21 状态机、事实字段、projection/Helper 语义、Skill、Hook、环境适配或其它事实对象，不新增持久 can_yield/continuation 标志，不允许 Code 选择 item 或判断语义完成，不执行 Git commit、push、发布或清理既有脏工作树；Gate 1 后若动作需要新的 Human 决定，执行期不得请求第三次确认、不得把 Human 写入 waiting_on、不得把该需求伪装成 blocked/unresolved；执行阶段据实取消受影响 item 及无法继续的依赖项并保留实际结果，items 全 terminal 后继续结果链；若在 items 已 terminal 后才发现，则不重开或新增 item，而在结果/验证及 closure proposal 的 residual decision 中据实承接到 Gate 2。契约测试只证明规则与输出约束，不宣称模型外机械保证。
+success_criterion_definitions:
+- criterion_id: criterion-unified-invariant
+  statement: 34 号模板将既有分散规则统一为 Gate 1 获批后的 pre-yield 控制不变量，覆盖 plan_revising、executing、controller_checking、independent_reviewing、closure_preparing，并明确 status=blocked 可覆盖任一合法活动 phase。
+- criterion_id: criterion-checkpoint-reread
+  statement: 每个稳定检查点或阶段中间结果经 Helper 写回后，都必须精确回读并消费与当前 content fingerprint 匹配的 fresh resolved projection；单项 terminal、AllTerminal、完整结果投影、Reviewer 返回与反馈处置、进入 closure_preparing、完整关闭提案均不得被误作普通合法交还点。
+- criterion_id: criterion-exit-set
+  statement: 在已获 Gate 1 的同一 WorkCase 链内，合法交还出口仅为 resolved human_closure_confirming 的 Gate 2、真实外部/能力 blocked、连续精确读取后仍 unresolved、或 closed；只有 gate2_waiting 可以使用 Gate 2 等待话术，blocked/unresolved 不得冒充 Gate 2，新的 Human 决策需求不得冒充 blocked/unresolved。
+- criterion_id: criterion-contract-matrix
+  statement: 直接契约测试形成阶段×出口矩阵，覆盖 Gate 1 后全部活动阶段、关键中间里程碑和合法出口集合，并与 Helper action-template 交付测试共同通过。
+- criterion_id: criterion-no-third-human
+  statement: Gate 1 后所有 phase 均不得新增 Human waiting：执行阶段需要新 Human 决定时停止未获准动作，将受影响 item 及无法继续的依赖项据实 cancelled，保留已有结果、未执行范围与超界原因并在 AllTerminal 后继续结果链；items 已 terminal 后才发现时不重开或新增 item，而在结果、验证和 closure proposal 的 residual decision 中据实承接至 Gate 2；cancelled 不得写成 completed，也不自动决定 closure outcome。
+- criterion_id: criterion-live-chain
+  statement: 本 WorkCase 在 Human Gate 1 批准后，无需额外 Human“继续”或扩权提示即可按 fresh fingerprint-matched projection 从实施推进到 human_closure_confirming，并保留 Gate 2 的 Human 所有权；若出现新的 Human 决策需求，按阶段据实取消受影响 item 或在结果/验证与 residual decision 中承接后继续；只有真实外部/能力 blocked 或持续 exact-read unresolved 才中途交还。
+- criterion_id: criterion-boundary
+  statement: 实际变化严格限于 specs/34、直接契约测试和 workcase-0082 自身受控检查点；不改写 0081/0071，不引入 Hook 模拟、Skill 职责、状态机复制、持久续跑字段、Helper 语义判断、提交、发布或无关工作树改动。
+success_criterion_results:
+- criterion_id: criterion-unified-invariant
+  outcome: satisfied
+  summary: 34 §5.2 已建立 Gate 1 后统一 pre-yield 控制点，覆盖五个 Controller-owned phase，并明确 blocked 是合法活动 phase 的覆盖层。
+- criterion_id: criterion-checkpoint-reread
+  outcome: satisfied
+  summary: 统一控制点要求完整 after、CAS、精确回读、独立完整性审计并仅消费 fingerprint 匹配的 fresh resolved projection；关键里程碑均明确不是普通交还点。
+- criterion_id: criterion-exit-set
+  outcome: satisfied
+  summary: §5.4 将 Gate 1 后出口收紧为 resolved Gate2、真实外部/能力 blocked、连续 exact-read unresolved 或 closed，并禁止新 Human 决策需求冒充 blocked/unresolved。
+- criterion_id: criterion-contract-matrix
+  outcome: satisfied
+  summary: 直接测试覆盖五个活动 phase 的精确 next step、所有 phase blocked 覆盖、唯一 Gate2、closed、unresolved 与关键中间里程碑；联跑 20 passed。
+- criterion_id: criterion-no-third-human
+  outcome: satisfied
+  summary: 模板明确禁止第三次 Human waiting，并分别规定 executing 中 cancelled 受影响/依赖 item 后继续结果链，以及 terminal 后用结果、验证与 residual decision 承接。
+- criterion_id: criterion-live-chain
+  outcome: not_verified
+  summary: 已观察本 WorkCase 自 Gate 1 无额外 Human 继续/扩权推进至完整结果投影、独立复核与 feedback 处置；human_closure_confirming 只能在完成新版本复核和关闭提案后到达，当前 canonical result projection 尚不能以前瞻动作证明该终点。
+- criterion_id: criterion-boundary
+  outcome: satisfied
+  summary: 实现差异仅在 specs/34、直接契约测试和 workcase-0082 自身检查点；未改 21/projection/Helper/Skill/Hook/0081/0071，未提交或发布。
+result_summary: 34 号执行模板现以一个 Gate 1 后统一 pre-yield 控制点覆盖 plan_revising、executing、controller_checking、independent_reviewing 与 closure_preparing；新增 Human 决策需求按执行期 cancelled 或 terminal 后结果/验证/residual 承接，继续到 Gate 2。直接契约测试扩展为阶段×出口与中间里程碑矩阵，未修改 21、projection、Helper、Skill 或 Hook。六项实施/契约/边界标准已满足；本 WorkCase 实际抵达 human_closure_confirming 只能在结果复核与关闭提案之后观察，当前结果投影对此据实保留 not_verified。
+validation_summary: PYTHONPATH=code .venv/bin/pytest -q code/tests/specs/test_workcase_controller_continuation_contract.py code/tests/helper/test_action_template_operation.py：20 passed；单文件 continuation 测试 12 passed。Helper read-action-template-content 精确回读 workcase-approved-plan-execution outcome=ok；目标 spec/test git diff --check 通过；check-fact-integrity complete（195 objects）。本 WorkCase 已从 Gate 1 连续推进至结果复核并完成一次反馈处置，但在 canonical result review 时尚未实际处于 human_closure_confirming，因此端到端 Gate2 到达保持 not_verified，由关闭提案 residual decision 交给 Gate2 判断。未执行 Git commit、push 或发布。
+change_log:
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T14:58:55.845032+08:00'
+  summary: 按 Human 指示创建后续 WorkCase，承接 0081 未覆盖的 Gate 1 获批后至 Gate 2 前完整合法交还控制链；已纳入独立创建复核反馈，当前等待 Gate 1。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:06:26.159447+08:00'
+  summary: 消费 Human 在同一 Gate 1 中提出的计划澄清，冻结当前计划与授权材料并进入 plan_revising；尚未形成或批准新计划。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:07:06.563335+08:00'
+  summary: 完成 Gate 1 前 PlanΔ：形成 plan_version=2、完整修订授权与 fresh 独立创建复核，明确新 Human 决策需求按执行期取消或 terminal 后结果/residual 承接并继续至 Gate 2；返回 Human Gate 1。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:13:15.852826+08:00'
+  summary: 消费 Human Gate 1 批准，绑定 plan_version=2 的完整执行授权基线并进入 executing。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:13:32.206956+08:00'
+  summary: Gate 1 快照精确回读与全库审计通过，启动 item-01-control-chain-audit 并建立可恢复检查点。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:14:27.243748+08:00'
+  summary: 完成 item-01 控制链审计并启动 item-02；最小修改保持在 34 号模板与直接契约测试，不改状态机或 Helper。
+- signature:
+    host_name: Cindy
+    model_id: gpt-5
+  summary: 完成 item-02 规范契约并启动 item-03；统一 Gate 1 后全阶段 pre-yield 控制、四类出口和新增 Human 决策安全收敛。
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:18:32.493423+08:00'
+- signature:
+    host_name: Cindy
+    model_id: gpt-5
+  summary: 完成 item-03 契约矩阵并启动 item-04；目标 continuation 测试已 12 passed。
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:19:40.173107+08:00'
+- signature:
+    host_name: Cindy
+    model_id: gpt-5
+  summary: 完成 item-04 定向验证；最后 item terminal 的同一事务进入 controller_checking 并建立 result_version=1。
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:20:44.479216+08:00'
+- signature:
+    host_name: Cindy
+    model_id: gpt-5
+  summary: 在 controller_checking 完整形成 canonical result projection v1；七项成功标准均有当前实施与验证证据支持，准备精确回读后进入独立结果复核。
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:21:39.314569+08:00'
+- signature:
+    host_name: Cindy
+    model_id: gpt-5
+  summary: 完整 result projection v1 已形成、校验并精确回读；phase controller_checking → independent_reviewing，等待实际只读 Reviewer 结论。
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:21:59.733792+08:00'
+- signature:
+    host_name: Cindy
+    model_id: gpt-5
+  summary: 在 independent_reviewing 同 phase 写入 result v1 独立复核 pass_with_followups 与 Controller 完整处置；准备返回 controller_checking 执行 ResultΔ。
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:23:50.766635+08:00'
+- signature:
+    host_name: Cindy
+    model_id: gpt-5
+  summary: result v1 feedback 已由 Controller 全部处置；phase independent_reviewing → controller_checking，projection 暂原样保留，下一检查点执行确定性 ResultΔ。
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:24:10.612106+08:00'
+- signature:
+    host_name: Cindy
+    model_id: gpt-5
+  summary: 执行 ResultΔ：result_version 1→2，清除旧 result review，将 criterion-live-chain 前瞻 satisfied 修订为 not_verified，并同步总体结果、Controller 检查与验证边界。
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:24:42.009302+08:00'
+- signature:
+    host_name: Cindy
+    model_id: gpt-5
+  summary: 修订后的 result projection v2 已完整形成、校验并精确回读；phase controller_checking → independent_reviewing，执行新版本复核。
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:24:57.807764+08:00'
+- signature:
+    host_name: Cindy
+    model_id: gpt-5
+  summary: 在 independent_reviewing 同 phase 写入 result v2 独立复核 pass_with_followups；Controller 已完整处置为 partial + accept_stop residual 的关闭提案路径。
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:25:55.413101+08:00'
+- signature:
+    host_name: Cindy
+    model_id: gpt-5
+  summary: result v2 独立复核 feedback 已由 Controller 全部处置，projection 未变；phase independent_reviewing → closure_preparing。
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:26:11.161318+08:00'
+- signature:
+    host_name: Cindy
+    model_id: gpt-5
+  summary: 在 closure_preparing 整体形成 partial closure proposal；以单一 accept_stop residual 承接 criterion-live-chain 的 Gate2 前自证时序边界，无 route target 或 Spark 建议。
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:26:32.193921+08:00'
+- signature:
+    host_name: Cindy
+    model_id: gpt-5
+  summary: 完成终态保留审查：长期有价值的实施结果、验证边界、复核处置和 Gate2 前自证时序限制均已吸收到 result/validation/proposal；phase closure_preparing → human_closure_confirming。
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:26:59.915778+08:00'
+- summary: 按 Human Gate 2 决定以 partial 关闭 WorkCase-0082，并保留 accepted-stop 的 Gate 2 到达自验证时序边界。
+  signature:
+    host_name: Cindy
+    model_id: gpt-5
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T15:31:30.968794+08:00'
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:31.247726Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+closure_outcome: partial
+disposition_summary: 本 WorkCase 已在冻结 scope 内完成 34 号模板的 Gate 1 后五阶段统一 pre-yield 控制、四类合法出口、新 Human 决策两条安全收敛路径与阶段×出口契约矩阵，定向联跑 20 项通过，未修改 21/projection/Helper/Skill/Hook，未提交或发布。六项成功标准满足；criterion-live-chain 因 canonical result 必须在 Gate 2 前冻结，无法以自身前瞻证明随后已实际抵达 human_closure_confirming，保留单一 accepted-stop 时序验证边界。Human 接受后以 partial 关闭，并保留该 residual responsibility；没有 route target 或 Spark 建议。
+residual_responsibilities:
+- residual_id: residual-gate2-arrival-self-verification
+  summary: criterion-live-chain 要求本 WorkCase 实际抵达 human_closure_confirming；canonical result projection 与独立结果复核必须先于关闭提案和 Gate 2 形成，因此它们不能用未来 phase 自证该终点。已实际观察从 Gate 1 无额外 Human 继续/扩权推进至 result v2 复核与 feedback 处置，剩余边界不是未实施技术任务，而是 Gate 2 前结果冻结所固有的时序验证限制。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7870-85bf-3893f28a1532
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7ccc-8b77-dd230fd27660
+object_id: workcase-01KZXN5TXNEY393BM110WPB9GC
+object_uid: 019ffb52-ebb5-7786-91ae-81083965a60c
+fact_type_key: workcase
+created_at: '2026-08-09T14:58:55.845032+08:00'
+updated_at: '2026-08-13T15:03:57Z'

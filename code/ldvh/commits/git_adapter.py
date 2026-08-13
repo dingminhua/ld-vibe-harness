@@ -254,6 +254,7 @@ def _fact_candidates(
     index: bytes,
     *,
     index_file: Path | None = None,
+    rename_sources: dict[str, str] | None = None,
 ) -> tuple[tuple[StagedFactCandidate, ...], CommitCandidateObservationIssue | None]:
     """Observe all staged single-file fact candidates from the bound Index."""
 
@@ -286,9 +287,16 @@ def _fact_candidates(
             )
             continue
         data, problem = _read_staged_blob(worktree, entries[0].oid, index_file=index_file)
+        head_path = (rename_sources or {}).get(path, path)
+        head_target = _classify_fact_path(head_path)
+        head_object_id = (
+            head_target[1]
+            if head_target is not None and head_target[0] == fact_type_key and head_target[1] is not None
+            else None
+        )
         head_data, head_oid, head_problem = _head_blob(
             worktree,
-            path,
+            head_path,
             index_file=index_file,
             max_bytes=MAX_FACT_BYTES,
         )
@@ -302,6 +310,7 @@ def _fact_candidates(
                 head_data=head_data,
                 head_exists=head_oid is not None,
                 head_observation_issue=head_problem,
+                head_object_id=head_object_id,
             )
         )
     return tuple(candidates), None
@@ -400,6 +409,48 @@ def _parse_name_status_map(output: bytes) -> dict[str, str]:
     return status_map
 
 
+def _parse_rename_source_map(output: bytes) -> dict[str, str]:
+    """Map each staged rename destination to its committed source path."""
+
+    try:
+        tokens = output.decode("utf-8").split("\0")
+    except UnicodeDecodeError:
+        return {}
+    if tokens and tokens[-1] == "":
+        tokens.pop()
+    sources: dict[str, str] = {}
+    index = 0
+    while index < len(tokens):
+        status = tokens[index]
+        index += 1
+        path_count = 2 if status.startswith(("R", "C")) else 1
+        if not status or index + path_count > len(tokens):
+            return {}
+        observed = tokens[index : index + path_count]
+        index += path_count
+        if status.startswith("R"):
+            sources[observed[1]] = observed[0]
+    return sources
+
+
+def _candidate_rename_source_map(
+    worktree: Path,
+    *,
+    index_file: Path | None = None,
+) -> tuple[dict[str, str], CommitCandidateObservationIssue | None]:
+    output = _successful(
+        _run_git(
+            worktree,
+            ("diff", "--cached", "--name-status", "-z", "--find-renames", "--find-copies", "--no-ext-diff"),
+            index_file=index_file,
+        ),
+        "staged candidate rename sources",
+    )
+    if isinstance(output, CommitCandidateObservationIssue):
+        return {}, output
+    return _parse_rename_source_map(output), None
+
+
 def _parse_front_matter_status(text: bytes) -> str | None:
     """Extract the ``status`` field from a spec's YAML front matter."""
     try:
@@ -487,11 +538,15 @@ def _observe_index(
     )
     if status_failure is not None:
         status_map = {}
+    rename_sources, rename_failure = _candidate_rename_source_map(worktree, index_file=index_file)
+    if rename_failure is not None:
+        return CommitCandidateObservation("unverifiable", None, (rename_failure,), paths, snapshot_before)
     fact_candidates, failure = _fact_candidates(
         worktree,
         paths,
         index_before,
         index_file=index_file,
+        rename_sources=rename_sources,
     )
     if failure is not None:
         return CommitCandidateObservation("unverifiable", None, (failure,), paths, snapshot_before)

@@ -1,0 +1,160 @@
+status: closed
+title: 核验 Spark-0067 缺陷 9 的增量变化感知方案与净价值
+goal: 仅针对 Spark-0067 缺陷 9，以当前可读实现、既有事实与已有测试证据核验“集合变了但无法定位变化对象”的实际边界；中立比较 per-object manifest 与 changed_since，形成符合规范 00 的实施、暂缓或 no-go 建议，不预先选择、设计或实施生产方案。
+scope: 仅读取当前 manifest/F1/F2 相关实现、现有测试 fixture、Spark-0067、已关闭 WorkCase-0072 的有限结论及规范 00 价值标准；只检查已有历史快照、现有 fixture 或当前可读事实中的新增/修改/删除可比证据。0072 已取消且没有生产方案选择依据，其合成投影只能作为受限历史材料，不重启 Spark-0068、隔离 worker、提示卡或 fixture 实验。排除代码、规范、Spark 或其它事实对象修改，新增或改写样本/fixture/临时事实，任何生产 API/Schema/规范设计，外部写入、暂存、Git commit 与网络操作。若无可比较的无写入证据，相应情景明确为 unverified。
+success_criterion_definitions:
+- criterion_id: criterion-current-boundary
+  statement: 基于当前可读实现、现有测试与事实回读，明确 object_set_fingerprint 已能和不能证明什么；对新增、修改、删除只记录已有可比较证据与未验证范围，不创建或改写样本、fixture 或事实对象。
+- criterion_id: criterion-neutral-options
+  statement: 分别列出 per-object manifest 与 changed_since 为满足“定位变化对象”所需的输入、输出、状态/兼容责任、锚点失效、删除、不同 worktree、响应量与维护成本；不产出具体公开 API、Schema 或规范设计。
+- criterion_id: criterion-net-value
+  statement: 按实际服务对象分别审查 V1-V8 与 HV1-HV5：AI 侧只在证据支持范围判断定位、接续和据实反馈收益；Human 侧没有真实使用证据的维度标为 unsupported 或 not_applicable；明确新增成本和风险能否抵消收益。
+- criterion_id: criterion-decision-handoff
+  statement: 形成 implement、defer 或 no-go 三选一建议及其证据、未验证范围和恢复条件；若建议实施，只说明需要另立 WorkCase 和新的 Human Gate，不授权当前 WorkCase 设计或实现功能。
+success_criterion_results:
+- criterion_id: criterion-current-boundary
+  outcome: satisfied
+  summary: 当前实现与现有测试已明确：公开 F1 响应交付当前 cards（含身份/字段）及 object_set_fingerprint；后者是唯一集合级变化锚点。由于缺少前后完整快照的逐对象内容版本和受契约支持的新增/修改/删除 delta，不能可靠定位此次变化对象。精确 diff 仅在完整、机械有效的测试专用内存投影中比较；未创建或改写样本、fixture 或其它事实。
+- criterion_id: criterion-neutral-options
+  outcome: satisfied
+  summary: 已比较两类责任：per-object manifest 以同范围完整快照和每对象身份/版本为输入，删除由 before-only 身份表达且基线 O(N)；changed_since 需要可验证基线、历史或 tombstone、失效/并发和同 worktree 语义。现有 cursor 变化后拒绝 stale，不能作为变化查询。未产出 API、Schema 或规范设计。
+- criterion_id: criterion-net-value
+  outcome: satisfied
+  summary: 价值审查完成但不主张正收益：AI 侧仅有测试专用定位可行性，V1–V8 中跨会话接续、响应节省、可靠性和演进收益均缺真实使用/量化证据；Human 侧 HV1–HV5 无真实使用证据，不能宣称成立。两路线新增的基线或历史、删除、兼容和维护风险目前不能被已知收益抵消。
+- criterion_id: criterion-decision-handoff
+  outcome: satisfied
+  summary: 建议 defer，而非 implement 或 no-go：保留未来在真实、可比较的跨会话消费需求出现后重开判断的空间；届时须另立 WorkCase、取得新的 Human Gate，并先定义可观察收益与成本证据。本 WorkCase 不授权生产设计或实施。
+result_summary: 结果为 completed（研究/决策范围）：当前生产候选发现会交付当前 cards 与集合级变化锚点，但没有前后逐对象版本或受契约支持的身份级 delta；精确定位仅在测试专用内存投影中证明。两种候选路线都带来完整范围锚定与额外状态/兼容责任，而真实收益、响应量基线和 Human 使用证据缺失；因此当前结论为 defer，不实施任何生产变化。
+validation_summary: 本次通过 Helper 实际读取当前 WorkCase、当前 F1 响应与写后全库完整性审计（190 个对象、无问题）；PYTHONPATH=code .venv/bin/python -m pytest code/tests/testing/test_fact_change_measurement.py -q 实际通过 10 项。此前直接运行未带 PYTHONPATH 的同类命令仅因模块路径缺失而收集失败，不作为实现失败；未运行网络、外部写入、暂存或提交。
+change_log:
+- summary: 依据 Human 对 Spark-0067 缺陷 9 方案核验的推进授权，经独立只读创建复核（pass_with_followups）并处置全部反馈后，形成不实施功能的价值与方案决策 WorkCase。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark0067-wc0078-creation
+  at: '2026-08-08T21:32:28.117952+08:00'
+- summary: 消费 Human Gate 1：批准 WorkCase-0078 的 plan_version=1 与冻结 execution_authorization，进入 executing；仅可开展授权范围内的只读核验。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark0067-wc0078-execution
+  at: '2026-08-08T21:36:29.011785+08:00'
+- summary: 开始 item-01：在冻结只读范围内核验集合指纹与既有变化证据边界。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark0067-wc0078-execution
+  at: '2026-08-08T21:36:59.118293+08:00'
+- summary: 完成 item-01 并开始 item-02：确认公开聚合指纹与测试专用身份 diff 的边界。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark0067-wc0078-execution
+  at: '2026-08-08T22:11:01.972998+08:00'
+- summary: 完成 item-02 并开始 item-03：已基于当前 F1 manifest、分页 cursor、context recovery 和测试专用 diff 对照两种变化定位路线；未形成生产 API/Schema 设计或实施结论。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark0067-wc0078-execution
+  at: '2026-08-08T23:43:28.314471+08:00'
+- summary: 完成 item-03 并进入 Controller 自检：依据当前实现、现有测试和 F1 观察形成 defer 建议；未选择、设计或实施生产变化。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark0067-wc0078-result
+  at: '2026-08-08T23:44:39.271905+08:00'
+- summary: 完整 result_version=1 投影已回读并通过全库机械完整性审计；进入独立只读结果复核，冻结当前结果投影。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark0067-wc0078-result-review
+  at: '2026-08-08T23:45:10.211778+08:00'
+- summary: 独立只读结果复核完成：changes_required，要求收窄 F1 身份卡与集合级变化锚点的表述；defer 方向不变。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark0067-wc0078-result-review
+  at: '2026-08-08T23:46:41.589416+08:00'
+- summary: Controller 已处置独立复核反馈：返回自检以收窄 F1 变化定位表述，随后将按结果版本规则重新复核。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark0067-wc0078-result-review
+  at: '2026-08-08T23:47:07.925290+08:00'
+- summary: 按独立复核反馈修正结果投影：明确 F1 交付当前身份 cards，但没有前后逐对象版本或受契约支持的身份级 delta；result_version 升至 2 并重新进入复核链。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark0067-wc0078-result-correction
+  at: '2026-08-08T23:47:35.868488+08:00'
+- summary: 更正后的 result_version=2 投影已回读并通过全库机械完整性审计；进入第二次独立只读结果复核。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark0067-wc0078-result-review-v2
+  at: '2026-08-08T23:47:58.734534+08:00'
+- summary: 第二次独立只读结果复核通过：更正后的 F1 表述和 defer 建议保持证据有界，无进一步反馈。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark0067-wc0078-result-review-v2
+  at: '2026-08-08T23:48:34.163453+08:00'
+- summary: 独立结果复核已通过且无 feedback；进入关闭提案准备。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark0067-wc0078-closure-preparing
+  at: '2026-08-08T23:48:53.782865+08:00'
+- summary: 已形成 completed 关闭提案：本 WorkCase 的研究与 defer 决策责任完成；不创建路线目标或生产变更。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark0067-wc0078-closure-proposal
+  at: '2026-08-08T23:49:15.821760+08:00'
+- summary: 关闭提案已回读，终态保留检查确认无 route_existing、accepted-stop 或 Spark suggestion；进入 Human Gate 2 等待当前 completed 提案确认。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark0067-wc0078-gate2
+  at: '2026-08-08T23:49:43.877892+08:00'
+- summary: Human Gate 2 已确认当前 completed 关闭提案；WorkCase 关闭，保留 defer 结论且未实施生产变化。
+  signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark0067-wc0078-closure
+  at: '2026-08-08T23:51:41.232289+08:00'
+- at: '2026-08-10T08:53:19.653977Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex-desktop -> Codex; 1: codex-desktop -> Codex; 2: codex-desktop -> Codex; 3: codex-desktop -> Codex; 4: codex-desktop -> Codex; 5: codex-desktop -> Codex; 6: codex-desktop -> Codex; 7: codex-desktop -> Codex; 8: codex-desktop -> Codex; 9: codex-desktop -> Codex; 10: codex-desktop -> Codex; 11: codex-desktop -> Codex; 12: codex-desktop -> Codex; 13: codex-desktop -> Codex; 14: codex-desktop -> Codex; 15: codex-desktop -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-workcase-signature-migration-20260810
+- at: '2026-08-10T09:24:41.708772Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5; 12: codex -> gpt-5; 13: codex -> gpt-5; 14: codex -> gpt-5; 15: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:19.572299Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+closure_outcome: completed
+disposition_summary: 完成本 WorkCase 的只读核验与决策责任：当前不实施 per-object manifest 或 changed_since。F1 已提供当前 cards 和集合级变化锚点，但缺少前后逐对象版本或受契约支持的身份级 delta；测试专用投影不能证明真实生产净收益。若未来出现可观察的真实跨会话消费需求，须以新的 WorkCase、新的 Human Gate 及收益/成本证据重新判断。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7f8e-b1d7-5da96f3f18a1
+object_id: workcase-01KZXN5TXNEWPT0ZC24TCY94VQ
+object_uid: 019ffb52-ebb5-772d-a07d-822699e49377
+fact_type_key: workcase
+created_at: '2026-08-08T21:32:28.117952+08:00'
+updated_at: '2026-08-13T15:03:57Z'

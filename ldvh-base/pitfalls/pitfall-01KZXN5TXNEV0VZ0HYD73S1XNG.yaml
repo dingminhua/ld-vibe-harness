@@ -1,0 +1,27 @@
+title: Trae CN 环境接入：通过 hooks.json 部署 LDVH 插件
+status: active
+applicability: 适用于在 Trae CN IDE 中通过本地 filesystem 插件方式接入 LDVH 的场景：LDVH 核心已安装在项目 .venv 中，需要通过 Trae CN 的 ~/.trae-cn/hooks.json 机制注册 SessionStart 和 SubagentStart 事件，使 AI 会话启动时自动注入 LDVH 规则引导。它不说明其他 AI 环境（如 Codex、Cursor、Windsurf 等）的接入方式，也不适用于通过 Trae CN 官方插件市场分发或远程安装的场景。
+validation_summary: "2026-07-26 在 Trae CN 环境完成以下验证：\n\n1. 静态部署：插件 manifest、wrapper 脚本、配置数据已部署到 ~/.trae-cn/plugins/ldvh/1.0.0/\n2. hooks.json：SessionStart 和 SubagentStart 均已注册，指向持久化 wrapper 脚本\n3. 核心直调：通过 wrapper 脚本模拟 SessionStart 事件，成功调用 ldvh-work-context 核心，返回 8.系统级运行架构 + 8.1渐进式披露 + 8.2薄引用 规则引导\n4. 插件注册：已注册到 installed-plugins.json 和 plugin-config.json 并启用\n\n该分层验证分别覆盖了资产完整性、Hook 注册、手动可执行性和实时触发（直调）。真实 Trae 会话启动时的自动触发尚未经新窗口验证，保持 unverified。"
+symptoms: "1. LDVH 核心已通过 pip install -e 安装，但 AI 会话启动时未自动收到 LDVH 规则引导\n2. 手动调用 ldvh-work-context 可以返回规则内容，但新开会话后 AI 仍然不知道 LDVH 的存在\n3. 项目中有完整的 specs/ 规范目录，但 AI 每次都需要 Human 提示才去读取\n4. 已安装 LDVH 但子代理（subagent）启动时没有上下文恢复\n5. 尝试参考 code/plugins/ldvh/ 的 Codex hooks.json 格式配置，发现 Trae CN 不兼容"
+trigger_conditions: "1. 目标环境是 Trae CN（非 Trae Solo），通过本地 filesystem 部署插件\n2. LDVH 核心已通过 .venv/bin/pip install -e 安装\n3. 尝试复用 code/plugins/ldvh/hooks/hooks.json（Codex 格式）失败\n4. 目标环境存在 ~/.trae-cn/hooks.json 机制，但需要正确的 wrapper 脚本路径和 JSON 格式\n5. 插件数据目录和 wrapper 脚本默认放在 /tmp/ 下，重启后丢失"
+root_cause: "失败机制是把不同环境的接入方式混为一谈：\n\n1. Codex 使用 hooks.json 格式为 {events:{...}}，而 Trae CN 的 hooks.json 格式为 {hooks:{SessionStart:[{...}]}}\n2. Codex adapter 脚本 (codex_context.py) 需要适配器接收 stdin JSON，但 wrapper 脚本的 PATH 和环境变量需要正确设置\n3. 插件数据（ldvh.json 配置）放在 /tmp/ 下会在系统重启后丢失，导致 wrapper 无法找到核心入口路径\n4. hooks.json 引用 /tmp/ldvh_hook_wrapper.sh 不是持久化路径\n5. 只配置 SessionStart 而忽略 SubagentStart，子代理启动时不会收到规则引导\n\n根本原因是在设计接入方案时没有区分：静态文件存在、Hook 注册、手动可执行性和真实事件触发四个层级。"
+resolution: "1. 创建持久化插件部署目录：~/.trae-cn/plugins/ldvh/1.0.0/\n2. 包含完整结构：.trae-plugin/plugin.json（manifest）、bin/ldvh_hook.sh（wrapper 脚本）、data/ldvh.json（配置）、.success（安装标记）\n3. wrapper 脚本使用绝对路径引用 adapter（codex_context.py）和配置数据，不依赖临时目录\n4. hooks.json 同时配置 SessionStart 和 SubagentStart 两个事件\n5. 注册插件到 installed-plugins.json 和 plugin-config.json，确保 UI 可见\n6. 验证方法：模拟 Hook 事件 -> 检查核心是否返回规则引导 -> 检查 JSON 响应格式\n\n该方案已在 2026-07-26 实施并验证通过。"
+avoidance: "后续在 Trae CN 或其他 AI 环境中接入 LDVH 时：\n\n1. 先确认目标环境的插件机制（Trae CN = hooks.json，Codex = hooks.json 不同格式，其他环境各有差异）\n2. 不要复用其他环境的插件配置格式，必须查阅目标环境的实际 hooks/plugins 文档\n3. 插件数据必须放在持久化路径（不要用 /tmp/）\n4. 必须同时考虑 SessionStart 和 SubagentStart 两个生命周期事件\n5. 验证时区分四个层级：静态文件存在 -> Hook 注册 -> 手动可执行 -> 真实事件触发\n6. 首次接入时按 33 行动模板完成逐事件验证矩阵"
+object_id: pitfall-01KZXN5TXNEV0VZ0HYD73S1XNG
+object_uid: 019ffb52-ebb5-76c1-bf82-3e69c790f6b0
+fact_type_key: pitfall
+created_at: '2026-07-26T08:49:58.522575+08:00'
+updated_at: '2026-08-13T15:03:57Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:59:07.845550Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。

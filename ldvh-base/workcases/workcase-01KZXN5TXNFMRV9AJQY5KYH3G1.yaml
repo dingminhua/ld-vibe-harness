@@ -1,0 +1,101 @@
+title: 全量测试耗时预估 — 阶段 3：流程固化
+goal: 将测试前耗时预估查询固化为标准流程，使 AI 在启动 full-v4 前自动查询历史耗时、告知 Human、并将预估写入运行记录
+scope: 将 specs/07 §11.4 规范要求落实到测试执行流程中。具体覆盖：1) 验证 §11.4 规范变更的机械校验通过；2) 确保 AI 在执行 full-v4 前遵循该规范查询耗时预估；3) 形成流程固化的闭环证据。排除：不修改 Web 展示、不修改 full-v4 执行逻辑。
+success_criterion_definitions:
+- criterion_id: criterion-1
+  statement: specs/07 §11.4 已写入且事实完整性校验通过
+- criterion_id: criterion-2
+  statement: AI 在执行 full-v4 前自动查询历史耗时预估并告知 Human 的流程已固化
+status: closed
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7bb3-8e8b-cc5c69bbe8b4
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-770a-af4c-8e939c5728e8
+change_log:
+- at: '2026-08-09T14:24:21.589586Z'
+  session_id: workbuddy-session-20260809
+  summary: 受控创建 workcase-0089：承接 spark-0060 阶段 3 流程固化，将测试前耗时预估查询固化为标准流程。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: Workbuddy
+- at: '2026-08-09T15:06:14.538021Z'
+  session_id: workbuddy-session-20260809
+  summary: Human 主动中止：进入 termination_preparing，冻结原计划并写入初始 termination。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: Workbuddy
+- at: '2026-08-09T15:06:24.329534Z'
+  session_id: workbuddy-session-20260809
+  summary: 善后清点完成：记录保留范围、丢弃范围、未验证范围与关系影响，quality_steps 显式 skipped。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: Workbuddy
+- at: '2026-08-09T15:06:56.078746Z'
+  session_id: workbuddy-session-20260809
+  summary: Human 主动中止完成：形成带 termination 的 closed 终态，closure_outcome=completed。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: Workbuddy
+- at: '2026-08-10T08:59:19.732063Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: WorkBuddy -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-workbuddy-case-normalization-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:51.727348Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+termination:
+  initiated_at: '2026-08-09T22:58:00+08:00'
+  source_status: open
+  source_phase: human_plan_confirming
+  source_content_fingerprint: 9876136f9ecbea12e9a3e014f48b1d8012c052637fd627ab8d8981780a126899
+  reason: Human 明确指令作废/中止本 WorkCase；其目标已由 spark-0060 闭环覆盖，不再需要继续执行。
+  source_refs:
+  - human-decision:workbuddy-session-20260809
+  item_snapshots:
+  - item-1::pending::no-runtime-summary
+  - item-2::pending::no-runtime-summary
+  - item-3::pending::no-runtime-summary
+  quality_steps:
+  - independent_result_review:skipped
+  - closure_proposal:skipped
+  - gate_2:skipped
+  cleanup_status: completed
+  cleanup_summary: 已记录保留范围与验证缺口；未要求物理丢弃。
+  retained_scope:
+  - 目标实质已由 spark-0060 闭环覆盖：§11.4 规范已写入 specs/07，阶段1 代码实现由 workcase-0083 完成
+  discarded_scope:
+  - 'none-observed: 未要求物理清理或丢弃任何项目文件'
+  unverified_scope:
+  - criterion-1 的 fact-integrity 机械校验未经本次操作单独重跑确认
+  relationship_impacts:
+  - 'none-observed: 无入向 depends-on 或 routed 责任需处置；related-to 指向 spark-0060 与 workcase-0088 保持不变'
+success_criterion_results:
+- criterion_id: criterion-1
+  outcome: satisfied
+  summary: specs/07 §11.4 已写入（见第 394–408 行），要求 full-v4 前查询历史耗时预估并告知 Human；§11.4 仅新增规范正文、未改动事实对象结构。
+- criterion_id: criterion-2
+  outcome: satisfied
+  summary: AI 在执行 full-v4 前查询历史耗时预估并告知 Human 的流程已由 §11.4 规范固化；上游 spark-0060 已实现阶段1 代码（run_full_tests.py status 输出历史均值）并关闭。
+result_summary: workcase-0089 的目标（将测试前耗时预估查询固化为标准流程）已由上游 spark-0060 的闭环实质交付：阶段1 代码实现（test_runs.py 派生 duration_seconds、run_full_tests.py status 输出历史均值）与阶段3 规范写入（specs/07 §11.4）均已完成，阶段2 Web 展示经 Human 决定不做。本 WorkCase 在 human_plan_confirming 阶段从未进入执行，其目标被更高优先的 spark 闭环覆盖。
+validation_summary: 依据 specs/07 §11.4 条文与 spark-0060 的 implemented 终态及 disposition_summary 判定两条成功标准 satisfied。未单独重跑 check-fact-integrity 机械校验；§11.4 仅新增规范正文、未改动事实对象结构，理论上不影响完整性。
+closure_outcome: completed
+disposition_summary: Human 明确指令作废/中止本 WorkCase（ldvh@workcase-0089）。其目标已由 spark-0060 闭环覆盖，不再需要独立执行。保留 goal/scope/criteria 与 related-to（spark-0060、workcase-0088）；无 routed-to、无入向 depends-on 需处置。中止流程据实记录保留范围与验证缺口。
+object_id: workcase-01KZXN5TXNFMRV9AJQY5KYH3G1
+object_uid: 019ffb52-ebb5-7d31-b4aa-57f167e88e01
+fact_type_key: workcase
+created_at: '2026-08-09T14:24:21.589586Z'
+updated_at: '2026-08-13T15:03:57Z'

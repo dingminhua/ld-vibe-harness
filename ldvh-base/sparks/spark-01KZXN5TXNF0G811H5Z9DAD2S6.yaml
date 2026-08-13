@@ -1,0 +1,55 @@
+title: 薄引用 Skill 默认接入的闭环工作
+intent: 在 LDVH 环境接入形态收敛为单一薄引用 Skill、过程机械检查和 worktree 级 Git Gate 分层配合后，支撑该形态的规范、验证、分发和能力边界工作当时仍分散在多个层面，没有稳定入口统一跟踪。创建并保留本 Spark，是为了跨行动协调这些收口责任，判断各项工作的范围、顺序、验收与事实处置，并在机械终闸和环境行为证据尚不充分时保持对外表述诚实。若不跨行动保留，每次接入或交付讨论都要重新核对形态决定、前置缺口，以及 Skill、插件、MCP 与 Hook 的边界，增加定位、重新分析、分流、复核与上下文恢复负担。
+status: implemented
+summary: "**现行形态与职责边界**\n\n- 现行决定排他地确定单一薄 Skill 为唯一环境接入形态，只承担身份告知、规则引导取得和行动模板路由；插件、环境 Hook 与 adapter 均不作为接入形态或可选 guardrail，MCP 当前不做。重估只在决定列明的触发条件出现时另行进行，既有决定无需重复或改写。\n- 事实写入后的精确回读与完整性审计、提交前机械预检和 Helper-only 写入纪律是必须的过程检查；Git Gate 只是在实际触发它的一个 worktree Git 事件中提供最后把关，不替代过程检查，也不覆盖其它 worktree、clone 或绕过事件。机械检查不能判定 Schema 合法内容的语义真实性。\n\n**六项工作的据实收口**\n\n- 第 1、2 项此前已落实候选级事实机械校验和公开的事实完整性检查能力，并保持候选范围而非全库测试的分寸。\n- 第 3 项已使提交、事实创建和事实生命周期行动的措辞一致：事实写入只经 Helper，逐写精确回读并审计；预检必须同时满足共同响应成功和机械结果通过；任何残留或不可排除写入都停止后续写入、提交与成功声明。规则引导入口也已交付直写禁令与审计继续入口。\n- 第 4 项已按环境接入规范确定为静态、逐字节一致的 Skill 分发；Skill 的 work-context 首步定位和 README 的第二路由信号均已覆盖，并由回归验证固定，不再保留生成式分发未决项。\n- 第 5 项已把劝告级写入保护、worktree 级 Gate 覆盖边界和语义污染残留风险三条能力声明固定到根规范、环境规范与薄 Skill，且用户级部署件与 canonical 资产逐字节一致。\n- 第 6 项确认既有形态决定已经完整承载唯一薄 Skill、插件与 Hook 退出接入面、MCP 不做和重估边界，因此没有另建决定；直接写入 guardrail 方向已处置为 discarded。无 Hook 自约束议题已更新有限证据与归因混淆，仍保持 open、P2，继续承载冷启动、隐式选中、委派与 worktree 切换、真实 Gate、负面写入矩阵和语义真实性证据缺口。\n\n**验证范围与未验证边界**\n\n- 各项受影响选择集已在干净隔离工作树通过定向测试；规范、Helper、work-context、静态分发和用户部署字节均按其声明范围实际核对。事实写入均经受控入口精确回读，项目完整性审计完成且未发现机械问题。独立规范与事实处置复核均通过。\n- 未运行全量测试。当前规则源仍有七项资格条件未由 Code 机械证明；新部署 Skill 的独立冷启动加载与大白话隐式选中、无显式 LDVH 指令的委派与恢复、自动 worktree 或 clone 切换、真实原生 Git Gate 的 allow、block 与绕过矩阵，以及 Schema 合法内容的语义真实性均未验证。\n- 这些未验证项没有被写成接入成功或保障成立；其中环境行为证据继续由 open 的无 Hook 自约束议题独立跟踪。本 Spark 的限定责任是把形态、交付、处置和诚实边界收口，而不是提前完成该独立证据矩阵。"
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-78b1-b9fe-b03917f96024
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7d9e-b5cc-17beecdc5303
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-73ff-a52e-432df71a367f
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7afc-8623-c117575e3111
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7cf6-be06-10ffe049c192
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-77c5-81a7-6bdbcda15670
+evolution:
+- at: '2026-07-29T23:07:46.892811+08:00'
+  summary: 本议题源于一场关于 LDVH 交付形态的连续讨论：先在插件、Skill、MCP 三选一中否定单一载体，确立 pip 包加单 Skill 默认接入加 git Gate 防线的分工；同一讨论发现 commit-msg Gate 当前不校验事实对象内容，使'提交终闸'预期落空，该发现直接塑造了本 Spark 的工作清单、P1 优先级与'终闸落地前如实表述'的未决事项。
+- at: '2026-07-30T18:45:00+08:00'
+  summary: 首轮 Skill 递达实证（Kimi Work 三个真实新对话、wire 级行为回查）完成：显式提及下薄路由全链路走通并给出正确答案，大白话自动选中 0/2 但仓库信号兜底全部救场。验证方法、首轮判定与复测验收标准进入摘要，待做工作第 5 项的验证方法部分闭环；断点修复方向（中文别名、管辖 ID 发现指引、work-context 首步定位）明确并入 SKILL.md 与 00 修订批次。
+- at: '2026-07-30T19:00:00+08:00'
+  summary: 断点修复落地并经同法复测：description 增补中文大白话别名后，大白话自动选中由 0/2 升至 2/2；管辖项目 ID 发现指引生效（对照组经 resolve-governance-scope 一次取得，无试错），复测验收标准达成。残留观察（向上查找措辞执行偏差、信封形状误用、查询组直读兜底）进入摘要；断点中的自动选中与 ID 试错闭环，README 第二路由信号与 work-context 首步重估仍随 00 修订批次。
+- at: '2026-07-31T20:18:52+08:00'
+  summary: Human 复核「skill 路线下 git Hook 是否已被加强」问题时确认加强方向（与 adr-0006 第三条既定方向一致，不新建 ADR），并下达分寸约束：Gate 事实校验严格限于当次 Index 候选中的事实文件，不做全局验证；即使 AI 执行也不得把全量测试作为默认前置。约束已写入待做工作第 1 项。
+- at: '2026-08-01T00:22:54.288317+08:00'
+  summary: workcase-0022 交付收尾写回：待办第 1 项（git commit-msg Gate 事实机械校验，03 §9.9 契约 + 提交链路双入口同核消费，提交 4ccad7397/8160630fc/e2898304d）与第 2 项（事实完整性校验一等化为 Helper 公开操作 check-fact-integrity，提交 57a7bf897）已完成并在正文按划线体例标记；未决事项中两项合并与 spark-0022 边界子项同步标记已决。本条写回补记 related-to → workcase-0022 关系（按 20 §关系契约，routed-to 仅 routed 终态可声明，本 Spark 第 3~6 项待办存续、保持 open，只宜声明主题相关）。
+- at: '2026-08-01T03:21:59+08:00'
+  summary: 余下第 3–6 项完成后，原先的生成式分发未决和插件可选加固方向分别收敛为静态逐字节分发与无插件、无 Hook、无 adapter 的唯一薄 Skill 形态；三条能力边界及过程审计入口已固定，无 Hook 自约束的独立证据缺口则保留在 open 议题中。本 Spark 因六项限定责任已全部落实或据实处置且无自身残余，从 open 进入 implemented。
+disposition_summary: 本 Spark 限定的六项责任均已由直接工作落实或据实处置：候选级终闸与完整性能力已经形成，过程检查与 Helper-only 边界已经对齐，Skill 静态逐字节分发和双路由已决，三条能力声明及用户部署已经核对，现行形态决定无需重复，相关 guardrail 方向已废弃且无 Hook 自约束议题保持 open、P2。当前 Spark 内没有剩余待处置内容，也没有需要 routed-to 的事实承接目标，因此以 implemented 结束本入口。这不表示项目、规则、实现、Git 或下游议题整体完成；全部 related-to 只表达主题或历史关联，无 Hook 自约束议题的独立证据矩阵和列明未验证边界均未被冒充完成。
+object_id: spark-01KZXN5TXNF0G811H5Z9DAD2S6
+object_uid: 019ffb52-ebb5-7820-8086-25fa5aa68b26
+fact_type_key: spark
+created_at: '2026-07-29T23:07:46.892811+08:00'
+updated_at: '2026-08-13T15:03:57Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:12.506255Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。

@@ -1,0 +1,79 @@
+title: LDVH 面向 AI 的服务质量评估与持续改进
+intent: 建立一套能够持续评估和改进 LDVH 面向 AI 的服务能力与服务水平的机制，判断 LDVH 是否在正确时机向 AI 提供了正确、充分、最新、不过量且可直接行动的规则、事实、模板、能力与状态，并区分准备、可证明交付、宿主递达、行为一致性和因果效益等不同证据层级。若不跨行动保留这一目标，后续对规则读取、事实召回、渐进披露、Helper 能力与恢复机制的优化仍会主要依赖主观判断，难以定位服务缺口发生在哪一层，也难以确认调整是否真正改善 AI 的执行结果。
+status: open
+priority: P1
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-70f7-ba7a-52c4319cacb3
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7283-b7d0-b234844017cb
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7aaf-8091-950ed178c6f1
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7376-ad8a-3c4f8c01d342
+summary: "**上位目标**\n\n- 建立“服务标准 → 实际交付 → 独立评估 → 问题定位 → 优化 → 复验”的持续闭环，判断 LDVH 是否真正服务好 AI。\n- 行为事件、运行证据、上下文回执和健康投影只是评估基础，不是最终目标；不因事件存在、Helper 返回、测试通过或记录落盘就声称 AI 获得了正确服务。\n\n**需要评估的服务对象**\n\n- 规则、行动模板、事实、状态、依赖和能力是否在正确时机交付，必要内容是否遗漏。\n- 条件性内容是否只在适用分支出现，是否存在重复、无关或过量交付。\n- 版本与实际 worktree 是否匹配，stale 是否被准确发现并读取到正确的新基线。\n- Helper 调用、响应体积、交付体积、延迟、重读、修复和回退成本是否合理。\n- AI 是否能够首次采取合法且有效的行动，失败后能否定位到准备、交付、宿主、模型行为或能力层。\n- 调整服务策略后，AI 的安全性、正确性和执行结果是否出现可重复且具有实际幅度的改善。\n\n**证据层级与声明边界**\n\n1. `LDVH prepared`：LDVH 准备了哪些规则、事实、模板或能力输入。\n2. `harness-delivered`：LDVH/runner 能以 locator、版本、指纹、范围和长度证明交付了什么。\n3. `host-received`：宿主能够证明实际送入模型的内容；宿主不提供回执时必须标为 `unavailable`，不得由 LDVH 交付回执代替。\n4. `behavior-consistent`：AI 的行动与某项输入一致，只能作为机制线索，不能证明模型理解或实际使用了该输入。\n5. `causal-effect`：通过预注册、配对消融或替换及独立评分，判断某项输入或服务策略是否产生实际帮助。\n\n**评价维度**\n\n- 完整性：运行前冻结的 required 输入是否全部交付且版本匹配。\n- 精确性：excluded 输入是否被交付，conditional 输入是否在条件未触发时过量出现；不使用主观“相关比例”冒充判断。\n- 新鲜度：真实 stale 的检测准确率、召回率、正确重读率和修复成本。\n- 效率：分别统计 LDVH 交付 bytes、Helper response bytes、宿主可观测 Prompt tokens、调用数、queue/wall latency 和修复开销；不可观察项不估算成实测值。\n- 可行动性：首次合法行动率、外部验证成功率、重读/修复/回退次数和安全违规。\n- 诊断性：失败后能否区分准备缺口、漏交、宿主不可观察、stale、Helper 拒绝/超时、模型行为不一致和证据不足。\n- 实际效益：由独立盲评和受控对照判断改善是否可重复，不合并为掩盖差异的单一健康分。\n\n**已有基础**\n\n- workcase-0103/0104 已形成并试跑隐私受限的 v2 运行证据：能够区分 observed、failed、timeout 和 inconclusive，记录调用、repair、响应体积、延迟、stale、外部状态和验证边界。\n- study-0031 已确认这套 record layer 可作为协议复读和诊断基础，但不能证明 Helper 正确、事实写入、模型实际收到/理解输入、真实跨进程恢复、执行健康或产品效益。\n- 当前 v2 输入回执只覆盖少量 locator/指纹/长度，尚未覆盖任务所需的完整规则、行动模板、WorkCase/事实对象和宿主最终 Prompt，因此不能据此判断 LDVH 总体服务水平。\n\n**下一验证方向**\n\n- 为代表性任务族预先冻结并版本化“最小必要上下文合同”，把输入标为 required、conditional、excluded，并记录适用条件、来源、版本和允许替代项；合同与评分标准不能由同一执行模型在运行后自行定义。\n- 建立规则精确读取、WorkCase 行动前准备、局部编辑 stale 修复等冻结任务族，比较完整合同、移除必要输入和增加无关输入等独立条件。\n- 使用配对运行、隐藏保留集和不知道实验条件的独立评分者，按模型、宿主、会话与任务分层报告结果及不确定性；输入引用率只作机制线索，不作为输入有帮助的核心指标。\n- 原始交互如确有必要，只能进入受限临时根并按期删除；长期事实只保存方法、聚合数据、限制和结论，评估记录不得成为第二事实源。\n\n**停止与扩大边界**\n\n- 宿主无法证明最终 Prompt 时，不得声称完整模型输入已观察。\n- 合同或 rubric 无法事前冻结、独立评分一致性不足、任务条件不等价、指纹漂移、隐私/留存边界不成立或样本方差过大时，只报告不确定，不形成“有帮助”“过量”或服务水平改善结论。\n- 只有出现可重复、具有实际幅度且不降低安全性/正确性的改善，才考虑把合同检查接入日常 LDVH；在此之前不建设统一健康分、长期遥测、健康面板或告警系统。\n\n**尚待判断**\n\n- 最小必要上下文合同由哪些来源和角色定义、审核、版本化与失效。\n- 宿主能提供到哪一层的实际递达证据，以及跨宿主如何保持可比性。\n- 冻结任务、独立 rubric、样本量、模型/会话方差和实用改善阈值如何确定。\n- 哪些评估结果只保留为 Study，哪些稳定机制值得进入 Helper、行动模板、ADR 或新的 WorkCase。\n\n**已知诊断改进议题**\n\n- 机械诊断能否让 AI 直接修正，是可行动性与诊断性评价中的具体分支：提交预检、Helper 请求校验、事实校验和完整性检查不应只报告错误值；应评估当前允许值、最小合法示例或精确继续读取入口能否减少额外查规则、试调和修复成本。\n- adr-0008 已对提交预检形成分层策略：确定性约束可直接给出闭集，规则驱动值从当前契约投影注入，列表过长或需完整上下文时提供精确读取入口。该决定不表示相关实现已经完成，也不自动扩展到其它 Helper 操作。\n- 后续不再以独立 Spark 跟踪这一分支；是否形成具体 WorkCase、扩展到哪些操作以及改善是否成立，统一由本 Spark 的冻结任务、独立评估和停止边界判断。"
+evolution:
+- at: '2026-08-02T09:20:55.139466Z'
+  summary: 议题起点是用行为事件、外部状态和执行上下文形成可回放判断，以减少失败定位、复核与恢复对聊天回放和手工推断的依赖。
+- at: '2026-08-13T08:55:02Z'
+  summary: v2 运行证据试跑与独立评估表明可观测性只能作为底层诊断设施，问题焦点因此上移为评估并持续改进 LDVH 对 AI 的服务质量，健康投影不再作为上位目标。
+- at: '2026-08-13T09:20:23Z'
+  summary: 诊断修正信息议题不再单独跟踪；其当前有效缺口、adr-0008 已有决策和未实现边界纳入本 Spark 的可行动性与诊断性评价分支。
+change_log:
+- signature:
+    model_id: glm-5.2
+    agent_workbench: Claude
+  session_id: session-merge-b-20260810
+  at: '2026-08-10T07:05:46.923852Z'
+  summary: 受控引导 change_log 起点：spark-0045 为缺失 change_log 的 legacy 对象，作为 B 组合并的吸收者需要先建立可信迁移起点，再通过普通更新吸收 spark-0070 的输入侧上下文透明性内容
+- signature:
+    model_id: glm-5.2
+    agent_workbench: Claude
+  session_id: session-merge-b-20260810
+  at: '2026-08-10T07:11:31.622127Z'
+  summary: 吸收 spark-0070（WC 执行上下文透明性）的输入侧议题：将 AI 启动执行时收到的完整提示链纳入行为可观测性闭环，与输出侧事件/健康投影共同形成完整的执行健康度判断。
+- at: '2026-08-10T08:27:44.771777Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: claude-code-mcp -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-historical-signature-repair-20260810
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-terra
+    agent_runtime_name: claude-code
+  at: '2026-08-12T16:51:07.269818Z'
+  summary: 补充局部编辑候选的评估设施缺口：将真实任务中的定位、stale、范围回退、延迟与人工反馈作为待承接的可观测性问题；不在 Spark 中加入计划、原始遥测或结论。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T08:56:14.322559Z'
+  summary: 将议题焦点从行为可观测性与健康投影上移为 LDVH 面向 AI 的服务质量评估与持续改进，并纳入上下文合同、分层证据、独立对照评估及停止边界。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T09:20:25.309105Z'
+  summary: 吸收 spark-0076 的机械诊断修正信息议题，并关联 adr-0008；保留未实现与扩展范围仍待评估的边界。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:29.968572Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+object_id: spark-01KZXN5TXNEKNA5YCZ62F8BM0K
+object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
+fact_type_key: spark
+created_at: '2026-08-02T17:20:55.139466+08:00'
+updated_at: '2026-08-13T15:03:57Z'

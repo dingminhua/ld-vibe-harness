@@ -1,0 +1,187 @@
+title: 验证 spark-0067 的 Helper 请求契约首次可用性
+status: closed
+goal: 以固定小样本对照 pilot，判断当前 Helper 公开契约在四类典型任务中的首次可用性，以及一个固定、临时、非生产的最小契约提示卡能否形成值得继续评估的收益信号；不据此选择生产实现、改变 spark-0067 或 spark-0068，或提升问题优先级。
+scope: 仅覆盖 spark-0067 与 spark-0068 的 A 问题簇（#1、#5、#8、#13）：F2 text_match、反向关系查询、read-specification-content 精确请求、prepare-fact-object-draft 后确定 Spark priority 合法值四类任务。每类最多执行 3 个 baseline 与 3 个 candidate trial；每个 trial 使用零历史继承的全新 subagent 上下文，只接收一个冻结任务包并只执行一个任务。baseline 与 candidate 的模型、reasoning、工具权限、环境、起始事实快照、任务通道/位置/布局和正文相同，唯一差异是固定 <contract_hint> 区块中的冻结空标记或冻结提示卡。提示卡只作为临时实验变量，结论限于本 pilot 的收益上界。排除 D 增量变化定位、关系覆盖解释、响应膨胀、完整 after、规范消费等其它问题簇；排除生产 code、specs、docs、其它事实对象、spark-0067、spark-0068、Git、安装、配置、Hook、网络与外部系统变更；除本 WorkCase 受控生命周期 CAS 外，生产载体全部只读。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 执行前已冻结四类任务、gold set、任务包、baseline 空标记、candidate 提示卡、配对方式、各任务必要成功调用数、指标口径、逐任务与总体聚合算法、提前停止算法、超时与失败分类，并记录任务包/提示卡 SHA-256 及当前规则、Schema、对象集、模型与环境绑定；gold set 不进入 trial 上下文。
+- criterion_id: criterion-02
+  statement: 按冻结协议完成 12 个 baseline trial；若 baseline 未触发提前停止，再完成 12 个 candidate trial，否则将全部 candidate 明确记录为 not-run-by-protocol。每个已运行 trial 均保留正确结果、首次合法、前置发现调用、目标调用、修复调用、总调用、extra_calls、invalid_request、响应 bytes/估算 tokens、耗时、超时与非契约失败分类，且不剔除表现不佳的 trial。
+- criterion_id: criterion-03
+  statement: 逐任务与总体结果均按预设算法机械形成：baseline 只有在总体首次合法至少 11/12、总体中位 extra_calls 不超过 1，且四任务分别首次合法至少 2/3、各任务中位 extra_calls 不超过 1 时才提前停止；否则 candidate 只有在总体与每任务正确率均不下降、总体首次合法至少提升 3/12、总体中位响应 bytes 增幅不超过 20% 时，才形成值得后续生产方案评估的信号。
+- criterion_id: criterion-04
+  statement: '实验分析逐项回指 spark-0067 与 spark-0068 的 #1、#5、#8、#13，明确区分能力机械存在、首次低摩擦可用、提示收益上界和生产净收益；n=3/任务不外推稳定发生率、P0/P1 或具体生产方案。'
+- criterion_id: criterion-05
+  statement: 除本 WorkCase 经 Helper CAS 形成的合法生命周期检查点外，生产 code、specs、docs、其它事实对象、spark-0067、spark-0068、Git、安装、配置、Hook、网络和外部系统保持不变；临时实验数据仅位于身份精确验证的本次 mktemp 目录，不成为第二事实源。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7f8e-b1d7-5da96f3f18a1
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-715d-bbad-25e9382c3936
+change_log:
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark-0067-a-validation-plan
+  at: '2026-08-07T19:31:25.415722+08:00'
+  summary: Human 授权按计划推进；在三路 0067/0068 对照和三轮创建前只读复核后，将验证范围收敛为单一 A-only 小样本 pilot，并停在 Human Gate 1。
+- signature:
+    agent_id: hy3
+    host_environment: Workbuddy
+  session_id: workcase-0068-execution
+  at: '2026-08-07T19:49:54.279031+08:00'
+  summary: Human Gate 1 批准，phase 推进至 executing。
+- signature:
+    agent_id: hy3
+    host_environment: Workbuddy
+  session_id: workcase-0068-execution
+  at: '2026-08-07T19:50:52.088112+08:00'
+  summary: item-01 开始：冻结 A-only pilot 协议。
+- signature:
+    agent_id: hy3
+    host_environment: Workbuddy
+  session_id: workcase-0068-execution
+  at: '2026-08-07T19:52:17.799351+08:00'
+  summary: item-01 完成：冻结试点协议已形成。item-02 开始：执行 baseline trial。
+- signature:
+    agent_id: hy3
+    host_environment: Workbuddy
+  session_id: workcase-0068-execution
+  at: '2026-08-07T20:10:07.417406+08:00'
+  summary: 'Baseline 聚合完成: fl=2/12, correct=12/12, extra_median=0.5。Candidate 12 trial 已启动。'
+- signature:
+    agent_id: hy3
+    host_environment: Workbuddy
+  session_id: workcase-0068-execution
+  at: '2026-08-07T20:15:26.649807+08:00'
+  summary: item-02 完成：24 trial (12B+12C) 全部执行。Signal=POSITIVE。item-03 开始：证据矩阵。
+- signature:
+    agent_id: hy3
+    host_environment: Workbuddy
+  session_id: workcase-0068-execution
+  at: '2026-08-07T20:20:08.070761+08:00'
+  summary: 独立复核完成（CONDITIONAL）。item-03 完成，phase→controller_checking。
+- signature:
+    agent_id: glm-5.2
+    host_environment: Codex
+  session_id: wc0068
+  at: '2026-08-07T20:26:34.178453+08:00'
+  summary: 'controller_checking: freeze result'
+- signature:
+    agent_id: glm-5.2
+    host_environment: Codex
+  session_id: wc0068
+  at: '2026-08-07T20:29:40.498427+08:00'
+  summary: controller→review (no reviews yet)
+- signature:
+    agent_id: glm-5.2
+    host_environment: Codex
+  session_id: wc0068
+  at: '2026-08-07T20:29:54.925681+08:00'
+  summary: add result_reviews in review phase
+- signature:
+    agent_id: glm-5.2
+    host_environment: Codex
+  session_id: wc0068
+  at: '2026-08-07T20:30:25.563135+08:00'
+  summary: review→prepare
+- signature:
+    agent_id: glm-5.2
+    host_environment: Codex
+  session_id: wc0068
+  at: '2026-08-07T20:30:28.698034+08:00'
+  summary: prepare→confirm
+- signature:
+    agent_id: glm-5.2
+    host_environment: Codex
+  session_id: wc0068
+  at: '2026-08-07T20:31:30.484016+08:00'
+  summary: Human Gate 2 批准。已关闭。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark-0067-wc0068-closure-correction
+  at: '2026-08-07T22:02:27.389927+08:00'
+  summary: 依 Human 当前指令与独立复核，更正关闭时已存在的 trial 结果与验证边界；保持 closed / partial，不重开。当前 Helper 拒绝 Spark route target，故保留既有残余责任而不伪造 routed-to。
+- at: '2026-08-10T08:48:06.511716Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 1: workbuddy-desktop -> Workbuddy; 2: workbuddy-desktop -> Workbuddy; 3: workbuddy-desktop -> Workbuddy; 4: workbuddy-desktop -> Workbuddy; 5: workbuddy-desktop -> Workbuddy; 6: workbuddy-desktop -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T08:52:52.986544Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex-desktop -> Codex; 13: codex-desktop -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-workcase-signature-migration-20260810
+- at: '2026-08-10T09:05:13.668551Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 7: wb -> Codex; 8: wb -> Codex; 9: wb -> Codex; 10: wb -> Codex; 11: wb -> Codex; 12: wb -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-codex-alias-migration-20260810
+- at: '2026-08-10T09:13:00.991969Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 1: workbuddy -> hy3; 2: workbuddy -> hy3; 3: workbuddy -> hy3; 4: workbuddy -> hy3; 5: workbuddy -> hy3; 6: workbuddy -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-model-id-migration-20260810
+- at: '2026-08-10T09:25:14.299105Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 13: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
+- at: '2026-08-10T09:30:24.206032Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 7: wb -> glm-5.2; 8: wb -> glm-5.2; 9: wb -> glm-5.2; 10: wb -> glm-5.2; 11: wb -> glm-5.2; 12: wb -> glm-5.2。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:50.266204Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 协议、任务包与 SHA-256 已在 mktemp 冻结；提示卡含三项错误契约描述，因此冻结不证明实验材料正确。
+- criterion_id: criterion-02
+  outcome: not_satisfied
+  summary: 24 个 trial 文件虽已保留，但多个 trial 缺少冻结要求的标准字段，一个 candidate 结果不是合法 JSON，response_bytes 全部缺失。
+- criterion_id: criterion-03
+  outcome: not_verified
+  summary: 冻结算法要求比较 response_bytes 增幅；该指标未采集，无法机械验证 POSITIVE signal。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: '证据矩阵回指 #1/#5/#8/#13，并区分能力存在、首次可用、提示上界和生产净收益；样本不外推。'
+- criterion_id: criterion-05
+  outcome: not_satisfied
+  summary: 实验执行中至少一次 candidate 临时文件曾写入项目根目录；移回 mktemp 只恢复当前状态，不能满足全程临时数据仅位于 mktemp 的标准。
+result_summary: 完成了 24 个 trial，并观察到提示卡可能降低首次调用摩擦的方向性迹象；由于输出 schema 不一致、关键 bytes 指标缺失、一个结果非法 JSON、提示卡含错误契约描述以及临时文件越界，本 pilot 不验证提示卡收益，也不支持生产方案选择。
+validation_summary: 独立复核识别 8 项问题：输出 schema 不一致、response_bytes 缺失、一个 candidate 结果非法 JSON、提示卡含三项错误契约描述，以及临时文件越界等。它们使预设收益算法不可机械复现；当前只保留能力与方法论学习。
+closure_outcome: partial
+disposition_summary: 本 WorkCase 停止于部分结论：保留能力发现与方向性迹象，但不将其视为提示卡收益或生产方案选择依据。三项残余责任保留为后续独立承接范围；当前 Helper 实现拒绝 Spark route target，未伪造 routed-to。
+residual_responsibilities:
+- residual_id: residual-01
+  summary: 标准化 trial 输出 schema
+- residual_id: residual-02
+  summary: 确保临时文件写入 mktemp
+- residual_id: residual-03
+  summary: 采集 response_bytes
+object_id: workcase-01KZXN5TXNE2HAZKF6H4B91SNB
+object_uid: 019ffb52-ebb5-70a2-afcd-e6891690e6ab
+fact_type_key: workcase
+created_at: '2026-08-07T19:31:25.415722+08:00'
+updated_at: '2026-08-13T15:03:57Z'

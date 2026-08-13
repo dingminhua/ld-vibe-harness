@@ -1,0 +1,53 @@
+object_id: workcase-01KZXN5TXNETD93YT7NKGVX05W
+object_uid: 019ffb52-ebb5-769a-91fb-47ace1be80bc
+fact_type_key: workcase
+title: 统一 Working Tree 当前规则与事实边界
+created_at: '2026-07-19T18:24:02.127750+08:00'
+updated_at: '2026-08-13T15:03:57Z'
+status: closed
+goal: 使 LDVH 下位规范、规则与事实读取实现、Helper/Web 行为和验证与 00 的当前 Working Tree 根原则一致，并完整实践一次 V4 WorkCase 生命周期、形成可复核的流程改进观察。
+scope: 覆盖全仓相关命中清单及 01、02、03、05、07、08、20–24、31、附件、README 等实际下位引用的修改、消歧与保留分类；覆盖规则 discovery、事实 repository/source validation 及其 Helper 读取、创建、更新，Web 读取和 direct capture，Working Tree 规则快照继承链及相关 Python、Web、packaging tests。明确保留并验证 09/30、commit 实现、显式 git-revision、ProjectFiles Git 观察视图、管辖 identity 和安装快照完整性。排除再次修改 00、自动 commit/push/PR、无关 Web 功能及在本案中顺手修改 WorkCase 流程。保留并区分 现有 candidate_discovery.py、relations.py、repository.py 用户修改。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 下位规范不再以单个文件的 Git 状态作为当前规则或事实资格门槛，且当前内容、 历史读取与提交动作的职责分层一致。
+- criterion_id: criterion-02
+  statement: canonical 且安全的当前规则、事实对象和项目内证据不因 tracked、untracked、 ignored、staged 或 committed 状态不同而改变资格，显式 git-revision 与 commit 专属校验仍然保留。
+- criterion_id: criterion-03
+  statement: Helper 读取、创建、更新与 Web 读取、direct capture 继承同一语义，规则快照、 管辖 identity 和 ProjectFiles Git 观察视图没有被误改。
+- criterion_id: criterion-04
+  statement: 规则、事实、证据、Web 和快照具有覆盖目标语义的正反测试，风险匹配的相关验证与 full-v4 验证形成可信结果，未验证范围被如实记录。
+- criterion_id: criterion-05
+  statement: 当前计划已具有独立创建审核和 Human 对同一 plan_version 的执行批准；全部工作项与 主控自检按 21 形成；WorkCase 流程观察已进入待审核结果包。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 下位规范已统一为实际 Git Working Tree 当前文件原则，单文件 Git 状态不再是 当前规则或事实的资格门槛，当前内容、显式历史与提交动作的职责分层清楚。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: canonical 且安全的规则、事实和项目内证据在 tracked、untracked、ignored、 staged、committed 状态间资格一致；git-revision 与 commit 专属历史校验保留。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: Helper 创建、读取、更新，Web 读取、direct capture 和规则快照继承同一语义； 管辖 identity、ProjectFiles Git 观察和安装快照完整性未被误改。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: 规则、事实、Study 证据、Helper、Web 和快照均有正反测试；最后一次 full-v4 的 lint、779 项 Python 测试、Web typecheck、26 项 Web 测试和 production build 全部通过，10 项原生 Windows 自动化按平台条件跳过。
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: 独立计划审核、Human 执行批准、四项工作项、Controller 自检、两轮结果审核反馈 处置、生命周期修复后的恢复及关闭准备均已实际完成。
+result_summary: 下位规范以及规则、事实、Study、Helper、Web 与快照消费链已统一采用实际 Git Working Tree 当前文件原则，并保留显式历史、提交、Git 观察、管辖身份、安全路径、 Schema、关系和安装快照的原有边界；相关实现、正反测试和 full-v4 验证均已完成。
+validation_summary: 五项成功标准逐项满足。最后一次 full-v4 的 lint、779 项 Python 测试、Web typecheck、26 项 Web 测试和 production build 全部通过，10 项原生 Windows 自动化按平台条件跳过。原生 Windows 专属自动化未在当前 macOS 环境运行；commit、 push、PR 和远端发布属于明确排除范围，未执行。
+closure_outcome: completed
+disposition_summary: workcase-0001 原目标范围内的规范、实现、测试与流程观察责任均已完成，没有需要转交的 剩余责任。spark-0008、spark-0014、spark-0019 仅作为控制面、过程输出契约和 Helper Agent 体验的后续研究建议继续存在，不因语义相关写 routed-to。本案全部修改 仍在实际 Working Tree，允许用户自行决定提交时机；未 commit、push 或创建 PR。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:04:38.667617Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。

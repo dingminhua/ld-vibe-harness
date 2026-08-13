@@ -1,0 +1,28 @@
+title: 人类可读与机器可读的过程输出契约
+intent: 保留计划、进度、工具运行、验证、风险与最终交还如何同时服务 Human 阅读和机器消费的问题，避免把界面呈现、过程事件、结构化输出或 AI 叙述误作正式事实、验证结论或 Human 决定。后续需判断稳定字段、投影关系和失败语义的职责归属。
+status: implemented
+summary: "**当前结论**\n\n- 机器可读与 Human 可读输出已经按同一实际结果分层：Helper 公共响应保留 operation、outcome、scope、result、sources、coverage、gaps、changes、verification、diagnostics 与 follow-up 等确定性边界；Web 和 AI 叙述只对这些结果及事实对象形成 Human 投影，不替代原始载体、证据或 Human 决定。\n- 成功、无变化、拒绝、无效、不可用、部分完成、回滚和未验证范围均有明确交付位置，紧凑与诊断投影保持同一语义；行动模板要求最终交还实际写入、验证覆盖、残留、副作用与未执行范围。\n- 现行契约已经覆盖原议题所需的计划、进度、工具结果、验证、风险和最终交还分工，不需要新增通用 trace Schema、事实类型或模型内部推理暴露。\n\n**处置边界**\n\n本结论不把界面显示完整等同于事实真实、验证通过或工作完成；每个领域操作仍须按自身来源解释结果。"
+evolution:
+- at: '2026-07-22T13:57:05+08:00'
+  summary: 迁移复核保留 V3 的双层输出问题，但移除机械 Git 来源、旧 Envelope 与产品比较；当前改以可观察结果的投影、证据与失败语义为待决边界。
+- at: '2026-08-01T01:58:26+08:00'
+  summary: 机器可读共同响应与 Human 阅读投影已形成同源但不互相替代的正式契约，原先待决定的过程输出分工已收敛，不再需要独立跟踪。
+disposition_summary: Helper 公共机器契约、领域操作结果、行动模板交还要求以及 Web/Human 投影边界，已经直接落实原议题中的成功、失败、部分结果、验证、风险和最终交接表达。机器结果与 Human 叙述的职责已分开，原范围内没有事实承接目标或剩余责任。
+object_id: spark-01KZXN5TXNFRH9J0PSAECH6Z8B
+object_uid: 019ffb52-ebb5-7e22-9902-d95399137d0b
+fact_type_key: spark
+created_at: '2026-07-19T10:28:43.236462+08:00'
+updated_at: '2026-08-13T15:03:57Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:00.130976Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。

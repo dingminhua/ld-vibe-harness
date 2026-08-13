@@ -1,0 +1,203 @@
+title: 退役 Git prepare-commit-msg 署名自动注入
+status: closed
+goal: 从正式 Hook bundle 退役 prepare-commit-msg 的 LDVH_SIGNATURE 自动署名注入，保留显式 trailer 与 commit-msg Gate。
+scope: 覆盖提交署名规则、环境接入规范和附件、Hook bundle 版本/部署/升级/回滚、显式 trailer 校验、真实 Git 事件测试及本地提交。排除事实 change_log 署名、Web、push、PR、发布和任何产品自动注入适配器。
+success_criterion_definitions:
+- criterion_id: criterion-1
+  statement: 规则和 Skill 一致规定提交署名由执行会话显式提供，LDVH_SIGNATURE 不再是默认接入接口。
+- criterion_id: criterion-2
+  statement: Hook bundle 仅管理 commit-msg；升级只删除可识别的 LDVH prepare Hook，未知或自定义 Hook 停止并交由 Human 决定。
+- criterion_id: criterion-3
+  statement: 预检与 commit-msg Gate 共享三字段 trailer 的解析、归一和拒绝规则，缺署名、旧署名或三项全空不能通过。
+- criterion_id: criterion-4
+  statement: 显式完整提交允许；自动 Git merge message、无正文或无署名提交被拒绝；真实 Git 事件覆盖安装、升级、回滚和 linked worktree common-dir 边界。
+- criterion_id: criterion-5
+  statement: 目标与相关回归、事实完整性、diff 检查和受控本地提交通过；不执行 push。
+success_criterion_results:
+- criterion_id: criterion-1
+  outcome: satisfied
+  summary: 规则、接入附件、Skill 与模板已明确提交署名由执行会话显式提供，LDVH_SIGNATURE 不再是默认接口。
+- criterion_id: criterion-2
+  outcome: satisfied
+  summary: Hook bundle 仅部署 commit-msg；迁移仅删除精确识别的旧 LDVH prepare Hook，未知 Hook 保持停止边界。
+- criterion_id: criterion-3
+  outcome: satisfied
+  summary: 预检与 commit-msg Gate 共享三字段解析归一；正向夹具直接使用新字段，退休字段只在拒绝断言中出现。
+- criterion_id: criterion-4
+  outcome: satisfied
+  summary: 测试覆盖显式提交允许、自动 merge/无正文/无署名拒绝，以及安装、升级、回滚和 linked worktree common-dir 边界。
+- criterion_id: criterion-5
+  outcome: satisfied
+  summary: 相关回归、完整性和 diff 检查通过；本地提交 fb6af9f0、79f7a7d1 与 bd30b529 已创建，未执行 push。
+result_summary: 正式 bundle 仅保留 commit-msg Gate；提交署名使用显式 LDVH 三字段。两轮独立复核发现并消除了测试中旧 trailer 被视为合法、以及测试夹具静默转换旧 trailer 的残留。
+validation_summary: 提交契约、契约来源与 commit-msg Hook 相关回归 118 passed；git diff --check passed；bd30b529 预检和原生 commit-msg Gate passed。尚待 result_version=3 的独立只读复核。
+closure_outcome: completed
+disposition_summary: 全部 5 项成功标准均为 satisfied，原 scope 内没有未满足或未验证责任；无 route_existing、suggest_spark 或 accept_stop 需要。Hook bundle 已安全迁移为仅 commit-msg，旧 prepare-commit-msg 署名自动注入已退役，显式三字段 trailer 已落地。
+change_log:
+- summary: 受控创建 WorkCase：形成退役 prepare-commit-msg 自动署名注入的迁移计划，等待 Human Gate 1。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T17:44:27.462194Z'
+- summary: Human Gate 1 批准 workcase-0099 计划，进入 executing。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T17:49:39.334951Z'
+- summary: 开始 item-1：修订显式提交署名与 prepare Hook 退役规则。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T17:50:00.618620Z'
+- summary: 完成 item-1 并开始 item-2：规则改为显式署名，Gate 接入共享三字段归一化校验。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:15:28.716455Z'
+- summary: 完成 item-2 并开始 item-3：共享三字段归一校验已生效，进入单 Hook 安全迁移。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:15:46.242303Z'
+- summary: 完成 item-3 并开始 item-4：已部署单 commit-msg Hook，进入验证、复核与受控提交准备。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:18:05.657495Z'
+- summary: item-4 因真实 Index 含无关暂存 Web 变更而阻断；不 unstage、不清空、不使用临时 Index 绕过，等待 Human 处置或授权。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:20:10.818632Z'
+- summary: 真实 Index 已无无关暂存内容，解除 item-4 阻塞；开始逐文件建立受控提交候选。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:25:51.990978Z'
+- summary: item-4 再次阻断：Index 含 workcase-0097/0098 的无关已暂存收口；不 unstage、不清空、不使用临时 Index 绕过，等待 Human 处置或授权。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:26:36.123145Z'
+- summary: workcase-0097/0098 已由独立提交完成，Index 为空；解除 item-4 阻塞并开始建立 workcase-0099 提交候选。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:29:55.524266Z'
+- summary: 全部 item 已 terminal；形成 result_version=1 的完整结果投影，进入 controller_checking 等待独立结果复核。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:31:36.434866Z'
+- summary: 已委派独立只读 Reviewer 审查 result_version=1，进入 independent_reviewing 并等待其结论。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:31:53.528001Z'
+- summary: 独立结果复核结论为 changes_required：发现提交契约测试残留旧 trailer 合法断言；进入反馈修正与重新验证。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:34:18.978904Z'
+- summary: 已接受 result_version=1 的复核反馈并进入 controller_checking；将先保持被审结果冻结，再形成修正后的新版本。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:37:22.307048Z'
+- summary: 已形成 result_version=2：将当前合法提交样例收敛为 LDVH 三字段 trailer，退休字段仅保留拒绝断言；等待新的独立只读复核。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:37:41.914802Z'
+- summary: 已委派新的独立只读 Reviewer 审查 result_version=2，重点核验当前合法样例与退休 trailer 的边界；进入 independent_reviewing。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:38:03.009800Z'
+- summary: result_version=2 独立复核为 changes_required：正向夹具仍借助静默转换使用退休 trailer；将按既有范围收敛夹具、重跑并重新复核。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:39:52.504893Z'
+- summary: 已记录 result_version=2 的 changes_required 复核结论；进入 controller_checking，开始收敛正向测试夹具。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:40:00.687677Z'
+- summary: 已删除正向夹具的退休 trailer 静默转换，提交 bd30b529 通过预检与原生 Gate；形成 result_version=3，待新的独立只读复核。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:42:01.223060Z'
+- summary: 已委派独立 Reviewer 审查 result_version=3，进入 independent_reviewing。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:42:18.271111Z'
+- summary: result_version=3 独立复核通过：正向夹具已直接使用三字段，Reviewer 独立重跑相关范围 118 passed；开始形成关闭提案。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:44:30.049607Z'
+- summary: 独立复核通过且反馈已处置；进入 closure_preparing 形成 Gate 2 关闭提案。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-12T18:44:38.652804Z'
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  at: '2026-08-12T21:05:23.147602Z'
+  summary: 形成完整关闭提案：proposed_outcome=completed，5 项 criterion 全部 satisfied，无剩余责任。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  at: '2026-08-12T21:06:10.023200Z'
+  summary: 完整关闭提案已形成并回读，进入 human_closure_confirming，等待 Human Gate 2 关闭决定。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  summary: Human Gate 2 批准关闭；outcome=completed，无剩余责任。
+  at: '2026-08-12T21:09:26.543639Z'
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:09:17.544172Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+object_id: workcase-01KZXN5TXNFSDTRN34J8PQMJ0A
+object_uid: 019ffb52-ebb5-7e5b-ac54-64922d7a480a
+fact_type_key: workcase
+created_at: '2026-08-12T17:44:27.462194Z'
+updated_at: '2026-08-13T15:03:57Z'

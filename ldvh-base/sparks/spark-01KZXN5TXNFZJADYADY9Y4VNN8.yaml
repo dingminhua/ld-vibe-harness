@@ -1,0 +1,60 @@
+title: 非权威关系导航与代码库索引
+intent: 保留事实候选、关系导航与代码索引如何帮助定位而不形成第二权威的问题，避免把旧知识地图、派生图谱、相似度或第三方工具结果误作正式关系、事实语义或自动决策依据。后续需分别判断三类导航能力的真实需求、重建边界和验证范围。
+status: discarded
+disposition_summary: Human 决定关闭本 Spark：三个子问题均已得出判断并处置完毕。事实候选与正向/反向关系导航已落地（含 05 §8.1 反向引用能力提示）；代码索引经评估暂不引入，依据是当前规模下 source_refs、grep 与 F0–F4 事实召回已覆盖定位需求，索引实施与维护成本大于收益。本终态不产生承接对象；未来若仓库规模显著扩大或频繁需要跨文件影响分析，可新建 Spark 重新评估代码索引。
+summary: "**当前判断**\n\n- 事实候选、关系导航和代码索引都可帮助减少重复读取、定位责任和影响，但三者必须区分来源、可信度与失败语义。\n- 05 的 F0–F4 事实召回直接扫描当前 Working Tree，形成恢复清单、候选卡与有界摘录；需要完整语义时再精确进入 F3，不建立持久 embedding、相关性分数或第二事实权威。\n\n**三类导航的现状（2026-08-08 复核）**\n\n- 事实候选已落地：`find-fact-object-candidates` 已实现 F0/F1/F2 分层召回，含精确文本与关系过滤，不建立第二权威。\n- 正向关系导航已进 Helper 契约：`relation_source_refs`/`relation_keys` 组织一跳正向声明边；Web 详情页展示当前对象自身的 relations。\n- 反向关系导航机制已实现并实测可用：`find-fact-object-candidates` 的 `relation_targets` 反向过滤可查出\"谁引用了当前对象\"（实测返回引用 spark-0016 的 spark-0032）；05 §8.1 已补充反向引用能力提示（非强制步骤）。\n- 代码索引（符号/调用链/影响索引）经评估暂不引入：当前规模下 source_refs、grep 与 F0–F4 事实召回已覆盖定位需求，索引实施与维护成本（增量更新、失效处理、查询预算）大于收益；索引只能缩小阅读范围，不能替代源码判断。\n\n**边界**\n\n- 不恢复旧 Knowledge Map、tool-plan、会话记忆或路由状态，不把候选、反向视图或代码图谱当作权威事实。\n- 不授权 embedding、语义评分、自动关系写回、第三方 MCP 安装或代码索引实施；索引只能缩小阅读范围，领域判断仍需回到当前对象、源码、Specs 和实际验证。"
+evolution:
+- at: '2026-07-22T13:57:58+08:00'
+  summary: 迁移复核保留 V3 的定位与影响发现需求，但移除机械 Git 来源、旧知识地图和第三方能力断言；当前分开审视事实召回、关系导航与代码索引。
+- at: '2026-08-08T20:40:47+08:00'
+  summary: 复核事实召回、关系导航与代码索引三者的实现现状：事实候选与正向/反向关系导航均已落地（反向经 relation_targets 实测验证），识别出 05 §8.1 缺少反向查询使用指引的规范缺口；剩余未决收窄为代码索引是否引入。
+- at: '2026-08-08T20:54:17+08:00'
+  summary: Human 决定关闭：代码索引经评估暂不引入（当前规模下现有定位能力已覆盖、索引成本大于收益），spark-0016 进入 discarded 终态。
+change_log:
+- signature:
+    agent_id: hy3
+    host_environment: Workbuddy
+  session_id: session-20260808-spark0016
+  at: '2026-08-08T20:41:17.761729+08:00'
+  summary: 历史不可得时建立的迁移可信起点：spark-0016 为 V4 迁移遗留对象，原载体无 change_log 流水，迁移补记首次受控更新起点，不声称恢复原始形成历史。
+- signature:
+    agent_id: hy3
+    host_environment: Workbuddy
+  session_id: session-20260808-spark0016
+  at: '2026-08-08T20:41:50.501264+08:00'
+  summary: content_update：复核三类导航实现现状，确认事实候选与正向/反向关系导航已落地（反向经 relation_targets 实测），记录 05 §8.1 反向查询使用指引缺口；剩余未决收窄为代码索引。
+- signature:
+    agent_id: hy3
+    host_environment: Workbuddy
+  session_id: session-20260808-spark0016
+  at: '2026-08-08T20:54:38.785274+08:00'
+  summary: single_object_lifecycle：status open→discarded，移除 priority，写入 disposition_summary；代码索引经评估暂不引入，三个子问题均处置完毕，Spark 关闭。
+- at: '2026-08-10T08:46:12.950592Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-claw -> Workbuddy; 1: workbuddy-claw -> Workbuddy; 2: workbuddy-claw -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T09:14:49.666785Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-ai -> hy3; 1: workbuddy-ai -> hy3; 2: workbuddy-ai -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-identity-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:05.851579Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+object_id: spark-01KZXN5TXNFZJADYADY9Y4VNN8
+object_uid: 019ffb52-ebb5-7fe4-a6f9-4df27c4dd6a8
+fact_type_key: spark
+created_at: '2026-07-19T10:28:46.306813+08:00'
+updated_at: '2026-08-13T15:03:57Z'

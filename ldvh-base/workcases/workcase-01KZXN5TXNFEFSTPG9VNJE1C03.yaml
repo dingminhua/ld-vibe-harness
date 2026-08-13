@@ -1,0 +1,150 @@
+title: 建立三字段署名采集与接入验收契约
+status: closed
+goal: 建立 product_name、model_name、agent_runtime_name 的环境接入、写前采集、缺失披露与验收契约，避免直接可观察字段被静默遗漏，同时不把声明误称为机器证明。
+scope: 仅修改三字段署名相关规范、附件、行动模板、LDVH Skill 与契约测试；不修改 Web、历史事实、环境读取或自动注入；不关闭 workcase-0099。
+success_criterion_definitions:
+- criterion_id: criterion-protocol
+  statement: 规范明确三字段快照只基于当次直接观察，不跨角色推导；任一 null 须在写前向 Human 说明字段与原因；parse_signature 是唯一归一边界。
+- criterion_id: criterion-independence
+  statement: change_log 与 Git footer 各自在写入时采集快照，不要求相等；Hook 与 Helper 不读环境、不自动注入或猜测。
+- criterion_id: criterion-acceptance
+  statement: 环境接入验收要求向 AI 交付完整三字段快照和值为 null 时的原因；本案不宣称特定产品已真实接入。
+- criterion_id: criterion-history
+  statement: 历史 null 语义为未声明/未知且不回填；相关契约测试覆盖边界，且不触及 Web 或并行修改。
+success_criterion_results:
+- criterion_id: criterion-protocol
+  outcome: satisfied
+  summary: 规范层面已落实：03 §9.4 要求提交前重新采集、32 §C.1 要求写前披露 null、05.Att.01 登记字段与历史 null 语义；specs/05 §11.7 的逐动作采集规则已在 HEAD 中（e97026cf），本案沿用并确认；parse_signature 为唯一归一边界。
+- criterion_id: criterion-independence
+  outcome: satisfied
+  summary: change_log 与 Git footer 各自为独立快照，不要求相等；skill/SKILL.md 明确禁止 Hook/Helper 自动注入或猜测；03 §9.4 对提交 footer 独立采集。Helper 的 inject_observed_write_signature 仅从调用方显式提供的 observed_context 覆盖 change_log 署名，不从环境变量或猜测自动注入。
+- criterion_id: criterion-acceptance
+  outcome: satisfied
+  summary: 09 §6 已纳入验收条件，要求交付完整三字段及 null 原因；本案 scope 限定为协议/规范，不宣称任何产品已真实接入。
+- criterion_id: criterion-history
+  outcome: satisfied
+  summary: 05.Att.01 已登记历史 null 语义为未声明/未知且不回填；test_signature.py 新增解析层历史 null 语义测试通过；未修改 Web 或历史事实。未验证：含历史 null 的真实 change_log 在后续更新中保持不变的端到端场景。
+result_summary: 已完成三字段署名采集与接入验收契约的第一期规范、行动模板、Skill 与契约测试修订。source-contract 完成 03/32/05.Att.01 的逐动作采集规则与历史 null 语义（05 §11.7 已在 HEAD 中沿用）；operational-protocol 完成 32/09/Skill 的写前采集纪律与验收条件；contract-verification 完成 6 项解析层契约测试并通过。未修改 Web、历史事实或自动注入，未关闭 0099。
+validation_summary: 验证包括：signature 契约测试 6 项通过（test_signature.py）；observed_signature 测试 5 项通过；机械校验目录 2 项通过；ldvh check 检查通过；fact-integrity 审计通过。覆盖范围：三字段归一化、历史 null 语义（解析层）、逐动作采集边界（解析层）、共同请求模式。未验证：跨产品环境接入、真实 Git Hook 递达、自动注入场景、连续动作不同快照不互相复用（端到端）、历史 null 在真实 change_log 中不被回填（端到端）。
+closure_outcome: completed
+disposition_summary: 全部 4 项成功标准均为 satisfied，原 scope 内没有未满足或未验证责任；无需 route_existing、suggest_spark 或 accept_stop。本案只建立规范、行动模板、Skill 与契约测试契约，不宣称任何产品已真实接入。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex-cli
+  at: '2026-08-12T19:06:13.212902Z'
+  summary: Human 批准建立独立 WorkCase，先落地三字段署名的规范与采集协议，不建 ADR。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  at: '2026-08-12T19:34:20.400528Z'
+  summary: Human Gate 1 批准 plan_version=1 执行授权基线，进入 executing 阶段。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  at: '2026-08-12T19:39:45.310230Z'
+  summary: 开始 item-source-contract：修订三字段署名相关规范与附件。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  at: '2026-08-12T19:48:07.394490Z'
+  summary: 完成 item-source-contract：三字段署名相关规范与附件已修订。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  at: '2026-08-12T19:49:07.700903Z'
+  summary: 开始 item-operational-protocol：把写前采集纪律与环境接入责任写入行动模板与 Skill。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  at: '2026-08-12T19:51:47.234214Z'
+  summary: 完成 item-operational-protocol，开始 item-contract-verification：更新规则与契约测试。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  at: '2026-08-12T19:56:31.277226Z'
+  summary: 全部 item terminal，进入 controller_checking 阶段。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  at: '2026-08-12T20:09:02.308421Z'
+  summary: 形成完整 result projection（success_criterion_results、result_summary、controller_check_summary、validation_summary），仍为 controller_checking 阶段。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  at: '2026-08-12T20:10:00.370823Z'
+  summary: 完整 result projection 已形成并回读，经 controller_checking 校验后进入 independent_reviewing，等待只读独立结果复核。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  at: '2026-08-12T20:32:31.584125Z'
+  summary: 独立结果复核返回 changes_required，返回 controller_checking 修正。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  at: '2026-08-12T20:34:05.412938Z'
+  summary: 按独立结果复核反馈修正 item result_summary、criterion results、controller_check 与 validation。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  at: '2026-08-12T20:34:36.242790Z'
+  summary: 修正后完整 result projection 已冻结，进入 independent_reviewing，等待只读独立结果复核。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  at: '2026-08-12T20:40:13.470538Z'
+  summary: 独立结果复核通过（pass），result review 已写入。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  at: '2026-08-12T20:40:45.007131Z'
+  summary: 独立结果复核通过（pass），进入 closure_preparing 阶段。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  at: '2026-08-12T20:41:19.929659Z'
+  summary: 形成完整关闭提案（proposed_outcome=completed，无剩余责任）。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  at: '2026-08-12T20:41:53.194982Z'
+  summary: 完整关闭提案已形成并回读，进入 human_closure_confirming，等待 Human Gate 2 关闭决定。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: codex-cli
+  summary: Human Gate 2 批准关闭；outcome=completed，无剩余责任。
+  at: '2026-08-12T20:50:50.452446Z'
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:09:23.404027Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+object_id: workcase-01KZXN5TXNFEFSTPG9VNJE1C03
+object_uid: 019ffb52-ebb5-7b9f-9d5a-09dd64e0b003
+fact_type_key: workcase
+created_at: '2026-08-12T19:06:13.212902Z'
+updated_at: '2026-08-13T15:03:57Z'

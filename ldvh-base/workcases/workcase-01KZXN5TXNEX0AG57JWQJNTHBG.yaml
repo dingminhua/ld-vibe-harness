@@ -1,0 +1,183 @@
+status: closed
+title: 通用事实更新的 Spark routed-to 形成时校验
+goal: 让 generic update_application.py 在新增 Spark routed-to 关系时，区分新形成的边与已存在的边，并在实际写入前执行 formation-time enforcement：新增加的 Spark 目标必须是同项目、mechanically valid、具有非空 title 且 status=open；既有边允许目标按自身生命周期继续变化。
+scope: 仅覆盖 code/ldvh/facts/update_application.py、必要且最小的 code/ldvh/facts/relations.py 形成辅助，以及 code/tests/facts/test_update_application.py、test_relations.py、test_project_validation.py。允许读取当前 dirty baseline、只读 Helper、目标测试、Ruff、git diff --check、check-fact-integrity 与指定事实精确回读。明确排除 specs、Web、Helper API/schema、任何 canonical fact 写入、spark-0034/workcase-0092 修改、successor 创建或迁移、multi-object 原子写入、WorkCase 状态机、commit/push/PR/release/external。
+success_criterion_definitions:
+- criterion_id: criterion-formation
+  statement: generic update_application.py 在候选对象通过普通 project/relation 机械校验后、atomic replacement 前，对 before→after 新增的 Spark routed-to 边执行形成时校验；新边目标必须同项目、mechanically valid、非空 title 且 status=open，新增指向 routed/implemented/discarded Spark 的边被拒绝。
+- criterion_id: criterion-existing-edge
+  statement: 已存在的 Spark routed-to 边不因目标后续变为 routed/implemented/discarded 而失效；对源对象的普通后续更新不误拒绝该既有边。
+- criterion_id: criterion-relation-regression
+  statement: Study、缺失、invalid、空 title、自指、跨项目和循环等既有关系约束继续拒绝；WorkCase、ADR、Pitfall 作为 Spark routed-to 的合法非 Spark 承接路径保持可用，不被本 WC 错误收紧。
+- criterion_id: criterion-verification
+  statement: 针对 generic update、relations 与 project validation 的正反测试、Ruff、git diff --check 和全库 check-fact-integrity 通过，并完成指定事实精确回读；无法区分 dirty baseline 时据实停止。
+- criterion_id: criterion-safety
+  statement: 本 WC 不产生任何 canonical business fact write，不创建 successor、不迁移 spark-0034、不实现 multi-object atomicity，不把 formation enforcement 写成 successor 分流已完成。
+success_criterion_results:
+- criterion_id: criterion-formation
+  outcome: satisfied
+  summary: 当前代码在 atomic replacement 前对新增 Spark routed-to 边执行 formation-time 检查；新 open 目标通过，新增 routed/implemented/discarded Spark 目标拒绝。
+- criterion_id: criterion-existing-edge
+  outcome: satisfied
+  summary: 新增端到端参数化回归覆盖既有边目标后续变为 routed、implemented、discarded；源对象普通后续更新三态均通过。
+- criterion_id: criterion-relation-regression
+  outcome: satisfied
+  summary: 既有 Study、缺失、invalid、空 title、自指、跨项目、循环约束保持拒绝；非 Spark formation guard 对 WorkCase、ADR、Pitfall 均保持不收紧。
+- criterion_id: criterion-verification
+  outcome: satisfied
+  summary: 71 项目标 Python 测试、Ruff、git diff --check、全库 check-fact-integrity（207/207）与三对象精确回读均通过；完整 64 位指纹已保留。
+- criterion_id: criterion-safety
+  outcome: not_verified
+  summary: 本会话未创建 successor、未迁移 spark-0034、未实现 multi-object atomicity；但 Gate1 后存在外部提交引入的 specs 变更及代码/测试提交，无法清洁证明与本 WC 授权边界完全分离，关闭前保留该归因/授权限制。
+result_summary: ResultΔ v2：授权 Python 回归覆盖已补齐并通过 71 tests；全库 integrity 与指定事实精确回读也已重跑并通过。当前行为证据完整，但 Gate1 后外部提交时间线包含 formation 实现、测试及 specs 变更，无法将整个提交链清洁归因于本 WC，因此当前结果仍为 partial，暂不形成 completed 关闭。
+validation_summary: 已验证：71 passed；Ruff passed；git diff --check passed；check-fact-integrity complete（207 个对象、0 问题）；spark-0034=2cf78e599f45088659e0872b929c20b909a3c509f8b6fb5708ec58251266894d；workcase-0092=3759b079b68ce4939e70a49f54a09f53495d990d864f28f9de423da77319a0a5；workcase-0077=63c6461da25a2bc86cdd7b131bddbd9ddfc69f9816de70c6076bf96a15815a12；三者均 mechanically_valid 且指纹未变。外部提交时间线：a41b5ce7、318159c7、cfd36226 等发生在 Gate1 后，且 a41b5ce7 修改 specs，未由本 WC 回退或清理。
+change_log:
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:11:37.937719Z'
+  summary: Human 要求按建议为 generic update_application.py formation-time enforcement 单独建立 WorkCase；完成相邻对象查重与独立 creation review，形成等待 Human Gate 1 的最小计划。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:17:39.899826Z'
+  summary: Human Gate 1 已批准 workcase-0093 plan_version=1 与完整 execution_authorization；进入 executing，先消费 item-path-analysis。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:17:59.136905Z'
+  summary: Gate 1 后启动 item-path-analysis：只读定位 generic update before/after 与 atomic replacement 边界，先固定 dirty baseline。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:18:41.927606Z'
+  summary: item-path-analysis 完成：确认 generic update 最小接入点与 dirty baseline；准备启动 item-formation-enforcement。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:19:04.012770Z'
+  summary: 稳定回读与 integrity 通过；启动 item-formation-enforcement，准备只修改 generic update 接入点。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:21:40.796419Z'
+  summary: item-formation-enforcement 完成；定向 66 tests、Ruff 与 diff check 通过；启动 item-formation-tests 进行完整正反覆盖复核。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:22:13.889575Z'
+  summary: item-formation-tests 完成（67 passed）；启动 item-verification，进行最终授权范围验证与事实回读。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:25:49.943593Z'
+  summary: item-verification 完成并原子进入 controller_checking：67 项目标测试、Ruff、diff check、全库 integrity（207/207）与指定事实回读通过；形成 result projection，并记录当前 HEAD 既有实现/测试的归因限制。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:28:41.210381Z'
+  summary: Controller 将冻结的 result projection 送入 independent_reviewing，等待 native subagent 只读结果审核写回。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:29:10.528342Z'
+  summary: 独立结果 Reviewer（Confucius）写回 changes_required：指出既有边 routed/discarded generic-update 证据、ADR/Pitfall 非 Spark 回归、Gate1 后外部提交归因/授权边界与指纹证据表达仍需处置；暂不形成 completed 关闭。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:29:49.189201Z'
+  summary: Controller 已处置 result review changes_required：返回 executing 补齐两类授权测试覆盖，不清理外部提交或 specs dirty，暂不关闭。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:31:54.994056Z'
+  summary: ResultΔ v2 形成：补齐 routed/implemented/discarded 既有边 generic-update 端到端回归与 WorkCase/ADR/Pitfall 非 Spark formation 回归，71 passed；清除旧 result review，诚实保留 Gate1 后外部提交/specs 变更的归因与授权限制，criterion-verification/safety 暂为 not_verified。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:32:30.645970Z'
+  summary: ResultΔ v2 验证收尾：71 tests、Ruff、diff check、integrity（207/207）与三对象完整 64 位指纹精确回读通过；criterion-verification 改为 satisfied，criterion-safety 继续因 Gate1 后外部提交/specs 变更的归因边界保持 not_verified。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:32:39.240760Z'
+  summary: ResultΔ v2 验证证据已完整，Controller 将冻结 projection 送入第二轮 native subagent 结果审核。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T11:35:25.508187Z'
+  summary: 第二轮 native subagent 独立结果审核结论为 pass_with_followups：确认五项标准的行为与验证证据，criterion-safety 因 Gate1 后外部提交及 specs 变更继续 not_verified；建议以 partial 收敛并保留归因限制。
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  summary: Controller 已处置第二轮 pass_with_followups：采信五项标准的行为与验证证据，保留 criterion-safety 的 Gate1 后外部提交/specs 归因限制，按 partial 处理并暂不关闭。
+  at: '2026-08-10T11:35:34.977303Z'
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  summary: 按当前 WorkCase 生命周期规则校正阶段：第二轮结果审核的 pass_with_followups 已由 Controller 处置，阶段从 controller_checking 推进至 closure_preparing；尚未形成关闭提案或替 Human 作 Gate2 决定。
+  at: '2026-08-10T13:18:06.697031Z'
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  summary: 在 closure_preparing 形成 partial 关闭提案：行为与验证已完成；剩余仅为 Gate1 后外部提交/specs 变更的完整归因边界，提案由 Human 在 Gate2 决定是否接受停止追溯。
+  at: '2026-08-10T13:18:43.076174Z'
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  summary: partial 关闭提案已完整形成，按生命周期规则交还 Human Gate 2；等待 Human 决定是否接受保留外部提交归因边界并关闭 WorkCase。
+  at: '2026-08-10T13:18:57.157752Z'
+- signature:
+    model_id: gpt-5
+    agent_workbench: Cindy
+  session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
+  at: '2026-08-10T13:24:00.800947Z'
+  summary: Human Gate 2 已决定按 partial 关闭 workcase-0093，接受保留 Gate1 后外部提交及 specs 变更的归因边界；未把整条提交链归功于本 WC。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:09:03.048043Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+closure_outcome: partial
+disposition_summary: formation-time enforcement 的行为和验证证据已完成；由于 Gate1 后外部提交及 specs 变更无法清洁归因，本 WorkCase 仅按 partial 收敛，不把整条提交链归功于本 WC。
+residual_responsibilities:
+- residual_id: residual-attribution-boundary
+  summary: 是否接受不再追溯 Gate1 后外部提交/specs 变更的完整归因，将其作为本 WorkCase 的已知边界保留。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7477-bad4-8724e00e5479
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7e7a-9744-2ba5d83575fa
+object_id: workcase-01KZXN5TXNEX0AG57JWQJNTHBG
+object_uid: 019ffb52-ebb5-7740-a814-f2e5e55d4570
+fact_type_key: workcase
+created_at: '2026-08-10T11:11:37.937719Z'
+updated_at: '2026-08-13T15:03:57Z'

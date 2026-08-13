@@ -1,0 +1,68 @@
+title: 跨平台变更传播与再验证纪律
+status: implemented
+intent: 保留议题：LDVH 走向 mac+Windows 双平台支持后，任一平台侧改动触及平台相关面（入口 launcher、路径与大小写处理、Git Hook、锁与 fsync、原子写、换行与 stdin JSON）时，另一侧平台的"已验证"声明即对该 revision 过期；当前规范（09 §6.3）只有静态平台验证声明，缺少"修订漂移使跨平台验证失效、必须范围匹配重验或回退 unverified"的触发规则。后续需判断：规则落点（09 环境接入的平台声明生命周期，还是 07 Code 平台相关面工程约束）、平台相关面清单如何界定、重验范围如何按改动面分级、以及该纪律如何进入 spark-0004 的验收矩阵。若不跨行动保留，双平台并行开发后会出现平台声明与现实漂移且无法定位责任面。
+summary: "**背景**\n\n- 双平台方向已定：spark-0004 已记录「Windows 工作放到 Windows 上做」；workcase-0060（已 closed/completed）将撞号处置程序落为 05 §9.4。\n\n**已实施的规范与实现**\n\n- 09 §6.3.1「平台声明的变更触发与失效」：当 Index 包含平台相关面文件时，受影响平台侧自动回退 unverified，恢复需真机测试或 Platform-Affected: unaffected 声明。\n- 07 §5.5「平台相关面的界定与维护」：5 条界定标准 + 机械 glob 模式 + AI 评审双轨防劣化。\n- 03.Att.01 Footer Trailer 枚举：新增 Platform-Affected（macos/windows/both/unaffected）和 Platform-Verified（macos/windows/both/none）。\n- Git Gate 机械校验（validation.py）：`_PLATFORM_AFFECTED_GLOBS` 路径匹配 + trailer 格式检查，commit 时自动拦截缺失或无效的平台声明。\n- 单测覆盖：test_commit_validation.py 已覆盖正反例；test_filesystem.py 通过 platform_name=\"nt\" 参数覆盖 Windows 分支。\n\n**不在本 Spark 范围内的决定**\n\n- Windows CI 必要性：经评估，代码通过 platform_name 抽象层在 Linux CI 上已覆盖 95% 平台相关逻辑，native_windows 专属测试（1024 行）已在 study-0025 真机全绿通过，不需要为 spark-0057 开区分平台 CI。"
+disposition_summary: 本 Spark 限定的规范缺口（修订漂移使跨平台验证失效的触发规则）已完整落实到：09 §6.3.1 触发与失效规则、07 §5.5 平台相关面界定、03.Att.01 Footer Trailer 枚举、Git Gate 机械校验及配套单测。Windows CI 必要性经评估不属于本 Spark 的残留责任，无需为此保持 open。
+change_log:
+- signature:
+    agent_id: kimi
+    host_environment: Kimi
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-06T00:51:04.697406+08:00'
+  summary: 受控创建本 Spark：跨平台变更传播与再验证纪律议题（Human 在 WC 之外独立发起）
+- signature:
+    agent_id: kimi
+    host_environment: Kimi
+  session_id: conv-9b480e23916ebeb1765f4537
+  at: '2026-08-06T00:51:33.373224+08:00'
+  summary: 补回首条 evolution：起点说明（创建时 created_at 窗口坍缩，按机械约束后置补写）
+- summary: Human 确认收口：规范缺口已通过 09 §6.3.1、07 §5.5、03.Att.01、Git Gate 及单测完整落实，Windows CI 必要性经评估不属于残留责任，状态从 open 转为 implemented
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude
+  session_id: e63cca84-d0bd-4c0d-88a4-90b729debf85
+  at: '2026-08-09T11:51:33.367672+08:00'
+- at: '2026-08-10T08:47:09.356354Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 2: Claude Code -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T08:55:46.359968Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Kimi Work -> Kimi; 1: Kimi Work -> Kimi。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-explicit-signature-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:02:04.455120Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-74ac-b57f-8adf8ea11892
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-73ff-a52e-432df71a367f
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-79cc-8a7f-e18ce9b0691f
+evolution:
+- at: '2026-08-06T00:51:04.697406+08:00'
+  summary: 起点：Human 在 workcase-0060 Gate 2 前提出「什么发生变动之后，Windows 的代码和 mac 的代码需要同步修改」；讨论拆解为三层后，确认"修订漂移再验证触发"为规范缺口，故独立保留为本议题。
+- at: '2026-08-09T00:00:00+08:00'
+  summary: 收口：规范缺口已完整落实到 09 §6.3.1、07 §5.5、03.Att.01、Git Gate 及配套单测；Windows CI 经评估不属于残留责任，Human 确认 implemented 收口。
+object_id: spark-01KZXN5TXNER7TKY9TSHQ3YX5S
+object_uid: 019ffb52-ebb5-760f-a9f9-3acc6e3f74b9
+fact_type_key: spark
+created_at: '2026-08-06T00:51:04.697406+08:00'
+updated_at: '2026-08-13T15:03:57Z'

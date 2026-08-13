@@ -1,0 +1,166 @@
+status: closed
+title: 建立可审核候选绑定的两阶段 Git 受控提交能力
+goal: 在不削弱 Human 授权、AI 对精确候选的一次语义与验证覆盖审核，以及 common-dir commit-msg 最终 Git Gate 的前提下，把普通非事实本地提交收敛为 prepare、一次 AI review、commit，并以一次性候选、真实事件 challenge、审计 witness、Index 排他保护和完整回读保证失败关闭。
+scope: 修改下位规范 03、04、05、09、30 并新增 10《Git 受控提交服务规范》及必要授权附件；实现 source-only Helper 的 prepare/read/discard/commit prepared 操作、私有生命周期 store、check-fact-integrity 一次性 witness、managed commit-msg challenge/event attestation、真实 Index 锁内安全对齐；复用并重构现有 code/ldvh/commits 内核；增加真实 git commit、linked worktree、alternate Index、故障与性能测试；验证通过后仅升级当前 LDVH common-dir /Users/dmh2002/poker_hud_projects/ld-vibe-harness-v2/.git/hooks/commit-msg 并保留可恢复备份。排除 00、ADR、新 staged_index 模式、pip 打包或安装、其它 clone/common-dir、push/PR/release/deploy、用户现有 web/src/components/CommitPushStatusBadge.tsx 改动和其它无关文件。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 00 保持不变；03 明确下放且不复制提交契约；10、04、05、09、30 职责闭合，并通过规范身份、关系、责任重复、来源与独立规范复核。
+- criterion_id: criterion-02
+  statement: prepare 公开能力形成精确 working_tree candidate、完整 dossier、may_change_state 授权分层和 0700/0600 私有一次性状态机；精确路径、Index 冲突与候选漂移全部 fail closed。
+- criterion_id: criterion-03
+  statement: 只有独立公开 check-fact-integrity 调用返回 ok/complete 后生成且 issuer_operation 精确绑定的 opaque witness 可被事实 candidate prepare 消费；调用方 JSON、事实写操作内审、过期、重放或漂移 witness 均不可冒充。
+- criterion_id: criterion-04
+  statement: commit prepared 完成原子 claim 与 started journal、最终 CAS、标准真实 Index 排他锁、alternate Index 提交与条件对齐；真实 common-dir Hook 先独立完整执行唯一 validator，再核对 challenge 并生成一次性 event attestation。
+- criterion_id: criterion-05
+  statement: not_created、partial、indeterminate 边界成立；commit 已创建后的异常返回 commit_id 与实际状态，不自动 amend、reset 或 retry，不覆盖无关 staged、unstaged 或 untracked。
+- criterion_id: criterion-06
+  statement: 真实 git commit allow/block、alternate Index、linked worktree、detached/unborn、same-OID ref switch、rename/delete/symlink/submodule/binary/clean filter、Hook/config/rule drift、challenge、锁竞争、crash/replay/TTL 与特殊路径测试通过；直调 Hook 不替代真实事件。
+- criterion_id: criterion-07
+  statement: 非事实 happy path 的外部编排为 prepare、一次 AI review、commit，execute 不重复完整 precheck；记录 p50/p95，Git 观察子进程从当前约 21 次向不高于 12 次优化并以实测报告，不删除 Hook 完整检查。
+- criterion_id: criterion-08
+  statement: 当前唯一 common-dir Hook 通过受控部署升级，并在代表性主 worktree 与可用 linked worktree 完成真实 allow/block 验收；失败可恢复精确备份，未触及其它 common-dir。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: not_satisfied
+  summary: Human 已撤回两阶段事务式提交方向，相关未提交规范、Code、tests 与部署目标均已回档，因此本标准没有形成当前稳定结果。
+- criterion_id: criterion-02
+  outcome: not_satisfied
+  summary: Human 已撤回两阶段事务式提交方向，相关未提交规范、Code、tests 与部署目标均已回档，因此本标准没有形成当前稳定结果。
+- criterion_id: criterion-03
+  outcome: not_satisfied
+  summary: Human 已撤回两阶段事务式提交方向，相关未提交规范、Code、tests 与部署目标均已回档，因此本标准没有形成当前稳定结果。
+- criterion_id: criterion-04
+  outcome: not_satisfied
+  summary: Human 已撤回两阶段事务式提交方向，相关未提交规范、Code、tests 与部署目标均已回档，因此本标准没有形成当前稳定结果。
+- criterion_id: criterion-05
+  outcome: not_satisfied
+  summary: Human 已撤回两阶段事务式提交方向，相关未提交规范、Code、tests 与部署目标均已回档，因此本标准没有形成当前稳定结果。
+- criterion_id: criterion-06
+  outcome: not_satisfied
+  summary: Human 已撤回两阶段事务式提交方向，相关未提交规范、Code、tests 与部署目标均已回档，因此本标准没有形成当前稳定结果。
+- criterion_id: criterion-07
+  outcome: not_satisfied
+  summary: Human 已撤回两阶段事务式提交方向，相关未提交规范、Code、tests 与部署目标均已回档，因此本标准没有形成当前稳定结果。
+- criterion_id: criterion-08
+  outcome: not_satisfied
+  summary: Human 已撤回两阶段事务式提交方向，相关未提交规范、Code、tests 与部署目标均已回档，因此本标准没有形成当前稳定结果。
+result_summary: Human 确认真实需求仅为 AI 明确文件并检查 diff、必要机械预检、本地 commit、真实不可绕过的 commit-msg Hook、不误带且不 push，以及源码+Skill/无 pip 打包。两阶段 prepared/challenge/journal/alternate Index 方案被判定明显过度设计；本 WorkCase 的全部未提交技术与规范变化已恢复到开始前基线，Hook 从未部署，本案不保留实现交付。
+validation_summary: 回档后 git diff 只剩用户 Web 改动、独立 spark-0037 事实变化和 workcase-0056 自身；03/30/09 已回到 676fcce7a 基线，10 与 10.Att.01 不存在，0056 新增 Code/tests 不存在。回档前内容已备份于 /tmp/ldvh-wc0056-rollback.KV6aqD；未执行 Hook 部署、push、reset、amend、rebase 或 tag。
+change_log:
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: codex-workcase-0056-creation
+  at: '2026-08-04T22:36:38.899404+08:00'
+  summary: 根据 Human 对独立终审通过方案的同意，建立两阶段 Git 受控提交实现与验收计划
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: codex-workcase-0056-execution
+  at: '2026-08-04T22:56:59.591031+08:00'
+  summary: 记录 Human Gate 1 批准并进入执行阶段
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: codex-workcase-0056-execution
+  at: '2026-08-04T22:57:17.137744+08:00'
+  summary: 开始 item-01 下位规范契约工作
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: codex-workcase-0056-execution
+  at: '2026-08-04T23:34:08.134143+08:00'
+  summary: 完成 item-01 规范契约、规范测试与独立复核，并开始 item-02 私有候选与 witness 实现
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: codex-workcase-0056-execution
+  at: '2026-08-05T00:14:12.010154+08:00'
+  summary: 完成 item-02 prepare/read/discard、私有状态与 integrity witness 实现及独立复审，并开始 item-03 commit/Hook/Index 实现
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: codex-workcase-0056-execution
+  at: '2026-08-05T00:50:42.455127+08:00'
+  summary: 完成 item-03 commit/Hook/Index 实现及独立复核，并开始 item-04 真实事件、故障与性能验收
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: codex-workcase-0056-rollback
+  at: '2026-08-05T01:05:17.444640+08:00'
+  summary: Human 判定方案过度设计并授权回档；取消 item-04/item-05，未提交技术与规范变化已恢复到 0056 前基线，进入结果收敛
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: codex-workcase-0056-rollback
+  at: '2026-08-05T01:06:16.013920+08:00'
+  summary: Controller 将 item-01 至 item-03 据实更正为 cancelled，并形成 result_version=1 的完整未达成结果投影
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: codex-workcase-0056-rollback
+  at: '2026-08-05T01:08:50.025958+08:00'
+  summary: 完整回档结果完成 Controller 自检并进入独立只读结果复核
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: codex-workcase-0056-rollback
+  at: '2026-08-05T01:09:30.466638+08:00'
+  summary: 记录独立只读结果复核通过；确认既有 commit-msg Hook 未被 0056 部署或修改
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: codex-workcase-0056-rollback
+  at: '2026-08-05T01:09:47.842605+08:00'
+  summary: 独立结果复核通过且无反馈，进入关闭提案收敛
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: codex-workcase-0056-rollback
+  at: '2026-08-05T01:10:18.240250+08:00'
+  summary: 形成 not-achieved 完整关闭提案与旧方案 accepted-stop 处置
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: codex-workcase-0056-rollback
+  at: '2026-08-05T01:10:27.760151+08:00'
+  summary: 完整关闭提案已校验并回读，进入 Human Gate2 等待
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: codex-workcase-0056-closure
+  at: '2026-08-05T01:13:34.704491+08:00'
+  summary: 依据 Human Gate2 决定，以 not-achieved 关闭并停止旧两阶段提交方案
+- at: '2026-08-10T09:15:25.536861Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Codex -> gpt-5; 1: Codex -> gpt-5; 2: Codex -> gpt-5; 3: Codex -> gpt-5; 4: Codex -> gpt-5; 5: Codex -> gpt-5; 6: Codex -> gpt-5; 7: Codex -> gpt-5; 8: Codex -> gpt-5; 9: Codex -> gpt-5; 10: Codex -> gpt-5; 11: Codex -> gpt-5; 12: Codex -> gpt-5; 13: Codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-identity-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:18.385548Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+closure_outcome: not-achieved
+disposition_summary: 0056 的两阶段 prepared/challenge/journal/alternate Index 方案及其规范、实现、测试和 Hook 升级责任全部停止，不保留交付；原方案责任作为 accepted-stop，不转交给现有对象。Human 已明确的最小提交要求作为独立后续机会保留，关闭 0056 不表示该后续要求已完成或已获执行授权。
+residual_responsibilities:
+- residual_id: residual-withdraw-two-stage-design
+  summary: criterion-01 至 criterion-08 所代表的两阶段提交规范、一次性状态、witness、challenge、journal、alternate Index、完整验证与 Hook 升级均未形成稳定结果；Human 已判定该方向过度设计，关闭后不再按 0056 的目标与授权继续。
+spark_suggestions:
+- suggestion_id: suggestion-minimal-commit-requirements
+  suggestion_kind: follow_up_opportunity
+  summary: 以现有 03、30、09 为基础，把 AI 明确候选文件并检查对应 diff、必要机械预检、本地 commit、真实执行 commit-msg Hook、不误带且不 push、源码加 Skill 且无 pip/打包/插件写成最小权威需求。
+  follow_up_summary: 后续独立事项应先在 specs 明确这六项最小要求，再只评估为满足它们所需的最小代码和测试差额；不得继承 0056 的 prepared service、witness、challenge、journal 或 alternate Index 事务设计。
+object_id: workcase-01KZXN5TXNE2Z9HC0BM14AR7ZP
+object_uid: 019ffb52-ebb5-70be-98b0-0ba048ac1ff6
+fact_type_key: workcase
+created_at: '2026-08-04T22:36:38.899404+08:00'
+updated_at: '2026-08-13T15:03:57Z'

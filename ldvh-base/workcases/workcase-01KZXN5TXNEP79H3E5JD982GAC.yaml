@@ -1,0 +1,58 @@
+object_id: workcase-01KZXN5TXNEP79H3E5JD982GAC
+object_uid: 019ffb52-ebb5-758e-988d-c5935281414c
+fact_type_key: workcase
+title: 建立 LDVH 多环境通用启用与 AI 自助接入基础
+created_at: '2026-07-21T08:45:57.944290+08:00'
+updated_at: '2026-08-13T15:03:57Z'
+status: closed
+goal: 建立 LDVH 自有的环境无关启用基础，使用户能够完成“获取→安装→配置→接入→验证”：LDVH 交付可回指的 本地发行物、稳定配置与只读诊断入口、可由当前正式来源发现的 LDVH 接入面、供目标环境 AI 消费的接入方法和统一验证边界； 具体 AI 开发环境的自动扩展或事件机制、安装位置与操作步骤，由用户在目标环境中让 AI 依据当前权威资料研究并在 Human Gate 下执行。 只有当前权威资料或实际环境肯定证明该 AI 开发环境不存在能够自动调用所需 LDVH 共享行为、Helper 或相应机械 Gate 且承接必需输入与反馈的机制时，才判定完整接入 unsupported；未知、未调查、不可观察或只因厂商不使用“Hook”一词均保持 unverified。
+scope: 覆盖 specs/09 对共同接入方法、AI 自助适配职责、按功能识别 Hook、unsupported 证据门槛和真实验证边界的必要最小澄清； 覆盖 specs/33 对一次明确目标环境在已有可安装接入单元前提下，由 AI 调查、形成方案、取得授权、安装或配置、验证、回滚和交还的行动组织； 实际需要时仅在 03/04/06/07 的既有职责内澄清。覆盖当前源码构建的本地 wheel/sdist 身份与哈希、包声明范围与实测范围、 依赖来源与联网前提、本地或源码获取、安装卸载、LDVH 自有配置入口、只读 doctor、LDVH 接入面权威发现合同、环境无关模拟 fixture、 用户五步文档、面向目标环境 AI 的自助调查与分流说明、能力分类和验证清单。排除修改 00、维护厂商环境候选清单、逐厂商预研、 在本案编写或安装任何具体环境 adapter、替用户修改任何具体 AI 开发环境、安装外部 CLI、账号登录、凭据、信任、重启、 用户或全局配置、管辖项目登记、事实 Schema、WorkCase 生命周期、Web、公共 registry 或 marketplace 发布、 发布 Specs 与发布行动模板（由 spark-0023 承接）、push 和 PR。Codex 只可作为范围受限的既有证据，不得成为共同模型或完成条件。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 权威方向成立：09 唯一定义共同接入成立条件与环境无关方法；具体环境当前权威资料定义厂商协议；33 只组织一个已有接入单元的一次安装、 验证与回滚；adapter 设计或编写先按具体环境来源、07 和普通 Code 计划独立完成，之后才可进入 33；03/04/06/07 只在自身既有职责中修改， 全部实际 Specs 差异按 01 完成独立语义复核，00 不再扩写。
+- criterion_id: criterion-02
+  statement: 从当前源码构建固定 wheel 和 sdist，记录版本、SHA-256、包声明 Python/OS 范围、实际验证组合、本地获取位置、依赖来源和联网前提； 从干净临时环境完成安装、核心能力直调、卸载和回读。公共发布未发生时明确只可从源码或本地 artifact 获取， 未实测组合保持 unverified，不把本地 artifact 表述为离线可安装。
+- criterion_id: criterion-03
+  statement: LDVH 自有配置入口和 doctor 可从安装后入口使用；doctor 固定只读，只检查 LDVH 版本与核心入口、显式工作对象与管辖解析、 LDVH 自有配置可读性以及显式传入的调用或验证缺口；不扫描、猜测或修改目标环境配置，不写用户或全局配置、不安装外部工具、 不登录、不触发信任或重启。
+- criterion_id: criterion-04
+  statement: 从 09、04 及其它实际适用来源冻结可供环境接入的既有共享行为、Helper、Git Gate 或 Hook Gate 核心入口清单或唯一权威发现方式， 并记录每项适用来源、输入、输出、partial/error、超时和反馈边界；不得另造统一厂商 payload、事件路由或默认语义。 目标环境 AI 若能直接把原生机制配置到既有入口，则在 Human 授权后进入 33；若需要新增 manifest、script 或薄 adapter， 先停止安装分支，按具体环境来源与 07 形成独立普通 Code 计划并完成 adapter，之后才能进入 33。本案只提供该分流方法，不实现 adapter。
+- criterion_id: criterion-05
+  statement: 支持判定明确：Hook 按能否自动触发并承接所需输入与反馈的功能识别，不依赖厂商术语。只有当前权威资料或实际环境肯定证明所需机制不存在， 完整接入才是 unsupported；未调查、资料未找到、权限不足或不可观察均为 unverified；存在机制只说明可进入调查， 未安装或未真实触发仍为 unverified；静态对象、核心直调与真实环境触发分开，partial 不得掩盖 unsupported 或 unverified。
+- criterion_id: criterion-06
+  statement: README 和用户文档给出获取、安装、配置、接入、验证五步入口，明确 artifact 边界与网络前提、doctor、LDVH 接入面发现方法、 可交给目标环境 AI 的调查输入、直接配置与需要新 adapter 两条分支、Human Gate、验证与回滚清单及无 Hook 判定； 聚焦规则、Code、打包、文档和必要综合验证通过。模拟 fixture 只证明 LDVH 侧入口和分类逻辑，不声明任何具体 AI 开发环境已支持、 缺少能力或已真实接入，也不形成公共发布声明。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 09/33 权威与 adapter 分流成立；当前 Code Implementation Plan 已登记来源、基线、模块、依赖、接口、诊断、打包、风险与测试， 并通过独立设计核对；00 未再修改。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: 当前源码已重建固定 0.1.0 wheel/sdist，archive 内 doctor 与源码一致；两类发行物均在独立临时环境完成安装、核心操作、doctor、 卸载和入口消失回读，文档明确声明范围、依赖、联网与本地 artifact 边界。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: 安装后 ldvh-doctor/1 只复用 capabilities 与 resolve-governance-scope，不扫描或修改目标环境； 非 ok Helper outcome 即使有残留 valid 字段也保持 attention；当前 wheel/sdist 实装 doctor 均为 ready，相关验证通过。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: LDVH 接入面说明从当前 04/09 与现有入口投影 Helper CLI、上下文恢复、commit-msg Gate 和 Git Hook 管理器， 逐项给出来源、输入输出、失败、超时与反馈边界；未新增统一厂商 payload、事件路由、Helper 操作或 Gate 合同，并明确直接配置/新 adapter 分流。
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: 09/用户指南的功能型 Hook 与 unsupported/unverified 边界成立。可执行 synthetic fixtures 覆盖模拟 Hook success、unknown、 confirmed-no-capability 及三项肯定依据逐项缺失负例；它们只固定来源定义的确定性边界，均明确不映射真实 AI 开发环境。
+- criterion_id: criterion-06
+  outcome: satisfied
+  summary: README 与随包用户文档已覆盖获取、安装、配置、接入、验证五步、artifact/网络边界、doctor、接入面、可交给目标环境 AI 的调查输入、 两条分支、Human Gate、分层验证及回滚。full-v4 通过；未声明公共发布、具体 adapter 或具体环境已验证。
+result_summary: 环境无关启用基础已经形成：09/33 的共同接入与 adapter 分流边界、固定 0.1.0 wheel/sdist、只读 doctor、 既有接入面说明、功能分类 fixtures 和五步用户文档均已交付。未公共发布、未实现具体 adapter，也未真实验证具体 AI 环境。
+validation_summary: 六项成功标准均已满足。09/33 已固定环境无关方法、功能型 Hook、unsupported/unverified 门槛和直接配置/新 adapter 分流； ldvh-doctor/1 保持只读，非 ok Helper outcome 不会误报 ready。wheel/sdist 的安装、核心操作、doctor、卸载与回读， 功能分类 fixture，以及规则、Code、打包、文档和 full-v4 验证均通过。fixture 不映射真实环境。 未公共发布、未实现或安装具体 adapter，也未真实验证具体 AI 环境。
+closure_outcome: completed
+disposition_summary: 已完成批准的环境无关启用基础，原范围内没有残余责任或需 routed-to 的对象。具体 AI 环境真实触发与原生 Windows 仍属未验证边界， 不自动形成后续责任；spark-0003 继续保留具体目标环境的安装与验证问题，spark-0023 独立承接发布 Specs 与行动模板， 均不是本 WorkCase 的未完成责任。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:05:01.869690Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。

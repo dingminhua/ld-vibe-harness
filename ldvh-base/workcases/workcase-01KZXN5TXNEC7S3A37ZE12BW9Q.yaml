@@ -1,0 +1,128 @@
+status: closed
+title: WorkCase Gate 1 后连续执行与机械 Stop gate 落地
+goal: 让 WorkCase 在 Gate 1 批准后持续消费 Controller-owned 控制步骤，仅在 Gate 1、Gate 2、真实 blocked、unresolved 或 closed 时允许交还，并在当前 Claude Code/Cindy 宿主中以 Stop hook 机械纠正非法停止。
+scope: 覆盖 specs/09、21、34 与必要附件；派生 handoff 判定、只读 Helper 操作、context recovery/Web 合同；项目级 Stop hook 与精确绑定；Python/Web/hook/真实会话验证；处置 workcase-0097 与 spark-0073 证据；本地受控 commit。排除 push、PR、远端发布、Code 自动选 item、绕过独立结果复核、增加第三 Human Gate或第二持久状态机。
+success_criterion_definitions:
+- criterion_id: criterion-1
+  statement: 规则源一致定义 handoff_allowed 的派生闭集、fresh projection 约束、精确绑定、fail-open 与宿主接入边界，保持 Gate1/Gate2、blocked/unresolved/closed 唯一安全出口。
+- criterion_id: criterion-2
+  statement: Code 以单一纯函数派生 handoff verdict，read-fact-objects、context-recovery、Web 与只读 check-workcase-handoff 操作使用同一语义，且不写事实、不推进 phase、不选择 item。
+- criterion_id: criterion-3
+  statement: 项目 Stop hook 只对精确绑定的当前 WorkCase 生效；Controller-owned projection 阻止 Stop 并反馈下一控制步骤，Gate1/Gate2/blocked/unresolved/closed 放行，无绑定或异常 fail-open，具备死循环保护。
+- criterion_id: criterion-4
+  statement: 状态机严格结果链保持不变，controller_checking 不能直达 Gate2；Python/Web/hook 正反测试覆盖所有 phase、误绑、stale、无绑定、异常和重复 Stop。
+- criterion_id: criterion-5
+  statement: 真实 WorkCase 验证在 Gate1 后连续通过 item、结果投影、独立复核和关闭提案，仅在 gate2_waiting 停止；workcase-0097 与 spark-0073 据实收口，事实完整性通过。
+- criterion_id: criterion-6
+  statement: 目标回归、全 Python/Web 测试、ldvh check、check-fact-integrity、git diff --check 与受控本地 commit 全部通过；不执行 push。
+success_criterion_results:
+- criterion_id: criterion-1
+  outcome: satisfied
+  summary: 09/21/34、附件与 Skill 一致定义 fresh handoff verdict、安全出口、精确绑定、fail-open 和受限宿主接入。
+- criterion_id: criterion-2
+  outcome: satisfied
+  summary: Python 投影为唯一生成源，Helper/context recovery/Web 共享 handoff_allowed/reason，check-workcase-handoff 只读且精确绑定。
+- criterion_id: criterion-3
+  outcome: satisfied
+  summary: Stop hook 在精确绑定的 Controller-owned 快照返回 block/下一步，Gate2 返回 continue；无绑定/异常/stop_hook_active fail-open，资产已纳入版本控制。
+- criterion_id: criterion-4
+  outcome: satisfied
+  summary: 严格结果链未增加捷径，正反测试覆盖 phase、blocked/unresolved/closed、绑定、异常和 wrapper 交付。
+- criterion_id: criterion-5
+  outcome: satisfied
+  summary: workcase-0097 真实回放已从 Gate1 连续推进 item、结果、复核、提案至 gate2_waiting；当前 Stop feedback 也真实阻止 workcase-0098 executing 交还。
+- criterion_id: criterion-6
+  outcome: not_verified
+  summary: 全部测试、完整性和 diff check 已通过；受控本地 commit 尚未创建，按结果链在 Gate2 前据实保留未验证。
+result_summary: 已交付派生 handoff verdict、只读 check-workcase-handoff、项目 Stop gate、精确会话绑定和 Web/Skill/规范同步。真实 Stop 在 executing/controller_checking 阻止交还并反馈下一步，在 gate2_waiting 放行。
+validation_summary: Python 1644 passed, 17 skipped；Web API 187 passed；TypeScript check passed；Stop/handoff 目标测试 49 passed；WorkCase Web 合同 64 passed；check-fact-integrity outcome=ok/status=complete/212 objects/problems=[]；git diff --check passed。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T14:55:50.198279Z'
+  summary: 创建 WorkCase Gate1 后连续执行与机械 Stop gate 实现计划，等待 Human Gate 1。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T14:57:51.912836Z'
+  summary: Human Gate 1 批准：授权处理全部相关事项，进入 executing 并按仅 Gate1/Gate2 或安全出口交还的目标连续执行。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T15:35:26.314529Z'
+  summary: 完成 item-1~4：规则、handoff verdict、只读 Helper、Stop gate、Web 同步和回归测试；item-5 开始独立复核、真实触发与事实收敛。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T16:08:54.982174Z'
+  summary: item-5 completed：真实 Stop feedback 阻止 executing 非法交还；全部 items terminal，进入 controller_checking 并冻结 result_version=1。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T16:09:47.536776Z'
+  summary: controller_checking 完成，进入 independent_reviewing。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T16:10:57.598859Z'
+  summary: 记录 Orca Worker 独立复核 pass_with_followups；唯一阻断项与附带维护反馈均已处置。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T16:11:25.028882Z'
+  summary: 独立结果复核闭合，进入 closure_preparing。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T16:12:01.744362Z'
+  summary: 形成 partial closure proposal：唯一剩余责任为本地受控 commit，不 push。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T16:12:53.692859Z'
+  summary: 进入 human_closure_confirming；只在 Gate2 交还 Human。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-luna
+    agent_runtime_name: claude-code
+  at: '2026-08-12T18:19:08.785867Z'
+  summary: Human 批准关闭 workcase-0098。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:09:14.548733Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+closure_outcome: partial
+disposition_summary: criterion-1~5 satisfied；criterion-6 的全部验证已通过，但本地受控 commit 按既定范围尚未创建。Human 可在 Gate2 接受 partial，并在提交后由后续事实据实记录提交完成。
+residual_responsibilities:
+- residual_id: residual-local-commit
+  summary: 通过受控 Git Gate 创建当前精确范围的本地 commit；不 push。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7ace-b424-7904f95e5f41
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-79b8-bf55-e06e986cc363
+object_id: workcase-01KZXN5TXNEC7S3A37ZE12BW9Q
+object_uid: 019ffb52-ebb5-730f-91a8-67fb8225f137
+fact_type_key: workcase
+created_at: '2026-08-12T14:55:50.198279Z'
+updated_at: '2026-08-13T15:03:57Z'

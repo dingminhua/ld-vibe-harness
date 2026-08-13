@@ -1,0 +1,96 @@
+status: closed
+title: 缩短 full-v4 Python 测试耗时（测试规则快照与热点夹具）
+goal: 在不削弱规则源刷新语义、CLI 进程边界和关键端到端覆盖的前提下，显著减少 full-v4 中 Python 测试反复解析同一规则库及重复构造候选事实的时间。
+scope: "承诺覆盖：为明确不验证规则源刷新语义的热点测试增加显式、只读、测试专用的规则源快照注入；优先覆盖 fact creation/candidate 测试；减少 candidate 测试中非被测目标所需的重复 prepare/create 搭建；保留真实规则源重读、真实 CLI、各事实类型 create→candidate、无效/部分/linked-worktree 等关键路径；运行相关模块测试与前后计时；完成只读独立结果复核。\n\n明确排除：不在生产代码中缓存 RuleSourceResult、RepositoryInspection 或 RuleReferenceBinder；不改变 full-v4 六阶段、v2 record 或历史校验；不引入 pytest-xdist/顶层并行；不修改 workcase-0083 的耗时预估实现；不执行完整 full-v4；不提交或推送。"
+success_criterion_definitions:
+- criterion_id: criterion-1
+  statement: 热点测试可显式复用同一只读规则源快照，生产请求仍逐次发现规则源且 RuleReferenceBinder 仍按请求创建
+- criterion_id: criterion-2
+  statement: candidate 测试的重复准备成本降低，同时保留规则刷新、真实 CLI、事实类型与异常边界的代表性端到端覆盖
+- criterion_id: criterion-3
+  statement: 相关测试模块全部通过，且同口径计时显示优化后耗时低于优化前基线
+- criterion_id: criterion-4
+  statement: 独立只读复核确认没有把生产缓存、旧记录失配或并行共享状态风险引入本次差异
+success_criterion_results:
+- criterion_id: criterion-1
+  outcome: satisfied
+  summary: 快照仅存在于 pytest conftest 并由函数级 monkeypatch 注入；生产代码零改动，真实二次发现回归证明同进程修改规则文件后第二次读取会变化。
+- criterion_id: criterion-2
+  outcome: satisfied
+  summary: 规则源解析从每次 Helper 请求降为每 session 一次；真实 CLI 子进程、create→candidate、linked worktree、invalid/noncanonical carrier 与关系异常覆盖均保留。
+- criterion_id: criterion-3
+  outcome: satisfied
+  summary: 同口径 79 项均通过，248.64s 降至 41.31s；完整 opt-in 选择 149 passed / 57.31s，ruff 通过。
+- criterion_id: criterion-4
+  outcome: satisfied
+  summary: 独立只读复核结论 PASS，确认没有生产缓存、binder 复用、runner record 变更或并行共享写状态。
+result_summary: 以显式 opt-in 的 pytest 只读规则源快照消除热点 Helper 测试的重复规则库解析；核心 79 项保持全过并由 248.64s 降至 41.31s。未修改生产代码、full-v4 六阶段/v2 record 或并行策略。
+validation_summary: ruff（本 WorkCase 相关测试文件）通过；test_rule_source 5 passed；candidate+creation 原路径 79 passed / 248.64s、快照路径 79 passed / 41.31s；全部交付 opt-in 模块及重读回归 149 passed / 57.31s；fact-integrity complete（198 对象）；未运行 full-v4。
+change_log:
+- signature:
+    model_id: gpt-5.6
+    host_name: Cindy
+  session_id: current-conversation
+  at: '2026-08-09T16:20:33.381545+08:00'
+  summary: 创建独立审核后的 full-v4 Python 测试优化 WorkCase。
+- signature:
+    model_id: gpt-5.6
+    host_name: Cindy
+  session_id: current-conversation
+  at: '2026-08-09T16:22:30.770051+08:00'
+  summary: 绑定 Human Gate 1 执行批准并冻结执行基线。
+- signature:
+    model_id: gpt-5.6
+    host_name: Cindy
+  session_id: current-conversation
+  at: '2026-08-09T16:41:46.108646+08:00'
+  summary: 完成四个工作项并形成 result_version=1 canonical result projection。
+- signature:
+    model_id: gpt-5.6
+    host_name: Cindy
+  session_id: current-conversation
+  at: '2026-08-09T16:41:57.307575+08:00'
+  summary: 冻结完整结果投影并进入独立复核阶段。
+- signature:
+    model_id: gpt-5.6
+    host_name: Cindy
+  session_id: current-conversation
+  at: '2026-08-09T16:42:11.748887+08:00'
+  summary: 绑定 result_version=1 的独立只读 PASS 复核。
+- signature:
+    model_id: gpt-5.6
+    host_name: Cindy
+  session_id: current-conversation
+  at: '2026-08-09T16:43:07.085283+08:00'
+  summary: 消费独立 PASS 复核并形成 completed 关闭提案。
+- signature:
+    model_id: gpt-5.6
+    host_name: Cindy
+  session_id: current-conversation
+  at: '2026-08-09T16:43:21.219834+08:00'
+  summary: 冻结关闭提案并交还 Human Gate 2。
+- signature:
+    model_id: gpt-5.6
+    host_name: Cindy
+  session_id: current-conversation
+  at: '2026-08-09T08:55:23.952887Z'
+  summary: 消费 Human Gate 2 决定，以 completed 关闭 WorkCase。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:40.046907Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+closure_outcome: completed
+disposition_summary: 测试优化目标已完成：核心热点 79 项保持全过并缩短 83.4%，全部授权范围验证通过；没有剩余受限责任。
+object_id: workcase-01KZXN5TXNFP382NQ3TWD031KD
+object_uid: 019ffb52-ebb5-7d86-8156-e3d71a01866d
+fact_type_key: workcase
+created_at: '2026-08-09T16:20:33.381545+08:00'
+updated_at: '2026-08-13T15:03:57Z'

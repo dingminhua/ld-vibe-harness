@@ -1,0 +1,176 @@
+status: closed
+title: 将 LDVH 迁移为源码唯一接入并部署 common-dir Git Gate
+goal: 完成从 Python distribution 接入模型到源码仓库唯一能力本体的迁移，使环境接入、管辖配置核验、common-dir Git Hook 部署与验证四项工作形成可执行闭环；六个源码 surface、源码 Doctor 和第三方依赖准备形成单一交付链，并在不中断当前 Git Gate 的前提下退役 packaging 与 installed snapshot。
+scope: 写入范围限定为当前 ld-vibe-harness-v4 worktree 内与本次迁移直接相关的 specs、attachments、Code、tests、tools、仓内 README 与仓内 Skill 源文件，以及 workcase-0055 自身生命周期；实现单一源码 dispatcher 或等价稳定源码入口，覆盖 helper、work-context、context-recovery、doctor、git-commit-msg、git-hook 六个 surface；修复 work-context 标题漂移；将 Doctor 改为源码身份；将 Hook manager 改为 common-dir；迁移当前 common-dir 下可证明由 LDVH 管理的旧 worktree-local Hook；改造 native Windows 验证为第三方依赖准备加源码入口；退役 setup/build/snapshot 与 LDVH 本体 pip 路径。排除已部署到用户环境的 Skill、未知用户 Hook 或配置、独立 clone、管辖配置 writer、通用 Skill installer、push、PR、发布、外部消息、Git commit、其它事实对象、历史事实改写、其它项目及无关 worktree。
+success_criterion_definitions:
+- criterion_id: criterion-source-only-rule-model
+  statement: 当前 specs 与授权附件不再把 installed_release_snapshot 或 Python distribution 作为活跃规则源、能力本体或默认交付载体，并明确只允许为第三方依赖准备使用依赖工具，禁止 pip install .、pip install -e .、wheel/sdist build 与发布。
+- criterion_id: criterion-six-source-surfaces
+  statement: helper、work-context、context-recovery、doctor、git-commit-msg、git-hook 六个 surface 均有稳定、可验证且绑定当前源码仓库的调用形态，不受 cwd、PATH 或已安装 LDVH 副本误导。
+- criterion_id: criterion-governance-config-validation
+  statement: 当前仓库的管辖配置可由源码入口只读核验项目标识、规则源与仓库绑定；缺失、漂移或歧义均 fail-closed，且不引入配置 writer。
+- criterion_id: criterion-source-doctor
+  statement: Doctor 使用源码身份、revision、工作树状态、源码 surface 和管辖解析形成诊断，不依赖 distribution metadata 或同目录 console scripts。
+- criterion_id: criterion-common-dir-hook
+  statement: Git Hook manager 从 actual worktree 解析 common-dir，一次部署覆盖当前 common-dir 下主 worktree、全部可安全验证的既有 linked worktree，并以受控临时 linked worktree证明后续 worktree 自动覆盖；独立 clone 明确不受影响；发现未知 core.hooksPath、未知 Hook 文件或来源不明覆盖时 fail-closed 且零写入。
+- criterion_id: criterion-gate-continuity
+  statement: 新 common-dir Hook 在 prepare、语法与所有权校验以及真实 allow/block 验证完成前不切换或删除旧 Hook；验证无需创建业务提交，可使用真实 Hook 入口和受控临时 message、index、worktree 证明各事件绑定自身 worktree、Index 与 message；仅删除有 LDVH 所有权证据的旧覆盖或资产。
+- criterion_id: criterion-packaging-retired
+  statement: packaging、installed snapshot、LDVH 本体 pip 安装与 console-script 默认路径已从当前产品实现和测试中退役；native Windows 验证资产保留并改为第三方依赖准备加源码入口，Windows 未验证范围如实保留。
+- criterion_id: criterion-validation-and-review
+  statement: 适用 specs、unit、integration 与完整回归验证通过，git diff 检查无误，workcase-0055 通过 Helper 精确回读并完成独立结果复核；未发生未授权外部动作或 Git 提交。
+success_criterion_results:
+- criterion_id: criterion-source-only-rule-model
+  outcome: satisfied
+  summary: 现行 01/04/09 与授权附件只承认 working_tree 源码规则源；LDVH 本体 pip、wheel/sdist 与 installed snapshot 已从活跃实现和测试退役，requirements 只准备第三方依赖。
+- criterion_id: criterion-six-source-surfaces
+  outcome: satisfied
+  summary: 根目录 ldvh dispatcher 提供 helper、work-context、context-recovery、doctor、git-commit-msg、git-hook 六个源码 surface；Doctor 当次验证 6/6 available。
+- criterion_id: criterion-governance-config-validation
+  outcome: satisfied
+  summary: 源码 Doctor 经 Helper 回读 workspace 配置 valid、scope governed_single、governed_project_id=ldvh；未引入配置 writer。
+- criterion_id: criterion-source-doctor
+  outcome: satisfied
+  summary: Doctor 当次以 v4 源码根、Git revision、dirty 工作树、源码 surface 与管辖解析形成 ready 结果，不依赖 distribution metadata。
+- criterion_id: criterion-common-dir-hook
+  outcome: satisfied
+  summary: 新 Hook 位于共享 common-dir；6 个 live worktree 无 core.hooksPath 覆盖且逐个 inspect=managed。后续 linked worktree 与独立 clone 边界由 12 项 manager 回归覆盖；其他项目使用不同 common-dir。
+- criterion_id: criterion-gate-continuity
+  outcome: satisfied
+  summary: 失效旧 common Hook 已按原 hash 备份，v3 旧 Hook原样保留；新 Hook 带 digest 所有权标记。v2、v3、v4 使用临时 Index/message 的真实事件均阻断非法消息并放行合法消息，未创建 commit。
+- criterion_id: criterion-packaging-retired
+  outcome: satisfied
+  summary: setup、snapshot 与发行生命周期路径已退役；Windows runner 改为第三方依赖加源码入口。当前 macOS 未冒充 Windows 实机，10 项 native Windows 验证保持 skipped/unverified。
+- criterion_id: criterion-validation-and-review
+  outcome: satisfied
+  summary: 1440 项 Python 测试可收集，各目录可运行分片通过，10 项 native Windows 跳过；变更相关 Web 类型检查与 12 项 API 测试通过，Hook 12 项与 Reviewer 相关回归 50 项通过。Ruff、format、diff check、Helper 回读及独立审核均通过；未提交 Git。
+result_summary: LDVH 已完成从 distribution/installed snapshot 到源码仓库唯一能力本体的迁移；环境接入、管辖配置核验、common-dir Git Hook 部署与验证四项工作形成闭环。共享 common-dir 的 6 个 live worktree 现统一使用调用 v4/ldvh 的 digest-owned commit-msg Gate；旧 common Hook 与 v3 Hook均保留为不生效审计/回滚资产，其他 Git 仓库未被改变。
+validation_summary: 源码 Doctor status=ready、6/6 surfaces available、配置 valid/governed_single；6 个 live worktree inspect=managed 且无 core.hooksPath；v2/v3/v4 真实 Hook block_rc=1、allow_rc=0。Hook 回归 12 passed，独立审核相关回归 50 passed，Ruff/format/diff check 通过；Python 共收集 1440 项，10 项 native Windows 保持 skipped。变更相关 Web check 与 12 项 API 测试通过；完整 Web 套件另有 7 项既有且与本次改动无关的 UI/docs contract 失败，未被误报为本次通过。
+change_log:
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
+  at: '2026-08-04T17:46:50.456343+08:00'
+  summary: 创建源码唯一接入与 common-dir Git Gate 迁移 WorkCase，并写入已处置的独立 creation review。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
+  at: '2026-08-04T17:48:45.830864+08:00'
+  summary: 记录 Human Gate 1 批准，进入 plan_version 1 的受限执行阶段。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
+  at: '2026-08-04T17:49:11.570810+08:00'
+  summary: 开始 item-spec-source-model，先迁移规则源与交付规范。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
+  at: '2026-08-04T17:52:41.401359+08:00'
+  summary: 完成源码唯一规则模型并开始源码运行时与 Doctor 迁移。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
+  at: '2026-08-04T18:10:31.249307+08:00'
+  summary: 完成源码运行时、管辖核验、环境链、common-dir manager 与 packaging 退役；记录真实 Hook 覆盖冲突并保持零写入。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
+  at: '2026-08-04T18:31:38.496694+08:00'
+  summary: 完成最终静态复核并记录独立审核 approved：1440 项测试可收集，Hook 分片 12 项通过，Ruff 与 diff check 通过；真实 common-dir 三条旧覆盖因所有权未获 Human 扩权而继续零写入。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
+  at: '2026-08-04T18:35:25.230628+08:00'
+  summary: Human 在了解 v3 core.hooksPath=hooks 的含义后明确要求按建议推进；授权精确处置已识别的三条旧 LDVH Hook 覆盖，保留 v3 旧 Hook 文件并完成 common-dir Gate 真实验证。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
+  at: '2026-08-04T18:37:10.520721+08:00'
+  summary: 执行三条旧覆盖的受控迁移时发现 common-dir 另有一个无当前 digest、且指向已删除旧源码目录的 LDVH commit-msg Hook；manager fail-closed，事务 ROLLBACK_OK，三条覆盖与旧 Gate 全部恢复，未安装新 Gate。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
+  at: '2026-08-04T20:32:08.166993+08:00'
+  summary: Human 在明确了解 common-dir 物理安装位置、非管辖项目隔离及三条覆盖含义后，同意备份并替换精确旧 common-dir Hook，继续完成统一 Gate 迁移与验证。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
+  at: '2026-08-04T20:33:34.522478+08:00'
+  summary: 完成 common-dir Git Gate 现实迁移：备份旧 common Hook，取消全部 worktree-local 覆盖，部署 digest-owned 共享 Hook；6 个 live worktree inspect 通过，v2/v3/v4 真实 block/allow 通过，未创建 commit。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
+  at: '2026-08-04T20:37:32.480085+08:00'
+  summary: 全部 work item terminal，进入 result_version 1 Controller 检查并形成完整结果投影；8 项成功标准均有当前证据，保留 Windows 未实机验证和既有 Web 非相关失败边界。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
+  at: '2026-08-04T20:37:43.579444+08:00'
+  summary: result_version 1 完整投影已通过 Helper 回读，进入独立结果复核。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
+  at: '2026-08-04T20:39:09.531771+08:00'
+  summary: 在 independent_reviewing 原 phase 保存 result_version 1 独立复核：pass_with_followups；Controller 采纳三项边界提醒，完整结果投影不变。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
+  at: '2026-08-04T20:39:30.831334+08:00'
+  summary: 独立 result review 已形成且全部 feedback 已由 Controller 处置；返回 controller_checking 确认投影不变。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
+  at: '2026-08-04T20:39:42.909308+08:00'
+  summary: 经 Controller 复核，result_version 1 与独立 review 保持不变；形成 proposed_outcome=completed 且无剩余责任的关闭提案。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
+  at: '2026-08-04T20:39:55.263396+08:00'
+  summary: 关闭提案完整回读并完成终态保留审查；进入 Human Gate 2，等待 Human 确认是否以 completed 正式关闭。
+- signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+  session_id: 23bc611d-4dc7-4949-ab5c-ffd122a23d22
+  at: '2026-08-04T20:51:33.459242+08:00'
+  summary: Human Gate 2 明确确认以 completed 关闭 workcase-0055；按已复核 result_version 1 与无剩余责任关闭提案形成终态。
+- at: '2026-08-10T09:24:12.468171Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5; 12: codex -> gpt-5; 13: codex -> gpt-5; 14: codex -> gpt-5; 15: codex -> gpt-5; 16: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:15.509522Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+closure_outcome: completed
+disposition_summary: 当前 WorkCase 的源码唯一迁移、四项接入闭环和 common-dir Git Gate 部署责任已完成；没有需要转交、建议新建 Spark 或由 Human 接受停止的剩余责任。Windows 原生未验证、既有 Web 非相关失败及保留 Hook 资产属于已记录验证/维护边界，不改变 completed 技术分类。
+object_id: workcase-01KZXN5TXNFTP90NG3BTT6EBMC
+object_uid: 019ffb52-ebb5-7eac-9056-035eb4672e8c
+fact_type_key: workcase
+created_at: '2026-08-04T17:46:50.456343+08:00'
+updated_at: '2026-08-13T15:03:57Z'

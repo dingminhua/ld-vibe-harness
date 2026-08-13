@@ -1,0 +1,30 @@
+title: Web 项目内容统一绑定当前管辖项目
+intent: 需要持续保留 Web 项目级内容与顶部当前管辖项目的一致性问题，避免文件、变更、提交、事实对象或仪表盘分别使用页面内选择、固定根目录、环境默认或旧缓存，导致同一界面同时展示不同项目。后续需判断项目级页面清单、统一请求与服务端解析边界、切换时的数据失效和性能复用；若不跨行动保留，后续单页修补会反复遗漏其它入口，并增加重新定位数据来源、比较页面语义和排查跨项目误读的负担。
+status: implemented
+summary: "**当前结论**\n\n- Web 当前存在的项目级内容统一消费顶部选中的管辖项目身份；浏览器传递稳定项目 ID，服务端只把它解析为登记配置中的当前受管项目及实际 worktree，不信任任意路径或页面私有默认值。\n- 文件、工作区变更、提交、事实对象列表与详情、认知和阅读入口共享同一项目请求上下文；项目切换会隔离旧项目结果，避免旧响应覆盖新选择，也不会以相同对象编号跨项目混读。\n- 当前请求解析、页面路由与契约测试已覆盖项目绑定和错误边界；已移除或不存在的页面不构成本 Spark 的残余。多项目切换及“全部”聚合的独立产品语义仍由 `spark-0021` 保持相关，但不影响单一已选项目绑定已落实。\n\n**处置边界**\n\n本结论不授权跨项目聚合写入，也不表示所有未来新增页面自动获得项目上下文；新增入口仍须复用现行项目解析契约并单独验证。"
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7bf4-8ed2-bce2a2d7d618
+disposition_summary: 当前 Web 项目级读取已经统一绑定顶部所选管辖项目，并通过稳定项目 ID、服务端登记解析、实际 worktree 校验、项目切换失效与相关契约测试直接落实。现有 `related-to → spark-0021` 仅保留相邻的多项目切换/聚合议题，不是承接目标；本 Spark 原范围内没有剩余责任。
+evolution:
+- at: '2026-08-01T01:58:26+08:00'
+  summary: 项目级页面和服务端请求已统一消费同一受管项目上下文，并具备切换时的隔离与验证边界，原先的跨页面项目混读风险已收敛为直接落实结果。
+object_id: spark-01KZXN5TXNEYP9C36Z4DM9N0V9
+object_uid: 019ffb52-ebb5-77ac-960c-df23689a8369
+fact_type_key: spark
+created_at: '2026-07-26T23:55:40.750956+08:00'
+updated_at: '2026-08-13T15:03:57Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:00.676606Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。

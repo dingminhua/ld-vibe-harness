@@ -1,0 +1,53 @@
+title: WC 流程拆分：受控创建与独立审核解耦
+status: discarded
+intent: 当前 21 号规范把"至少一项实际独立方案复核"作为受控创建的前置条件（§4.4），导致 creation_reviews、execution_authorization 与计划主体在创建时一次性写入，WC 创建完成后直接处于 human_plan_confirming 阶段。这意味着审核发生在创建事务内部，主控 AI 既是方案撰写者又是创建执行者，subagent 的独立视角无法在创建之后、Gate1 之前以独立阶段介入。Human 希望的流程是：主控 AI 受控创建 WC（完成基本计划主体）→ 调用 subagent 独立审核方案 → 主控 AI 基于审核反馈完善 → 完善后进入 Gate1。若不跨行动保留，这一流程改进方向会随会话结束丢失，后续需要重新通读 21 号规范并重建判断。
+summary: "## 当前结论\n\n**现状核实**：21 号规范 §4.4 要求受控创建\"至少一项实际独立方案复核\"，创建后 phase 为 `human_plan_confirming`，creation_reviews 已存在。审核是创建事务的组成部分，不是独立阶段。\n\n**Human 期望流程**：\n1. 主控 AI 受控创建 WC（形成 goal、scope、criteria、items、execution_authorization，但不含 creation_reviews）\n2. 调用 subagent 对完整方案进行独立审核\n3. 主控 AI 根据审核反馈完善方案\n4. 完善后进入 Gate1 等待 Human 批准\n\n**核心差异**：规范把审核视为创建的前置条件（创建时必须已完成），Human 把审核视为创建后的独立阶段。\n\n**待判断**：\n- 是否解耦 creation_reviews 与受控创建的同事务要求，使创建后可以无 creation_reviews 进入一个新 phase？\n- 新 phase 如何命名？候选：`plan_reviewing`（独立审核阶段），或复用 `plan_revising` 并扩展其 Gate1 前语义？\n- subagent 独立审核如何路由？是否需要独立性保障机制（如独立 Agent 类型、隔离上下文）？\n- 审核后的\"完善\"与现有 `plan_revising` 是否合并？完善后是否需要 fresh review 才能进入 Gate1？\n- 该流程变化涉及 21 号规范的哪些章节：§4.4 受控创建、§6.2 phase 闭集、§6.3 presence、§6.5 计划投影与批准、§7 AI 写回检查点？\n\n**边界**：本 Spark 不授权修改规范、创建 WorkCase 或执行任何实施动作。只保留议题识别、流程分析和方向判断。\n\n## 废弃判断\n\n本 Spark 于 2026-08-06 废弃，理由如下：\n\n1. **创建后独立审核阶段的设计方向正确但成本过高**：要落地需要修改 21 §4.4、§6.2 phase 闭集、§6.3 presence、§6.3.2 phase 转换闭集、§7 写回检查点等一整条链，涉及状态机核心章节，风险—收益在当前阶段不成比例。\n2. **当前问题与本 Spark 的预期解不同**：workcase-0062/0063/0064 暴露的\"受控提交被写成 item\"问题，根因是 21 §4.3 的枚举闭集未点名\"受控提交\"，已于 2026-08-06 通过单点补枚举、不修改 phase 链的方式解决。创建后独立审核阶段并不能防止此类 item 级建模错误——它甚至可能让错误更晚暴露（审核基于草稿方案，缺少终态约束钩子）。\n3. **当前方向应为强化创建前独立审核质量而非改为创建后独立审核阶段**：4.5 已要求独立 subagent 审核，本次 workcase 的 creation_reviews 已由 GPT-5 等独立视角执行，方向正确；gap 在枚举闭集完整度而非 phase 编排。应优先补齐枚举、打磨创建前复核检查清单，待门控体系稳定后再评估是否值得引入 phase 层面的分解。\n4. **本 spark 已 open 一年（2025-08-05 → 2026-08-06），无 workcase 实际承接，说明未被实际阻塞**：相关 workcase（0056/0057）明确在 scope 中排除了本 spark，表明执行层面不认为它是燃眉之急。保留 open 状态持续消耗列表关注度但无推进行动，不如明确废弃，待后续有真实需求时创建新 spark 接替。"
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7ee2-a408-38b8fd5e8ba9
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-70be-98b0-0ba048ac1ff6
+evolution:
+- at: '2026-08-05T12:00:00+08:00'
+  summary: Human 提出 WC 流程应当是"先受控创建，再审核，审核后修改，然后进入 Gate1"，指出当前流程与此有出入。经核实 21 号规范 §4.4，确认差异为：当前 creation_reviews 是受控创建的同事务组成部分，不是独立阶段；Human 希望解耦为创建→独立审核→完善→Gate1 四步流程。
+- at: '2026-08-06T09:55:44+08:00'
+  summary: 经评估废弃本议题：创建后独立审核阶段方向正确但改动成本过高（涉及 phase 闭集与状态机），且当前 workcase-0062/0063/0064 实际暴露的受控提交漏检问题已通过 21 §4.3 补枚举解决，与 phase 编排无关；一年来无 workcase 实际承接（0056/0057 均明确排除）。当前应强化创建前独立审核质量，暂不引入 phase 层面的创建后审核阶段。
+change_log:
+- signature:
+    agent_id: glm-5.2
+    host_environment: Claude
+  session_id: session-20260805-spark-creation
+  at: '2026-08-05T12:00:00+08:00'
+  summary: 创建 spark-0054，记录 WC 流程拆分议题：受控创建与独立审核解耦。
+- signature:
+    agent_id: glm-5.2
+    host_environment: Claude
+  session_id: claude-code-session-20260806
+  at: '2026-08-06T09:55:44+08:00'
+  summary: 按 Human 指令将 spark-0054 处置为 discarded，废弃理由见 summary 废弃判断段。创建后独立审核阶段方向正确但成本过高；当前受控提交漏检已由 21 §4.3 补枚举解决；优先强化创建前独立审核质量，后续有真实需求时由新 spark 接替。
+- at: '2026-08-10T08:47:00.434511Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: claude-code-mcp -> Claude; 1: Claude Code (macOS) -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:55.721728Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+disposition_summary: 本 Spark 按 Human 指令废弃。创建后独立审核阶段（受控创建→独立审核→完善→Gate1）设计方向正确，但需改动 21 §4.4、§6.2/§6.3/§6.3.2 phase 闭集与状态机及 §7 写回等整条链，风险—收益在当前阶段不成比例；且 workcase-0062/0063/0064 暴露的受控提交漏检根因是 21 §4.3 枚举闭集未点名"受控提交"，已于 2026-08-06 单点补枚举解决，不涉及 phase 编排。当前方向是强化创建前独立审核质量（4.5 已要求独立 subagent 审核，本次 creation_reviews 已由 GPT-5 等独立视角执行），待门控体系稳定后再评估是否引入 phase 层分解。本 spark 一年来无 workcase 实际承接（0056/0057 明确排除），非燃眉之急，故废弃而非延续 open。后续如有真实需求由新 spark 接替。
+object_id: spark-01KZXN5TXNF9CV12595A41SSCG
+object_uid: 019ffb52-ebb5-7a59-b088-a92a881ce590
+fact_type_key: spark
+created_at: '2026-08-05T12:00:00+08:00'
+updated_at: '2026-08-13T15:03:57Z'

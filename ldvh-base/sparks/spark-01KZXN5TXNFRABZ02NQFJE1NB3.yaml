@@ -1,0 +1,54 @@
+title: work item 吸收生命周期关口的机械拦截——创建时禁止将受控提交/结果复核写成 item
+intent: WorkCase 创建时 Controller 与 Reviewer 必须逐项审核 work item 是否吸收生命周期关口（21 §4.3），但 WC-0067 创建时 item-05（goal=全部 item terminal 后本地受控提交）明确违例却未被拦截通过。需要判断：是否应把 21 §4.3 禁止的典型反例在 Code 层面做机械拦截，使 create-fact-object 在校验 work items 时检测已知关键词闭集并拒绝创建，不再仅依赖 AI 语义审核。
+summary: "## 问题\n\nWC-0067 创建时，item-05 的 goal 为「全部 item terminal 后本地受控提交」。规范 21 §4.3 明确禁止把受控提交写成 item——「应在全部 item terminal 后由受控提交承接」，且模板 34 §5.2 停止条件也要求检测「任一 item 吸收受控提交」。但创建时 Controller/Reviewer 未拦截，导致该违例 item 进入获批计划并执行。\n\n## 根因\n\n规范 21 §4.3 和模板 34 §5.2 的规则明确，但依赖 AI 逐项语义审核——无机械保障。当 AI 语义审核漏过时，唯一防线失效。\n\n## 候选方向\n\n1. **纯规范层强化**：在模板 34 增加创建前强制逐项核对清单，列出典型反例（受控提交、结果复核、关闭准备等），让 Controller 创建前逐项问「这个 goal 是不是生命周期关口」。成本低，但仍靠 AI 语义审核。\n\n2. **Code 机械拦截**：在 create-fact-object 的 work items 校验中，检测 goal/expected_result 是否命中已知生命周期关口关键词闭集（如「受控提交」「本地提交」「结果复核」「完整结果投影」「关闭准备」「Gate」），命中则拒绝创建并报「生命周期关口误建模」。机械拦截能覆盖已知关键词，不能覆盖任意自然语言换说法。\n\n3. **两者兼用**：机械拦截抓已知关键词，模板核对清单兜底任意自然语言变体。\n\n## 边界\n\n- 不改规范 21 正文（§4.3 已明确禁止，规则正确）\n- 不改 00/02/05 等正文与字段表\n- 只讨论「work item 吸收生命周期关口」这一种违例，不泛化到其他 item 合规问题\n- 机械拦截只检测关键词闭集，不用自然语言理解判断任意语义\n- 不改 Code 的 resolver.py/configuration.py/filesystem.py 等核心模块\n\n## 参考\n\n- 规范 21 §4.3（生命周期关口边界）\n- 模板 34 §5.2（停止条件核对项）\n- WC-0067 item-05 实际违例实例\n- spark-0055（LDVH 流程复杂度是否过度设计——宏观议题）\n\n## 关系\n\n本 Spark 与 spark-0055 有交集——如果机械拦截被判定为合理，它是「以 Code 机制保障规范边界」的实例，可支撑或反驳 spark-0055 的宏观判断。如果机械拦截被判定为过度设计，则本 Spark 结论可以关闭为 discarded 并记录理由。"
+status: implemented
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c
+disposition_summary: 以 Skill 路由纪律作为处置，不做 Code 机械拦截。在 SKILL.md 新增「WorkCase 创建路由纪律」章节，要求 AI 创建 WorkCase 前经 Helper 读取规范 21 §4.3 与 §4.4 及当次适用行动模板的 Stop Conditions，照其逐项审核 work items 与 success_criterion_definitions 是否吸收生命周期关口或 Human Gate。不做 Code 机械拦截的理由：关键词闭集无法覆盖任意自然语言换说法，且存在假阳性（如合法的「实现受控提交系统」item），投入产出比低。规范层（21 §4.3/§4.4）与行动模板层（31/34 Stop Conditions）已完善，Skill 路由纪律补最后一公里触发提醒。无剩余待处置内容，无事实承接对象。
+evolution:
+- at: '2026-08-09T05:50:00Z'
+  summary: 经审核确认规范层（21 §4.3/§4.4）与行动模板层（31/34 Stop Conditions）已完善，Code 机械拦截因假阳性与覆盖不足判定不做。处置方式为在 SKILL.md 新增 WorkCase 创建路由纪律，作为创建前的强制审核触发提醒。
+change_log:
+- at: '2026-08-07T02:34:34.529232+08:00'
+  session_id: glm-5.2-wc0067-followup-spark-0064-20260807
+  summary: 受控创建本 Spark：WC-0067 创建时 item-05（goal=受控提交）违例 21 §4.3 未被拦截，暴露「AI 语义审核不可靠」问题。需判断是否增加 Code 机械拦截。
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude
+- at: '2026-08-09T13:51:32.383409Z'
+  session_id: trae-spark0064-implemented-20260809
+  summary: Spark 处置为 implemented：以 Skill 路由纪律作为处置，不做 Code 机械拦截。在 SKILL.md canonical 新增「WorkCase 创建路由纪律」章节。部署件待手动同步。
+  signature:
+    model_id: glm-5.2
+    agent_workbench: Trae
+- at: '2026-08-10T08:31:19.425854Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 1: Trae Code -> Trae。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-historical-signature-repair-20260810
+- at: '2026-08-10T08:47:27.295901Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Claude Code (macOS) -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:02:24.866336Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+object_id: spark-01KZXN5TXNFRABZ02NQFJE1NB3
+object_uid: 019ffb52-ebb5-7e14-bf80-55bbe4e0d563
+fact_type_key: spark
+created_at: '2026-08-07T02:34:34.529232+08:00'
+updated_at: '2026-08-13T15:03:57Z'

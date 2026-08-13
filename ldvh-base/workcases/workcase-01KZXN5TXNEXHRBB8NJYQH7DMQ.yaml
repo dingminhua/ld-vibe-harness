@@ -1,0 +1,43 @@
+success_criterion_definitions:
+- criterion_id: criterion-gate1-consumption-coverage
+  statement: 环境验收行为同时覆盖同一已批准 WorkCase 中的有界本地动作与只读 Reviewer 委派，并明确二者直接消费 Gate 1、不产生新的 WorkCase Human waiting/权限提请；环境强制 UI 只按原文、版本和政策作为非 LDVH 边界记录。
+- criterion_id: criterion-subagent-context-regression
+  statement: work_context 的 SubagentStart 成功路径具有回归测试，且只证明规则引导递达、facts=not_requested 与不替代精确事实/授权读取。
+- criterion_id: criterion-bounded-validation
+  statement: 相关 work-context、文档和规范测试通过，且结果不把本地回归覆盖夸大为已验证所有运行环境 UI 行为。
+goal: 消除已获 Gate 1 授权的有界本地动作和只读 Reviewer 委派在执行期被误提示第二次 Human 权限的本地递达与回归覆盖缺口；若实际提示来自运行环境强制 UI，必须如实区分其并非 LDVH 的第三 Gate。
+status: closed
+success_criterion_results:
+- criterion_id: criterion-gate1-consumption-coverage
+  outcome: satisfied
+  summary: B4 now requires a single Gate 1-approved WorkCase exercise of both an authorized bounded local action and a read-only Reviewer delegation, forbids a new LDVH Human wait for either, and requires any mandatory environment UI to be recorded as a non-LDVH boundary with its transcript, version, and policy.
+- criterion_id: criterion-subagent-context-regression
+  outcome: satisfied
+  summary: Added a successful SubagentStart work-context regression that verifies rule orientation delivery, facts=not_requested, and that the thin entry performs neither fact reads nor authorization judgment.
+- criterion_id: criterion-bounded-validation
+  outcome: satisfied
+  summary: Targeted work-context, enablement-doc, and specification-repository tests passed (20 total), and the validation record explicitly leaves real environment UI behavior unverified.
+title: 补足 Gate 1 后授权消费不再二次索权的递达与回归覆盖
+validation_summary: Passed .venv/bin/pytest -q code/tests/work_context/test_work_context.py code/tests/docs/test_enablement_docs.py code/tests/specs/test_repository.py (20 passed in 7.31s), plus git diff --check. Validation is local and does not exercise a real environment mandatory-confirmation UI.
+scope: 仅覆盖 skill/SKILL.md（仅在路由文案确有歧义时）、specs/attachments/09.Att.02-接入验收行为清单.md、code/ldvh/work_context.py、code/tests/work_context/test_work_context.py 及直接相关文档/规范测试。排除运行环境、插件或用户配置改动，外部 UI 操作与消息，push、PR、发布和破坏性操作。
+result_summary: B4 now defines one Gate 1-approved WorkCase exercise in which both the bounded local action and read-only Reviewer delegation consume the same authorization without a new LDVH Human wait. The work-context regression covers successful SubagentStart rule delivery without fact or authorization substitution.
+closure_outcome: completed
+disposition_summary: 当前本地责任已完成：B4 已明确同一 Gate 1 内的有界本地动作与只读 Reviewer 委派直接消费授权且不产生新的 LDVH Human waiting；SubagentStart 成功路径回归与 20 项定向测试均通过。真实环境强制确认 UI、其版本/政策、spawn 能力和 Reviewer 真实独立性未在本案中验证，已如实保留为非 LDVH 边界；无剩余责任、路由目标或 Spark 建议。
+object_id: workcase-01KZXN5TXNEXHRBB8NJYQH7DMQ
+object_uid: 019ffb52-ebb5-7763-85ad-1597af13b697
+fact_type_key: workcase
+created_at: '2026-08-02T12:13:30.454117+08:00'
+updated_at: '2026-08-13T15:03:57Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:06:23.060145Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。

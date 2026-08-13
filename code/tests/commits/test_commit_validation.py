@@ -910,6 +910,40 @@ def test_new_footer_does_not_bind_legacy_shape_entries(
     assert "legacy_signature_write_retired" in _codes(result)
 
 
+def test_fact_rename_compares_trace_with_original_head_object_id(
+    contract: CommitContractProjection,
+) -> None:
+    after = (
+        _LEGACY_SHAPE_SPARK.replace(b"spark-0001", b"spark-0002").replace(
+            b"updated_at: 2026-07-01T00:00:00+08:00",
+            b"updated_at: 2026-07-01T01:00:00+08:00",
+        )
+        + (
+            "  - signature:\n"
+            "      product_name: Cindy\n"
+            "      model_name: gpt-5.6-luna\n"
+            "      agent_runtime_name: codex-cli\n"
+            "    at: 2026-07-01T01:00:00+08:00\n"
+            "    summary: 改名事实对象\n"
+        ).encode()
+    )
+    candidate = _fact_candidate(
+        path="ldvh-base/sparks/spark-0002.yaml",
+        object_id="spark-0002",
+        data=after,
+        head_data=_LEGACY_SHAPE_SPARK,
+        head_exists=True,
+        head_object_id="spark-0001",
+    )
+
+    result = validate_commit(
+        contract,
+        _input(contract, fact_candidates=(candidate,), fact_schemas=(_spark_schema(),)),
+    )
+
+    assert result.outcome == "passed", [f"{issue.code}: {issue.message}" for issue in result.issues]
+
+
 def test_legacy_shape_change_log_is_rejected_even_with_legacy_footer(
     contract: CommitContractProjection,
 ) -> None:

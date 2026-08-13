@@ -1,0 +1,45 @@
+title: Claude Code 技能在 Cindy/Codex 环境中部署失败
+status: active
+change_log:
+- signature:
+    agent_id: glm-5.2
+    host_environment: Codex
+  session_id: d0fb02a7-769a-40e7-a481-9ce20fe02f99
+  at: '2026-08-06T19:29:55+08:00'
+  summary: 新建 pitfall-0007：Claude Code 技能在 Cindy/Codex 环境部署失败的经验与规避
+- signature:
+    agent_id: glm-5.2
+    host_environment: Codex
+  session_id: d0fb02a7-769a-40e7-a481-9ce20fe02f99
+  at: '2026-08-06T23:09:31+08:00'
+  summary: draft → active：Human 确认 pitfall-0007 完整 draft 后 promote，仅变更 status 与 updated_at
+- at: '2026-08-10T11:16:25.224362Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Cindy/Codex 2.1.219, Windows -> Codex; 0: GLM-5.2 -> glm-5.2; 1: Cindy/Codex 2.1.219, Windows -> Codex; 1: GLM-5.2 -> glm-5.2。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-codex-signature-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:59:19.424559Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+symptoms: "1. 按 Claude Code 标准文档将技能文件部署为 ~/.claude/skills/<name>.md 后，重启 Claude Code\n   会话看不到技能。\n2. /skill 命令返回 Unknown command，而原生 Claude Code 环境应能识别。\n3. 技能文件存在于文件系统中，但 Claude Code 启动时未加载。\n4. 在 Cindy/Codex 环境中，codex-home/skills/ 目录下的 symlink 指向的目录中有技能文件，\n   但根目录 .md 文件不被识别。\n"
+trigger_conditions: "前置条件组合：（1）通过 Cindy/Codex 环境启动 Claude Code（非原生 Claude Code 可执行文件）；\n（2）技能部署为 ~/.claude/skills/<name>.md 扁平文件格式；（3）未将技能部署到 ~/.codex/skills/\n或 ~/.agents/skills/ 目录的目录格式路径。已观察条件：Cindy 的 Pi 文档明确说明 ~/.agents/skills/\n和 .agents/skills/ 中根目录 .md 文件被忽略，只有包含 SKILL.md 的子目录才被识别。未知条件：\nCindy/Codex 其他版本（如 2.0.x 或 3.x）是否采用相同规则；是否还有其他隐藏的技能扫描路径。\n"
+root_cause: "Cindy/Codex 环境不是原生 Claude Code，它通过自己的 Pi 框架加载技能。Pi 的技能发现规则与原生\nClaude Code 不同：在 ~/.agents/skills/ 和项目 .agents/skills/ 中，根目录 .md 文件被忽略，只有\n目录内含 SKILL.md 的子目录才被识别为技能。Cindy 的 codex-home/skills/ 通过 symlink 指向\n~/.codex/skills/ 和 ~/.agents/skills/，因此继承了这个规则。而原生 Claude Code 的 ~/.claude/skills/\n支持根目录 .md 文件格式，两者不兼容。已观察事实：Cindy 的 Pi 0.83.0 文档 skills.md 中明确记载了\n该规则；~/.codex/skills/.system/ 下的技能全部使用目录格式（子目录 + SKILL.md）。当前根因判断：\n不是技能文件内容问题，也不是 Claude Code 实现问题，而是部署路径和格式与宿主环境不匹配。\n"
+resolution: "已将技能从 ~/.claude/skills/ldvh.md（扁平格式）迁移到 ~/.codex/skills/ldvh/SKILL.md\n（目录格式），两个文件内容逐字节一致（4842 bytes）。已实际验证：重启全新会话后技能可见。\n适用前提：（1）目标环境是 Cindy/Codex；（2）技能内容为 canonical 正文；（3）使用目录格式\n（<skill-name>/SKILL.md）。可观察成功信号：技能在启动时自动加载，/skill 命令可正常使用。\n"
+avoidance: "复用前应核对的关键条件：（1）必须先确认目标环境类型——运行 claude --version 或检查启动器路径，\n若指向 Cindy/Codex 安装目录（如 AppData/Roaming/Cindy/claude-code/），则采用目录格式部署到\n~/.codex/skills/<skill-name>/SKILL.md；（2）若为原生 Claude Code，则使用 ~/.claude/skills/<name>.md\n扁平格式；（3）不确定时两种格式同时部署，不影响加载。处理后的确认信号：重启全新会话后技能立即可见，\n无需额外操作。不相容边界：如果 Cindy/Codex 版本升级后改变了技能发现规则，本经验不适用，\n应重新查阅对应版本的 Pi 文档。\n"
+applicability: "适用于 Cindy/Codex 环境下运行 Claude Code 的用户。该环境通过 codex-home/skills/ 下的 symlink 链\n加载技能，技能发现规则为目录格式（<skill-name>/SKILL.md），而非原生 Claude Code 的扁平 .md 文件\n格式。不适用于原生 Claude Code 环境或使用 Claude Code 标准技能路径 ~/.claude/skills/ 的场景。\n"
+validation_summary: "2026-08-06 验证：将 ldvh 技能从 ~/.claude/skills/ldvh.md（扁平格式）迁移到\n~/.codex/skills/ldvh/SKILL.md（目录格式）后，重启全新会话，技能可见。/skill 命令可正常响应，\n不再返回 Unknown command。已观察环境：Windows，Cindy/Codex 2.1.219，Pi 0.83.0。未覆盖范围：\n其他操作系统（macOS/Linux）上的 Cindy/Codex 行为未知；Cindy/Codex 版本升级后技能发现规则\n是否变化未知。\n"
+object_id: pitfall-01KZXN5TXNFV1RATRMK8NYZGN8
+object_uid: 019ffb52-ebb5-7ec3-856b-149a2befc2a8
+fact_type_key: pitfall
+created_at: '2026-08-06T19:29:55+08:00'
+updated_at: '2026-08-13T15:03:57Z'

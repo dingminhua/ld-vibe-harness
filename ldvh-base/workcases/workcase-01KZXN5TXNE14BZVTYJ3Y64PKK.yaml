@@ -1,0 +1,141 @@
+status: closed
+title: 建立可审计的 trial 测量基础设施
+goal: 交付可审计、可独立复核且 fail-closed 的 trial 测量基础设施，使后续实验能产生完整、可解释的证据；本工作项不重跑实验，也不修改生产 Helper。
+scope: 仅限 code/ldvh/testing/ 与 code/tests/testing/ 下的测试性模块和测试；可只读读取现行 Helper capabilities/specification 内容以生成并校验提示卡声明；运行数据只能写入由运行器新建、并以创建身份、realpath、lstat 前后校验的 mkdtemp 临时根目录。明确排除任何真实 A/B trial、提示卡效益判断、生产 Helper/调用入口/能力契约、规格、文档、其它事实对象、Git、配置、网络、依赖安装及 WorkCase-0068 产物的修改。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 存在版本化、严格且禁止未声明字段的 JSON schema，明确 trial_id、task_package_hash、condition、runner/schema/rule/capability fingerprints、correct、first_legal、discover/target/repair/total 调用、extra_calls、invalid_requests、response_bytes、estimated_tokens、duration、timeout、failure、unavailable_reason 的类型、可空性、单位和错误语义；每种终态均能形成完整对象。
+- criterion_id: criterion-02
+  statement: 运行器自动采集而非由 agent 事后填写调用分类及次数、invalid_requests、成功和失败时完整原始 Helper 响应 UTF-8 bytes、monotonic clock duration、timeout/failure；token 不可得时必须为 null 并附 unavailable_reason，绝不可填 0。
+- criterion_id: criterion-03
+  statement: 所有运行数据仅写入运行器新建的 mkdtemp 根目录；创建前后以创建身份、realpath、lstat 校验，拒绝 ..、绝对路径、符号链接逃逸、既有或非自身创建目录及 realpath 漂移；不得回退到仓库或 ldvh-base。
+- criterion_id: criterion-04
+  statement: 提示卡声明由当前 capabilities/specification source 读取生成并记录 provenance 与 fingerprint；无法从当前源验证的声明必须拒绝生成。
+- criterion_id: criterion-05
+  statement: 正常、缺字段、额外字段、畸形 JSON、失败响应、超时、错误提示卡及全部路径逃逸均有 synthetic tests；独立复核者可重跑全量测试，并确认未发生真实 trial、生产契约变更或越权写入。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: trial_measurement/1 严格闭集 schema 已实现；每种终态均含完整字段并通过成功、失败、超时及结构拒绝测试。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: 采集器自动从响应事件记录调用分类、invalid_requests、成功和失败完整原始响应 UTF-8 bytes、monotonic duration、timeout/failure；token 未提供时为 null 加 unavailable_reason。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: 临时根强制 repository_root，绑定创建身份与 realpath；路径遍历、绝对路径、仓库内 mkdtemp、非自建父目录、符号链接、身份/realpath 漂移与创建竞态均 fail-closed。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: 提示卡必须调用注入的当前 source reader；每项声明必须是当前 source 的精确片段且 source fingerprint 必须匹配。当次以 Helper capabilities 当前输出成功构建来源绑定卡片。
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: synthetic tests 覆盖标准与对抗性情形；Controller 与独立复核者均按 Python 3.12 官方调用重跑 code/tests/testing，结果均为 106/106，ruff 与 diff --check 通过，范围仅两份 testing-only 新文件和本 WorkCase 生命周期记录。
+result_summary: 已交付 fail-closed 的 trial 测量基础设施：严格 schema、自动指标采集、来源绑定提示卡和身份受限临时输出。它只保证后续实验的证据采集质量，不重跑 WorkCase-0068，也不评价提示卡收益或修改生产契约。
+validation_summary: 主执行与独立只读复核均使用 Python 3.12 官方 pytest 调用运行 code/tests/testing：106/106 passed；ruff 与 git diff --check passed。独立复核者已检查 testing-only 路径和 WorkCase 生命周期范围。
+change_log:
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: spark-0067-measurement-infrastructure-plan
+  at: '2026-08-07T22:09:03.449286+08:00'
+  summary: 用户授权按建议推进；创建仅限 testing-only 的 trial 测量基础设施计划，等待 Gate 1。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0069-execution
+  at: '2026-08-08T05:14:39.841850+08:00'
+  summary: Human Gate 1 已批准，phase 推进至 executing。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0069-execution
+  at: '2026-08-08T05:15:09.436352+08:00'
+  summary: item-01 开始：定义严格 schema 与自动采集模型。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0069-execution
+  at: '2026-08-08T05:18:56.729280+08:00'
+  summary: item-01 完成；item-02 开始：受限运行器与来源受控提示卡生成。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0069-execution
+  at: '2026-08-08T05:25:37.696888+08:00'
+  summary: item-02、item-03、item-04 完成；进入 controller_checking 形成结果投影。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0069-execution
+  at: '2026-08-08T05:28:47.260557+08:00'
+  summary: 已形成 result_version 1 的完整结果投影，等待独立结果复核。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0069-execution
+  at: '2026-08-08T05:29:06.578688+08:00'
+  summary: 完整结果投影已冻结，进入 independent_reviewing。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0069-execution
+  at: '2026-08-08T05:30:26.134038+08:00'
+  summary: 独立结果复核已完成并通过，结果版本 1 已冻结。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0069-execution
+  at: '2026-08-08T05:30:44.196879+08:00'
+  summary: 独立结果复核通过，进入 closure_preparing 形成 Gate 2 呈报。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0069-execution
+  at: '2026-08-08T05:30:58.661952+08:00'
+  summary: 已形成 completed 的完整 Gate 2 关闭提案，原 scope 内无 residual decision。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0069-execution
+  at: '2026-08-08T05:31:15.500861+08:00'
+  summary: 已完成终态保留审查并进入 human_closure_confirming，等待 Human Gate 2。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0069-closure
+  at: '2026-08-08T05:59:00.418627+08:00'
+  summary: Human Gate 2 已批准，WorkCase 按当前 completed 关闭提案关闭。
+- at: '2026-08-10T08:52:55.947269Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex-desktop -> Codex; 1: codex-desktop -> Codex; 2: codex-desktop -> Codex; 3: codex-desktop -> Codex; 4: codex-desktop -> Codex; 5: codex-desktop -> Codex; 6: codex-desktop -> Codex; 7: codex-desktop -> Codex; 8: codex-desktop -> Codex; 9: codex-desktop -> Codex; 10: codex-desktop -> Codex; 11: codex-desktop -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-workcase-signature-migration-20260810
+- at: '2026-08-10T09:25:05.684233Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:53.220086Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+closure_outcome: completed
+disposition_summary: 已完成原 scope 内的 testing-only trial 测量基础设施：严格 schema、自动采集、来源绑定提示卡、受限临时输出与对抗性测试均已交付并通过独立复核。未形成真实 trial 或生产契约变更，且这些事项始终不在本 WorkCase scope 内；原 scope 内无剩余责任。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-715d-bbad-25e9382c3936
+object_id: workcase-01KZXN5TXNE14BZVTYJ3Y64PKK
+object_uid: 019ffb52-ebb5-7048-bfef-5e90fc625a73
+fact_type_key: workcase
+created_at: '2026-08-07T22:09:03.449286+08:00'
+updated_at: '2026-08-13T15:03:57Z'

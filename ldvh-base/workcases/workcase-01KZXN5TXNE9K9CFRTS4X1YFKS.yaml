@@ -1,0 +1,149 @@
+status: closed
+title: 独立审核语义定义——在 LDVH 规范层明确定义"独立审核"的判断视角独立性优先级
+goal: 在 LDVH 规范层（21 号规范）明确定义「独立审核」的语义，使 AI 在 WC 执行期能够理解判断视角的独立性优先于执行环境的独立性，不再因字面理解「独立」而默认调用 subagent 导致执行卡住。
+scope: 含：21 号规范新增「独立审核」定义章节（覆盖语义：判断视角独立性优先于执行环境独立性；可接受执行方式闭集及其适用优先级：切换视角自审、checklist 审核、Helper 只读检查、委派一个或多个只读 subagent 并行复核——subagent 数量由 Controller 根据审核范围、复杂度和风险判断，不固定——且所有方式均为只读，不修改任何文件或状态；明确不可接受行为：冒充独立视角、虚假审核声明、没有可用的 subagent 能力时硬等不推进）；34 号模板中独立复核步骤说明与 21 号定义保持一致；spark-0061 承接范围据实记录。不含：任何 Code/tests 变更；phase 定义或状态机修改；Helper 操作新增或修改；Human Gate 流程修改；subagent/spawn 能力实现或声明。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 21 号规范中存在可机械定位的「独立审核」定义条文，覆盖语义（判断视角独立性优先于执行环境独立性）、可接受执行方式闭集（切换视角自审、checklist 审核、Helper 只读检查、委派一个或多个只读 subagent 并行复核——subagent 数量由 Controller 根据审核范围、复杂度和风险判断，不固定——所有方式均为只读，不修改任何文件或状态）及适用优先级、不可接受行为（冒充独立视角、虚假审核声明、没有可用的 subagent 能力时硬等不推进）。
+- criterion_id: criterion-02
+  statement: 34 号模板中独立结果复核步骤的说明与 21 号定义一致，不再暗含「必须委派 subagent」的默认假设。
+- criterion_id: criterion-03
+  statement: spark-0061 承接范围据实记录（保持 open 并写明残留：subagent 环境能力声明与独立性证明机制需后续规范处理）。
+- criterion_id: criterion-04
+  statement: 修订经 30 模板受控提交、Git Gate 通过，commit 路径闭集仅含本 WorkCase 实际变更，提交后 check-fact-integrity 外层 ok 且 result.status=complete。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: not_satisfied
+  summary: 当前 21 §4.5 明确要求独立审核必须由独立 subagent 执行，并排除同一 AI 切换视角、checklist 与 Helper 只读检查替代；与本标准要求的判断视角独立优先及多方式闭集相反。
+- criterion_id: criterion-02
+  outcome: not_satisfied
+  summary: 当前 34 模板明确写入必须委派独立 subagent 的默认假设，与本标准要求不再暗含该默认假设相反。
+- criterion_id: criterion-03
+  outcome: not_satisfied
+  summary: spark-0061 虽保持 open 并记录了残留事项，但其承接情况把 WC-0062 误写为已完成目标；该描述与当前 21/34 的实际反向落地冲突，未做到据实记录。
+- criterion_id: criterion-04
+  outcome: not_verified
+  summary: 已观察到提交 d05541575 且当前 check-fact-integrity 为 complete，但无法从当前事实与 Git 历史重建该提交当时 Git Gate 及提交后完整性检查的全部证据，因此 criterion-04 保持 not_verified；该过程性标准是否曾形成稳定结果不能据现有证据判断。
+result_summary: WC-0062 产生并提交了 21 §4.5、34 模板和 spark-0061 相关变更，但前三项成果与批准目标相反：执行环境独立性被设为必要条件，独立审核被限定为独立 subagent，Spark 又将该反向结果误记为完成。criterion-04 的提交过程性结果仍因历史证据不足而 not_verified。当前没有标准可据实判为 satisfied；Human 已决定不再继续投入。关闭后，现存反向规则与 spark-0061 失真记录不会被本次关闭修正，将作为明确接受停止的剩余责任保留。
+validation_summary: 已验证：当前 21/34 规则正文的实际反向语义、spark-0061 当前失真承接记录、d05541575 的存在与路径范围、当前全库机械完整性 complete。未验证：d05541575 发生时 Git Gate 的真实触发/递达及当时提交后完整性检查结果，因此 criterion-04 不作满足或未满足判断。机械完整性不证明自然语言语义正确。本次关闭不修改 21/34 或 spark-0061；接受停止后这些现存问题仍保留。
+change_log:
+- at: '2026-08-06T14:30:00+08:00'
+  session_id: claude-code-session-20260806
+  summary: 受控创建本 WorkCase（plan_version=1）：经独立只读 Reviewer 方案复核（pass_with_followups）并完成 Controller 全部处置，等待 Human Gate 1 执行决定
+  signature:
+    agent_id: glm-5.2
+    host_environment: Claude
+- at: '2026-08-06T22:07:04.369354+08:00'
+  session_id: cindy-wc0062-close-20260806
+  summary: Human 决定中途关闭；取消非法生命周期 item，进入 Controller 结果检查并形成当前完整结果投影。
+  signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+- at: '2026-08-06T22:07:27.695547+08:00'
+  session_id: cindy-wc0062-close-20260806
+  summary: 完整结果投影已回读，进入独立结果复核阶段并等待只读 subagent Reviewer。
+  signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+- at: '2026-08-06T22:09:41.091740+08:00'
+  session_id: cindy-wc0062-close-20260806
+  summary: 三次独立 subagent Reviewer 启动均因宿主 Provider route 503 失败；未形成 result review，保留 independent_reviewing 检查点并记录恢复条件。
+  signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+- at: '2026-08-06T22:22:27.456004+08:00'
+  session_id: cindy-wc0062-close-20260806
+  summary: 独立只读 Reviewer 完成 result_version=1 复核并提出 changes_required：关闭分类证据不足且剩余责任需补明。
+  signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+- at: '2026-08-06T22:22:40.874304+08:00'
+  session_id: cindy-wc0062-close-20260806
+  summary: Controller 接受并处置 result_version=1 Reviewer feedback，返回结果检查以修正 projection。
+  signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+- at: '2026-08-06T22:23:01.552584+08:00'
+  session_id: cindy-wc0062-close-20260806
+  summary: 按 Reviewer feedback 升为 result_version=2：保留提交证据未知，改按 cancelled 收敛并补明 accepted-stop 剩余责任。
+  signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+- at: '2026-08-06T22:23:25.673043+08:00'
+  session_id: cindy-wc0062-close-20260806
+  summary: result_version=2 完整投影已回读，重新进入独立结果复核。
+  signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+- at: '2026-08-06T22:25:47.879449+08:00'
+  session_id: cindy-wc0062-close-20260806
+  summary: 独立只读 Reviewer 复核 result_version=2，结论 pass。
+  signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+- at: '2026-08-06T22:26:08.557266+08:00'
+  session_id: cindy-wc0062-close-20260806
+  summary: result_version=2 独立复核通过；形成 cancelled 关闭提案并完整列出三项 accept-stop 剩余责任。
+  signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+- at: '2026-08-06T22:26:24.397548+08:00'
+  session_id: cindy-wc0062-close-20260806
+  summary: 完整 cancelled 关闭提案完成终态保留审查，进入 Human Gate 2 最终关闭确认。
+  signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+- at: '2026-08-06T22:27:36.779412+08:00'
+  session_id: cindy-wc0062-close-20260806
+  summary: Human Gate 2 确认当前 cancelled 提案；以三项 accept-stop 剩余责任原子关闭 WC-0062。
+  signature:
+    agent_id: gpt-5
+    host_environment: Cindy
+- at: '2026-08-10T08:47:50.982653Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Claude Code (macOS) -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T08:56:08.404279Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 1: cindy desktop -> Cindy; 2: cindy desktop -> Cindy; 3: cindy desktop -> Cindy; 4: cindy desktop -> Cindy; 5: cindy desktop -> Cindy; 6: cindy desktop -> Cindy; 7: cindy desktop -> Cindy; 8: cindy desktop -> Cindy; 9: cindy desktop -> Cindy; 10: cindy desktop -> Cindy; 11: cindy desktop -> Cindy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-explicit-signature-migration-20260810
+- at: '2026-08-10T09:15:28.493154Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 1: cindy-codex -> gpt-5; 2: cindy-codex -> gpt-5; 3: cindy-codex -> gpt-5; 4: cindy-codex -> gpt-5; 5: cindy-codex -> gpt-5; 6: cindy-codex -> gpt-5; 7: cindy-codex -> gpt-5; 8: cindy-codex -> gpt-5; 9: cindy-codex -> gpt-5; 10: cindy-codex -> gpt-5; 11: cindy-codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-identity-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:33.042383Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+closure_outcome: cancelled
+disposition_summary: Human 已决定不再继续投入 WC-0062；当前目标未按批准方向实现，提交过程性标准又因历史证据不足而无法完整评价。提案按 cancelled 停止，不修正当前 21/34 的反向规则、不更正 spark-0061 的失真承接记录、不补造 Git Gate 或提交后完整性历史证据；三项剩余责任全部由 Human 明确接受停止，不路由到其它对象，也不建立 Spark 建议。
+residual_responsibilities:
+- residual_id: residual-reversed-review-semantics
+  summary: 当前 21 §4.5 与 34 模板仍把独立审核限定为独立 subagent，与 WC-0062 批准目标相反；本次关闭不修改或回滚这些规则，接受其继续存在。
+- residual_id: residual-spark-0061-inaccuracy
+  summary: spark-0061 仍把 WC-0062 的反向落地误记为完成批准目标；本次关闭不更正该现存失真记录，接受其继续存在。
+- residual_id: residual-commit-evidence-unavailable
+  summary: 无法从当前事实与 Git 历史重建 d05541575 发生时 Git Gate 真实触发及当时提交后完整性检查的全部证据，criterion-04 保持 not_verified；本次关闭不补造或继续追查该历史证据。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7de6-9de3-8319a47efad4
+object_id: workcase-01KZXN5TXNE9K9CFRTS4X1YFKS
+object_uid: 019ffb52-ebb5-7266-963f-1ac93a1f3e79
+fact_type_key: workcase
+created_at: '2026-08-06T14:30:00+08:00'
+updated_at: '2026-08-13T15:03:57Z'

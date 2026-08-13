@@ -1,0 +1,63 @@
+object_id: workcase-01KZXN5TXNEVJVB3WBX1SSAV8Y
+object_uid: 019ffb52-ebb5-76e5-b58f-8be873956d1e
+fact_type_key: workcase
+title: Codex 参考实现定位与多环境 adapter 开发责任明确
+created_at: '2026-07-25T08:50:27.386550+08:00'
+updated_at: '2026-08-13T15:03:57Z'
+status: closed
+goal: 在 LDVH 规则与文档中明确：LDVH 核心只提供环境无关入口与一个 Codex 参考实现，其它 AI 开发环境的 adapter 由该环境的 AI 自己照参考实现开发，不在 LDVH 仓库收纳或维护。
+scope: 覆盖 specs/09-环境接入规范.md §8，明确“不承诺预制”是设计原则而非临时状态；覆盖 §6.1，明确原生插件/adapter 由处理该目标环境的 AI 在该环境自己的仓库开发；覆盖 specs/attachments/09.Att.01-环境接入面.md 的“入口选择”第 7 项， 明确独立 Code 计划在目标 AI 环境自己的仓库建立，并新增“参考实现位置”指向 code/plugins/ldvh/； 新建 code/plugins/ldvh/README.md 说明参考实现定位，并在 code/plans/codex-context-recovery.md §1 补充同一定位。 排除修改 specs/00-理念与构成.md、已完成的 code/plans/environment-neutral-enablement.md、任何非 Codex adapter、 setup.py 打包逻辑，以及 09 §1–5 或 §7 的现有规则正文。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 09 §8 明确表达“LDVH 不主动为每个 AI 环境提供 adapter 是设计原则而非临时状态”，且不引入 specs 未定义的新术语。
+- criterion_id: criterion-02
+  statement: 09 §6.1 明确“原生插件/adapter 由处理该目标环境的 AI 在该环境自己的仓库开发，不在 LDVH 仓库收纳”。
+- criterion_id: criterion-03
+  statement: 09.Att.01 的“入口选择”第 7 项明确独立 Code 计划在目标 AI 环境自己的仓库建立，并新增“参考实现位置”指向 code/plugins/ldvh/。
+- criterion_id: criterion-04
+  statement: code/plugins/ldvh/README.md 存在且说明 Codex adapter 是参考实现，其它环境 adapter 不在本仓库维护。
+- criterion_id: criterion-05
+  statement: code/plans/codex-context-recovery.md §1 明确 Codex adapter 是参考实现。
+- criterion_id: criterion-06
+  statement: 直接文档测试 python -m pytest code/tests/docs/test_enablement_docs.py 通过；setup.py 对 code/plugins/ 的排除规则保持成立， code/tests/packaging/test_distribution_lifecycle.py 通过。
+- criterion_id: criterion-07
+  statement: 09 和 09.Att.01 正文不举具体厂商名；具体厂商名只出现在 code/plugins/ldvh/README.md。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 09 §8 明确不为每个 AI 环境预制 adapter 是长期设计原则，未引入范例或官方支持等新规则术语。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: 09 §6.1 已明确目标环境 adapter 由处理该环境的 AI 在其自己的仓库开发，LDVH 仓库只保留单一参考实现。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: 09.Att.01 入口选择第 7 项已约束独立 Code 计划的仓库位置，参考实现位置段可精确定位 code/plugins/ldvh/。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: code/plugins/ldvh/README.md 已说明 Codex adapter 的参考实现身份与其它环境 adapter 责任边界； 5 处相对链接均已修正并回读到存在目标。
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: code/plans/codex-context-recovery.md 已明确承接 Codex adapter 参考实现的维护责任。
+- criterion_id: criterion-06
+  outcome: satisfied
+  summary: 文档、打包生命周期和规范仓库定向测试通过；setup.py 对 code/plugins/ 的排除规则仍成立。
+- criterion_id: criterion-07
+  outcome: satisfied
+  summary: 09 和 09.Att.01 正文不含 Codex、Claude、Trae 或 Cursor；具体厂商名只在参考实现 README 出现。
+result_summary: 09 §6.1/§8、09.Att.01、Codex 参考实现 README 与维护计划已经形成一致的 adapter 职责表述； LDVH 仓库只保留 Codex 参考实现，其它环境 adapter 由处理目标环境的 AI 在对应环境仓库开发。README 的 5 处相对链接均可解析。
+validation_summary: 七项成功标准均已满足。文档、打包生命周期和规范仓库定向测试及差异检查通过，setup.py 的排除规则保持有效， README 引用已逐项回读。当前测试不自动检查 README 相对链接；其它 AI 环境 adapter 的实际实现、目标环境原生事件真实触发、 Codex 插件安装或发布运行效果和非定向全量测试未验证，均不属于本 WorkCase 的承诺范围。
+closure_outcome: completed
+disposition_summary: 目标已达成，原范围内没有残余责任或需 routed-to 的对象。其它环境 adapter 实现、真实事件验证和 Markdown 相对链接自动化检查 均未被接纳为本案责任；如需推进，应另行建立明确责任。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:05:16.407528Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。

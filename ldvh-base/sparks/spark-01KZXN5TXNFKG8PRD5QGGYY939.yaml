@@ -1,0 +1,55 @@
+title: 多管辖项目 Harness 全链路成熟度审视（含配置拓扑、用户级便利层与 Web 作用域）
+intent: 保留 LDVH 多管辖项目能力是否形成完整且可解释闭环的问题，避免把单项目可用、项目注册存在或某个聚合页面误作多项目治理已经成立。作为唯一的多项目总入口，统一承接配置拓扑与用户级便利层（原 0007）、Web 作用域与聚合呈现（原 0021）及跨层成熟度审视三块职责，后续需判断项目边界、跨项目聚合与隔离、身份消歧和各层责任如何共同成立，并将独立缺口分流。
+status: implemented
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7f32-aab8-c6c58b4f5296
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7bf4-8ed2-bce2a2d7d618
+summary: "**审视结论**\n\n- 当前已经具备多项目登记、管辖身份解析、单项目选择、稳定对象身份和严格项目/worktree 隔离；这些能力足以支撑现阶段按项目独立使用。\n- 本轮审核确认，Web“全部项目”聚合、跨项目正式关系、跨项目写入、联合事务和联合 Git Gate 并非当前版本必须补齐的成熟度缺口，不再由本 Spark 作为 P1 当前责任持续追踪。\n- 原 spark-0007 的配置拓扑议题和 spark-0021 的 Web 作用域议题已完成合并审视；仍可能有价值的聚合、导航、配置便利层和跨项目联动已由 P2 `spark-0078` 作为未来方向独立保留。\n\n**当前边界**\n\n- 事实读取、写入、关系校验、完整性审计和 Git Gate 继续绑定明确的单一管辖项目与实际 worktree；本次处置不扩大任何跨项目能力或授权。\n- 项目注册、单项目切换和隔离能力不被表述为已经实现跨项目聚合；相反，聚合是否值得实现留待真实需求和新的 Human 决定。\n- 本 Spark 的现阶段成熟度审视和缺口分流职责已经结束，没有需要继续作为当前 P1 责任保留的内容。"
+evolution:
+- at: '2026-07-22T13:48:41+08:00'
+  summary: 迁移对照补入 V3 对项目边界和项目集合缺口的约束：多项目聚合不自动要求新对象，必须先判断现有管辖配置、事实对象与消费视图能否承接；当前对象继续只负责跨层成熟度审视与分流。
+- at: '2026-08-09T19:40:00+08:00'
+  summary: 按 Human 决定合并三 spark：本 Spark 作为唯一多项目总入口，显式承接 spark-0007（配置拓扑与用户级便利层）与 spark-0021（Web 作用域与聚合呈现）；0007、0021 关闭，其议题纳入本 Spark 审视范围。
+- at: '2026-08-13T07:49:31Z'
+  summary: Human 将尚未承诺的多项目聚合与联动调整为 P2 未来方向并由 spark-0078 保留；因此本 Spark 从全链路当前缺口审视转为现阶段边界已明确、入口可结束。
+disposition_summary: 本 Spark 对配置拓扑、Web 作用域及跨层多项目成熟度的现阶段审视已经完成：当前按项目登记、选择、身份绑定和隔离使用的边界成立，未实现的聚合与跨项目联动不再作为当前 P1 缺口；其未来产品方向已由 P2 spark-0078 独立保留。本终态只结束 spark-0025 的审视入口，不表示 spark-0078、跨项目聚合或任何下游实现已经完成。
+change_log:
+- signature:
+    agent_id: glm-5.2
+    host_environment: Claude
+  session_id: e63cca84-d0bd-4c0d-88a4-90b729debf85
+  at: '2026-08-09T19:40:00+08:00'
+  summary: 按 Human 决定合并三 spark：本 Spark 作为唯一多项目总入口，显式承接 spark-0007 与 spark-0021 的三块职责并补入拆解原则。
+- at: '2026-08-10T08:46:24.906188Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Claude Code -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:50:02.135651Z'
+  summary: 按 Human 决定将多项目聚合与联动转由 P2 spark-0078 保留，并结束 spark-0025 的当前成熟度审视入口。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:31.863740Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+object_id: spark-01KZXN5TXNFKG8PRD5QGGYY939
+object_uid: 019ffb52-ebb5-7ce0-8b61-a5bc21ef2469
+fact_type_key: spark
+created_at: '2026-07-21T11:58:06.482101+08:00'
+updated_at: '2026-08-13T15:03:57Z'

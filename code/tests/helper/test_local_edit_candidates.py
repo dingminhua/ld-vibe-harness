@@ -25,7 +25,7 @@ def _study_payload(*, expected_baseline: str | None = None, candidate_after: str
                 "fact_ref": {
                     "governed_project_id": "ldvh",
                     "fact_type_key": "study",
-                    "object_id": "study-0030",
+                    "object_id": "study-01KZXN5TXNFV8T3AQS1QCPAQ8B",
                 },
                 "body_heading": "建议",
                 "expected_baseline": expected_baseline,
@@ -126,7 +126,9 @@ def test_study_candidate_uses_full_object_fingerprint_and_fixed_h2_target() -> N
     assert item["baseline"]["kind"] == "content_fingerprint"
     assert item["stale"] is True
     assert item["before"].startswith("## 建议\n")
-    assert item["unified_diff"].startswith("--- ldvh-base/studies/study-0030.md:before\n")
+    assert item["unified_diff"].startswith(
+        "--- ldvh-base/studies/study-01KZXN5TXNFV8T3AQS1QCPAQ8B.md:before\n"
+    )
     assert set(item["scope_coverage"]["unexpanded"][0]["body_headings"]) == {
         "研究问题",
         "输入与边界",
@@ -145,7 +147,11 @@ def test_study_uid_request_reads_the_resolved_locator_and_preserves_requested_id
     original_resolver = local_edit_candidates.resolve_stable_fact_reference
 
     def resolve_existing_study(run, _reference, schemas):
-        return original_resolver(run, FactReference("ldvh", "study", "study-0030"), schemas)
+        return original_resolver(
+            run,
+            FactReference("ldvh", "study", "study-01KZXN5TXNFV8T3AQS1QCPAQ8B"),
+            schemas,
+        )
 
     monkeypatch.setattr(local_edit_candidates, "resolve_stable_fact_reference", resolve_existing_study)
 
@@ -158,7 +164,9 @@ def test_study_uid_request_reads_the_resolved_locator_and_preserves_requested_id
     assert response["outcome"] == "ok"
     item = response["result"]["items"][0]
     assert item["target"]["fact_ref"] == {"object_uid": object_uid}
-    assert item["source_ranges"][0]["source_ref"]["locator"].endswith("/ldvh-base/studies/study-0030.md")
+    assert item["source_ranges"][0]["source_ref"]["locator"].endswith(
+        "/ldvh-base/studies/study-01KZXN5TXNFV8T3AQS1QCPAQ8B.md"
+    )
 
 
 def test_study_selection_error_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -218,7 +226,7 @@ def test_study_request_without_unique_governance_boundary_does_no_fact_read() ->
                     "fact_ref": {
                         "governed_project_id": "ldvh",
                         "fact_type_key": "study",
-                        "object_id": "study-0030",
+                        "object_id": "study-01KZXN5TXNFV8T3AQS1QCPAQ8B",
                     },
                     "body_heading": "建议",
                 },

@@ -1,0 +1,37 @@
+title: 以「你好，LDVH」问候作为 AI 规则递达验证信标
+status: active
+decision_question: LDVH 接入后，如何以最低成本在每次 AI 交互中获得一个 Human 可直接观察的信号，证明当次会话已实际取得 LDVH 规则引导（薄 Skill 路由递达），而非来自历史上下文恢复或规则未加载？
+decision: 决定：在 LDVH 管辖项目的每次 AI 交互中，AI 须在当次回应正文最前先输出问候「你好，LDVH」。该问候作为规则递达验证信标——其出现证明当次会话已实际加载并遵从 LDVH 路由纪律（先经薄 Skill 取规则引导与行动模板再动手），问候缺失即提示规则递达可能失败、需复核接入。本决定只确立问候约定与验证意图，不构成事实写入、提交或行动授权，不替代事实完整性校验、Git Gate 或其它机械检查，也不证明深度合规；问候存在仅证明表面递达。
+applicability: 适用于全部 LDVH 管辖项目（ldvh、poker-train-card、poker-train-video、ldvh-closure-preview）中 AI 与 Human 的交互会话；问候出现在 AI 当次回应正文的最前，只读查询与单次工具调用等非交互性回应同样适用。明确排除：本约定不构成任何事实写入、提交或行动授权；不替代任何规范、Human Gate、Git Gate 或机械校验；问候存在不证明 LDVH 已完整接入或规则已深度遵从，仅作递达信标；Human 可在特定会话明示豁免当次问候。
+rationale: LDVH 接入形态（adr-0005、adr-0006）已确立薄 Skill 为唯一接入载体，但其递达为劝告级、非机械保证，『真实递达』须经新会话实测验证；Skill 与 MCP 均为模型内通道，原理上无法阻断行动，真阻断仅 Git Gate。在此约束下，一个低成本、Human 可直接观察的每会话信标能压缩『规则是否加载』的不可见窗口：AI 要输出该问候，须先在当次会话取得并遵从路由纪律，故问候缺失即递达失败的早期可观察信号。取舍：选『每交互问候信标』而非『无信标』或『仅靠 Git Gate 事后把关』，以最低成本换取每会话前置可见性；未选『机械阻断式递达保证』，因当前接入形态下不存在模型外递达阻断点。残留风险：问候可被 cargo-cult（输出而不真遵从），故仅证明表面递达、不证明深度合规。
+consequences: 正面：每会话获得零成本的递达可见性，Human 一眼可知当次 AI 是否加载规则；规则未递达时早期暴露，而非等到 Git Gate 事后拦截。负面与限制：每次交互多一句问候，增加少量输出开销与阅读噪音；存在 cargo-cult 风险——AI 可能输出问候却未实质遵从规则，故信标只证明表面递达、不证明深度合规、不替代机械校验；问候本身不构成任何事实、提交或行动授权。后续义务：本约定不新增机械执行点，递达仍靠 AI 自觉与 Git Gate 终闸；若未来 LDVH 长出模型外递达阻断能力，应重估本信标的必要性。本 ADR 被规范、Code 或行动模板吸收后不自动退休，退出需 Human 另行授权。
+change_log:
+- signature:
+    model_id: glm-5.2
+    agent_workbench: Claude
+  session_id: claude-code-session-20260806
+  at: '2026-08-06T12:29:41.327924+08:00'
+  summary: 受控创建本 ADR：确立每次 AI 交互先问候「你好，LDVH」作为规则递达验证信标；Human 当前指令明确授权创建。
+- at: '2026-08-10T08:44:05.780803Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Claude Code (macOS) -> Claude。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:58:56.264366Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+object_id: adr-01KZXN5TXNFA8RQ80Y3K1KXKPZ
+object_uid: 019ffb52-ebb5-7a91-8ba0-1e1cc33ecedf
+fact_type_key: adr
+created_at: '2026-08-06T12:29:41.327924+08:00'
+updated_at: '2026-08-13T15:03:57Z'

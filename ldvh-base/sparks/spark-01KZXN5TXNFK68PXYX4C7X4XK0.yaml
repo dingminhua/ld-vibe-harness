@@ -1,0 +1,71 @@
+title: WorkCase 执行控制闭环——防止单个工作项完成后的提前交还
+intent: 活动 WorkCase 执行中，AI 可能把单个 work item 的完成误认为整个获批计划已经到达交还点，从而遗漏仍应继续的 Controller loop、结果复核或关闭链。本 Spark 保留这一跨会话问题，用于判断 LDVH 如何仅依靠自身行动模板、最新事实投影和执行者消费规则建立稳定的 WorkCase 合法交还控制点，同时不引入宿主 Hook 模拟、全局事件机制、持久化续跑标志，也不让 Helper 或 Code 代替 AI 判断授权、选择下一项或断言完成。
+status: implemented
+summary: "## 已落实范围\n\n- 34 号 WorkCase 执行模板已明确 `item terminal ≠ WorkCase execution terminal`：单项终结写回、精确回读和完整性审计后，fresh resolved projection 重新成为 Controller 输入。\n- 尚有非 terminal item 时继续按授权、依赖和能力判断；全部 item terminal 时继续进入 `controller_checking` 及既有结果链，不把控制闭环误写成一律返回 `executing`。\n- 直接契约测试覆盖单项终结后的 projection 再消费与全部 item terminal 后的结果链；相关定向测试合并运行 16 项通过。\n- WorkCase-0081 在同一获批执行链中完成 item-02 后，没有 Human 追加“继续”，即精确回读匹配当前指纹的 projection 并启动、完成 item-03，形成一次最小实证。\n\n## 保留边界\n\n- 该结果只证明 LDVH 内部执行协议和本次同链遵从得到强化，不证明跨会话、跨环境、宿主事件或模型外机械续跑。\n- Skill 仍是薄路由；没有引入 Hook 模拟、全局调用锚点、持久续跑字段、Helper 语义判断或环境 adapter。\n- 输入上下文透明性与行为健康观测仍分别由相关的 open Spark 独立承接，不属于本 Spark 第一版的剩余责任。\n\n## 当前结论\n\n本 Spark 限定的第一版 WorkCase 执行控制闭环已直接落实，范围内没有剩余待处置内容；后续若出现跨上下文稳定性的新证据，应进入仍 open 的相邻议题或建立新的独立入口，不重开本 Spark。"
+evolution:
+- at: '2026-08-09T05:45:09.272Z'
+  summary: Human 明确取消“Skill 模拟 Hook”和全局调用锚点方向，将议题收敛为 LDVH 内部的 WorkCase 执行控制闭环；因此 Skill 保持薄路由，首版只围绕 34 号模板、现有 fresh projection 消费和小型 WorkCase 实证判断。
+- at: '2026-08-09T06:35:11.169Z'
+  summary: WorkCase-0081 完成模板强化、直接契约测试和一次同链跨 item 实证，使本 Spark 的第一版最小方案由待判断转为已直接落实；跨会话、跨环境和模型外保证继续留在范围外。
+change_log:
+- summary: 补建变更流水以支持受控提交；spark-0071 为新增 Spark（恒定锚点 + Helper 状态驱动提醒议题），事实内容由其他会话产出，此处仅补审计签名。
+  signature:
+    agent_id: hy3
+    host_environment: Workbuddy
+  session_id: batch-commit-20260809-spark0071
+  at: '2026-08-08T22:00:00+08:00'
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T13:45:09.477643+08:00'
+  summary: 按 Human 决定将 spark-0071 从 Hook/全局锚点方案收敛为 WorkCase 执行控制闭环，刷新现有能力与关联事实，并明确最小实证、验收边界和待判断事项。
+- signature:
+    model_id: gpt-5
+    host_name: Cindy
+  session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
+  at: '2026-08-09T14:35:11.369215+08:00'
+  summary: 消费 Human 对关联 Spark 的收口授权；依据已关闭 workcase-0081 的完整结果与边界，将 spark-0071 从 open 更新为 implemented。
+- at: '2026-08-10T08:47:45.013000Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-claw -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T09:15:16.594199Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-ai -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-identity-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:02:45.222317Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+disposition_summary: 第一版已直接落实：WorkCase 单项终结后的 fresh projection 必须重入 Controller，剩余 item 继续判断、全部 terminal 后继续既有结果链；定向契约测试与一次同链跨 item 实证通过。该处置不声称跨会话、跨环境、宿主 Hook 或模型外机械续跑，范围内无剩余责任。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7283-b7d0-b234844017cb
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7d64-bb4e-acb3e92f30e6
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7ee5-b317-7c9a133107f8
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
+object_id: spark-01KZXN5TXNFK68PXYX4C7X4XK0
+object_uid: 019ffb52-ebb5-7ccc-8b77-dd230fd27660
+fact_type_key: spark
+created_at: '2026-08-08T22:00:00+08:00'
+updated_at: '2026-08-13T15:03:57Z'

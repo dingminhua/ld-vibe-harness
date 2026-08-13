@@ -1,0 +1,141 @@
+status: closed
+title: 验证 D 簇增量变化定位的可行性与净价值边界
+goal: 在隔离测试 fixture 中量化“集合已变化”与“精确定位变化对象身份”之间的差距，比较不落地的候选交互或投影，判断是否值得另立生产实现 WorkCase；不选择任何生产方案。
+scope: 仅允许修改 code/ldvh/testing/ 与 code/tests/testing/ 下的测试性模块和测试；固定 fixture、checkpoint、原始输出与测量材料只能写入由 SafeTrialTempRoot 新建的仓库外临时根。明确排除生产 Helper、公开接口、capabilities、规格、文档、配置、网络、依赖安装、A 簇 trial、worker 隔离改动、任何其它事实对象或真实受管事实写入，以及 Git 状态变更（暂存、提交、重置、推送等）。允许当前 WorkCase 依生命周期受控写回，并允许只读 git diff --check；决策表只作为本 WorkCase 的结果投影或验证摘要保存，不新建事实、token、cache、receipt、journal 或生产持久状态。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 冻结单对象修改、新增、删除与跨检查点恢复四类相互独立的测试 fixture/checkpoint；每类明确 expected changed/unchanged stable triples，并记录规则、环境与 fixture 指纹。fixture 不读取或写入真实事实对象。
+- criterion_id: criterion-02
+  statement: 以当前公开候选发现和读取路径为 baseline，复现每类场景只能报告 aggregate stale 而不能直接给出精确 identity 的边界；记录为取得精确身份所需调用数、读取对象数、response bytes、定位准确率、漏报与误报，且结果可从冻结输入重跑。
+- criterion_id: criterion-03
+  statement: 在同一冻结 fixtures 上比较至少一项不改变生产接口、只在内存中存在的候选交互或投影；记录其输入基线、服务端扫描、输出 bytes、调用数、精确性与新增状态/泄漏风险。未达到 100% 精确定位且不引入额外持久状态或全量正文暴露时，必须形成 No-go。
+- criterion_id: criterion-04
+  statement: 形成方案中立的决策表：将 per-object manifest 与 changed_since 仅作为待比较类别，逐项说明各自所需的基线、持久状态和协议代价；不作生产方案选择或收益主张。
+- criterion_id: criterion-05
+  statement: 独立只读结果复核可从冻结 fixture、原始输出和测量输入重算全部指标；相关 pytest、ruff、git diff --check 与范围审计通过，且确认没有生产接口、其它事实对象、Git 状态或仓库内运行产物越权变更。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: not_verified
+  summary: 测试性模块定义四个场景和受限 checkpoint 路径，但本批证据未冻结每场景 expected stable triples、before/after fixture/checkpoint 或 fixture/environment fingerprints；不得把代码定义视为已验证批次。
+- criterion_id: criterion-02
+  outcome: not_satisfied
+  summary: 仅验证了公开响应的 aggregate-only 结构，未能以真实当前 Helper fixture 重放四类场景；因此未满足该基线复现与完整指标要求。
+- criterion_id: criterion-03
+  outcome: not_verified
+  summary: 内存候选在四个合成投影场景均定位一个 identity 且不持久化状态，但未在真实当前 Helper fixture 上验证，不能据此判断生产可行性或收益。
+- criterion_id: criterion-04
+  outcome: not_verified
+  summary: 仅形成 generic No-go，未交付逐项比较 per-object manifest 与 changed_since 的基线、持久状态和协议代价；不得据此声称方案中立决策表已完成。
+- criterion_id: criterion-05
+  outcome: not_verified
+  summary: Python 3.12 兼容检查、手工覆盖测试逻辑、Ruff 与 diff-check 通过；但当前 .venv 缺 pytest，且证据根缺原始公开响应、before/after 投影输入，独立复核只能重算已写 comparison，不能全量重算指标。
+result_summary: 结果为 partial：测试性模块严格区分集合变化检测与身份定位，合成完整内存投影可精确 diff；但真实 Helper fixture 重放、冻结原始输入、方案比较表与官方 pytest 均未验证，因此不具备生产方案选择依据。
+validation_summary: Python 3.12 py_compile、兼容 harness、SafeTrialTempRoot 持久化检查、Ruff 与 git diff --check 通过；官方 pytest 未运行，原因是当前 3.12 venv 未安装 pytest，且授权禁止依赖安装。证据根仅能复算 comparison，不能复算原始响应 bytes/sha 或投影输入。
+change_log:
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0072-planning
+  at: '2026-08-08T14:02:26.682516+08:00'
+  summary: Human 要求按 Spark-0068 的 D 簇验证计划推进；本 WorkCase 只验证增量变化定位的可行性与净价值边界，不预选生产方案。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0072-execution
+  at: '2026-08-08T14:08:32.710807+08:00'
+  summary: Human 已批准 Gate 1；进入执行，仅消费冻结的测试性 fixture、测量与独立结果复核授权。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0072-execution
+  at: '2026-08-08T14:09:05.536252+08:00'
+  summary: item-01 已开始：实现四类隔离 fixture、checkpoint 与测量口径；尚未运行确定性测量。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0072-execution
+  at: '2026-08-08T14:15:15.130027+08:00'
+  summary: item-01 已完成测试性 fixture/checkpoint 测量基础；item-02 开始测量公开 aggregate 边界与候选 identity diff。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0072-result
+  at: '2026-08-08T14:17:06.573888+08:00'
+  summary: 三项工作已形成 result_version=1：测试性四场景投影和方案中立 No-go 已完成；真实 Helper fixture 重放与官方 pytest 未验证，进入 Controller 检查。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0072-result
+  at: '2026-08-08T14:21:05.376020+08:00'
+  summary: 独立结果复核要求返修；Controller 未补造证据，将 criterion-01、04 降为 not_verified，补充原始输入缺失边界并更正 result_version=1。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0072-result
+  at: '2026-08-08T14:26:24.623770+08:00'
+  summary: 完整 result_version=1 已回读并冻结为独立结果复核对象；实际只读复核已完成，下一检查点写入其结果。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0072-result
+  at: '2026-08-08T14:26:54.592913+08:00'
+  summary: 独立只读 subagent 对当前 result_version=1 的复核结果已写入：pass，无 feedback；结果投影从此冻结。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0072-closure
+  at: '2026-08-08T14:27:19.115589+08:00'
+  summary: 当前结果已完成独立复核且无 feedback；结果投影保持不变，Controller 开始形成关闭提案与剩余责任处置。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0072-closure
+  at: '2026-08-08T14:28:52.397386+08:00'
+  summary: 形成完整关闭提案：无 satisfied criterion 且多项 not_verified，拟定 outcome 为 cancelled；全部未完成的 D 簇真实验证与方案比较责任建议 route_existing 至当前 Spark-0068。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0072-closure
+  at: '2026-08-08T14:29:24.099609+08:00'
+  summary: 关闭提案与 Spark-0068 目标指纹均已形成并回读；进入 Gate2，等待 Human 判断 cancelled 分类、停止边界和 route_existing 责任处置。
+- signature:
+    agent_id: gpt-5
+    host_environment: Codex
+  session_id: workcase-0072-closure
+  at: '2026-08-08T14:40:30.313079+08:00'
+  summary: Human 已批准 Gate2；按已冻结的 cancelled 提案关闭 WorkCase，并将未完成的 D 簇验证与方案比较责任 routed-to Spark-0068。
+- at: '2026-08-10T08:53:04.841353Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex-desktop -> Codex; 1: codex-desktop -> Codex; 2: codex-desktop -> Codex; 3: codex-desktop -> Codex; 4: codex-desktop -> Codex; 5: codex-desktop -> Codex; 6: codex-desktop -> Codex; 7: codex-desktop -> Codex; 8: codex-desktop -> Codex; 9: codex-desktop -> Codex; 10: codex-desktop -> Codex; 11: codex-desktop -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-workcase-signature-migration-20260810
+- at: '2026-08-10T09:25:21.829416Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:01.903959Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+closure_outcome: cancelled
+disposition_summary: 停止本 WorkCase 的测试性探索，不选择生产方案或宣称净收益；因当前五项标准均未形成 satisfied 且多项仍 not_verified，不能以现有材料判定稳定成果。把真实当前 Helper fixture 重放、冻结原始输入与完整指标、官方 pytest 运行，以及 per-object manifest 与 changed_since 的中立成本比较，路由至仍开放的 Spark-0068 作为 D 簇后续立项判断。
+relations:
+- relation_key: routed-to
+  target:
+    object_uid: 019ffb52-ebb5-715d-bbad-25e9382c3936
+object_id: workcase-01KZXN5TXNFCR95Y3D577C48PB
+object_uid: 019ffb52-ebb5-7b30-92f8-6d29cec222cb
+fact_type_key: workcase
+created_at: '2026-08-08T14:02:26.682516+08:00'
+updated_at: '2026-08-13T15:03:57Z'

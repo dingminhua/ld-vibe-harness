@@ -1,0 +1,73 @@
+object_id: workcase-01KZXN5TXNF65R2TT8W0VS0ZK3
+object_uid: 019ffb52-ebb5-798b-816b-48e037907e63
+fact_type_key: workcase
+title: 建立 WorkCase 控制契约与持续改进基础
+created_at: '2026-07-20T07:11:51.119277+08:00'
+updated_at: '2026-08-13T15:03:57Z'
+status: closed
+goal: 建立 A–E 共用的 WorkCase 控制契约基础：在不依赖中途 Git commit 的情况下保留紧凑 审核连续性和可核验审核对象，结构化表达成功标准结果、残余责任、非约束后续、31/32 行动分类与持续改进观察，并冻结供后续 Working Tree 证据生成和 Human 投影共同消费的 唯一 evidence DTO。
+scope: A 只建立规则契约及其直接机械保护。规则范围为 specs/21、31、32；为当时 current WorkCase 字段与事实领域绑定所必需的 specs/05 和 05.Att.01；作为 Working Tree evidence DTO 唯一来源的 specs/07 及一个新授权附件；仅引用该 DTO 的 specs/04 和 04.Att.01。实现范围限统一字段登记和派生 Schema 的直接消费者、code/ldvh/facts 中 validation、transitions、relations、审核对象投影与指纹所需的最小纯函数、行动模板声明/ 发现的直接消费者及直接测试。明确排除 B 的 Helper 高层生命周期操作、统一事件时间、 诊断和 compact 体验，C 的 Working Tree manifest 采集与比较实现，D 的 Human、Helper、 Web、Codex 展示实现，E 的隔离验收，修改 00，批量迁移工具，多对象原子能力实现，修改或 路由 spark-0008、spark-0014、spark-0019，以及 push、PR。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 规则可机械区分 legacy 与 current WorkCase：生效边界前对象和 A 可按 legacy 生命周期 原样有效；生效后新建对象必须使用 current；legacy 升级是可选显式行动，涉及计划覆盖字段 时必须升版、重审并回 Human Gate，closed legacy 不补造历史。
+- criterion_id: criterion-02
+  statement: current WorkCase 的成功标准具有稳定 criterion_id；结果对当前 criterion 完整且唯一 覆盖。Code 只检查 ID、引用、覆盖、状态和证据结构，不判断成功标准或满足结论的真实性。
+- criterion_id: criterion-03
+  statement: audit_summary、review_basis、projection_key 和 subject_fingerprint 形成唯一闭集； 创建时审核和主控处置完整，对象内结果审核遵循 Reviewer 记录后由 Controller 单独处置， 任何审核结论都不自动推进或否决。
+- criterion_id: criterion-04
+  statement: 残余责任使用 WorkCase 内稳定 local ID，并只有显式 routed-to 映射才表示承接； nonbinding followup 不自动建立关系、Spark 或 WorkCase，当前计划和结果可被确定性投影。
+- criterion_id: criterion-05
+  statement: 持续改进只登记影响成功标准、跨阶段恢复或有明确后续消费价值的观察；每项具有来源证据、 去重与归属、V1–V8 净价值判断和四类终态处置，单一结果版本最多 20 项且同主题压缩；普通 推理不记录，观察不自动扩张计划或创建、更新、路由事实对象。
+- criterion_id: criterion-06
+  statement: 31 明确创建激活结果和交还，且只为 WorkCase 持久化 21 允许的字段；32 明确 fact_correction、content_update、single_object_lifecycle、multi_object_disposition， 区分单对象 CAS、合法多步序列和真正多对象原子能力，不冒充未成立的原子成功。
+- criterion_id: criterion-07
+  statement: Working Tree evidence DTO 由 07 的单一授权附件唯一定义 manifest coverage、 before/after fingerprints、complete/stale/incomplete、changes 和 include/exclude policy refs；04 只引用其 Helper 嵌入方式，05 不把非事实对象 DTO 误登记为事实字段， C 与 D 可据此独立实现而不复制 Schema。
+- criterion_id: criterion-08
+  statement: 隔离 fixture 的正反 contract、schema、validation、transitions、relations 和 action-template 测试覆盖兼容、生效、升级、审核、指纹、成功标准、承接映射、观察收敛和 禁止自动语义；聚焦验证与 full-v4 通过，A 自身生命周期不作为新契约成立的证明。
+- criterion_id: criterion-09
+  statement: 除 A 规则、直接实现与测试、本 WorkCase 流程记录以及范围精确隔离的可选本地 commit 外， 不修改 B/C/D/E 实现、00、三项来源 Spark 或远端状态；未提交不影响 A 的审核、结果或关闭。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 当时的规则已形成显式 current profile、生效边界、legacy 原样读取和可选升级机械边界。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: 成功标准定义和结果已使用稳定 criterion_id，结果覆盖、ID、引用与状态的机械校验已实现。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: 当时定义的审核摘要、basis、投影键和主体指纹闭集已进入规则与机械保护；Reviewer 记录和 Controller 处置职责分离，审核结论不自动推进或否决。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: 残余责任、显式 routed-to 承接、非约束后续及计划和结果投影边界已进入规则与测试。
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: 当时的持续改进观察结构、来源、去重、归属、净价值判断、终态处置与数量边界已形成，普通 推理和自动扩张被明确排除。
+- criterion_id: criterion-06
+  outcome: satisfied
+  summary: 31/32 已明确当时的创建、CAS、合法序列与多对象原子边界，不把未成立能力表达为原子成功。
+- criterion_id: criterion-07
+  outcome: satisfied
+  summary: 07.Att.01 已成为 Working Tree evidence DTO 的唯一结构来源，04/05 只按各自职责引用， 没有把 DTO 重复登记为事实字段。
+- criterion_id: criterion-08
+  outcome: satisfied
+  summary: 隔离契约和聚焦正反测试通过；workcase-0005 后续形成的真实 v2 full-v4 补齐了当前树全量 证据，固定五步全部通过，Working Tree DTO complete 且前后一致。
+- criterion_id: criterion-09
+  outcome: satisfied
+  summary: 范围检查确认 A 的规则、直接实现、测试和本 WorkCase 记录之外未扩张到排除对象；A 实现 以本地提交 ddcff52a 保存，未 push 或创建 PR。
+result_summary: A 已交付当时的 WorkCase 控制契约、成功标准与审核机械保护、31/32 行动边界、持续改进 结构和唯一 Working Tree evidence DTO；相关聚焦验证已通过，随后由 workcase-0005 的 真实 full-v4 DTO 补齐当前树全量验证。
+validation_summary: 九项成功标准全部满足。标准 1–7、9 由规则差异、聚焦正反测试、范围检查及独立审核支持； 标准 8 由 closed workcase-0005 的真实 v2 full-v4 补齐：固定五步均通过，Code 879 passed、10 skipped，Web 26 passed，typecheck 和 build 通过，Working Tree DTO complete，before/after 同为 360 文件、7,741,963 bytes、同一指纹、changes=[] 且无诊断。 未验证范围为原计划排除的 B/D/E 实现、00、Sparks、远端发布及原生 Windows 平台实证。
+closure_outcome: completed
+disposition_summary: A 已交付批准范围，workcase-0005 已完成 DTO 生产与 runner 接入并正式关闭，此前唯一证据 缺口已经消除。A 没有残余责任，不需要 routed-to 或新增 Spark。A 实现已提交为 ddcff52a，C 实现已提交为 fdf7b4f9；workcase-0003 与 workcase-0005 的生命周期载体 当时仍在 Working Tree，未 push 或创建 PR。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:04:44.333951Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。

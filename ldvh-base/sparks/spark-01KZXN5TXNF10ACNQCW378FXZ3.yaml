@@ -1,0 +1,42 @@
+title: 补齐 WorkCase 执行编排与事实类型行动入口
+intent: 需要稳定保留 WorkCase 获批计划的执行编排：存在跨检查点推进或恢复价值时，先据实写回工作项状态再继续实施；局部结果在同一稳定检查点形成时，保留直接完成例外。并判断五类事实对象如何更清楚地复用统一创建与生命周期模板而不复制规则。若不跨行动保留，执行者仍可能绕过 21 已定义的检查点直接实施，或为改善可发现性拆出重复模板，增加状态失真、规则漂移和接续复核负担。
+status: implemented
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7270-bc33-57c7ec37f724
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7be8-ab91-2c06f1041de3
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7912-9be1-996fcfa5f5a1
+summary: "**承接结果**\n\n- `workcase-0018` 完整承接获批计划执行编排与行动入口：建立唯一的 WorkCase 获批计划执行模板，保留跨检查点先写回和同一稳定检查点窄例外，维持 31/32 的通用创建与生命周期入口，并验证 Helper 能交付模板及 Web 从当前权威快照派生进展。\n- `workcase-0019` 完整承接生命周期关口防误建模：明确 Controller 自检、独立结果复核、关闭准备与 Human 关闭决定不得成为 work item；执行模板在消费计划前检查，命中后停止未来执行并回到计划修订，同时以真实坏计划固定负例。\n- 两个目标共同覆盖原 Spark 的执行编排、类型行动入口、检查点恢复、复核/关闭关口和呈现同步边界；没有未分流内容。与 `spark-0008` 的普通 `related-to` 只保留控制面主题相关性，不承担本次承接。\n\n**处置边界**\n\n本分流不表示任一未来 WorkCase 自动执行或关闭；两个目标后续生命周期也不反向改变本次已经成立的承接。"
+disposition_summary: '`workcase-0018` 承接获批计划执行模板、20–24 行动入口、Helper 模板交付与当前快照进展呈现；`workcase-0019` 承接生命周期关口不进入 work item、命中后计划修订和负例验证。两者共同完整覆盖原 Spark，现有 `related-to → spark-0008` 仅为主题关系；没有残余内容。'
+evolution:
+- at: '2026-08-01T01:58:26+08:00'
+  summary: 两个已验证 WorkCase 已分别收敛执行编排/行动入口和生命周期关口防误建模，原先合并的候选方案现已由稳定事实对象共同完整承接。
+change_log:
+- at: '2026-08-11T13:56:20.046073Z'
+  summary: 经逐条 Human 授权，历史 routed Spark 迁移为 implemented；旧 routed-to 已转为 related-to。
+  signature:
+    agent_workbench: Cindy
+    model_id: glm-5.2
+  session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:09.554545Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+object_id: spark-01KZXN5TXNF10ACNQCW378FXZ3
+object_uid: 019ffb52-ebb5-7840-a656-ece0ce87f7e3
+fact_type_key: spark
+created_at: '2026-07-29T20:18:25.325818+08:00'
+updated_at: '2026-08-13T15:03:57Z'

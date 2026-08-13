@@ -1,0 +1,53 @@
+object_id: workcase-01KZXN5TXNFCYTGVD1H5S01BQW
+object_uid: 019ffb52-ebb5-7b3d-a86d-a1897200aefc
+fact_type_key: workcase
+title: Helper 事实对象机械结构校验闭环
+created_at: '2026-07-22T17:40:53.989641+08:00'
+updated_at: '2026-08-13T15:03:57Z'
+status: closed
+goal: 为五类事实对象建立可追溯、完整的 Code 机械校验闭环：所有由当前 Specs 明确交给 Code 判定的结构规则都有唯一清单、 统一校验入口、读取/创建/更新/写后回读及候选消费的实际覆盖，以及范围匹配测试；适用检查尚未实现或无法完成时， Helper 必须返回 unavailable，不得报为 mechanically_valid。
+scope: 主要修改与归属载体为 specs/05、20–24 及其字段登记和附件，覆盖其中明确归 Code 的身份、载体/路径、Schema、字段闭集、类型、 必填/条件/空值、枚举、时间/版本/允许转换、引用、关系、项目级约束和诊断。item-01 还必须读取 specs/01、02、03、04 及其字段附件， 逐项判断是否已有适用 Code 机械规则或公开 invalid/unavailable 字段必须最小修改；这些上游契约不因读取而自动扩张实施范围。 覆盖 read-fact-objects、prepare-fact-object-draft 的对象消费判断、create-fact-object、update-fact-object、update-workcase 等类型便利写入口、 CAS 零写入、写后回读和 find-fact-object-candidates。排除自然语言意图、摘要充分性、来源真实性、证据充分性、关系领域语义、 是否应建对象等 AI 判断；排除 Hook 外部直写保护和批量迁移或修复已有对象。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 在不改 00 的前提下，定稿并审核适用机械规则的唯一定位、适用类型、机械/语义归属、Code owner、入口预期与 unavailable 边界； 对 01–04 是否存在适用规则或须最小修改形成可回读结论。
+- criterion_id: criterion-02
+  statement: 形成已审核的可检测闭集：每条已归 Code 的规则均映射到共享 validator/operation、读/建/更新/便利写入/回读/candidate 入口和正反测试； 任一缺失均不得报告 mechanically_valid。
+- criterion_id: criterion-03
+  statement: 仅按定稿 Specs 和已审核映射接入实现，使读取、创建、更新、便利写入、CAS 零写入与写后回读对同类违规给出一致 invalid 或 unavailable 处置。
+- criterion_id: criterion-04
+  statement: 候选发现和恢复遇到 invalid 或 unavailable 的旧对象时完整披露诊断、coverage 与 scope partial，不静默排除。
+- criterion_id: criterion-05
+  statement: 跨五类型的正反测试覆盖新增或收紧的机械规则；任一必要的 Specs 映射、validator、入口覆盖或对应测试缺失时，验证失败。 能力声明不包含自然语言语义、Hook 防护或迁移。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 唯一目录已登记适用类型、来源、owner、入口与 unavailable 边界，并完成上游契约适用性判断。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: 目录、实现映射与正反测试映射三表闭集及入口精确匹配由专门测试强制。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: 读、草案、创建、更新、WorkCase 更新、CAS/回读及候选入口均经共享校验链，独立实现审核通过。
+- criterion_id: criterion-04
+  outcome: satisfied
+  summary: 错误后缀和非 canonical 旧载体均公开为 partial/unavailable，不再静默排除。
+- criterion_id: criterion-05
+  outcome: satisfied
+  summary: 范围测试覆盖缺目录、入口或正反证据时失败；能力声明未扩张至自然语言语义、Hook 防护或迁移。
+result_summary: 机械规则唯一目录、规则到实现与正反测试的三表映射闭集已经形成；读、草案、创建、更新、WorkCase 专属写入、CAS/回读及候选入口 均接入共享校验链。非 canonical 载体会被公开为 partial/unavailable，而不会静默排除。
+validation_summary: 五项成功标准均已满足。定向验证覆盖事实测试 57 项、候选操作 17 项、创建/更新关键正反例 6 项及实际 CLI readback； 未验证范围为 full-v4、性能/并发压力与跨平台压力，均不在本 WorkCase 范围内。
+closure_outcome: completed
+disposition_summary: 原范围内没有未满足、未验证或仍适用的残余责任；已明确排除的自然语言语义、Hook 外部直写防护、迁移、full-v4 及性能/跨平台压力 不属于本 WorkCase 的关闭承接范围。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:05:04.799205Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。

@@ -1,0 +1,117 @@
+title: 全量测试耗时预估阶段 1 闭环：full-v4 criterion-4 验证
+goal: 验证 full-v4 全量测试通过（criterion-4），闭合 workcase-0083 遗留责任
+scope: 确认最新 full-v4 运行记录 run-c439573ecb194ff08ae70a733b826f14 六步 exit_code=0（整体 status=unknown 因 working_tree_evidence.status=stale），形成证据并更新 workcase-0083 闭合状态。
+success_criterion_definitions:
+- criterion_id: criterion-1
+  statement: full-v4 六步均 exit_code=0（code-lint / code-tests / fact-integrity / web-typecheck / web-tests / web-build），且如实记录 working_tree_evidence.status=stale 导致整体 status=unknown
+status: closed
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7422-b1e2-a58bf9215ca7
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7bb3-8e8b-cc5c69bbe8b4
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7599-ac8a-740baac2be0b
+change_log:
+- at: '2026-08-09T14:19:59.816696Z'
+  session_id: workbuddy-session-20260809
+  summary: 受控创建 workcase-0088：承接 workcase-0083 criterion-4 闭环验证。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: Workbuddy
+- at: '2026-08-09T15:17:16.175986Z'
+  session_id: workbuddy-session-20260809
+  summary: Human Gate 1 批准：进入 executing，写入 execution_approval（subject_version=1，baseline 指纹绑定）。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: Workbuddy
+- at: '2026-08-09T15:25:13.707163Z'
+  session_id: workbuddy-session-20260809
+  summary: 执行完成并形成结果投影：item-1/2 completed、item-3 cancelled，criterion-1 not_satisfied，进入 controller_checking。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: Workbuddy
+- at: '2026-08-09T15:27:38.978848Z'
+  session_id: workbuddy-session-20260809
+  summary: 吸收独立复核 feedback：在 result projection 补充判定口径说明（旧 run stale 不采用，以 fresh run-0d5e 为准）。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: Workbuddy
+- at: '2026-08-09T15:29:47.513429Z'
+  session_id: workbuddy-session-20260809
+  summary: Controller 自检完成：补齐 controller_check_summary，result projection 冻结。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: Workbuddy
+- at: '2026-08-09T15:29:51.749924Z'
+  session_id: workbuddy-session-20260809
+  summary: 进入 independent_reviewing（projection 冻结，等待写入 result_reviews）。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: Workbuddy
+- at: '2026-08-09T15:29:54.484330Z'
+  session_id: workbuddy-session-20260809
+  summary: 独立只读复核完成（subagent-read-only）：写入 result_reviews。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: Workbuddy
+- at: '2026-08-09T15:30:02.969666Z'
+  session_id: workbuddy-session-20260809
+  summary: 形成完整关闭提案（proposed_outcome=not-achieved，residual suggest_spark suggestion-1），进入 closure_preparing。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: Workbuddy
+- at: '2026-08-09T15:30:06.248768Z'
+  session_id: workbuddy-session-20260809
+  summary: 终态保留审查完成、无入向 depends-on；进入 human_closure_confirming，等待 Human Gate 2 关闭决定。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: Workbuddy
+- at: '2026-08-09T15:42:57.449178Z'
+  session_id: workbuddy-session-20260809
+  summary: Human Gate 2 批准关闭（not-achieved）。关闭原因：执行期 fresh 验证 run-0d5e5835… 六步中 web-build exit 2 失败（未提交 web/ 改动引入 TS 错误 WorkCaseProgressFilter.tsx:37），criterion-1 not_satisfied、提案 not-achieved，投影冻结故按此关闭；Human 随后调整未提交 web/ 改动后，fresh 验证 run-0f789a5661… 六步全 exit_code=0（final_exit_code=0，整体 unknown 因 wte.status=stale），criterion-1 验收条件已满足——该新事实属关闭后进展，按 §6.3.3/§7 不改写冻结投影，已如实留档于本关闭处置，作为 workcase-0083 criterion-4 后续闭合证据（0083 已 closed，须由新责任承接）。
+  signature:
+    model_id: deepseek-v4-flash
+    agent_workbench: Workbuddy
+- at: '2026-08-10T08:59:16.779924Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: WorkBuddy -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-workbuddy-case-normalization-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:48.766332Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+success_criterion_results:
+- criterion_id: criterion-1
+  outcome: not_satisfied
+  summary: fresh full-v4 run-0d5e5835365040ef808c697f72e5ecb2 六步非全部 exit_code=0：web-build exit_code=2 failed（TS 错误 WorkCaseProgressFilter.tsx:37，由未提交 web/ 改动引入）；整体 status=unknown，最终退出码 2。判定口径：旧记录 run-c439573ecb194ff08ae70a733b826f14 六步虽均 exit_code=0，但整体 status=unknown（working_tree_evidence.status=stale），按 specs/07 §11.2 不得作为通过依据；故另行执行 fresh full-v4 run-0d5e5835365040ef808c697f72e5ecb2 验证，其 web-build exit 2 失败，六步非全 0，criterion 不满足。
+result_summary: workcase-0088 执行验证：fresh full-v4 运行 5/6 步通过，web-build 因未提交 web/ 改动引入的 TS 类型错误失败，整体未通过。criterion-4（full-v4 全量通过）无法成立，workcase-0083 保持 partial 闭环。 判定口径：不采用 run-c439573（stale/unknown，不得声称通过），另行 fresh 验证 run-0d5e（web-build 失败）作为依据。
+validation_summary: 依据 fresh full-v4 run-0d5e5835365040ef808c697f72e5ecb2 的 record.json 回读：五步 passed、web-build failed（exit 2）；根因经 output.log 定位（WorkCaseProgressFilter.tsx:37 TS2345），属未提交改动引入，超出本 WorkCase 授权修复范围。 口径补充：run-c439573 六步均 exit 0 但 wte.status=stale，整体 status=unknown，未作为通过证据；以 fresh run-0d5e 六步结果为准。
+closure_outcome: not-achieved
+spark_suggestions:
+- suggestion_id: suggestion-1
+  suggestion_kind: constrained_responsibility
+  summary: 修复 web-build 失败（WorkCaseProgressFilter.tsx:37 TS2345，未提交 web/ 改动引入），使 full-v4 完整通过，并闭合 workcase-0083 criterion-4。
+  restriction_reason: workcase-0088 执行授权仅限读取与验证（action_ceiling：单次运行只允许读取和验证，不得修改或提交；prohibited_actions：不得修改其它事实对象、不得提交代码变更），无法修复 web/ 代码或提交；修复属新的代码变更责任。
+  impact_summary: full-v4 整体未通过，workcase-0083 的 criterion-4 维持 not_satisfied，partial 闭环遗留责任未闭合；回归验证仍受 web-build 阻断。
+  resume_condition: 新的 WorkCase/Spark 获得修复未提交 web/ 改动（WorkCaseProgressFilter.tsx:37 TS2345）的授权，并成功运行 fresh full-v4 全绿。
+  follow_up_summary: 后续建立 Spark 时应以 fresh full-v4 全绿为验收，并据实将 workcase-0083 criterion-4 更新为 satisfied。
+disposition_summary: 本 WorkCase 以 not-achieved 停止：criterion-1 未满足（fresh full-v4 六步中 web-build 失败，exit 2）。剩余责任（修复 web-build 使 full-v4 全绿，并闭合 workcase-0083 criterion-4）经 suggest_spark 转交 proposal 内 constrained suggestion-1；无 accept-stop 项。
+object_id: workcase-01KZXN5TXNEW5AYK4EJEE5EA78
+object_uid: 019ffb52-ebb5-770a-af4c-8e939c5728e8
+fact_type_key: workcase
+created_at: '2026-08-09T14:19:59.816696Z'
+updated_at: '2026-08-13T15:03:57Z'

@@ -220,6 +220,14 @@ def test_modified_copy_source_is_reported_once() -> None:
     assert paths == ("source.txt", "extracted.txt")
 
 
+def test_rename_source_map_keeps_only_rename_before_images() -> None:
+    sources = git_adapter._parse_rename_source_map(
+        b"R097\0old.yaml\0new.yaml\0C100\0source.yaml\0copy.yaml\0M\0other.yaml\0"
+    )
+
+    assert sources == {"new.yaml": "old.yaml"}
+
+
 def test_linked_worktree_stays_bound_to_its_own_index(tmp_path: Path) -> None:
     repository = _repository(tmp_path / "repository")
     linked = tmp_path / "linked"

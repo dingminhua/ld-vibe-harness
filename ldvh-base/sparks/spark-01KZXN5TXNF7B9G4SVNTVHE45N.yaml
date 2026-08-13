@@ -1,0 +1,51 @@
+title: Obsidian 与 LDVH 的 AI 协作分层
+status: discarded
+disposition_summary: Human 决定关闭本 Spark：是否需要在 LDVH 引入 Obsidian 技术的判断已得出明确结论——不需要。依据 study-0026 的评估，Obsidian 的图谱可视化、双向链接、标签检索等核心能力对 AI 关联发现没有增量价值，AI 的关联发现已由现有 Helper CLI（relation_targets/text_match/F0-F4）覆盖，Human 的浏览需求已由 Web 聚焦页（CommitHotspotGraph、FactAssociationsSection）覆盖；引入 Obsidian 还会带来事实源边界模糊与第二权威风险，不符合 spec 00 §5.1、§8.1。本终态不产生承接对象；真正待加强的方向是补齐 ADR/Pitfall/Study 的关系数据，由 spark-0040 与 spark-0067 承接，不在此 Spark 内跟踪。
+intent: 需要保留 Obsidian 这类本地 Markdown 知识工作区与 LDVH 是否存在协同层的未决问题：两者都可提供关联和检索，但面向 Human 的自由材料与面向 AI 的可回指规则和事实不能混作同一权威。后续需先判断是否存在真实场景和可验证收益，才考虑受控桥接；若不跨会话保留，容易把工具比较重新简化为替换选型，或在未辨明来源、覆盖和责任边界时推进接入。
+summary: "## 当前判断\n\n- 把 Obsidian 用作 LLM Wiki 时，它提供的是以本地 Vault、Markdown、链接、属性、搜索或图谱视图和插件为基础的探索性材料层。它适合 Human 沉淀阅读材料、草稿和自由关联，也能让 AI 或检索层发现可能有用的内容。\n- 该层回答的是“哪些材料可能值得看”；链接、图谱、标签、搜索命中或检索排序本身不证明语义关系、规则适用、行动许可、材料当前性或已覆盖范围。\n- LDVH 面向 AI 的价值则是“当前工作可以依据什么”：来源可回指、稳定对象身份、来源定义的关系、渐进式读取、coverage/gaps、验证与 Human Gate。候选、关系和排序只用于定位与继续读取，不成为第二规则源、事实源或语义结论。\n- 两者因此更可能分层协作而非彼此替代：Obsidian 承载 Human 的广泛探索与项目背景；LDVH 承载当前规则、受管事实、工作责任和受控上下文。现有 Helper 的事实候选与一跳关系导航仍独立成立，尚未建立对任何外部知识系统的桥接。\n\n## 可能的协作方向\n\n- 若未来存在真实需求，Obsidian 只能向 AI 提供可回指的候选材料、精确读取入口、已读取范围和缺口；AI 仍需依据目标和来源自行判断相关性与下一步。\n- 若需要 Human 侧浏览，可考虑将 LDVH 受管对象投影为 Obsidian 可读视图；这不等同于让 Obsidian 成为规则或事实的权威，也不自动允许反向写回。\n\n## 尚未决定\n\n- 是否确有需要让 AI 从 Obsidian 获取候选材料的工作场景，以及相对直接读取当前来源能否带来可验证收益，而非增加一层不可靠上下文。\n- 若存在桥接，单向候选发现、只读投影、受控同步或双向修改分别需要哪些来源、冲突、覆盖与写入责任。\n\n## 当前边界\n\n本 Spark 不构成 Obsidian 接入、插件安装、数据同步、知识图谱、语义检索或全量 Vault 注入的实施授权；也不把任何 Obsidian 内容预先认定为 LDVH 的规则或事实来源，更不允许自动把链接转换为 LDVH 关系。"
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7fe4-a6f9-4df27c4dd6a8
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7ce4-9c43-fba3a264ef95
+evolution:
+- at: '2026-07-24T12:21:12+08:00'
+  summary: 本次比较将问题从“Obsidian 是否可替代 LDVH”收敛为 LLM Wiki 的探索性材料层如何与 LDVH 的执行权威层分工；当前摘要因此新增候选发现与可依赖事实的区分、层间受控交接及禁止全量注入或自动关系写回的边界。
+object_id: spark-01KZXN5TXNF7B9G4SVNTVHE45N
+object_uid: 019ffb52-ebb5-79d6-9813-3baeb71710b5
+fact_type_key: spark
+created_at: '2026-07-24T07:47:36.176894+08:00'
+updated_at: '2026-08-13T15:03:57Z'
+change_log:
+- summary: 补建变更流水以支持受控提交；spark-0032 由 open 转 discarded（依据 study-0026 结论：无需引入 Obsidian），事实内容变更由其他会话产出，此处仅补审计签名。
+  signature:
+    agent_id: hy3
+    host_environment: Workbuddy
+  session_id: batch-commit-20260809-spark0032
+  at: '2026-07-24T12:21:30.913531+08:00'
+- at: '2026-08-10T08:46:27.872966Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-claw -> Workbuddy。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-legacy-signature-migration-20260810
+- at: '2026-08-10T09:14:52.699538Z'
+  summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-ai -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
+  signature:
+    agent_workbench: Cindy
+    model_id: gpt-5
+  session_id: cindy-identity-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:52.021706Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。

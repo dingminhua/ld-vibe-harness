@@ -1,0 +1,117 @@
+status: closed
+title: 让缺少 change_log 的事实对象在首次真实更新时建立流水
+goal: 使任何满足结构与 HEAD 历史基线的既有事实对象，可在原本合法的首次真实受控更新中建立恰好一条当前三字段 change_log，而不使用对象编号名单、不恢复未知历史、不放宽类型生命周期。
+scope: 修改 specs/05、21、32 与 05.Att.01 的最小规则增量；修改 facts validation、HEAD 基线读取、通用更新与 WorkCase 专属更新实现及相关 tests。判断只依赖当前 Working Tree before、同路径 HEAD before、fingerprint 与原类型规则。保护现有未提交修改；不迁移任何真实 legacy 对象，不更新 spark-0018，不执行 git commit/reset/stash/push/发布或外部写入。
+success_criterion_definitions:
+- criterion_id: criterion-first-log-contract
+  statement: 当前规则明确允许 HEAD 与 Working Tree before 都机械有效且完全缺少 change_log 的既有对象，在本来合法的一次真实更新中建立恰好一条当前三字段流水，并明确第一条不是创建记录或完整历史。
+- criterion_id: criterion-structural-history-gate
+  statement: 实现不含对象 ID、日期或类型实例 allowlist；HEAD 已有流水但 Working Tree 删除、HEAD 不存在/不可读/无效、旧署名、空或多条首写均零写入拒绝。
+- criterion_id: criterion-lifecycle-preservation
+  statement: Spark、ADR、Pitfall、Study 与 WorkCase 原有操作只在其既有类型、状态、字段所有权、授权和生命周期规则成立时支持首写；缺少流水不授予其它更新、重开或终态回写能力。
+- criterion_id: criterion-write-transaction
+  statement: 首次流水复用现有三字段 observed_context 注入、共享锁、完整 after、fingerprint CAS、事件时间绑定、原子替换、精确回读、条件回滚与独立完整性审计。
+- criterion_id: criterion-regression-isolation
+  statement: 定向与完整 Code 回归、规则检查、Ruff、ldvh check 和 diff 检查形成实际结果；现有并行 dirty baseline 与真实 legacy 对象保持隔离且无 Git commit。
+success_criterion_results:
+- criterion_id: criterion-first-log-contract
+  outcome: satisfied
+  summary: 规则已定义 HEAD 与 Working Tree before 都机械有效且完全缺少 change_log 时，在本来的真实更新中建立恰好一条当前三字段流水；21/32/05.Att.01 同步。
+- criterion_id: criterion-structural-history-gate
+  outcome: satisfied
+  summary: 实现仅依赖当前 before、同路径 HEAD before 与 fingerprint，无对象编号 allowlist；删除历史、新文件、不可用或旧署名均零写入拒绝，已由 facts 与 Helper 正反例锁定。
+- criterion_id: criterion-lifecycle-preservation
+  outcome: satisfied
+  summary: 通用 update-fact-object 与全部 WorkCase 专属模式保持原类型、状态、字段所有权与 Gate；closed 更正只允许终态事实更正，不重开不回写。
+- criterion_id: criterion-write-transaction
+  outcome: satisfied
+  summary: 首写复用三字段 observed_context 注入、共享锁、完整 after、fingerprint CAS、事件时间绑定、原子替换、精确回读与独立完整性审计；已有流水仍恰追加一条。
+- criterion_id: criterion-regression-isolation
+  outcome: satisfied
+  summary: 完整 Code 测试 1695 passed、17 skipped；Ruff、ldvh check（facts complete 216）与 git diff --check 通过；真实 legacy 对象与并行 dirty baseline 保持隔离，无 Git commit。
+result_summary: 已交付受控能力：HEAD/WT 双基线下，缺失 change_log 的既有事实对象可在原本合法的首次真实更新中建立恰好一条当前三字段流水；五类事实与全部 WorkCase 专属模式接入，历史删除/新文件/不可用 fail closed，普通更新默认拒绝保持不变。
+validation_summary: 规则源先行并完成 item 局部规则复核；新增 facts/Helper/commit 正反例并复用既有事务；完整 Code 测试 1695 passed、17 skipped，Ruff 通过，ldvh check outcome=ok/status=passed、facts complete 216、problems=[], git diff --check 通过。未验证：Windows 原生探针（requires native Windows）、真实跨 clone 汇合与远端发布；均不在 scope 内。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T17:56:13.158864Z'
+  summary: Human 要求按缺少 change_log 的结构条件实施：在原本合法的首次真实更新中创建第一条当前三字段流水，不使用对象编号名单或独立迁移步骤。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T18:01:26.375280Z'
+  summary: Human Gate 1 批准三字段首次流水方案及冻结执行授权；进入 executing 并开始规则源增量。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T18:02:14.199783Z'
+  summary: 开始 item-source-contract：先形成三字段首次流水方案的规则源最小增量。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T18:33:14.386907Z'
+  summary: 完成 item-source-contract 与 item-first-log-implementation；开始 item-regression-evidence。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T18:35:41.208947Z'
+  summary: 全部 work items 终态；Controller 形成 result_version=1 投影并进入 controller_checking。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T18:38:53.015945Z'
+  summary: 冻结 result_version=1 投影并进入 independent_reviewing，委派独立只读结果复核。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T19:11:18.711088Z'
+  summary: 独立只读结果复核返回 changes_required（Git 预检首写契约缺口）；Controller 已修复并处置 feedback，记录 result review 事件。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T19:11:28.943569Z'
+  summary: 形成 completed 关闭提案并进入 closure_preparing；保留冻结 projection/reviews，移除 Reviewer waiting。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T19:11:39.678729Z'
+  summary: 关闭提案完整、route/依赖边界成立，进入 human_closure_confirming，等待 Human Gate 2。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-12T19:13:31.241328Z'
+  summary: Human Gate 2 接受 completed 关闭提案，原子关闭；能力已交付，真实 legacy 对象与 spark-0018 的迁移作为范围外后续机会。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:09:20.464221Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+closure_outcome: completed
+disposition_summary: 受控能力已按冻结范围交付并验证：HEAD/WT 双基线下无流水对象可在首次真实更新中建立当前三字段流水，普通更新默认拒绝保持不变；独立结果复核唯一反馈（Git 预检首写契约）已修复并以提交层正反测试锁定。全部 5 项成功标准 satisfied，无剩余责任。真实 legacy 对象与 spark-0018 不在 scope 内，作为范围外后续机会交由 Human 独立判断。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7d9e-b5cc-17beecdc5303
+object_id: workcase-01KZXN5TXNFGB9RGGR7RG461PV
+object_uid: 019ffb52-ebb5-7c16-9c42-183e204306db
+fact_type_key: workcase
+created_at: '2026-08-12T17:56:13.158864Z'
+updated_at: '2026-08-13T15:03:57Z'

@@ -1,0 +1,72 @@
+title: 无环境 Hook 下的 LDVH 自约束运行
+intent: 保留无环境 Hook 时 Agent 能否稳定发现、遵守、验证并交还 LDVH 约束的问题，避免把 Agent.md 等规则文档存在、一次自觉执行或 Helper 可用误作自动注入、阻断与审计已经成立。后续需判断主动约束的最低可靠链路、失效面和可接受边界。
+status: discarded
+summary: "## 最终判断\n\n- 原议题设想在没有环境 Hook 时，仍通过模型内主动路由和广泛证据矩阵形成接近持续约束的可靠性；该方案需要跨环境冷启动、隐式路由、委派、恢复、worktree 切换及大量负面路径验证，成本过高，不再作为 LDVH 必需能力继续推进。\n- `study-0029` 已形成较低成本的分层结论：使用显式 `ldvh check` 提供早期机械反馈，事实写入后继续精确回读与完整性审计，真实 Git Hook/Gate 保留提交边界最后把关；watcher、范围 receipt 与持续后台监控只在未来出现明确不足时重新研究。\n- 既有环境探针说明薄 Skill 自动选中和模型主动遵守具有环境与行为不确定性，这些证据保留为历史判断依据，但不再要求通过扩大验证矩阵把模型内主动路由提升为必要保证。\n\n## 退出边界\n\n- 不恢复环境 Hook、插件、adapter 或 MCP 作为本议题候选形态。\n- 不继续以本 Spark 跟踪跨环境持续主动约束、自动路由成功率或完整负面路径矩阵。\n- 本终态只表示决定不再跟踪这一高成本原议题，不表示薄 Skill、显式检查、事实审计、Git Gate 或项目整体已经完成或获得额外保证。"
+evolution:
+- at: '2026-07-22T13:48:08+08:00'
+  summary: 迁移对照保留 V3 对“持续消费同一运行链路”的关注，但移除旧双入口和部署结论；当前问题收窄为无 Hook 时主动约束究竟能证明什么、在哪些恢复和委派场景失效。
+- at: '2026-08-01T03:12:13+08:00'
+  summary: adr-0006 将原先可能依赖环境 Hook 的问题边界改为唯一薄 Skill 架构内的主动约束证据评估；本次吸收 Kimi 特定环境复测与当前 Codex 显式上下文的有限观察，并因 legacy 归因混淆及冷启动、委派、worktree、负面写入和真实 Gate 矩阵仍缺失而保持 open。
+- at: '2026-08-01T14:01:26+08:00'
+  summary: 吸收 WorkBuddy 5.3.5 接入验收证据（Kimi 侧逐项独立复核属实）：helper-cli、doctor、Skill 静态部署与启用态、真实 Git Gate block 路径成立，skill-icons 以肯定依据记 unsupported；自动路由、SessionStart 原生事件、Gate allow 真实事件仍缺，保持 open。另发现 CLI main() 无条件 sys.stdin.buffer.read() 致无 tty EOF 环境挂起（SIGKILL 137）的 Pitfall 候选，待按 23 受控创建。
+- at: '2026-08-01T14:47:59+08:00'
+  summary: WorkBuddy 冷启动探针（n=1）未路由：AI 绕开技能直接 shell 遍历事实库；诊断为 description 截断机制加大白话触发词后置，SKILL.md description 已改触发词前置并双环境同步部署，待同法复测；spark 保持 open。
+- at: '2026-08-01T14:58:17+08:00'
+  summary: WorkBuddy 复测（n=2）路由仍阴性：触发词前置后 description 疑似可见，模型仍选 shell 直读；新增两类负面证据——为首答合规性事后虚构（声称读过 SKILL.md 与日志矛盾）、再次把非法事实对象当正常项呈现；发现 skills 目录 HotReload 机制；瓶颈从描述可见性转移至模型行为层，spark 保持 open。
+- at: '2026-08-01T15:37:50+08:00'
+  summary: WorkBuddy 写入探针获首个阳性：Skill 首动作触发、模板→独立复核→受控创建→完整性检查全链路成立，关键声称逐项经日志与 pty 输出独立核实属实；如实登记三项方法学警示（探针措辞启动提示、仓库本体工作区、写入无捷径）；读取路由仍阴性，spark 保持 open。
+- at: '2026-08-13T07:25:51Z'
+  summary: Human 明确判断原先无 Hook 持续主动约束设想的实现与验证成本过高，不能作为必要选择；本 Spark 因而退出该方向，并以 study-0029 的显式检查、事实审计与 Git Gate 分层结论限定当前边界。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-78b1-b9fe-b03917f96024
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7afc-8623-c117575e3111
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7820-8086-25fa5aa68b26
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-77c5-81a7-6bdbcda15670
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7735-aecd-9a309abfaead
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7c16-9c42-183e204306db
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-751c-8041-ba92bae6c7bc
+change_log:
+- at: '2026-08-12T19:28:54.613781Z'
+  signature:
+    product_name: Cindy
+    model_name: deepseek/deepseek-v4-flash
+    agent_runtime_name: claude-code
+  summary: 补充关联信息：建立到 spark-0029、spark-0039、workcase-0023、workcase-0026、workcase-0100、study-0029 的 related-to 关联（前次更新均未记录此前历史；本次只记录本次真实变化，未恢复对象创建或完整历史）
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:25:51.565173Z'
+  summary: 按 Human 当前退出决定将 spark-0018 从 open 处置为 discarded，重写当前摘要与处置边界，并保留其与 study-0029 的既有关联。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:11.755409Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+disposition_summary: Human 已明确决定不再继续跟踪无环境 Hook 下建立跨环境持续主动约束这一原议题：其实现与验证成本过高，不能作为 LDVH 必需选择。当前接受 study-0029 所记录的低成本分层边界——显式检查、事实写后回读与完整性审计、以及提交边界 Git Gate；高成本 watcher、receipt、持续后台监控及扩大环境证据矩阵不作为当前必要方向。本次 discarded 仅结束该原议题，不声明任何下游工作已经完成。
+object_id: spark-01KZXN5TXNFPFBBK0QQVPDRMR3
+object_uid: 019ffb52-ebb5-7d9e-b5cc-17beecdc5303
+fact_type_key: spark
+created_at: '2026-07-19T18:45:09.421410+08:00'
+updated_at: '2026-08-13T15:03:57Z'

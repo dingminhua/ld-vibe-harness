@@ -1,0 +1,28 @@
+title: 受管项目语义选中后的 Helper-first 续接
+intent: 保留 AI 已依据用户目标选中受管项目后，如何以显式工作对象重新解析并通过 Helper 继续的边界，避免让 adapter 或 Code 解释自然语言、让语义选择冒充管辖事实，或让 AI 跳过路由与最小读取计划直接行动。后续需判断标准续接合同、失败分流与可观测顺序是否足够。
+status: implemented
+summary: "**当前结论**\n\n- AI 依据 Human 目标选择候选项目后，必须以实际 worktree 的显式工作对象重新执行管辖解析；只有返回 `governed_single`，后续 Helper 能力、规则、模板和事实读取才绑定到该项目。语义选择不冒充管辖事实，adapter 与 Code 也不解释自然语言来自动选项目。\n- 标准续接顺序已经落实为：明确工作对象、解析治理范围、确认单一项目、读取当前能力与行动模板、按需取得最小权威规则/事实、执行范围匹配行动、回读并验证。候选、摘要和关系只帮助定位，不成为适用性或授权结论。\n- 多候选、配置缺失、`partial`、能力未覆盖、对象不可读或来源资格未完全证明时，Helper 会保留 scope、coverage、gap、diagnostic 和继续入口；调用方不得静默补全、跳过路由或凭记忆行动。\n\n**处置边界**\n\n本结论只落实受管项目被语义选中后的 Helper-first 续接合同；它不替代每次任务的相关性、授权、Human Gate 或完成判断。"
+evolution:
+- at: '2026-07-22T13:50:17+08:00'
+  summary: 迁移对照保留 V3 的入口顺序保障：AI 的语义选择与 Code/Helper 的可观察校验必须分层；当前对象据此明确选中项目后仍需重新解析，并只在已证明的 Helper 范围内续接。
+- at: '2026-08-01T01:58:26+08:00'
+  summary: 治理解析、Helper 能力路由、行动模板和渐进式读取已经形成可执行的标准续接链，原先待完善的顺序、失败分流与可观察边界已收敛。
+disposition_summary: 显式工作对象重新解析、`governed_single` 绑定、能力与行动模板读取、最小权威信息展开、失败缺口保留以及写后验证的 Helper-first 顺序，已由现行治理、Helper 与行动模板契约和实现直接落实。原议题没有事实承接目标或剩余责任。
+object_id: spark-01KZXN5TXNFWSSZJBSJPGVSVK5
+object_uid: 019ffb52-ebb5-7f33-9fc9-7995a1bcee65
+fact_type_key: spark
+created_at: '2026-07-21T10:34:17.820904+08:00'
+updated_at: '2026-08-13T15:03:57Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:29.011196Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T15:03:57Z'
+  summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
