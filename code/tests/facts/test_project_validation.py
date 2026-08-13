@@ -31,7 +31,7 @@ def _relation(relation_key: str, fact_type_key: str, object_id: str) -> dict[str
     }
 
 
-def test_configuration_uid_target_in_another_project_is_not_folded_into_local_graph() -> None:
+def test_configuration_uid_target_in_another_project_invalidates_the_source() -> None:
     source = _read(
         "study",
         "study-0001",
@@ -48,7 +48,9 @@ def test_configuration_uid_target_in_another_project_is_not_folded_into_local_gr
 
     stabilize_project_index(index, (("study", "study-0001"),))
 
-    assert index.cache[("study", "study-0001")].check_status == "mechanically_valid"
+    stabilized = index.cache[("study", "study-0001")]
+    assert stabilized.check_status == "invalid"
+    assert any(issue.summary == "事实对象关系目标只允许同一管辖项目" for issue in stabilized.issues)
 
 
 def _read(

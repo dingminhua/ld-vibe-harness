@@ -97,13 +97,19 @@ function projectRelations(value: unknown, unresolved: UnresolvedAssociation[]): 
       return [];
     }
     const target = item.target;
-    if (Object.keys(target).length === 1 && typeof target.object_uid === 'string'
+    const targetKeys = Object.keys(target);
+    if (targetKeys.length === 1 && typeof target.object_uid === 'string'
       && /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(target.object_uid)) {
       return [{
         originPath,
         relationKey: item.relation_key,
         target: { objectUid: target.object_uid },
       }];
+    }
+    if (targetKeys.length !== 3
+      || !targetKeys.every((key) => ['governed_project_id', 'fact_type_key', 'object_id'].includes(key))) {
+      unresolved.push({ originPath, role: 'relation', value: item });
+      return [];
     }
     if (
       typeof target.governed_project_id !== 'string'

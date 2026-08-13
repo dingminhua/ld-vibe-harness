@@ -48,7 +48,7 @@ def _validate_spark(
     return validate_project_relations(index, "spark", str(source.fields["object_id"]), source)  # type: ignore[arg-type]
 
 
-def test_spark_relations_are_limited_to_the_current_project_until_cross_project_is_designed() -> None:
+def test_spark_relations_are_limited_to_the_current_project() -> None:
     read = FactReadResult(
         Path("ldvh-base/sparks/spark-0001.yaml"),
         "yaml",
@@ -78,7 +78,7 @@ def test_spark_relations_are_limited_to_the_current_project_until_cross_project_
     )
 
     assert not unavailable
-    assert any(issue.summary == "Spark 关系目标只允许同一管辖项目" for issue in issues)
+    assert any(issue.summary == "事实对象关系目标只允许同一管辖项目" for issue in issues)
 
 
 def test_spark_related_to_can_target_an_implemented_spark() -> None:
@@ -210,6 +210,43 @@ class _MemoryIndex:
             ),
             self.complete and (not require_all_canonical_valid or not invalid_peer),
         )
+
+
+@pytest.mark.parametrize(
+    ("fact_type_key", "relation_key", "status"),
+    [
+        ("spark", "related-to", "open"),
+        ("workcase", "depends-on", "open"),
+        ("adr", "related-to", "active"),
+        ("pitfall", "related-to", "active"),
+        ("study", "informs", "active"),
+    ],
+)
+def test_every_fact_type_rejects_a_uid_relation_resolved_to_another_project(
+    fact_type_key: str,
+    relation_key: str,
+    status: str,
+) -> None:
+    source_id = f"{fact_type_key}-0001"
+    source = _read(
+        source_id,
+        status,
+        phase="executing" if fact_type_key == "workcase" else None,
+        fact_type_key=fact_type_key,
+        object_uid=_UID_A,
+        relations=[{"relation_key": relation_key, "target": {"object_uid": _UID_B}}],
+    )
+    target = _read("spark-0002", "open", fact_type_key="spark", object_uid=_UID_B)
+    index = _MemoryIndex(source)
+    index.configuration_uid_resolver = lambda _uid: (
+        ("other-project", "spark", "spark-0002", target),
+        "resolved",
+    )
+
+    issues, unavailable = validate_project_relations(index, fact_type_key, source_id, source)  # type: ignore[arg-type]
+
+    assert unavailable is False
+    assert any(issue.summary == "事实对象关系目标只允许同一管辖项目" for issue in issues)
 
 
 def _validate(

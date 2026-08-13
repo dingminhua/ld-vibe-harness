@@ -133,6 +133,8 @@ test('fact list cards project every formal association through exact readable ta
         '  - relation_key: informs', '    target:', '      governed_project_id: fixture', '      fact_type_key: workcase', '      object_id: workcase-0001',
         '  - relation_key: related-to', '    target:', '      governed_project_id: fixture', '      fact_type_key: study', '      object_id: study-9999',
         '  - relation_key: related-to', '    target:', '      object_uid: 0198f1c7-8a2b-7c3d-9e4f-123456789abc',
+        '  - relation_key: related-to', '    target:', '      object_uid: 0198f1c7-8a2b-7c3d-9e4f-123456789abc', '      governed_project_id: fixture', '      fact_type_key: workcase', '      object_id: workcase-0001',
+        '  - relation_key: related-to', '    target:', '      governed_project_id: fixture', '      fact_type_key: workcase', '      object_id: workcase-0001', '      copied_title: Bad target',
         '  - malformed relation',
         '',
       ].join('\n'),
@@ -165,6 +167,8 @@ test('fact list cards project every formal association through exact readable ta
         status: 'open',
         progressGroup: 'progressing',
       },
+      { available: false },
+      { available: false },
       { available: false },
     ]);
   } finally {

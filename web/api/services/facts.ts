@@ -111,9 +111,12 @@ function factAssociationTargetKey(target: FactAssociationTarget): string {
 function projectFactAssociationTarget(value: unknown): FactAssociationTarget | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const target = value as Record<string, unknown>
-  if (Object.keys(target).length === 1 && typeof target.object_uid === 'string' && UUID_V7_PATTERN.test(target.object_uid)) {
+  const keys = Object.keys(target)
+  if (keys.length === 1 && typeof target.object_uid === 'string' && UUID_V7_PATTERN.test(target.object_uid)) {
     return { objectUid: target.object_uid }
   }
+  if (keys.length !== 3
+    || !keys.every((key) => ['governed_project_id', 'fact_type_key', 'object_id'].includes(key))) return null
   if (typeof target.governed_project_id !== 'string' || !target.governed_project_id.trim()
     || typeof target.fact_type_key !== 'string' || !target.fact_type_key.trim()
     || typeof target.object_id !== 'string' || !target.object_id.trim()) return null

@@ -71,8 +71,21 @@ test('legacy reference fields are not projected', () => {
 });
 
 test('malformed relations stay visible as unresolved', () => {
-  const projected = projectFactReadingAssociations({ relations: [{ relation_key: 'related-to', target: { object_id: 'spark-0002' } }] });
-  assert.deepEqual(projected.unresolved.map((item) => item.originPath), ['relations[0]']);
+  const objectUid = '0198f1c7-8a2b-7c3d-9e4f-123456789abc';
+  const projected = projectFactReadingAssociations({
+    relations: [
+      { relation_key: 'related-to', target: { object_id: 'spark-0002' } },
+      {
+        relation_key: 'related-to',
+        target: { object_uid: objectUid, governed_project_id: 'sample', fact_type_key: 'spark', object_id: 'spark-0002' },
+      },
+      {
+        relation_key: 'related-to',
+        target: { governed_project_id: 'sample', fact_type_key: 'spark', object_id: 'spark-0002', title: 'copied title' },
+      },
+    ],
+  });
+  assert.deepEqual(projected.unresolved.map((item) => item.originPath), ['relations[0]', 'relations[1]', 'relations[2]']);
 });
 
 test('groups ordinary relations by target type rather than their relation key', () => {

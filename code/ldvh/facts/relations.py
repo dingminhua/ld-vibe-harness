@@ -829,13 +829,8 @@ def validate_project_relations(
         if not _source_condition(fact_type_key, relation_key, read.fields):
             issues.append(FactIssue("relation", "关系不允许由当前 source 状态声明", path))
         if resolution in {"cross_project", "cross_project_resolved"}:
-            if fact_type_key in {"spark", "workcase"}:
-                source_label = "Spark" if fact_type_key == "spark" else "WorkCase"
-                issues.append(FactIssue("relation", f"{source_label} 关系目标只允许同一管辖项目", path))
-                continue
-            if resolution == "cross_project":
-                unavailable = True
-                continue
+            issues.append(FactIssue("relation", "事实对象关系目标只允许同一管辖项目", path))
+            continue
         if target_read is None or target_read.check_status in {"not_found", "invalid"}:
             issues.append(
                 FactIssue(
