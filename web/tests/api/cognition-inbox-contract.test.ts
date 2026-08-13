@@ -230,6 +230,45 @@ test('recent hotspot builder does not absorb transitive peers and rejects invali
   assert.equal(result.clusters[0].relations.some((relation) => relation.node.id === 'workcase-0002'), false)
 })
 
+test('recent hotspots use UID identity, preserve UID activity, and reject mixed targets', async () => {
+  const { buildRecentHotspots } = await import('../../api/routes/cognition.ts')
+  const firstUid = '0198f1c7-8a2b-7c3d-9e4f-123456789abc'
+  const secondUid = '0198f1c7-8a2b-7c3d-9e4f-123456789abd'
+  const facts: RecentHotspotBuildItem[] = [
+    {
+      type: 'spark', object_id: 'spark-0001', object_uid: firstUid, short_ref: 'SVUATH',
+      title: 'First UID object', status: 'open', read_status: 'readable',
+      relations: [
+        { relation_key: 'related-to', target: { object_uid: secondUid } },
+        {
+          relation_key: 'informs',
+          target: { object_uid: secondUid, governed_project_id: 'demo', fact_type_key: 'spark', object_id: 'spark-0001' },
+        },
+      ],
+    },
+    {
+      type: 'spark', object_id: 'spark-0001', object_uid: secondUid, short_ref: 'SAAAAA',
+      title: 'Second UID object', status: 'open', read_status: 'readable', relations: [],
+    },
+  ]
+  const uidActivity = new Map([
+    [`uid:${firstUid}`, [{ occurred_at: '2026-08-01T00:00:00Z', activity: 'updated' as const }]],
+  ])
+
+  const result = buildRecentHotspots(facts, uidActivity, 'demo')
+  assert.equal(result.hotspotTotal, 1)
+  assert.equal(result.relationTotal, 1)
+  assert.equal(result.clusters[0].primary.object_uid, firstUid)
+  assert.equal(result.clusters[0].primary.short_ref, 'SVUATH')
+  assert.equal(result.clusters[0].primary.activityRefs.length, 1)
+  assert.equal(result.clusters[0].relations[0].node.object_uid, secondUid)
+
+  const ambiguousLegacyActivity = new Map([
+    ['spark:spark-0001', [{ occurred_at: '2026-08-01T00:00:00Z', activity: 'updated' as const }]],
+  ])
+  assert.equal(buildRecentHotspots(facts, ambiguousLegacyActivity, 'demo').hotspotTotal, 0)
+})
+
 test('recent hotspots do not project a legacy Spark routed-to edge as a current responsibility', async () => {
   const { buildRecentHotspots } = await import('../../api/routes/cognition.ts')
   const target = (fact_type_key: string, object_id: string) => ({ governed_project_id: 'demo', fact_type_key, object_id })
@@ -382,6 +421,22 @@ test('recent activity aggregation retains the newest fact event and counts compl
   ])
   assert.deepEqual(view.modelUsage, [{ value: 'gpt-5.6-luna', count: 2 }, { value: 'reviewer-model', count: 1 }])
   assert.deepEqual(view.environmentUsage, [{ value: 'Cindy(Claude)', count: 2 }, { value: 'Ci', count: 1 }])
+})
+
+test('duplicate object UIDs never merge distinct activity objects', async () => {
+  const { buildRecentActivityView } = await import('../../api/routes/cognition.ts')
+  const duplicateUid = '0198f1c7-8a2b-7c3d-9e4f-123456789abc'
+  const common = {
+    type: 'spark' as const, title: 'Duplicate UID', activity: 'updated' as const,
+    status: 'open', read_status: 'readable', field_issues: [], unparsed_structures: [],
+    object_uid: duplicateUid,
+  }
+  const view = buildRecentActivityView([
+    { ...common, object_id: 'spark-0001', occurred_at: '2026-08-01T00:00:00Z' },
+    { ...common, object_id: 'spark-0002', occurred_at: '2026-08-01T01:00:00Z' },
+  ])
+
+  assert.deepEqual(view.items.map((item) => item.object_id).sort(), ['spark-0001', 'spark-0002'])
 })
 
 test('recent activity aggregates trailing model bracket annotations with the canonical model name', async () => {

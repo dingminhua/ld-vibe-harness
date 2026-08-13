@@ -6,10 +6,11 @@ import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal
+from typing import Callable, Literal
 
 from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS, is_ignored_fact_type_root_entry, is_legacy_spark_object
-from ldvh.facts.models import FactIssue, FactReference
+from ldvh.facts.identity import canonical_object_uid
+from ldvh.facts.models import FactIssue, FactReference, StableFactReference, UIDFactReference
 from ldvh.facts.repository import (
     MAX_FACT_BYTES,
     FactReadResult,
@@ -23,7 +24,7 @@ from ldvh.filesystem import safe_list_directory
 MAX_GRAPH_OBJECTS = 10_000
 _CONTENT_FINGERPRINT_PATTERN = re.compile(r"[0-9a-f]{64}\Z")
 
-WorkCaseTargetIdentity = tuple[str, str, str]
+WorkCaseTargetIdentity = tuple[str, ...]
 GraphStatus = Literal["acyclic", "cycle", "invalid", "unavailable"]
 GraphStatusKey = tuple[str, str, str]
 
@@ -32,17 +33,13 @@ GraphStatusKey = tuple[str, str, str]
 class WorkCaseRouteTargetSnapshot:
     """One exact route target read consumed from its operation-specific origin."""
 
-    target: FactReference
+    target: StableFactReference
     content_fingerprint: str
     origin_path: str
 
     @property
     def identity(self) -> WorkCaseTargetIdentity:
-        return (
-            self.target.governed_project_id,
-            self.target.fact_type_key,
-            self.target.object_id,
-        )
+        return _stable_reference_identity(self.target)
 
 
 @dataclass(slots=True)
@@ -54,6 +51,15 @@ class ProjectFactIndex:
     cache: dict[tuple[str, str], FactReadResult] = field(default_factory=dict)
     base_cache: dict[tuple[str, str], FactReadResult] = field(default_factory=dict)
     git_identity_cache: GitIdentityCache = field(default_factory=dict)
+    uid_cache: dict[str, list[tuple[str, str, FactReadResult]]] = field(default_factory=dict)
+    uid_scan_complete: bool | None = None
+    configuration_uid_resolver: Callable[
+        [str], tuple[tuple[str, str, str, FactReadResult] | None, str]
+    ] | None = None
+
+    def _invalidate_uid_index(self) -> None:
+        self.uid_cache.clear()
+        self.uid_scan_complete = None
 
     def read(self, fact_type_key: str, object_id: str) -> FactReadResult | None:
         layout = LAYOUTS.get(fact_type_key)
@@ -74,6 +80,8 @@ class ProjectFactIndex:
             self.base_cache[key] = result
             return result
         if key not in self.cache:
+            if self.uid_scan_complete is not None:
+                self._invalidate_uid_index()
             result = read_fact_object(
                 self.root,
                 layout,
@@ -96,6 +104,7 @@ class ProjectFactIndex:
         """
 
         key = (fact_type_key, object_id)
+        self._invalidate_uid_index()
         self.cache.pop(key, None)
         self.base_cache.pop(key, None)
         return self.read(fact_type_key, object_id)
@@ -103,6 +112,85 @@ class ProjectFactIndex:
     def base_read(self, fact_type_key: str, object_id: str) -> FactReadResult | None:
         self.read(fact_type_key, object_id)
         return self.base_cache.get((fact_type_key, object_id))
+
+    def _scan_uid_index(self) -> None:
+        if self.uid_scan_complete is not None:
+            return
+        complete = True
+        observed = 0
+        indexed_keys: set[tuple[str, str]] = set()
+        for key, read in self.cache.items():
+            if read.fields is None:
+                continue
+            object_uid = canonical_object_uid(read.fields.get("object_uid"))
+            if object_uid is None:
+                continue
+            self.uid_cache.setdefault(object_uid, []).append((*key, read))
+            indexed_keys.add(key)
+        for fact_type_key, layout in LAYOUTS.items():
+            try:
+                paths = safe_list_directory(self.root, layout.directory)
+            except FileNotFoundError:
+                continue
+            except OSError:
+                complete = False
+                continue
+            try:
+                paths = tuple(path for path in paths if not is_ignored_fact_type_root_entry(path))
+            except OSError:
+                complete = False
+                continue
+            for path in paths:
+                if path.suffix != layout.suffix:
+                    continue
+                object_id = path.name.removesuffix(layout.suffix)
+                if layout.object_id_pattern.fullmatch(object_id) is None:
+                    continue
+                observed += 1
+                if observed > MAX_GRAPH_OBJECTS:
+                    complete = False
+                    break
+                read = self.read(fact_type_key, object_id)
+                if read is None or read.check_status == "unavailable":
+                    complete = False
+                    continue
+                if read.fields is None:
+                    continue
+                object_uid = canonical_object_uid(read.fields.get("object_uid"))
+                if object_uid is not None and (fact_type_key, object_id) not in indexed_keys:
+                    self.uid_cache.setdefault(object_uid, []).append((fact_type_key, object_id, read))
+                    indexed_keys.add((fact_type_key, object_id))
+            if observed > MAX_GRAPH_OBJECTS:
+                break
+        self.uid_scan_complete = complete
+
+    def resolve_uid(self, object_uid: str) -> tuple[FactReadResult | None, str]:
+        """Resolve one UID in the current project without guessing through collisions."""
+
+        if canonical_object_uid(object_uid) is None:
+            return None, "invalid"
+        self._scan_uid_index()
+        matches = self.uid_cache.get(object_uid, [])
+        if not self.uid_scan_complete:
+            return None, "unavailable"
+        if len(matches) > 1:
+            return None, "duplicate"
+        if not matches:
+            return None, "not_found"
+        return matches[0][2], "resolved"
+
+    def resolve_uid_entry(self, object_uid: str) -> tuple[tuple[str, str, FactReadResult] | None, str]:
+        if canonical_object_uid(object_uid) is None:
+            return None, "invalid"
+        self._scan_uid_index()
+        matches = self.uid_cache.get(object_uid, [])
+        if not self.uid_scan_complete:
+            return None, "unavailable"
+        if len(matches) > 1:
+            return None, "duplicate"
+        if not matches:
+            return None, "not_found"
+        return matches[0], "resolved"
 
     def scan_valid_objects(
         self,
@@ -255,6 +343,8 @@ def _source_condition(source_type: str, relation_key: str, source_fields: dict[s
 
 def _edge_identity(relation: dict[str, object]) -> tuple[object, object, object, object]:
     target = _target(relation) or {}
+    if "object_uid" in target:
+        return (relation.get("relation_key"), "uid", target.get("object_uid"), None)
     return (
         relation.get("relation_key"),
         target.get("governed_project_id"),
@@ -274,6 +364,64 @@ def _reference(value: object) -> FactReference | None:
     return FactReference(project_id, fact_type_key, object_id)
 
 
+def _stable_reference(value: object, *, allow_fingerprint: bool = False) -> StableFactReference | None:
+    if not isinstance(value, Mapping):
+        return None
+    ignored = {"content_fingerprint"} if allow_fingerprint else set()
+    keys = set(value) - ignored
+    if keys == {"object_uid"}:
+        object_uid = canonical_object_uid(value.get("object_uid"))
+        return UIDFactReference(object_uid) if object_uid is not None else None
+    if keys != {"governed_project_id", "fact_type_key", "object_id"}:
+        return None
+    return _reference(value)
+
+
+def _stable_reference_identity(reference: StableFactReference) -> WorkCaseTargetIdentity:
+    if isinstance(reference, UIDFactReference):
+        return ("uid", reference.object_uid)
+    return (
+        "legacy",
+        reference.governed_project_id,
+        reference.fact_type_key,
+        reference.object_id,
+    )
+
+
+def _resolved_target(
+    index: ProjectFactIndex,
+    value: Mapping[str, object],
+) -> tuple[str | None, str | None, FactReadResult | None, str]:
+    object_uid = value.get("object_uid")
+    if isinstance(object_uid, str):
+        configuration_resolver = getattr(index, "configuration_uid_resolver", None)
+        if configuration_resolver is not None:
+            entry, status = configuration_resolver(object_uid)
+            if status != "resolved" or entry is None:
+                return None, None, None, status
+            target_project_id, fact_type_key, object_id, read = entry
+            resolution = "resolved" if target_project_id == index.governed_project_id else "cross_project_resolved"
+            return fact_type_key, object_id, read, resolution
+        resolver = getattr(index, "resolve_uid", None)
+        if resolver is None:
+            return None, None, None, "unavailable"
+        read, status = resolver(object_uid)
+        if status != "resolved" or read is None or read.fields is None:
+            return None, None, read, status
+        fact_type_key = read.fields.get("fact_type_key")
+        object_id = read.fields.get("object_id")
+        if not isinstance(fact_type_key, str) or not isinstance(object_id, str):
+            return None, None, read, "invalid"
+        return fact_type_key, object_id, read, "resolved"
+    reference = _reference(value)
+    if reference is None:
+        return None, None, None, "invalid"
+    if reference.governed_project_id != index.governed_project_id:
+        return reference.fact_type_key, reference.object_id, None, "cross_project"
+    read = index.read(reference.fact_type_key, reference.object_id)
+    return reference.fact_type_key, reference.object_id, read, "resolved"
+
+
 def _snapshot(
     value: object,
     *,
@@ -284,10 +432,13 @@ def _snapshot(
     if isinstance(value, WorkCaseRouteTargetSnapshot):
         snapshot = value
     elif isinstance(value, Mapping):
-        target = _reference(value.get("target") if target_is_nested else value)
+        target = _stable_reference(
+            value.get("target") if target_is_nested else value,
+            allow_fingerprint=not target_is_nested,
+        )
         fingerprint = value.get("content_fingerprint")
         if target is None:
-            issues.append(FactIssue("relation", "route target 必须是完整稳定三元组", path))
+            issues.append(FactIssue("relation", "route target 必须是 object_uid 或完整 legacy 三元组", path))
             return None
         if not isinstance(fingerprint, str) or _CONTENT_FINGERPRINT_PATTERN.fullmatch(fingerprint) is None:
             issues.append(
@@ -385,9 +536,9 @@ def workcase_routed_target_identities(fields: Mapping[str, object]) -> tuple[Wor
     for relation in relations if isinstance(relations, list) else []:
         if not isinstance(relation, Mapping) or relation.get("relation_key") != "routed-to":
             continue
-        target = _reference(relation.get("target"))
+        target = _stable_reference(relation.get("target"))
         if target is not None:
-            identities.append((target.governed_project_id, target.fact_type_key, target.object_id))
+            identities.append(_stable_reference_identity(target))
     return tuple(identities)
 
 
@@ -418,6 +569,31 @@ def validate_workcase_route_target_alignment(
     return tuple(issues)
 
 
+def resolve_workcase_route_target_snapshot(
+    index: ProjectFactIndex,
+    snapshot: WorkCaseRouteTargetSnapshot,
+    *,
+    fresh: bool,
+) -> tuple[str | None, str | None, FactReadResult | None, str]:
+    """Resolve one WorkCase-local route target while preserving its authority shape."""
+
+    target = snapshot.target
+    if isinstance(target, FactReference):
+        if target.governed_project_id != index.governed_project_id:
+            return target.fact_type_key, target.object_id, None, "cross_project"
+        read = index.read_fresh(target.fact_type_key, target.object_id) if fresh else index.read(
+            target.fact_type_key, target.object_id
+        )
+        return target.fact_type_key, target.object_id, read, "resolved"
+    entry, status = index.resolve_uid_entry(target.object_uid)
+    if status != "resolved" or entry is None:
+        return None, None, None, status
+    fact_type_key, object_id, read = entry
+    if fresh:
+        read = index.read_fresh(fact_type_key, object_id)
+    return fact_type_key, object_id, read, "resolved"
+
+
 def validate_workcase_route_target_snapshots(
     index: ProjectFactIndex,
     source_object_id: str,
@@ -434,7 +610,6 @@ def validate_workcase_route_target_snapshots(
     issues: list[FactIssue] = []
     unavailable = False
     seen: set[WorkCaseTargetIdentity] = set()
-    source_identity = (index.governed_project_id, "workcase", source_object_id)
     for snapshot in snapshots:
         path = snapshot.origin_path
         identity = snapshot.identity
@@ -442,20 +617,28 @@ def validate_workcase_route_target_snapshots(
             issues.append(FactIssue("relation", "route target snapshot 必须按目标去重", path))
             continue
         seen.add(identity)
-        if snapshot.target.governed_project_id != index.governed_project_id:
+        target_type, target_id, target_read, resolution = resolve_workcase_route_target_snapshot(
+            index, snapshot, fresh=True
+        )
+        if resolution == "cross_project":
             issues.append(FactIssue("relation", "WorkCase route target 只允许同一管辖项目", path))
             continue
-        if snapshot.target.fact_type_key not in {"workcase", "spark"}:
+        if resolution == "unavailable":
+            unavailable = True
+            continue
+        if resolution in {"duplicate", "invalid", "not_found"}:
+            issues.append(FactIssue("relation", "WorkCase route target 不存在或身份不唯一", path))
+            continue
+        if target_type not in {"workcase", "spark"} or not isinstance(target_id, str):
             issues.append(FactIssue("relation", "WorkCase routed-to 只能指向 WorkCase 或 Spark", path))
             continue
-        layout = LAYOUTS[snapshot.target.fact_type_key]
-        if layout.object_id_pattern.fullmatch(snapshot.target.object_id) is None:
+        layout = LAYOUTS[target_type]
+        if layout.object_id_pattern.fullmatch(target_id) is None:
             issues.append(FactIssue("relation", "WorkCase route target object_id 与目标类型不匹配", path))
             continue
-        if identity == source_identity:
+        if target_type == "workcase" and target_id == source_object_id:
             issues.append(FactIssue("relation", "WorkCase route target 禁止自指", path))
             continue
-        target_read = index.read_fresh(snapshot.target.fact_type_key, snapshot.target.object_id)
         if target_read is None or target_read.check_status in {"not_found", "invalid"}:
             issues.append(FactIssue("relation", "WorkCase route target 不存在或不是 mechanically valid 当前对象", path))
             continue
@@ -473,7 +656,7 @@ def validate_workcase_route_target_snapshots(
             issues.append(FactIssue("reference", "WorkCase route target content_fingerprint 已变化", path))
             continue
         target_status = target_read.fields.get("status")
-        if snapshot.target.fact_type_key == "workcase":
+        if target_type == "workcase":
             allowed_statuses = (
                 {"open", "blocked", "closed"}
                 if identity in existing_routed_targets
@@ -569,11 +752,14 @@ def _graph_status(
             if relation.get("relation_key") != relation_key:
                 continue
             target = _target(relation)
-            if target is None or target.get("governed_project_id") != index.governed_project_id:
+            if target is None:
                 continue
-            target_type = target.get("fact_type_key")
-            target_id = target.get("object_id")
-            if not isinstance(target_type, str) or not isinstance(target_id, str):
+            target_type, target_id, _, resolution = _resolved_target(index, target)
+            if resolution in {"cross_project", "cross_project_resolved"}:
+                continue
+            if resolution == "unavailable":
+                return "unavailable"
+            if resolution != "resolved" or not isinstance(target_type, str) or not isinstance(target_id, str):
                 return "invalid"
             stack.append(((target_type, target_id), False))
     return "acyclic"
@@ -603,28 +789,53 @@ def validate_project_relations(
         seen_edges.add(identity)
         if not isinstance(relation_key, str) or target is None:
             continue
-        target_project = target.get("governed_project_id")
-        target_type = target.get("fact_type_key")
-        target_id = target.get("object_id")
-        if not isinstance(target_project, str) or not isinstance(target_type, str) or not isinstance(target_id, str):
+        target_type, target_id, target_read, resolution = _resolved_target(index, target)
+        if resolution == "duplicate":
+            issues.append(FactIssue("identity", "关系目标 object_uid 在当前项目重复", path))
+            continue
+        if resolution == "not_found":
+            issues.append(
+                FactIssue(
+                    "relation",
+                    "关系目标不存在或不是 mechanically valid 当前对象",
+                    code="TARGET_NOT_EXIST",
+                    field_path=path,
+                )
+            )
+            continue
+        if resolution == "unavailable":
+            unavailable = True
+            continue
+        if resolution == "invalid" or not isinstance(target_type, str) or not isinstance(target_id, str):
+            issues.append(FactIssue("relation", "关系目标身份形状无效", path))
             continue
         layout = LAYOUTS.get(target_type)
         if layout is None or layout.object_id_pattern.fullmatch(target_id) is None:
             issues.append(FactIssue("relation", "关系目标的类型与 object_id 格式不一致", path))
             continue
-        if target_project == index.governed_project_id and target_type == fact_type_key and target_id == object_id:
+        source_uid = read.fields.get("object_uid")
+        target_uid = target.get("object_uid")
+        if (
+            isinstance(target_uid, str)
+            and isinstance(source_uid, str)
+            and target_uid == source_uid
+        ) or (
+            resolution not in {"cross_project", "cross_project_resolved"}
+            and target_type == fact_type_key
+            and target_id == object_id
+        ):
             issues.append(FactIssue("relation", "事实对象关系禁止自指", path))
             continue
         if not _source_condition(fact_type_key, relation_key, read.fields):
             issues.append(FactIssue("relation", "关系不允许由当前 source 状态声明", path))
-        if target_project != index.governed_project_id:
+        if resolution in {"cross_project", "cross_project_resolved"}:
             if fact_type_key in {"spark", "workcase"}:
                 source_label = "Spark" if fact_type_key == "spark" else "WorkCase"
                 issues.append(FactIssue("relation", f"{source_label} 关系目标只允许同一管辖项目", path))
                 continue
-            unavailable = True
-            continue
-        target_read = index.read(target_type, target_id)
+            if resolution == "cross_project":
+                unavailable = True
+                continue
         if target_read is None or target_read.check_status in {"not_found", "invalid"}:
             issues.append(
                 FactIssue(
@@ -655,6 +866,10 @@ def validate_project_relations(
     for relation in _relations(read):
         target = _target(relation) or {}
         identity = (
+            "uid",
+            target.get("object_uid"),
+            None,
+        ) if "object_uid" in target else (
             target.get("governed_project_id"),
             target.get("fact_type_key"),
             target.get("object_id"),
@@ -700,6 +915,7 @@ __all__ = [
     "WorkCaseTargetIdentity",
     "proposal_route_target_snapshots",
     "request_route_target_snapshots",
+    "resolve_workcase_route_target_snapshot",
     "validate_project_relations",
     "validate_workcase_incoming_dependencies",
     "validate_workcase_route_target_alignment",

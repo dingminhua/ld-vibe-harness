@@ -600,6 +600,7 @@ export function ObjectIdentityHeader({
                   statusLabel={statusLabel}
                   objectType={objectType}
                   target={target}
+                  shortRef={typeof source.short_ref === 'string' ? source.short_ref : undefined}
                   statusLeadingBadges={capabilityStatusBadge}
                   actionBadges={actionBadges}
                   copyLabel={copyLabel}

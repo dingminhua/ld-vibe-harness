@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { listLocalFacts, readLocalFact, type LocalFactScope } from '../../api/services/localFactReader.ts';
+import { listLocalFacts, readLocalFact, shortFactReference, type LocalFactScope } from '../../api/services/localFactReader.ts';
 
 const base = [
   'fact_type_key: adr',
@@ -16,6 +17,48 @@ const base = [
   'rationale: It is sufficient here',
   'consequences: No production effect',
 ].join('\n');
+
+test('field-level reader projects the same six-letter short reference as Core', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'ldvh-field-reader-'));
+  const scope: LocalFactScope = { worktreeLocator: root, governedProjectId: 'fixture' };
+  const directory = path.join(root, 'ldvh-base', 'adrs');
+  await mkdir(directory, { recursive: true });
+  try {
+    await writeFile(
+      path.join(directory, 'adr-0001.yaml'),
+      `object_uid: 0198f1c7-8a2b-7c3d-9e4f-123456789abc\nobject_id: adr-0001\ntitle: UID projection\n${base}\n`,
+      'utf8',
+    );
+    const listed = await listLocalFacts('adr', scope);
+    assert.equal(listed.items[0]?.fact_object?.object_uid, '0198f1c7-8a2b-7c3d-9e4f-123456789abc');
+    assert.equal(listed.items[0]?.fact_object?.short_ref, 'AFWUFU');
+    assert.deepEqual(listed.items[0]?.authority_ref, { object_uid: '0198f1c7-8a2b-7c3d-9e4f-123456789abc' });
+    assert.equal(listed.items[0]?.unparsed_structures.some((item) => item.path === 'object_uid'), false);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('short reference uses every type code and rejects noncanonical UUIDs', () => {
+  const uid = '0198f1c7-8a2b-7c3d-9e4f-123456789abc';
+  const codes = { adr: 'A', workcase: 'C', pitfall: 'P', spark: 'S', study: 'T' } as const;
+  const oracle = (type: keyof typeof codes) => {
+    const digest = createHash('sha256').update(`${type}:${uid}`, 'utf8').digest();
+    let value = [...digest].reduce((current, byte) => (current << 8n) | BigInt(byte), 0n) % (26n ** 5n);
+    let suffix = '';
+    for (let index = 0; index < 5; index += 1) {
+      suffix = String.fromCharCode(65 + Number(value % 26n)) + suffix;
+      value /= 26n;
+    }
+    return `${codes[type]}${suffix}`;
+  };
+  for (const type of Object.keys(codes) as Array<keyof typeof codes>) {
+    assert.equal(shortFactReference(type, uid), oracle(type));
+  }
+  assert.equal(shortFactReference('spark', uid.toUpperCase()), undefined);
+  assert.equal(shortFactReference('spark', '550e8400-e29b-41d4-a716-446655440000'), undefined);
+  assert.equal(shortFactReference('spark', undefined), undefined);
+});
 
 test('field-level reader keeps recoverable field defects separate from unreadable carriers', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'ldvh-field-reader-'));

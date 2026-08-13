@@ -10,6 +10,7 @@ from typing import Any
 from urllib.parse import urlparse
 
 from ldvh.facts.contracts import LAYOUTS, TERMINAL_COMMON, is_legacy_spark_object
+from ldvh.facts.identity import canonical_object_uid
 from ldvh.facts.models import FactIssue
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.workcase_validation import validate_workcase_snapshot
@@ -529,6 +530,28 @@ def _validate_relations(
         path = f"relations[{index}]"
         if relation.get("relation_key") not in allowed:
             issues.append(FactIssue("relation", "relation_key 不在当前类型闭集中", f"{path}.relation_key"))
+        target = relation.get("target")
+        if not isinstance(target, dict):
+            continue
+        target_keys = set(target)
+        uid_shape = target_keys == {"object_uid"}
+        legacy_shape = target_keys == {"governed_project_id", "fact_type_key", "object_id"}
+        if not uid_shape and not legacy_shape:
+            issues.append(
+                FactIssue(
+                    "relation",
+                    "关系目标必须恰好使用 object_uid 或完整 legacy 三元组",
+                    f"{path}.target",
+                )
+            )
+        elif uid_shape and canonical_object_uid(target.get("object_uid")) is None:
+            issues.append(
+                FactIssue(
+                    "identity",
+                    "关系目标 object_uid 必须是 canonical 小写 UUIDv7",
+                    f"{path}.target.object_uid",
+                )
+            )
 
 
 STUDY_REPORT_KINDS = frozenset(
@@ -611,6 +634,8 @@ def validate_fact_object(
     ]
     if fields.get("fact_type_key") != fact_type_key:
         issues.append(FactIssue("identity", "fact_type_key 与请求类型不一致", "fact_type_key"))
+    if "object_uid" in fields and canonical_object_uid(fields.get("object_uid")) is None:
+        issues.append(FactIssue("identity", "object_uid 必须是 canonical 小写 UUIDv7", "object_uid"))
     _validate_status(fact_type_key, fields, issues, allow_legacy_spark=allow_legacy_spark)
     if fact_type_key == "workcase":
         issues.extend(validate_workcase_snapshot(fields))

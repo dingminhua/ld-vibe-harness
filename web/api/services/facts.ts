@@ -92,19 +92,28 @@ function projectListItem(type: ObjectType, item: LocalFactItem): Record<string, 
   }
 }
 
-type FactAssociationTarget = {
+type LegacyFactAssociationTarget = {
   governedProjectId: string
   factTypeKey: string
   objectId: string
 }
 
+type FactAssociationTarget = LegacyFactAssociationTarget | { objectUid: string }
+type FactUidTargetIndex = Map<string, LegacyFactAssociationTarget | null>
+
+const UUID_V7_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/
+
 function factAssociationTargetKey(target: FactAssociationTarget): string {
+  if ('objectUid' in target) return `uid\u0000${target.objectUid}`
   return `${target.governedProjectId}\u0000${target.factTypeKey}\u0000${target.objectId}`
 }
 
 function projectFactAssociationTarget(value: unknown): FactAssociationTarget | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const target = value as Record<string, unknown>
+  if (Object.keys(target).length === 1 && typeof target.object_uid === 'string' && UUID_V7_PATTERN.test(target.object_uid)) {
+    return { objectUid: target.object_uid }
+  }
   if (typeof target.governed_project_id !== 'string' || !target.governed_project_id.trim()
     || typeof target.fact_type_key !== 'string' || !target.fact_type_key.trim()
     || typeof target.object_id !== 'string' || !target.object_id.trim()) return null
@@ -119,12 +128,35 @@ function isObjectType(value: string): value is ObjectType {
   return ACTIVE_OBJECT_TYPES.includes(value as ObjectType)
 }
 
+async function currentProjectUidTargets(scope: LocalFactScope): Promise<FactUidTargetIndex> {
+  const matches = new Map<string, LegacyFactAssociationTarget[]>()
+  for (const type of ACTIVE_OBJECT_TYPES) {
+    const listed = await listLocalFacts(type, scope)
+    for (const item of listed.items) {
+      const objectUid = item.fact_object?.object_uid
+      if (item.read_status !== 'readable' || typeof objectUid !== 'string' || !UUID_V7_PATTERN.test(objectUid)) continue
+      const targets = matches.get(objectUid) ?? []
+      targets.push({
+        governedProjectId: scope.governedProjectId,
+        factTypeKey: type,
+        objectId: item.object_ref.object_id,
+      })
+      matches.set(objectUid, targets)
+    }
+  }
+  return new Map([...matches].map(([objectUid, targets]) => [objectUid, targets.length === 1 ? targets[0] : null]))
+}
+
 /**
  * Fact list cards show association targets as an exact-read projection.  A
  * relation never carries a copied title itself, so an unavailable target stays
  * explicit instead of being silently omitted or given a guessed title.
  */
-async function projectFactCardAssociations(item: LocalFactItem, scope: LocalFactScope): Promise<Array<Record<string, unknown>>> {
+async function projectFactCardAssociations(
+  item: LocalFactItem,
+  scope: LocalFactScope,
+  uidTargets: FactUidTargetIndex,
+): Promise<Array<Record<string, unknown>>> {
   const relations = item.fact_object?.relations
   if (!Array.isArray(relations)) return []
   const seenTargets = new Set<string>()
@@ -144,20 +176,22 @@ async function projectFactCardAssociations(item: LocalFactItem, scope: LocalFact
     const target = projectFactAssociationTarget(relation.target)
     if (typeof relation.relation_key !== 'string' || target === null) return { available: false }
     const projection: Record<string, unknown> = { relationKey: relation.relation_key, target, available: false }
-    if (target.governedProjectId !== scope.governedProjectId || !isObjectType(target.factTypeKey)) return projection
-    const exact = await readLocalFact(target.factTypeKey, target.objectId, scope)
+    const locator = 'objectUid' in target ? uidTargets.get(target.objectUid) : target
+    if (!locator || locator.governedProjectId !== scope.governedProjectId || !isObjectType(locator.factTypeKey)) return projection
+    const exact = await readLocalFact(locator.factTypeKey, locator.objectId, scope)
     if (exact.status !== 'ok' || exact.item.read_status !== 'readable' || exact.item.fact_object === null) return projection
     const source = exact.item.fact_object
     if (typeof source.title !== 'string' || !source.title.trim()) return projection
-    const workCasePresentation = target.factTypeKey === 'workcase'
+    const workCasePresentation = locator.factTypeKey === 'workcase'
       ? deriveWorkCasePresentationProjection(source.status, source.phase, exact.item.source_content_fingerprint)
       : null
     return {
       ...projection,
       available: true,
+      ...('objectUid' in target ? { resolvedTarget: locator } : {}),
       title: source.title,
       ...copyPresentFields(source, ['title_en', 'title_zh', 'status']),
-      ...(target.factTypeKey === 'workcase' && typeof source.closure_outcome === 'string'
+      ...(locator.factTypeKey === 'workcase' && typeof source.closure_outcome === 'string'
         ? { closureOutcome: source.closure_outcome }
         : {}),
       ...(workCasePresentation?.resolution === 'resolved'
@@ -167,8 +201,13 @@ async function projectFactCardAssociations(item: LocalFactItem, scope: LocalFact
   }))
 }
 
-async function projectListItemWithAssociations(type: ObjectType, item: LocalFactItem, scope: LocalFactScope): Promise<Record<string, unknown>> {
-  const associations = await projectFactCardAssociations(item, scope)
+async function projectListItemWithAssociations(
+  type: ObjectType,
+  item: LocalFactItem,
+  scope: LocalFactScope,
+  uidTargets: FactUidTargetIndex,
+): Promise<Record<string, unknown>> {
+  const associations = await projectFactCardAssociations(item, scope, uidTargets)
   return {
     ...projectListItem(type, item),
     ...(associations.length > 0 ? { factAssociations: associations } : {}),
@@ -210,13 +249,16 @@ function projectCriterionStatements(value: unknown): string[] {
 
 function projectContributedToTargets(value: unknown): Array<Record<string, string>> {
   if (!Array.isArray(value)) return []
-  return value.flatMap((candidate) => {
+  return value.flatMap<Record<string, string>>((candidate) => {
     if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return []
     const relation = candidate as Record<string, unknown>
     if (relation.relation_key !== 'contributed-to') return []
     const target = relation.target
     if (!target || typeof target !== 'object' || Array.isArray(target)) return []
     const triple = target as Record<string, unknown>
+    if (Object.keys(triple).length === 1 && typeof triple.object_uid === 'string' && UUID_V7_PATTERN.test(triple.object_uid)) {
+      return [{ objectUid: triple.object_uid }]
+    }
     if (typeof triple.governed_project_id !== 'string' || !triple.governed_project_id.trim()
       || triple.fact_type_key !== 'pitfall'
       || typeof triple.object_id !== 'string' || !triple.object_id.trim()) return []
@@ -230,6 +272,9 @@ const RESIDUAL_DISPOSITIONS = new Set(['route_existing', 'suggest_spark', 'accep
 function projectRelationTarget(value: unknown): Record<string, string> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const target = value as Record<string, unknown>
+  if (Object.keys(target).length === 1 && typeof target.object_uid === 'string' && UUID_V7_PATTERN.test(target.object_uid)) {
+    return { objectUid: target.object_uid }
+  }
   if (typeof target.governed_project_id !== 'string' || !target.governed_project_id.trim()
     || typeof target.fact_type_key !== 'string' || !target.fact_type_key.trim()
     || typeof target.object_id !== 'string' || !target.object_id.trim()) return null
@@ -239,12 +284,13 @@ function projectRelationTarget(value: unknown): Record<string, string> | null {
 function projectProposalRouteTarget(value: unknown): Record<string, string> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const target = value as Record<string, unknown>
-  const allowed = new Set(['governed_project_id', 'fact_type_key', 'object_id', 'content_fingerprint'])
+  const allowed = new Set(['object_uid', 'governed_project_id', 'fact_type_key', 'object_id', 'content_fingerprint'])
   if (Object.keys(target).some((key) => !allowed.has(key))
     || typeof target.content_fingerprint !== 'string'
     || !/^[0-9a-f]{64}$/.test(target.content_fingerprint)) return null
-  const projected = projectRelationTarget(target)
+  const projected = projectRelationTarget(Object.fromEntries(Object.entries(target).filter(([key]) => key !== 'content_fingerprint')))
   if (projected === null) return null
+  if ('objectUid' in projected) return projected
   if (projected.factTypeKey === 'workcase' && !/^workcase-[0-9]{4,}$/.test(projected.objectId)) return null
   if (projected.factTypeKey === 'spark' && !/^spark-[0-9]{4,}$/.test(projected.objectId)) return null
   return projected
@@ -308,7 +354,7 @@ function projectResidualDecisions(
     if (typeof decision.proposed_disposition !== 'string' || !RESIDUAL_DISPOSITIONS.has(decision.proposed_disposition)) return null
     const routeTarget = decision.proposed_disposition === 'route_existing' ? projectProposalRouteTarget(decision.route_target) : null
     if (decision.proposed_disposition === 'route_existing'
-      && (routeTarget === null || !['workcase', 'spark'].includes(routeTarget.factTypeKey))) return null
+      && (routeTarget === null || ('factTypeKey' in routeTarget && !['workcase', 'spark'].includes(routeTarget.factTypeKey)))) return null
     if (decision.proposed_disposition !== 'route_existing' && decision.route_target !== undefined) return null
     if (decision.proposed_disposition === 'suggest_spark') {
       if (typeof decision.spark_suggestion_id !== 'string'
@@ -363,7 +409,7 @@ function projectClosedDisposition(fact: Record<string, unknown>): Record<string,
       const relation = candidate as Record<string, unknown>
       if (relation.relation_key !== 'routed-to') continue
       const target = projectRelationTarget(relation.target)
-      if (target === null || !['workcase', 'spark'].includes(target.factTypeKey)) return null
+      if (target === null || ('factTypeKey' in target && !['workcase', 'spark'].includes(target.factTypeKey))) return null
       routedTo.push(target)
     }
   } else if (fact.relations !== undefined) return null
@@ -466,7 +512,10 @@ export async function listObjects(type: ObjectType, _baseDir?: string, status?: 
     const resolvedScope = await readingScope(scope)
     const listed = await listLocalFacts(type, resolvedScope)
     if (listed.status !== 'complete') return notIntegrated(type, listed.issues[0]?.message ?? `类型 ${type} 尚无对象目录`)
-    const projectedItems = await Promise.all(listed.items.map((item) => projectListItemWithAssociations(type, item, resolvedScope)))
+    const uidTargets = await currentProjectUidTargets(resolvedScope)
+    const projectedItems = await Promise.all(
+      listed.items.map((item) => projectListItemWithAssociations(type, item, resolvedScope, uidTargets)),
+    )
     const items = projectedItems.filter((item) => !status || item.status === status)
     const response = result('list', type, { items, coverage_status: 'complete', collection_issues: listed.issues })
     response.issues = [
@@ -492,7 +541,8 @@ export async function showObject(id: string, scope?: LocalFactScope): Promise<We
   if (!match) return { ok: false, error: `Object not found: ${id}`, stderr: '', exitCode: 1 }
   const type = match[1] as ObjectType
   try {
-    const detail = await readLocalFact(type, id, await readingScope(scope))
+    const resolvedScope = await readingScope(scope)
+    const detail = await readLocalFact(type, id, resolvedScope)
     if (detail.status !== 'ok') return readFailure(id, type, detail.metadata, detail.issues)
     const item = detail.item
     if (item.read_status === 'unreadable' || item.fact_object === null) return readFailure(id, type, item, item.issues)
@@ -506,6 +556,8 @@ export async function showObject(id: string, scope?: LocalFactScope): Promise<We
       unparsed_structures: item.unparsed_structures,
       read_issues: item.issues,
     }
+    const associations = await projectFactCardAssociations(item, resolvedScope, await currentProjectUidTargets(resolvedScope))
+    if (associations.length > 0) data.factAssociations = associations
     if (type === 'workcase') {
       const projection = deriveWorkCasePresentationProjection(
         item.fact_object.status,

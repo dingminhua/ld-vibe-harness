@@ -5,23 +5,22 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from ldvh.facts.contracts import LAYOUTS
-from ldvh.facts.models import FactReference
+from ldvh.facts.models import StableFactReference
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
+from ldvh.helper.operations.fact_reference_support import parse_stable_fact_reference
 from ldvh.helper.requests import CommonRequest
 
 REQUIRED_INPUTS = ("arguments.fact_ref",)
 OPTIONAL_INPUTS = ("work_object_locators", "arguments.workspace_root")
 _ARGUMENT_FIELDS = frozenset({"workspace_root", "fact_ref"})
-_FACT_REF_FIELDS = frozenset({"governed_project_id", "fact_type_key", "object_id"})
 
 
 @dataclass(frozen=True, slots=True)
 class WorkCaseCloseCandidateRequest:
     workspace_root: Path | None
     governance_scope: tuple[ScopeDescriptor, ...]
-    fact_ref: FactReference
+    fact_ref: StableFactReference
     base: Path
 
 
@@ -58,32 +57,13 @@ def parse_workcase_close_candidate_request(
         else:
             workspace_root = Path(value)
 
-    reference: FactReference | None = None
-    raw_ref = request.arguments.get("fact_ref")
-    if not isinstance(raw_ref, dict):
-        problems.append("arguments.fact_ref 必须是 object")
-    else:
-        unknown_ref = sorted(set(raw_ref) - _FACT_REF_FIELDS)
-        if unknown_ref:
-            problems.append(f"arguments.fact_ref 包含未知字段: {', '.join(unknown_ref)}")
-        values: dict[str, str] = {}
-        for name in sorted(_FACT_REF_FIELDS):
-            value = raw_ref.get(name)
-            if not isinstance(value, str) or not value:
-                problems.append(f"arguments.fact_ref.{name} 必须是非空 string")
-            else:
-                values[name] = value
-        if len(values) == len(_FACT_REF_FIELDS):
-            if values["fact_type_key"] != "workcase":
-                problems.append("arguments.fact_ref.fact_type_key 必须精确为 workcase")
-            elif LAYOUTS["workcase"].object_id_pattern.fullmatch(values["object_id"]) is None:
-                problems.append("arguments.fact_ref.object_id 不符合 workcase 当前格式")
-            else:
-                reference = FactReference(
-                    values["governed_project_id"],
-                    values["fact_type_key"],
-                    values["object_id"],
-                )
+    raw_reference = request.arguments.get("fact_ref")
+    reference, reference_problems = parse_stable_fact_reference(raw_reference, "arguments.fact_ref")
+    problems.extend(reference_problems)
+    legacy_type = raw_reference.get("fact_type_key") if isinstance(raw_reference, dict) else None
+    if legacy_type is not None and legacy_type != "workcase":
+        problems.append("arguments.fact_ref.fact_type_key 必须精确为 workcase")
+        reference = None
 
     if request.observed_context:
         problems.append("observed_context 对本只读操作必须为空 object")

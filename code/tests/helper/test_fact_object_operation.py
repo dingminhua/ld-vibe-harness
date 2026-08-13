@@ -12,6 +12,8 @@ from ldvh.helper.service import handle_request
 
 pytestmark = pytest.mark.usefixtures("use_current_rule_source_snapshot")
 
+_UID = "0198f1c7-8a2b-7c3d-9e4f-123456789abc"
+
 
 def _git(project: Path, *arguments: str) -> None:
     subprocess.run(["git", "-C", str(project), *arguments], check=True, capture_output=True)
@@ -99,6 +101,26 @@ def test_exact_fact_read_preserves_valid_and_not_found_local_results(tmp_path: P
     assert response["result"]["items"][1]["fact_object"] is None
     assert response["result"]["items"][1]["content_fingerprint"] is None
     assert response["changes"] == []
+
+
+def test_exact_fact_read_accepts_uid_and_returns_authoritative_uid_ref(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    fact = project / "ldvh-base" / "sparks" / "spark-0001.yaml"
+    fact.write_text(f"object_uid: {_UID}\n" + fact.read_text(encoding="utf-8"), encoding="utf-8")
+    for plural in ("workcases", "adrs", "pitfalls", "studies"):
+        (project / "ldvh-base" / plural).mkdir(parents=True, exist_ok=True)
+    payload = {
+        "work_object_locators": [str(project)],
+        "arguments": {"workspace_root": str(workspace), "fact_refs": [{"object_uid": _UID}]},
+    }
+
+    response = handle_request("call", "read-fact-objects", json.dumps(payload)).response
+
+    assert response["outcome"] == "ok"
+    item = response["result"]["items"][0]
+    assert item["requested_ref"] == {"object_uid": _UID}
+    assert item["resolved_ref"] == {"object_uid": _UID}
+    assert item["fact_object"]["object_id"] == "spark-0001"
 
 
 def test_parseable_invalid_fact_exposes_only_the_complete_cas_repair_snapshot(tmp_path: Path) -> None:

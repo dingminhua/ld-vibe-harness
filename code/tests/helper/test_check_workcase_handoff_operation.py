@@ -5,12 +5,15 @@ from pathlib import Path
 import pytest
 
 from ldvh.facts.models import FactIssue
+from ldvh.facts.creation import CreationBoundary
+from ldvh.facts.models import FactReference
 from ldvh.facts.repository import FactReadResult
 from ldvh.facts.schema import FactSchema
 from ldvh.governance.resolver import GovernanceResolutionRun
 from ldvh.helper.operation_runtime import OperationExecutionContext
 from ldvh.helper.operations import IMPLEMENTATIONS
 from ldvh.helper.operations import check_workcase_handoff_operation as operation
+from ldvh.helper.operations.fact_reference_support import ResolvedFactReference
 from ldvh.helper.requests import CommonRequest
 
 FINGERPRINT = "a" * 64
@@ -104,6 +107,31 @@ def test_operation_returns_handoff_verdict_for_controller_owned_phase(monkeypatc
     assert execution.result["handoff_allowed"] is False
     assert execution.result["handoff_reason"] == "controller_owned"
     assert execution.result["next_required_control_step"] == "advance_current_work_item"
+
+
+def test_operation_resolves_uid_reference_before_reading_workcase(monkeypatch) -> None:
+    calls = _install_read(monkeypatch, {"status": "open", "phase": "executing"})
+    uid = "0198f1c7-8a2b-7c3d-9e4f-123456789abc"
+    monkeypatch.setattr(
+        operation,
+        "resolve_stable_fact_reference",
+        lambda run, reference, schemas: (
+            ResolvedFactReference(
+                FactReference("sample", "workcase", "workcase-0047"),
+                CreationBoundary("sample", Path("/project"), Path("/git")),
+            ),
+            "resolved",
+        ),
+    )
+    request = _request()
+    request.arguments["fact_ref"] = {"object_uid": uid}
+
+    execution = operation._call(request, object(), OperationExecutionContext(Path("/project")))  # type: ignore[arg-type]
+
+    assert execution.outcome == "ok"
+    assert calls == ["workcase-0047"]
+    assert execution.result is not None
+    assert execution.result["actual_ref"] == {"object_uid": uid}
 
 
 @pytest.mark.parametrize(

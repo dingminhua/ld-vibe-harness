@@ -72,6 +72,60 @@ def _command(current_fact_schemas: Mapping[str, FactSchema], tmp_path: Path) -> 
     )
 
 
+def test_prepare_retries_a_configuration_uid_collision_before_any_allocation(
+    current_fact_schemas: Mapping[str, FactSchema],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    command = _command(current_fact_schemas, tmp_path)
+    generated = iter(
+        (
+            "0198f1c7-8a2b-7c3d-9e4f-123456789abc",
+            "0198f1c7-8a2b-7c3d-9e4f-123456789abd",
+        )
+    )
+    statuses = iter(("resolved", "not_found"))
+    monkeypatch.setattr(creation_application, "generate_object_uid", lambda: next(generated))
+    monkeypatch.setattr(
+        creation_application.ConfigurationFactIndex,
+        "resolve_uid",
+        lambda _self, _uid: (None, next(statuses)),
+    )
+
+    prepared = prepare_fact_creation(command, observed_at="2026-08-13T10:00:00+08:00")
+
+    assert isinstance(prepared, PreparedFactCreation)
+    assert prepared.object_uid == "0198f1c7-8a2b-7c3d-9e4f-123456789abd"
+
+
+def test_prepare_stops_after_three_configuration_uid_collisions(
+    current_fact_schemas: Mapping[str, FactSchema],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    command = _command(current_fact_schemas, tmp_path)
+    calls = 0
+
+    def generate() -> str:
+        nonlocal calls
+        calls += 1
+        return f"0198f1c7-8a2b-7c3d-9e4f-123456789ab{calls}"
+
+    monkeypatch.setattr(creation_application, "generate_object_uid", generate)
+    monkeypatch.setattr(
+        creation_application.ConfigurationFactIndex,
+        "resolve_uid",
+        lambda _self, _uid: (None, "resolved"),
+    )
+
+    result = prepare_fact_creation(command, observed_at="2026-08-13T10:00:00+08:00")
+
+    assert isinstance(result, FactCreationResult)
+    assert result.status == "candidate_unavailable"
+    assert calls == 3
+    assert result.issues[0].field_path == "object_uid"
+
+
 def _workcase_command(current_fact_schemas: Mapping[str, FactSchema], tmp_path: Path) -> FactCreationCommand:
     base = _command(current_fact_schemas, tmp_path)
     supplied = {
@@ -577,6 +631,57 @@ def test_caller_supplied_observation_time_binds_both_managed_timestamps(
     assert result.read is not None and result.read.fields is not None
     assert result.read.fields["created_at"] == canonical_observed_at
     assert result.read.fields["updated_at"] == canonical_observed_at
+
+
+def test_creation_generates_one_uid_and_reuses_it_for_final_write_and_readback(
+    current_fact_schemas: Mapping[str, FactSchema],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    expected_uid = "0198f1c7-8a2b-7c3d-9e4f-123456789abc"
+    command = _command(current_fact_schemas, tmp_path)
+    monkeypatch.setattr(creation_application, "generate_object_uid", lambda: expected_uid)
+
+    result = create_fact_object(command, observed_at="2026-07-26T13:00:00+08:00")
+
+    assert result.status == "created"
+    assert result.actual_fields is not None and result.actual_fields["object_uid"] == expected_uid
+    assert result.read is not None and result.read.fields is not None
+    assert result.read.fields["object_uid"] == expected_uid
+
+
+def test_application_rejects_caller_supplied_uid_before_allocator_side_effect(
+    current_fact_schemas: Mapping[str, FactSchema],
+    tmp_path: Path,
+) -> None:
+    command = _command(current_fact_schemas, tmp_path)
+    command.supplied["object_uid"] = "0198f1c7-8a2b-7c3d-9e4f-123456789abc"
+
+    result = create_fact_object(command)
+
+    assert result.status == "candidate_rejected"
+    assert any("Code 托管字段" in issue.summary for issue in result.issues)
+    assert not (command.boundary.git_common_dir / "ldvh").exists()
+
+
+def test_uuid7_generation_failure_is_unavailable_without_allocator_or_fact_side_effect(
+    current_fact_schemas: Mapping[str, FactSchema],
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    command = _command(current_fact_schemas, tmp_path)
+
+    def fail_uid_generation() -> str:
+        raise RuntimeError("entropy unavailable")
+
+    monkeypatch.setattr(creation_application, "generate_object_uid", fail_uid_generation)
+
+    result = create_fact_object(command)
+
+    assert result.status == "candidate_unavailable"
+    assert any(issue.field_path == "object_uid" for issue in result.issues)
+    assert not (command.boundary.git_common_dir / "ldvh").exists()
+    assert not (command.boundary.worktree_root / "facts").exists()
 
 
 def test_candidate_rejection_has_no_allocator_or_fact_side_effect(

@@ -14,7 +14,8 @@ import { useEffect, useState, type KeyboardEvent } from 'react';
 import { AlertCircle, ChevronDown, ChevronUp, CirclePlay, GitFork, HeartPulse, History, Inbox } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import CopyPathButton from '@/components/CopyPathButton';
-import ObjectReferenceCopyButton, { formatObjectReference } from '@/components/ObjectReferenceCopyButton';
+import ObjectReferenceCopyButton from '@/components/ObjectReferenceCopyButton';
+import { formatObjectReference } from '@/utils/objectReference';
 import ObjectUpdatedMeta from '@/components/ObjectUpdatedMeta';
 import {
   ObjectCardFrame,
@@ -108,7 +109,7 @@ function buildModuleSummary(data: CognitionData, locale: string, t: Translate, p
     .map((kind) => `${t(INBOX_KIND_LABEL_KEYS[kind])} ${counts[kind]}`);
   lines.push(`total: ${data.inbox.total}${countParts.length > 0 ? ` (${countParts.join(', ')})` : ''}`);
   for (const item of data.inbox.items) {
-    lines.push(`- ${formatObjectReference(projectId, item.id)} · ${t(INBOX_KIND_LABEL_KEYS[item.inboxKind])} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
+    lines.push(`- ${formatObjectReference(projectId, item.id, item.type, item.short_ref)} · ${t(INBOX_KIND_LABEL_KEYS[item.inboxKind])} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
   }
   return lines.join('\n');
 }
@@ -122,7 +123,7 @@ function buildRecentActivitySummary(data: CognitionData, locale: string, t: Tran
     `events: ${recent.eventTotal}`,
   ];
   for (const item of recent.items) {
-    lines.push(`- ${formatObjectReference(projectId, item.id)} · ${item.activityCount} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
+    lines.push(`- ${formatObjectReference(projectId, item.id, item.type, item.short_ref)} · ${item.activityCount} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
   }
   return lines.join('\n');
 }
@@ -130,7 +131,7 @@ function buildRecentActivitySummary(data: CognitionData, locale: string, t: Tran
 function buildActiveWorkCaseSummary(data: CognitionData, locale: string, t: Translate, projectId: string): string {
   const lines = [t('cognition.active.title'), `total: ${data.activeWorkCases.total}`];
   for (const item of data.activeWorkCases.items) {
-    lines.push(`- ${formatObjectReference(projectId, item.id)} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
+    lines.push(`- ${formatObjectReference(projectId, item.id, item.type, item.short_ref)} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
   }
   return lines.join('\n');
 }
@@ -149,7 +150,7 @@ function buildSparkHealthSummary(data: CognitionData, locale: string, t: Transla
     t('cognition.sparkHealth.silentSummary', { count: String(health.silentCount), days: String(health.silentThresholdDays) }),
   ];
   for (const item of health.silentItems) {
-    lines.push(`- ${formatObjectReference(projectId, item.id)} · ${t('cognition.sparkHealth.silentDays', { days: String(item.silentDays) })} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
+    lines.push(`- ${formatObjectReference(projectId, item.id, item.type, item.short_ref)} · ${t('cognition.sparkHealth.silentDays', { days: String(item.silentDays) })} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
   }
   return lines.join('\n');
 }
@@ -165,7 +166,7 @@ function buildRecentHotspotSummary(data: CognitionData, locale: string, t: Trans
   ];
   for (const cluster of hotspots.clusters) {
     const item = cluster.primary;
-    lines.push(`- ${formatObjectReference(projectId, item.id)} · ${item.activityRefs.length} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
+    lines.push(`- ${formatObjectReference(projectId, item.id, item.type, item.short_ref)} · ${item.activityRefs.length} · ${getLocalizedObjectTitle(item, locale, item.id)}`);
   }
   return lines.join('\n');
 }
@@ -396,7 +397,7 @@ function RecentActivityRow({ item }: { item: CognitionRecentActivityItem }) {
         </span>
         <span className="ml-auto flex shrink-0 items-center gap-1.5">
           {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(item.type, status, locale)} objectType={item.type} />}
-          <ObjectReferenceCopyButton objectId={item.id} />
+          <ObjectReferenceCopyButton objectId={item.id} objectType={item.type} shortRef={item.short_ref} />
         </span>
       </div>
       <div
@@ -469,7 +470,7 @@ function SparkHealthRow({ item }: { item: CognitionSparkHealthItem }) {
         <code className="ldvh-caption min-w-0 break-all text-ldvh-text-secondary/55">{item.id}</code>
         <PriorityIcon source={item} type="spark" locale={locale} size="xs" />
         <span className="ml-auto shrink-0">
-          <ObjectReferenceCopyButton objectId={item.id} />
+          <ObjectReferenceCopyButton objectId={item.id} objectType="spark" shortRef={item.short_ref} />
         </span>
       </div>
       <div

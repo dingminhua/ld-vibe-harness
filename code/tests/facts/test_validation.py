@@ -94,6 +94,28 @@ def test_all_fact_types_reject_unknown_local_offset_in_managed_timestamps(
     assert invalid_time_paths == {"created_at", "updated_at"}
 
 
+def test_legacy_object_may_omit_uid_but_present_uid_must_be_canonical_uuid7(
+    current_fact_schemas: Mapping[str, FactSchema],
+) -> None:
+    fields = _common("spark", "spark-0001", "open")
+    fields.update({"summary": "Legacy compatibility remains readable.", "priority": "P2"})
+
+    assert not any(
+        issue.field_path == "object_uid"
+        for issue in validate_fact_object("spark", fields, current_fact_schemas["spark"])
+    )
+
+    fields["object_uid"] = "550e8400-e29b-41d4-a716-446655440000"
+    issues = validate_fact_object("spark", fields, current_fact_schemas["spark"])
+    assert any(issue.field_path == "object_uid" and issue.category == "identity" for issue in issues)
+
+    fields["object_uid"] = "0198f1c7-8a2b-7c3d-9e4f-123456789abc"
+    assert not any(
+        issue.field_path == "object_uid"
+        for issue in validate_fact_object("spark", fields, current_fact_schemas["spark"])
+    )
+
+
 @pytest.mark.parametrize(
     ("earlier", "later"),
     [
@@ -348,6 +370,33 @@ def test_relations_accept_only_key_and_target(current_fact_schemas: Mapping[str,
     assert any(
         issue.field_path == "relations[0].source_refs" for issue in validate_fact_object("spark", fields, schema)
     )
+
+
+def test_relation_target_accepts_uid_or_legacy_shape_but_never_both(
+    current_fact_schemas: Mapping[str, FactSchema],
+) -> None:
+    schema = current_fact_schemas["spark"]
+    fields = {
+        **_common("spark", "spark-0001", "open"),
+        "object_uid": "0198f1c7-8a2b-7c3d-9e4f-123456789abc",
+        "summary": "A current question.",
+        "priority": "P2",
+        "relations": [
+            {
+                "relation_key": "related-to",
+                "target": {"object_uid": "0198f1c7-8a2b-7c3d-9e4f-123456789abd"},
+            }
+        ],
+    }
+    assert validate_fact_object("spark", fields, schema) == ()
+
+    fields["relations"][0]["target"]["object_id"] = "adr-0001"
+    issues = validate_fact_object("spark", fields, schema)
+    assert any(issue.field_path == "relations[0].target" and issue.category == "relation" for issue in issues)
+
+    fields["relations"][0]["target"] = {"governed_project_id": "p", "object_id": "adr-0001"}
+    issues = validate_fact_object("spark", fields, schema)
+    assert any(issue.field_path == "relations[0].target" and issue.category == "relation" for issue in issues)
 
 
 def test_change_log_accepts_two_field_signatures_and_rejects_bad_order_or_shape(

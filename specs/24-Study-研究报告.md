@@ -100,6 +100,7 @@ AI 负责判断研究是否完成、来源是否充分、推断是否越界、�
 | field_key | presence | constraint_ref |
 |---|---|---|
 | `object-id` | required | `study-fact-type::5. Study 类型定义` |
+| `object-uid` | conditional | `study-fact-type::5. Study 类型定义` |
 | `fact-type-key` | required | `inherit` |
 | `title` | required | `study-fact-type::5. Study 类型定义` |
 | `created-at` | required | `inherit` |
@@ -133,7 +134,7 @@ AI 负责判断研究是否完成、来源是否充分、推断是否越界、�
 
 ### Schema、Markdown 正文与对象载体
 
-Study 对象使用 UTF-8 Markdown，一文件一对象，当前权威位置固定为管辖项目仓库中的 `ldvh-base/studies/<object_id>.md`。`object_id` 必须匹配 `study-[0-9]{4,}`；文件名必须与 `object_id` 完全一致，分配后的身份不得因标题、路径、状态或内容改变。`title` 应以“报告对象 + 当前项目判断主题”简短识别报告，不复制 `research_question`、`abstract`、建议摘要或结论；它是当前文件名之外的可读命名入口。YAML frontmatter 只承载本节绑定字段，之后的 Markdown 正文承载详细报告。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
+Study 对象使用 UTF-8 Markdown，一文件一对象，当前权威位置固定为管辖项目仓库中的 `ldvh-base/studies/<object_id>.md`。`object_id` 必须匹配 `study-[0-9]{4,}`且与文件名完全一致，只承担兼容定位和命名空间职责；具有 `object_uid` 时其权威身份、legacy 缺失兼容和不可变边界统一按 05 §7.3–§7.4，新建 Study 必须由 Code 生成 UID。`title` 应以“报告对象 + 当前项目判断主题”简短识别报告，不复制 `research_question`、`abstract`、建议摘要或结论；它是当前文件名之外的可读命名入口。YAML frontmatter 只承载本节绑定字段，之后的 Markdown 正文承载详细报告。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
 
 正文必须按顺序各出现且只出现一次以下非空 H2：`研究问题`、`输入与边界`、`关键发现`、`建议`、`后续分流`。这五段不是最小填空骨架；active Study 必须使用下表的可见阅读单元，使读者能区分外部资料的观察、对当前项目的启发、尚未成立的结论和下一步选择。frontmatter 的 research_question 和 abstract 是稳定机器入口，正文不得改变或弱化这些边界。
 
@@ -204,7 +205,7 @@ Study 没有统一 TTL；当前消费依赖易变资料时，AI 必须重新检�
 
 ### 主动召回与消费时机
 
-Study 在当前问题需要外部研究、内部审计、技术评估或比较报告启发，或当前输入精确引用报告时产生召回机会。F2 Study 候选卡直接投影 `object_id`、`title`、`status`、`report_kind`、`research_intent`、`research_question`、`abstract`、`recommendation_summary`、`relations` 和 `updated_at`，不在候选层解释报告结论当前性，也不内联输入来源。只在关键发现、限制或建议会影响当前判断时展开完整正文，不得因主题相似就向 AI 无差别注入整份报告。
+Study 在当前问题需要外部研究、内部审计、技术评估或比较报告启发，或当前输入精确引用报告时产生召回机会。F2 Study 候选卡直接投影条件出现的 `object_uid`、以及 `object_id`、`title`、`status`、`report_kind`、`research_intent`、`research_question`、`abstract`、`recommendation_summary`、`relations` 和 `updated_at`，不在候选层解释报告结论当前性，也不内联输入来源。只在关键发现、限制或建议会影响当前判断时展开完整正文，不得因主题相似就向 AI 无差别注入整份报告。
 
 `active` Study 可进入当前报告候选，但仍必须按本节时效规则核对版本、观察时点、已知变化和冲突；`retired` Study 只在精确引用、报告历史、来源追溯或比较报告变化时展开。上下文压缩后，已在当次被引用且仍影响判断的 Study 必须重新回读 F3 中的研究问题、关键发现、建议与限制，并恢复需要复核的版本、观察时点和来源范围；Study 被召回不证明外部事实仍当前、建议已采纳或发现取得规则与决定权威。
 

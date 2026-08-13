@@ -111,6 +111,8 @@ export interface ObjectItem {
   /** Exact-read formal relation targets for every fact list card. */
   factAssociations?: FactCardAssociation[];
   /** Exact field-level source metadata. */
+  object_uid?: string;
+  short_ref?: string;
   object_id?: string;
   fact_type_key?: string;
   canonical_path?: string;
@@ -149,6 +151,14 @@ export interface ObjectItem {
 export interface FactCardAssociation {
   relationKey?: string;
   target?: {
+    objectUid: string;
+  } | {
+    governedProjectId: string;
+    factTypeKey: string;
+    objectId: string;
+  };
+  /** Current-project locator resolved uniquely from an authoritative UID; never part of the relation identity. */
+  resolvedTarget?: {
     governedProjectId: string;
     factTypeKey: string;
     objectId: string;
@@ -338,9 +348,10 @@ export interface WorkCaseRelation {
 
 /** closure_confirmation Card 只消费稳定目标三元组，不复制目标标题。 */
 export interface WorkCaseContributionTarget {
-  governedProjectId: string;
-  factTypeKey: string;
-  objectId: string;
+  governedProjectId?: string;
+  factTypeKey?: string;
+  objectId?: string;
+  objectUid?: string;
 }
 
 /**
@@ -532,6 +543,8 @@ export interface CognitionInboxCard extends Record<string, unknown> {
 
 interface CognitionInboxItemBase {
   id: string;
+  object_uid?: string;
+  short_ref?: string;
   title: string;
   title_en?: string;
   title_zh?: string;
@@ -582,6 +595,8 @@ export type CognitionRecentActivityKind = 'created' | 'updated';
 
 export interface CognitionRecentActivityItem {
   id: string;
+  object_uid?: string;
+  short_ref?: string;
   type: string;
   title: string;
   title_en?: string;
@@ -613,6 +628,8 @@ export interface CognitionRecentActivityAttributionUsage {
 export interface CognitionSparkHealthItem {
   type: 'spark';
   id: string;
+  object_uid?: string;
+  short_ref?: string;
   title: string;
   title_en?: string;
   title_zh?: string;
@@ -651,6 +668,8 @@ export interface CognitionRecentHotspotRef {
 export interface CognitionRecentHotspotNode {
   type: string;
   id: string;
+  object_uid?: string;
+  short_ref?: string;
   title: string;
   title_en?: string;
   title_zh?: string;

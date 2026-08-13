@@ -52,9 +52,20 @@ class FactReference:
 
 
 @dataclass(frozen=True, slots=True)
+class UIDFactReference:
+    object_uid: str
+
+    def to_json(self) -> dict[str, str]:
+        return {"object_uid": self.object_uid}
+
+
+type StableFactReference = FactReference | UIDFactReference
+
+
+@dataclass(frozen=True, slots=True)
 class FactReferenceScope:
     fact_ref_index: int
-    requested_ref: FactReference
+    requested_ref: StableFactReference
 
     def to_json(self) -> dict[str, object]:
         return {"fact_ref_index": self.fact_ref_index, "requested_ref": self.requested_ref.to_json()}

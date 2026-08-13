@@ -49,7 +49,7 @@ UpdateStatus = Literal[
     "updated",
 ]
 
-MANAGED_FIELDS = frozenset({"object_id", "fact_type_key", "created_at", "updated_at"})
+MANAGED_FIELDS = frozenset({"object_uid", "object_id", "fact_type_key", "created_at", "updated_at"})
 STUDY_REPORT_CONTENT_FIELDS = frozenset({
     "report_kind",
     "input_refs",
@@ -143,6 +143,7 @@ def _candidate(
     layout = LAYOUTS[command.fact_type_key]
     fields = {
         **dict(command.supplied),
+        **({"object_uid": before["object_uid"]} if "object_uid" in before else {}),
         "object_id": before["object_id"],
         "fact_type_key": before["fact_type_key"],
         "created_at": before["created_at"],
@@ -281,6 +282,7 @@ def apply_fact_update_locked(command: FactUpdateCommand) -> FactUpdateResult:
 
     proposed = {
         **dict(command.supplied),
+        **({"object_uid": current.fields["object_uid"]} if "object_uid" in current.fields else {}),
         "object_id": current.fields["object_id"],
         "fact_type_key": current.fields["fact_type_key"],
         "created_at": current.fields["created_at"],

@@ -6,6 +6,7 @@ from collections import deque
 from collections.abc import Iterable, Mapping
 from dataclasses import replace
 
+from ldvh.facts.identity import canonical_object_uid
 from ldvh.facts.models import FactIssue
 from ldvh.facts.relations import (
     MAX_GRAPH_OBJECTS,
@@ -23,6 +24,41 @@ def _locally_valid(read: FactReadResult | None) -> bool:
     return read is not None and read.check_status == "mechanically_valid" and read.fields is not None
 
 
+def _relation_target_key(
+    index: ProjectFactIndex,
+    target: Mapping[str, object],
+) -> tuple[FactKey | None, str]:
+    object_uid = target.get("object_uid")
+    if isinstance(object_uid, str):
+        configuration_resolver = getattr(index, "configuration_uid_resolver", None)
+        if configuration_resolver is not None:
+            entry, status = configuration_resolver(object_uid)
+            if status != "resolved" or entry is None:
+                return None, status
+            target_project_id, target_type, target_id, _target_read = entry
+            if target_project_id != index.governed_project_id:
+                return None, "cross_project"
+            return (target_type, target_id), "resolved"
+        resolver = getattr(index, "resolve_uid", None)
+        if resolver is None:
+            return None, "unavailable"
+        target_read, status = resolver(object_uid)
+        if status != "resolved" or target_read is None or target_read.fields is None:
+            return None, status
+        target_type = target_read.fields.get("fact_type_key")
+        target_id = target_read.fields.get("object_id")
+        if not isinstance(target_type, str) or not isinstance(target_id, str):
+            return None, "invalid"
+        return (target_type, target_id), "resolved"
+    if target.get("governed_project_id") != index.governed_project_id:
+        return None, "cross_project"
+    target_type = target.get("fact_type_key")
+    target_id = target.get("object_id")
+    if not isinstance(target_type, str) or not isinstance(target_id, str):
+        return None, "invalid"
+    return (target_type, target_id), "resolved"
+
+
 def _same_project_relation_targets(
     index: ProjectFactIndex,
     read: FactReadResult,
@@ -36,12 +72,9 @@ def _same_project_relation_targets(
         target = relation.get("target")
         if not isinstance(target, Mapping):
             continue
-        if target.get("governed_project_id") != index.governed_project_id:
-            continue
-        fact_type_key = target.get("fact_type_key")
-        object_id = target.get("object_id")
-        if isinstance(fact_type_key, str) and isinstance(object_id, str):
-            targets.append((fact_type_key, object_id))
+        target_key, status = _relation_target_key(index, target)
+        if status == "resolved" and target_key is not None:
+            targets.append(target_key)
     return tuple(targets)
 
 
@@ -93,14 +126,15 @@ def _relation_graph_statuses(
             target = relation.get("target")
             if not isinstance(target, Mapping):
                 continue
-            if target.get("governed_project_id") != index.governed_project_id:
+            target_key, resolution = _relation_target_key(index, target)
+            if resolution == "cross_project":
                 continue
-            target_type = target.get("fact_type_key")
-            target_id = target.get("object_id")
-            if not isinstance(target_type, str) or not isinstance(target_id, str):
+            if resolution == "unavailable":
+                unavailable.add(source_key)
+                continue
+            if resolution != "resolved" or target_key is None:
                 invalid.add(source_key)
                 continue
-            target_key = (target_type, target_id)
             if target_key in base_reads:
                 adjacency[source_key].add(target_key)
                 adjacency.setdefault(target_key, set())
@@ -155,6 +189,29 @@ def _evaluated_read(
     base_read: FactReadResult,
     graph_statuses: Mapping[GraphStatusKey, GraphStatus],
 ) -> FactReadResult:
+    assert base_read.fields is not None
+    object_uid = canonical_object_uid(base_read.fields.get("object_uid"))
+    if object_uid is not None:
+        resolver = getattr(index, "resolve_uid", None)
+        if resolver is None:
+            return replace(
+                base_read,
+                check_status="unavailable",
+                issues=(*base_read.issues, FactIssue("reference", "无法完成 object_uid 唯一性检查", "object_uid")),
+            )
+        _, uid_status = resolver(object_uid)
+        if uid_status == "duplicate":
+            return replace(
+                base_read,
+                check_status="invalid",
+                issues=(*base_read.issues, FactIssue("identity", "object_uid 在当前项目重复", "object_uid")),
+            )
+        if uid_status != "resolved":
+            return replace(
+                base_read,
+                check_status="unavailable",
+                issues=(*base_read.issues, FactIssue("reference", "未能完成 object_uid 唯一性检查", "object_uid")),
+            )
     relation_issues, relation_unavailable = validate_project_relations(
         index,
         key[0],

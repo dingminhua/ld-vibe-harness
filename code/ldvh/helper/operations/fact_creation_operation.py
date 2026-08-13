@@ -40,7 +40,7 @@ from ldvh.helper.operations.fact_creation_request import (
     parse_draft_request,
     parse_observed_write_signature,
 )
-from ldvh.helper.operations.fact_operation_support import post_write_integrity_audit
+from ldvh.helper.operations.fact_operation_support import configuration_reading_boundaries, post_write_integrity_audit
 from ldvh.helper.requests import CommonRequest
 from ldvh.helper.responses import source_reference
 from ldvh.specs.repository import RepositoryInspection
@@ -55,7 +55,7 @@ _IMPLEMENTATION_SOURCE = source_reference(
     "implementation",
     "code/ldvh/helper/operations/fact_creation_operation.py",
 )
-_MANAGED_FIELDS = frozenset({"object_id", "fact_type_key", "created_at", "updated_at"})
+_MANAGED_FIELDS = frozenset({"object_uid", "object_id", "fact_type_key", "created_at", "updated_at"})
 _FACT_TYPE_SOURCES = {
     "spark": "specs/20-Spark-火花.md",
     "workcase": "specs/21-WorkCase-工作项.md",
@@ -447,6 +447,7 @@ def _creation_domain_result(
     result: dict[str, Any] = {
         "requested_candidate_id": requested_candidate_id,
         "allocation": {
+            "attempted_object_uid": creation.attempted_object_uid,
             "attempted_object_id": attempted_id,
             "allocated_object_id": allocated_object_id,
             "counter_state": counter_state,
@@ -465,11 +466,7 @@ def _creation_domain_result(
         assert read is not None and read.fields is not None
         result.update(
             {
-                "actual_ref": {
-                    "governed_project_id": governed_project_id,
-                    "fact_type_key": fact_type_key,
-                    "object_id": attempted_id,
-                },
+                "actual_ref": {"object_uid": read.fields["object_uid"]},
                 "carrier": layout.carrier,
                 "fact_object": (
                     {"frontmatter": read.fields, "body": read.body or ""}
@@ -659,6 +656,9 @@ def _create_execute(
     boundary = _boundary(run)
     if boundary is None:
         return _boundary_execution(run, requested, "当前管辖结果不能形成唯一事实对象创建边界")
+    configuration_boundaries = configuration_reading_boundaries(run)
+    if configuration_boundaries is None:
+        return _boundary_execution(run, requested, "当前管辖结果不能形成完整配置级 UID 扫描边界")
     type_contract = source_reference("rule", _FACT_TYPE_SOURCES[basis.fact_type_key])
     change_sources = [_CREATE_CONTRACT, type_contract]
     request_sources = tuple(_plain(source) for source in run.sources) + tuple(change_sources)
@@ -723,6 +723,7 @@ def _create_execute(
                 requested_candidate_id=basis.candidate_object_id,
                 supplied=supplied,
                 body=body,
+                configuration_boundaries=configuration_boundaries,
             ),
             observed_at=context.event_at,
         )
@@ -1126,11 +1127,8 @@ def _create_execute(
     assert creation_result is not None
     assert domain_result is not None
 
-    actual_ref = {
-        "governed_project_id": boundary.governed_project_id,
-        "fact_type_key": basis.fact_type_key,
-        "object_id": actual_id,
-    }
+    assert read.fields is not None and isinstance(read.fields.get("object_uid"), str)
+    actual_ref = {"object_uid": read.fields["object_uid"]}
     working_tree_source = {
         "kind": "working_tree",
         "locator": (boundary.worktree_root / layout.canonical_path(actual_id)).as_posix(),
@@ -1183,6 +1181,7 @@ def _create_execute(
             boundary=boundary,
             schemas=schemas,
             audit_contract=_INTEGRITY_CONTRACT,
+            configuration_boundaries=configuration_boundaries,
         )
     )
 

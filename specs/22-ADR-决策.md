@@ -95,6 +95,7 @@ AI 负责判断决定是否已实际成立、是否值得对象化、是否重�
 | field_key | presence | constraint_ref |
 |---|---|---|
 | `object-id` | required | `adr-fact-type::5. ADR 类型定义` |
+| `object-uid` | conditional | `adr-fact-type::5. ADR 类型定义` |
 | `fact-type-key` | required | `inherit` |
 | `title` | required | `adr-fact-type::5. ADR 类型定义` |
 | `created-at` | required | `adr-fact-type::8. 变更、删除与类型退出` |
@@ -121,7 +122,7 @@ AI 负责判断决定是否已实际成立、是否值得对象化、是否重�
 
 ### Schema 与对象载体
 
-ADR 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为管辖项目仓库中的 `ldvh-base/adrs/<object_id>.yaml`。`object_id` 必须匹配 `adr-[0-9]{4,}`；文件名必须与 `object_id` 完全一致，分配后的身份不得因标题、路径、状态或内容改变。
+ADR 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为管辖项目仓库中的 `ldvh-base/adrs/<object_id>.yaml`。`object_id` 必须匹配 `adr-[0-9]{4,}`且与文件名完全一致，只承担兼容定位和命名空间职责；具有 `object_uid` 时其权威身份、legacy 缺失兼容和不可变边界统一按 05 §7.3–§7.4，新建 ADR 必须由 Code 生成 UID。
 
 `title` 是对已作决策的简短名称，必须直接表达 `decision` 所确定的方向，使只读标题的人能区分“决定了什么”与“在讨论什么”。它不复制完整 `decision_question` 或 `decision`，也不写成正式规则条文或实现步骤。不得只写领域名、对象名、问题名、章节名、文档标题或“讨论/说明/解释”等未表达决定的名词短语；例如可写“规则缺口时先修规则源”“交付中解释关键术语与代码标识”，不可只写“规则缺口来源先行”“技术术语与代码标识解释”。标题与 `decision` 不一致、无法单独识别决定方向或把决定伪装成字段合同、实现完成时，不得创建或消费该 ADR。
 
@@ -160,7 +161,7 @@ ADR 不建立 `source_ref`、`evidence_ref` 或来源关系。ADR 不定义 rela
 
 ### 主动召回与消费时机
 
-当 Human 目标已经明确需要项目事实，且当前工作可能受长期选择、架构边界、数据模型、稳定接口或运行约束影响时，AI 才取得该项目全部 `active` ADR 的 F1 决策卡。新会话开始、会话恢复或上下文压缩本身不构成恢复 ADR 事实的理由；它们只取得 00 §8.1 定义的规则引导。每张卡只直接投影 `object_id`、`title`、`decision_question`、`decision`、`applicability` 和 `updated_at`；不用 AI 临时摘要、索引标签或缓存改写权威字段。这一完整最小投影帮助 AI 判断当前行动可能受哪些长期决定制约；不得先要求 AI 已知 applicability 命中，再决定是否让其看到该 ADR。
+当 Human 目标已经明确需要项目事实，且当前工作可能受长期选择、架构边界、数据模型、稳定接口或运行约束影响时，AI 才取得该项目全部 `active` ADR 的 F1 决策卡。新会话开始、会话恢复或上下文压缩本身不构成恢复 ADR 事实的理由；它们只取得 00 §8.1 定义的规则引导。每张卡只直接投影条件出现的 `object_uid`、以及 `object_id`、`title`、`decision_question`、`decision`、`applicability` 和 `updated_at`；不用 AI 临时摘要、索引标签或缓存改写权威字段。这一完整最小投影帮助 AI 判断当前行动可能受哪些长期决定制约；不得先要求 AI 已知 applicability 命中，再决定是否让其看到该 ADR。
 
 决策卡可以分页，但必须披露全部 `active` 数量、已读数量、未读范围、指纹和后续 cursor。coverage 未完整时，不得声称已恢复全部当前决策约束，也不得在可能受未读 ADR 影响的高影响行动前宣称 ADR 检查完成。AI 审阅全部决策卡后，对当前对象、环境或选择问题可能适用的 ADR 展开 F3；准备作出、重议或改变长期选择，以及影响架构边界、数据模型、稳定接口或运行约束前，必须重新完成这一筛选与全文核对。
 

@@ -6,7 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from ldvh.facts.contracts import LAYOUTS
-from ldvh.facts.models import FactReference, FactReferenceScope
+from ldvh.facts.identity import canonical_object_uid
+from ldvh.facts.models import FactReference, FactReferenceScope, UIDFactReference
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
 from ldvh.helper.requests import CommonRequest
@@ -14,7 +15,7 @@ from ldvh.helper.requests import CommonRequest
 REQUIRED_INPUTS = ("arguments.fact_refs",)
 OPTIONAL_INPUTS = ("work_object_locators", "arguments.workspace_root")
 _ARGUMENT_FIELDS = frozenset({"workspace_root", "fact_refs"})
-_FACT_REF_FIELDS = frozenset({"governed_project_id", "fact_type_key", "object_id"})
+_LEGACY_FACT_REF_FIELDS = frozenset({"governed_project_id", "fact_type_key", "object_id"})
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,17 +69,24 @@ def parse_fact_object_request(
             if not isinstance(raw_ref, dict):
                 problems.append(f"{prefix} 必须是 object")
                 continue
-            unknown_ref = sorted(set(raw_ref) - _FACT_REF_FIELDS)
+            if set(raw_ref) == {"object_uid"}:
+                object_uid = canonical_object_uid(raw_ref.get("object_uid"))
+                if object_uid is None:
+                    problems.append(f"{prefix}.object_uid 必须是 canonical 小写 UUIDv7")
+                else:
+                    fact_scopes.append(FactReferenceScope(index, UIDFactReference(object_uid)))
+                continue
+            unknown_ref = sorted(set(raw_ref) - _LEGACY_FACT_REF_FIELDS)
             if unknown_ref:
                 problems.append(f"{prefix} 包含未知字段: {', '.join(unknown_ref)}")
             values: dict[str, str] = {}
-            for name in sorted(_FACT_REF_FIELDS):
+            for name in sorted(_LEGACY_FACT_REF_FIELDS):
                 value = raw_ref.get(name)
                 if not isinstance(value, str) or not value:
                     problems.append(f"{prefix}.{name} 必须是非空 string")
                 else:
                     values[name] = value
-            if len(values) != len(_FACT_REF_FIELDS):
+            if len(values) != len(_LEGACY_FACT_REF_FIELDS):
                 continue
             fact_type_key = values["fact_type_key"]
             layout = LAYOUTS.get(fact_type_key)

@@ -25,6 +25,8 @@ from ldvh.facts.schema import FactSchema
 _PROJECT = "current-project"
 _FINGERPRINT_A = "a" * 64
 _FINGERPRINT_B = "b" * 64
+_UID_A = "0198f1c7-8a2b-7c3d-9e4f-123456789abc"
+_UID_B = "0198f1c7-8a2b-7c3d-9e4f-123456789abd"
 
 
 class _CurrentProjectIndex:
@@ -119,6 +121,7 @@ def _read(
     fingerprint: str = _FINGERPRINT_A,
     fact_type_key: str = "workcase",
     title: str = "关系目标",
+    object_uid: str | None = None,
 ) -> FactReadResult:
     fields: dict[str, object] = {
         "object_id": object_id,
@@ -130,6 +133,8 @@ def _read(
         fields["phase"] = phase
     if relations is not None:
         fields["relations"] = relations
+    if object_uid is not None:
+        fields["object_uid"] = object_uid
     return FactReadResult(
         Path(f"ldvh-base/{fact_type_key}s/{object_id}.yaml").as_posix(),
         "yaml",
@@ -162,6 +167,28 @@ class _MemoryIndex:
 
     def base_read(self, fact_type_key: str, object_id: str) -> FactReadResult | None:
         return self.read(fact_type_key, object_id)
+
+    def resolve_uid(self, object_uid: str) -> tuple[FactReadResult | None, str]:
+        matches = [
+            read
+            for read in self.reads.values()
+            if read.fields is not None and read.fields.get("object_uid") == object_uid
+        ]
+        if len(matches) > 1:
+            return None, "duplicate"
+        if not matches:
+            return None, "not_found" if self.complete else "unavailable"
+        return matches[0], "resolved"
+
+    def resolve_uid_entry(self, object_uid: str):
+        read, status = self.resolve_uid(object_uid)
+        if read is None or read.fields is None:
+            return None, status
+        return (
+            str(read.fields["fact_type_key"]),
+            str(read.fields["object_id"]),
+            read,
+        ), status
 
     def scan_valid_objects(
         self,
@@ -419,7 +446,7 @@ def test_proposal_snapshots_deduplicate_same_target_but_reject_conflicting_finge
 
     assert issues == ()
     assert len(snapshots) == 1
-    assert snapshots[0].identity == (_PROJECT, "workcase", "workcase-0002")
+    assert snapshots[0].identity == ("legacy", _PROJECT, "workcase", "workcase-0002")
     assert snapshots[0].origin_path == "closure_proposal.residual_decisions[0].route_target"
 
     fields["closure_proposal"]["residual_decisions"][1]["route_target"][  # type: ignore[index]
@@ -457,7 +484,7 @@ def test_route_target_alignment_requires_proposal_after_and_request_exact_target
     )
     after = {"relations": [_relation("routed-to", "workcase-0002")]}
 
-    assert workcase_routed_target_identities(after) == ((_PROJECT, "workcase", "workcase-0002"),)
+    assert workcase_routed_target_identities(after) == (("legacy", _PROJECT, "workcase", "workcase-0002"),)
     assert (
         validate_workcase_route_target_alignment(
             after,
@@ -473,6 +500,40 @@ def test_route_target_alignment_requires_proposal_after_and_request_exact_target
         request_snapshots=(),
     )
     assert len([issue for issue in issues if "精确一致" in issue.summary]) == 2
+
+
+def test_uid_route_target_snapshot_aligns_and_resolves_without_legacy_rewrite() -> None:
+    target_read = _read(
+        "workcase-0002",
+        "open",
+        phase="executing",
+        fingerprint=_FINGERPRINT_A,
+        object_uid=_UID_B,
+    )
+    proposal = {
+        "closure_proposal": {
+            "residual_decisions": [
+                {
+                    "residual_id": "residual-one",
+                    "proposed_disposition": "route_existing",
+                    "route_target": {"object_uid": _UID_B, "content_fingerprint": _FINGERPRINT_A},
+                }
+            ]
+        }
+    }
+    snapshots, issues = proposal_route_target_snapshots(proposal)
+
+    assert issues == ()
+    assert snapshots[0].identity == ("uid", _UID_B)
+    after = {"relations": [{"relation_key": "routed-to", "target": {"object_uid": _UID_B}}]}
+    assert validate_workcase_route_target_alignment(after, proposal_snapshots=snapshots) == ()
+    guard_issues, unavailable = validate_workcase_route_target_snapshots(  # type: ignore[arg-type]
+        _MemoryIndex(target_read),
+        "workcase-0001",
+        snapshots,
+    )
+    assert guard_issues == ()
+    assert unavailable is False
 
 
 def test_route_target_snapshot_guard_fresh_reads_and_distinguishes_new_from_unchanged_closed_target() -> None:
@@ -738,3 +799,73 @@ def test_workcase_contributed_to_rejects_cross_project_duplicate_and_self_refere
     )
     issues, _ = _validate(self_ref)
     assert any("禁止自指" in issue.summary for issue in issues)
+
+
+def test_uid_relation_resolves_target_and_preserves_type_conditions() -> None:
+    source = _read(
+        "spark-0001",
+        "open",
+        fact_type_key="spark",
+        object_uid=_UID_A,
+        relations=[{"relation_key": "related-to", "target": {"object_uid": _UID_B}}],
+    )
+    target = _read("workcase-0002", "closed", object_uid=_UID_B)
+
+    issues, unavailable = _validate_spark(source, target)
+
+    assert issues == ()
+    assert unavailable is False
+
+
+def test_uid_relation_rejects_duplicate_uid_without_guessing() -> None:
+    source = _read(
+        "spark-0001",
+        "open",
+        fact_type_key="spark",
+        object_uid=_UID_A,
+        relations=[{"relation_key": "related-to", "target": {"object_uid": _UID_B}}],
+    )
+    first = _read("workcase-0002", "open", object_uid=_UID_B)
+    second = _read("workcase-0003", "open", object_uid=_UID_B)
+
+    issues, unavailable = _validate_spark(source, first, second)
+
+    assert unavailable is False
+    assert any(issue.category == "identity" and "重复" in issue.summary for issue in issues)
+
+
+def test_uid_relation_rejects_self_reference() -> None:
+    source = _read(
+        "spark-0001",
+        "open",
+        fact_type_key="spark",
+        object_uid=_UID_A,
+        relations=[{"relation_key": "related-to", "target": {"object_uid": _UID_A}}],
+    )
+
+    issues, unavailable = _validate_spark(source)
+
+    assert unavailable is False
+    assert any("禁止自指" in issue.summary for issue in issues)
+
+
+def test_uid_relations_participate_in_cycle_detection() -> None:
+    first = _read(
+        "workcase-0001",
+        "open",
+        phase="executing",
+        object_uid=_UID_A,
+        relations=[{"relation_key": "depends-on", "target": {"object_uid": _UID_B}}],
+    )
+    second = _read(
+        "workcase-0002",
+        "open",
+        phase="executing",
+        object_uid=_UID_B,
+        relations=[{"relation_key": "depends-on", "target": {"object_uid": _UID_A}}],
+    )
+
+    issues, unavailable = _validate(first, second)
+
+    assert unavailable is False
+    assert any("有向循环" in issue.summary for issue in issues)

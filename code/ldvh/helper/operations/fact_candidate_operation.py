@@ -6,12 +6,16 @@ import base64
 import hashlib
 import json
 from collections import Counter
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Literal
 
 from ldvh.facts.candidate_discovery import discover_fact_candidates
+from ldvh.facts.configuration_index import ConfigurationFactEntry, ConfigurationFactIndex
 from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS
-from ldvh.facts.models import FactReference
+from ldvh.facts.identity import canonical_object_uid, short_reference
+from ldvh.facts.project_validation import stabilize_project_index
+from ldvh.facts.models import FactReference, StableFactReference, UIDFactReference
 from ldvh.facts.repository import FactReadResult
 from ldvh.facts.schema import project_fact_schemas
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
@@ -28,7 +32,7 @@ from ldvh.helper.operations.fact_candidate_request import (
     FactCandidateRequest,
     parse_fact_candidate_request,
 )
-from ldvh.helper.operations.fact_operation_support import plain, reading_boundary
+from ldvh.helper.operations.fact_operation_support import configuration_reading_boundaries, plain, reading_boundary
 from ldvh.helper.requests import CommonRequest
 from ldvh.helper.responses import source_reference
 from ldvh.specs.repository import RepositoryInspection
@@ -93,8 +97,9 @@ _DEFAULT_STATUSES = {
     "study": frozenset({"active"}),
 }
 _F1_FIELDS = {
-    "adr": ("object_id", "title", "decision_question", "decision", "applicability", "updated_at"),
+    "adr": ("object_uid", "object_id", "title", "decision_question", "decision", "applicability", "updated_at"),
     "workcase": (
+        "object_uid",
         "object_id",
         "title",
         "status",
@@ -108,6 +113,7 @@ _F1_FIELDS = {
     ),
 }
 _WORKCASE_F2_CLOSED_FIELDS = (
+    "object_uid",
     "object_id",
     "title",
     "status",
@@ -120,9 +126,10 @@ _WORKCASE_F2_CLOSED_FIELDS = (
     "updated_at",
 )
 _F2_FIELDS = {
-    "spark": ("object_id", "title", "status", "priority", "updated_at"),
-    "adr": ("object_id", "title", "status", "decision_question", "decision", "applicability", "updated_at"),
+    "spark": ("object_uid", "object_id", "title", "status", "priority", "updated_at"),
+    "adr": ("object_uid", "object_id", "title", "status", "decision_question", "decision", "applicability", "updated_at"),
     "pitfall": (
+        "object_uid",
         "object_id",
         "title",
         "status",
@@ -133,6 +140,7 @@ _F2_FIELDS = {
         "updated_at",
     ),
     "study": (
+        "object_uid",
         "object_id",
         "title",
         "status",
@@ -150,6 +158,7 @@ _EDGE_REASON_ORDER = (
     "fact-type-filter",
     "explicit-status-filter",
     "exact-ref-filter",
+    "short-ref-filter",
     "relation-target-filter",
     "locator-filter",
     "field-text-filter",
@@ -183,14 +192,33 @@ def _digest(value: object) -> str:
     return hashlib.sha256(_stable_json(value).encode("utf-8")).hexdigest()
 
 
+def _stable_ref(project_id: str, fact_type_key: str, fields: dict[str, Any]) -> dict[str, str]:
+    object_uid = fields.get("object_uid")
+    if isinstance(object_uid, str):
+        return {"object_uid": object_uid}
+    return FactReference(project_id, fact_type_key, str(fields["object_id"])).to_json()
+
+
+def _ref_sort_key(value: object) -> tuple[str, ...]:
+    if isinstance(value, dict) and isinstance(value.get("object_uid"), str):
+        return ("uid", str(value["object_uid"]))
+    if isinstance(value, dict):
+        return (
+            "legacy",
+            str(value.get("governed_project_id", "")),
+            str(value.get("fact_type_key", "")),
+            str(value.get("object_id", "")),
+        )
+    return ("legacy", "", "", "")
+
+
 def _problem_item(
     project_id: str,
     fact_type_key: str,
     object_id: str,
     read: FactReadResult,
 ) -> dict[str, object]:
-    return {
-        "fact_ref": FactReference(project_id, fact_type_key, object_id).to_json(),
+    item: dict[str, object] = {
         "canonical_path": read.canonical_path,
         "check_status": read.check_status,
         "issues": [
@@ -198,14 +226,39 @@ def _problem_item(
             for issue in read.issues
         ],
     }
+    if read.fields is None or "object_uid" not in read.fields:
+        item["fact_ref"] = FactReference(project_id, fact_type_key, object_id).to_json()
+    else:
+        object_uid = canonical_object_uid(read.fields.get("object_uid"))
+        if object_uid is None:
+            item["fact_type_key"] = fact_type_key
+        else:
+            item["fact_ref"] = UIDFactReference(object_uid).to_json()
+    return item
 
 
-def _references(value: tuple[FactReference, ...]) -> set[tuple[str, str, str]]:
-    return {(item.governed_project_id, item.fact_type_key, item.object_id) for item in value}
+def _reference_identity(value: StableFactReference) -> tuple[object, ...]:
+    if isinstance(value, UIDFactReference):
+        return ("uid", value.object_uid)
+    return ("legacy", value.governed_project_id, value.fact_type_key, value.object_id)
 
 
-def _relations(fields: dict[str, Any]) -> set[tuple[object, object, object]]:
-    result: set[tuple[object, object, object]] = set()
+def _object_identity(project_id: str, fact_type_key: str, fields: dict[str, Any]) -> tuple[object, ...]:
+    object_uid = fields.get("object_uid")
+    if isinstance(object_uid, str):
+        return ("uid", object_uid)
+    return ("legacy", project_id, fact_type_key, fields.get("object_id"))
+
+
+def _references(value: tuple[StableFactReference, ...]) -> set[tuple[object, ...]]:
+    return {_reference_identity(item) for item in value}
+
+
+def _relations(
+    fields: dict[str, Any],
+    configuration_index: ConfigurationFactIndex | None = None,
+) -> set[tuple[object, ...]]:
+    result: set[tuple[object, ...]] = set()
     raw = fields.get("relations")
     if not isinstance(raw, list):
         return result
@@ -213,7 +266,25 @@ def _relations(fields: dict[str, Any]) -> set[tuple[object, object, object]]:
         if not isinstance(relation, dict) or not isinstance(relation.get("target"), dict):
             continue
         target = relation["target"]
-        result.add((target.get("governed_project_id"), target.get("fact_type_key"), target.get("object_id")))
+        reference: StableFactReference | None = None
+        if isinstance(target.get("object_uid"), str):
+            reference = UIDFactReference(str(target["object_uid"]))
+        elif all(
+            isinstance(target.get(name), str)
+            for name in ("governed_project_id", "fact_type_key", "object_id")
+        ):
+            reference = FactReference(
+                str(target["governed_project_id"]),
+                str(target["fact_type_key"]),
+                str(target["object_id"]),
+            )
+        if reference is None:
+            continue
+        if configuration_index is not None:
+            authority, _entry, _status = _resolve_authority_reference(configuration_index, reference)
+            if authority is not None:
+                reference = authority
+        result.add(_reference_identity(reference))
     return result
 
 
@@ -235,7 +306,11 @@ def _source_result(
     read: FactReadResult,
 ) -> dict[str, object]:
     return {
-        "source_ref": source.to_json(),
+        "source_ref": (
+            _stable_ref(source.governed_project_id, source.fact_type_key, read.fields)
+            if read.fields is not None
+            else source.to_json()
+        ),
         "check_status": read.check_status,
         "canonical_path": read.canonical_path,
         "issues": [
@@ -246,18 +321,21 @@ def _source_result(
     }
 
 
-def _declared_relations(read: FactReadResult) -> tuple[tuple[int, str, FactReference], ...]:
+def _declared_relations(read: FactReadResult) -> tuple[tuple[int, str, StableFactReference], ...]:
     """Return only schema-shaped direct declarations from a safely parsed source."""
 
     if read.fields is None or not isinstance(read.fields.get("relations"), list):
         return ()
-    result: list[tuple[int, str, FactReference]] = []
+    result: list[tuple[int, str, StableFactReference]] = []
     for index, relation in enumerate(read.fields["relations"]):
         if not isinstance(relation, dict):
             continue
         relation_key = relation.get("relation_key")
         target = relation.get("target")
         if not isinstance(relation_key, str) or not isinstance(target, dict):
+            continue
+        if set(target) == {"object_uid"} and isinstance(target.get("object_uid"), str):
+            result.append((index, relation_key, UIDFactReference(target["object_uid"])))
             continue
         project_id = target.get("governed_project_id")
         fact_type_key = target.get("fact_type_key")
@@ -266,6 +344,45 @@ def _declared_relations(read: FactReadResult) -> tuple[tuple[int, str, FactRefer
             continue
         result.append((index, relation_key, FactReference(project_id, fact_type_key, object_id)))
     return tuple(result)
+
+
+def _resolve_authority_reference(
+    configuration_index: ConfigurationFactIndex,
+    reference: StableFactReference,
+) -> tuple[StableFactReference | None, ConfigurationFactEntry | None, str]:
+    if isinstance(reference, UIDFactReference):
+        entry, status = configuration_index.resolve_uid(reference.object_uid)
+        return (reference if entry is not None else None), entry, status
+    match = next(
+        (
+            (project_id, root, common_dir, index)
+            for project_id, root, common_dir, index in configuration_index.project_indexes
+            if project_id == reference.governed_project_id
+        ),
+        None,
+    )
+    if match is None:
+        return None, None, "not_found"
+    project_id, root, common_dir, index = match
+    read = index.read(reference.fact_type_key, reference.object_id)
+    if read is None or read.check_status == "not_found":
+        return None, None, "not_found"
+    if read.check_status == "unavailable":
+        return None, None, "unavailable"
+    entry = ConfigurationFactEntry(
+        project_id,
+        root,
+        common_dir,
+        reference.fact_type_key,
+        reference.object_id,
+        read,
+        index,
+    )
+    object_uid = None if read.fields is None else read.fields.get("object_uid")
+    authority: StableFactReference = (
+        UIDFactReference(object_uid) if isinstance(object_uid, str) else reference
+    )
+    return authority, entry, "resolved"
 
 
 def _source_edge_failure(
@@ -299,6 +416,7 @@ def _source_edge_failure(
 def _source_filter_reasons(
     domain: FactCandidateRequest,
     fields: dict[str, Any],
+    configuration_index: ConfigurationFactIndex | None = None,
 ) -> tuple[list[str], list[dict[str, object]]]:
     """Evaluate all post-resolution F2 conditions for one source-edge target."""
 
@@ -314,15 +432,22 @@ def _source_filter_reasons(
             filtered.append("explicit-status-filter")
         else:
             matched.append({"kind": "status", "field_path": "status"})
-    identity = (domain.governed_project_id, fact_type_key, object_id)
+    identity = _object_identity(domain.governed_project_id, fact_type_key, fields)
     if domain.exact_refs:
         if identity not in _references(domain.exact_refs):
             filtered.append("exact-ref-filter")
         else:
             matched.append({"kind": "exact-ref", "field_path": "object_id"})
+    if domain.short_refs:
+        object_uid = fields.get("object_uid")
+        candidate = short_reference(fact_type_key, object_uid) if isinstance(object_uid, str) else None
+        if candidate not in set(domain.short_refs):
+            filtered.append("short-ref-filter")
+        else:
+            matched.append({"kind": "short-ref", "field_path": "object_uid", "matched_text": candidate})
     if domain.relation_targets:
         targets = _references(domain.relation_targets)
-        if not (_relations(fields) & targets):
+        if not (_relations(fields, configuration_index) & targets):
             filtered.append("relation-target-filter")
         else:
             matched.append({"kind": "relation-target", "field_path": "relations[].target"})
@@ -365,30 +490,66 @@ def _source_navigation(
     domain: FactCandidateRequest,
     *,
     project_id: str,
-    root: Path,
-    index: Any,
-) -> tuple[list[dict[str, object]], list[dict[str, object]], dict[tuple[str, str], FactReadResult]]:
+    configuration_index: ConfigurationFactIndex,
+) -> tuple[
+    list[dict[str, object]],
+    list[dict[str, object]],
+    dict[tuple[object, ...], tuple[str, Path, str, FactReadResult]],
+]:
     """Organize only source-declared direct fact edges for one F2 request."""
 
     source_results: list[dict[str, object]] = []
     edges: list[dict[str, object]] = []
-    card_reads: dict[tuple[str, str], FactReadResult] = {}
+    card_reads: dict[tuple[object, ...], tuple[str, Path, str, FactReadResult]] = {}
     source_refs = sorted(
         domain.relation_source_refs,
-        key=lambda item: (item.governed_project_id, item.fact_type_key, item.object_id),
+        key=lambda item: _ref_sort_key(item.to_json()),
     )
-    for source in source_refs:
+    for requested_source in source_refs:
+        source_authority, source_entry, source_status = _resolve_authority_reference(
+            configuration_index, requested_source
+        )
+        if source_entry is None or source_authority is None:
+            source_results.append(
+                {
+                    "source_ref": requested_source.to_json(),
+                    "check_status": (
+                        "invalid" if source_status in {"duplicate", "invalid"}
+                        else "not_found" if source_status == "not_found"
+                        else "unavailable"
+                    ),
+                    "canonical_path": None,
+                    "issues": [
+                        {
+                            "category": "reference",
+                            "field_path": None,
+                            "summary": f"关系来源引用解析状态为 {source_status}",
+                        }
+                    ],
+                    "source_refs": [],
+                }
+            )
+            continue
+        source = FactReference(
+            source_entry.governed_project_id,
+            source_entry.fact_type_key,
+            source_entry.object_id,
+        )
+        index = source_entry.project_index
+        stabilize_project_index(index, ((source.fact_type_key, source.object_id),))
         source_read = index.read(source.fact_type_key, source.object_id)
         source_base = index.base_read(source.fact_type_key, source.object_id)
         if source_read is None or source_base is None:
             continue
+        root = source_entry.root
         source_results.append(_source_result(source, root, source_read))
         if source_base.check_status != "mechanically_valid" or source_base.fields is None:
             continue
         source_evidence = _source_refs(root, source.fact_type_key, source_read)
+        source_ref = _stable_ref(source.governed_project_id, source.fact_type_key, source_base.fields)
         for relation_index, relation_key, target in _declared_relations(source_base):
             edge: dict[str, object] = {
-                "source_ref": source.to_json(),
+                "source_ref": source_ref,
                 "relation_index": relation_index,
                 "relation_key": relation_key,
                 "target_ref": target.to_json(),
@@ -401,16 +562,24 @@ def _source_navigation(
                 edge.update(edge_status="filtered", reasons=["relation-key-filter"])
                 edges.append(edge)
                 continue
-            target_read = (
-                index.read(target.fact_type_key, target.object_id) if target.governed_project_id == project_id else None
+            target_authority, target_entry, target_resolution = _resolve_authority_reference(
+                configuration_index, target
             )
+            target_read = None if target_entry is None else target_entry.read
+            if target_entry is not None:
+                stabilize_project_index(
+                    target_entry.project_index,
+                    ((target_entry.fact_type_key, target_entry.object_id),),
+                )
+                target_read = target_entry.project_index.read(target_entry.fact_type_key, target_entry.object_id)
             target_status = (
-                "unavailable"
-                if target.governed_project_id != project_id
-                else "invalid"
-                if target_read is None
-                else target_read.check_status
+                "invalid" if target_resolution in {"duplicate", "invalid"}
+                else "not_found" if target_resolution == "not_found"
+                else "unavailable" if target_resolution == "unavailable"
+                else target_read.check_status if target_read is not None else "unavailable"
             )
+            if target_authority is not None:
+                edge["target_ref"] = target_authority.to_json()
             source_failure = _source_edge_failure(
                 source_read,
                 target_status=target_status,
@@ -431,31 +600,40 @@ def _source_navigation(
                 edge.update(edge_status="unavailable", reasons=["target-unavailable"])
                 edges.append(edge)
                 continue
-            filtered, _ = _source_filter_reasons(domain, target_read.fields)
+            filtered, _ = _source_filter_reasons(domain, target_read.fields, configuration_index)
             if filtered:
                 edge.update(edge_status="filtered", reasons=filtered)
                 edges.append(edge)
                 continue
             edge.update(edge_status="returned", reasons=["relation-source"])
             edges.append(edge)
-            identity = (target.fact_type_key, target.object_id)
-            card_reads.setdefault(identity, target_read)
+            identity = _reference_identity(target_authority) if target_authority is not None else ()
+            assert target_entry is not None
+            card_reads.setdefault(
+                identity,
+                (
+                    target_entry.governed_project_id,
+                    target_entry.root,
+                    target_entry.fact_type_key,
+                    target_read,
+                ),
+            )
     edges.sort(
         key=lambda item: (
-            item["source_ref"]["governed_project_id"],  # type: ignore[index]
-            item["source_ref"]["fact_type_key"],  # type: ignore[index]
-            item["source_ref"]["object_id"],  # type: ignore[index]
+            _ref_sort_key(item.get("source_ref")),
             item["relation_key"],
-            item["target_ref"]["governed_project_id"],  # type: ignore[index]
-            item["target_ref"]["fact_type_key"],  # type: ignore[index]
-            item["target_ref"]["object_id"],  # type: ignore[index]
+            _ref_sort_key(item.get("target_ref")),
             item["relation_index"],
         )
     )
     return source_results, edges, card_reads
 
 
-def _reasons(domain: FactCandidateRequest, fields: dict[str, Any]) -> list[dict[str, object]] | None:
+def _reasons(
+    domain: FactCandidateRequest,
+    fields: dict[str, Any],
+    configuration_index: ConfigurationFactIndex | None = None,
+) -> list[dict[str, object]] | None:
     fact_type_key = fields["fact_type_key"]
     object_id = fields["object_id"]
     status = fields.get("status")
@@ -466,13 +644,13 @@ def _reasons(domain: FactCandidateRequest, fields: dict[str, Any]) -> list[dict[
         return [{"kind": "recovery-baseline", "field_path": "status"}] if expected else None
     if fact_type_key not in domain.fact_type_keys:
         return None
-    identity = (domain.governed_project_id, fact_type_key, object_id)
+    identity = _object_identity(domain.governed_project_id, fact_type_key, fields)
     reasons: list[dict[str, object]] = []
     if domain.statuses is not None:
         if status not in set(domain.statuses):
             return None
         reasons.append({"kind": "status", "field_path": "status"})
-    elif not domain.exact_refs:
+    elif not domain.exact_refs and not domain.short_refs:
         if status not in _DEFAULT_STATUSES[fact_type_key]:
             return None
         reasons.append({"kind": "default-status", "field_path": "status"})
@@ -480,9 +658,15 @@ def _reasons(domain: FactCandidateRequest, fields: dict[str, Any]) -> list[dict[
         if identity not in _references(domain.exact_refs):
             return None
         reasons.append({"kind": "exact-ref", "field_path": "object_id"})
+    if domain.short_refs:
+        object_uid = fields.get("object_uid")
+        candidate = short_reference(fact_type_key, object_uid) if isinstance(object_uid, str) else None
+        if candidate not in set(domain.short_refs):
+            return None
+        reasons.append({"kind": "short-ref", "field_path": "object_uid", "matched_text": candidate})
     if domain.relation_targets:
         targets = _references(domain.relation_targets)
-        if not (_relations(fields) & targets):
+        if not (_relations(fields, configuration_index) & targets):
             return None
         reasons.append({"kind": "relation-target", "field_path": "relations[].target"})
     if domain.locator_text is not None:
@@ -556,7 +740,7 @@ def _card(
         },
     ]
     return {
-        "fact_ref": FactReference(project_id, fact_type_key, object_id).to_json(),
+        "fact_ref": _stable_ref(project_id, fact_type_key, read.fields),
         "card_layer": domain.card_layer,
         "fields": fields,
         "excerpts": excerpts,
@@ -575,12 +759,13 @@ def _query_fingerprint(domain: FactCandidateRequest, root: Path, common_dir: Pat
             "types": domain.fact_type_keys,
             "statuses": domain.statuses,
             "exact_refs": [item.to_json() for item in domain.exact_refs],
+            "short_refs": sorted(domain.short_refs),
             "relation_targets": [item.to_json() for item in domain.relation_targets],
             "relation_source_refs": [
                 item.to_json()
                 for item in sorted(
                     domain.relation_source_refs,
-                    key=lambda item: (item.governed_project_id, item.fact_type_key, item.object_id),
+                    key=lambda item: _ref_sort_key(item.to_json()),
                 )
             ],
             "relation_keys": sorted(domain.relation_keys),
@@ -695,8 +880,96 @@ def _execute(
                 },
             ),
         )
+    configuration_boundaries = configuration_reading_boundaries(run)
+    if configuration_boundaries is None:
+        return OperationExecution(
+            outcome="unavailable",
+            summary="当前管辖结果不能形成配置级 UID 引用解析边界",
+            requested_scope=requested,
+            not_completed_scope=requested,
+            governance_resolution=governance_json,
+            sources=tuple(plain(source) for source in run.sources) + (_RESULT_CONTRACT,),
+        )
+    configuration_index = ConfigurationFactIndex(configuration_boundaries, schemas)
+    if not configuration_index.prepare():
+        return OperationExecution(
+            outcome="unavailable",
+            summary="配置级 UID 全扫描未能完整形成",
+            requested_scope=requested,
+            not_completed_scope=requested,
+            governance_resolution=governance_json,
+            sources=tuple(plain(source) for source in run.sources) + (_RESULT_CONTRACT,),
+        )
+    reference_failures: list[dict[str, object]] = []
 
-    snapshot = discover_fact_candidates(root, project_id, common_dir, schemas)
+    def resolved_filter_refs(
+        values: tuple[StableFactReference, ...],
+        field_path: str,
+    ) -> tuple[StableFactReference, ...]:
+        resolved: list[StableFactReference] = []
+        for value in values:
+            authority, _entry, status = _resolve_authority_reference(configuration_index, value)
+            if authority is None:
+                reference_failures.append(
+                    {
+                        "fact_ref": value.to_json(),
+                        "canonical_path": None,
+                        "check_status": "invalid" if status in {"duplicate", "invalid"} else status,
+                        "issues": [
+                            {
+                                "category": "reference",
+                                "field_path": field_path,
+                                "summary": f"引用解析状态为 {status}",
+                            }
+                        ],
+                    }
+                )
+            else:
+                resolved.append(authority)
+        return tuple(resolved)
+
+    filter_domain = replace(
+        domain,
+        exact_refs=resolved_filter_refs(domain.exact_refs, "exact_refs"),
+        relation_targets=resolved_filter_refs(domain.relation_targets, "relation_targets"),
+    )
+    if domain.current_workcase_ref is not None:
+        _authority, current_entry, current_status = _resolve_authority_reference(
+            configuration_index, domain.current_workcase_ref
+        )
+        if current_entry is not None and current_entry.fact_type_key != "workcase":
+            raise OperationRequestError(
+                ("arguments.current_workcase_ref 解析后的类型必须为 workcase",),
+                sources=(_INPUT_CONTRACT,),
+            )
+        if current_entry is None:
+            reference_failures.append(
+                {
+                    "fact_ref": domain.current_workcase_ref.to_json(),
+                    "canonical_path": None,
+                    "check_status": "invalid" if current_status in {"duplicate", "invalid"} else current_status,
+                    "issues": [{"category": "reference", "field_path": "current_workcase_ref", "summary": f"引用解析状态为 {current_status}"}],
+                }
+            )
+    selected_index = next(
+        (
+            candidate_index
+            for candidate_project_id, _candidate_root, _candidate_common, candidate_index
+            in configuration_index.project_indexes
+            if candidate_project_id == project_id
+        ),
+        None,
+    )
+    if selected_index is None:
+        return OperationExecution(
+            outcome="unavailable",
+            summary="请求项目未形成配置级事实索引",
+            requested_scope=requested,
+            not_completed_scope=requested,
+            governance_resolution=governance_json,
+            sources=tuple(plain(source) for source in run.sources) + (_RESULT_CONTRACT,),
+        )
+    snapshot = discover_fact_candidates(root, project_id, common_dir, schemas, index=selected_index)
     structural = list(snapshot.structural_problems)
     reads = [
         (fact_type, object_id, snapshot.index.cache[(fact_type, object_id)]) for fact_type, object_id in snapshot.keys
@@ -706,7 +979,7 @@ def _execute(
         _problem_item(project_id, fact_type, object_id, read)
         for fact_type, object_id, read in reads
         if read.check_status == "invalid"
-    ]
+    ] + reference_failures
     unavailable = [
         _problem_item(project_id, fact_type, object_id, read)
         for fact_type, object_id, read in reads
@@ -721,22 +994,21 @@ def _execute(
     ]
     source_results: list[dict[str, object]] = []
     all_edges: list[dict[str, object]] = []
-    edge_card_reads: dict[tuple[str, str], FactReadResult] = {}
+    edge_card_reads: dict[tuple[object, ...], tuple[str, Path, str, FactReadResult]] = {}
     cards: list[dict[str, object]] = []
     if domain.relation_source_refs:
         source_results, all_edges, edge_card_reads = _source_navigation(
-            domain,
+            filter_domain,
             project_id=project_id,
-            root=root,
-            index=snapshot.index,
+            configuration_index=configuration_index,
         )
     else:
         for fact_type, _, read in valid:
             assert read.fields is not None
-            reasons = _reasons(domain, read.fields)
+            reasons = _reasons(filter_domain, read.fields, configuration_index)
             if reasons is not None:
                 cards.append(_card(domain, project_id, root, fact_type, read, reasons))
-        cards.sort(key=lambda item: (item["fact_ref"]["fact_type_key"], item["fact_ref"]["object_id"]))  # type: ignore[index]
+        cards.sort(key=lambda item: _ref_sort_key(item.get("fact_ref")))
 
     query_fingerprint = _query_fingerprint(domain, root, common_dir)
     paginated = all_edges if domain.relation_source_refs else cards
@@ -762,16 +1034,25 @@ def _execute(
     page_members = paginated[offset : offset + domain.page_size]
     if domain.relation_source_refs:
         page_edges = page_members
-        page_card_reasons: dict[tuple[str, str], list[dict[str, object]]] = {}
+        page_card_reasons: dict[tuple[object, ...], list[dict[str, object]]] = {}
         for edge in page_edges:
             if edge["edge_status"] != "returned":
                 continue
             target = edge["target_ref"]
             assert isinstance(target, dict)
-            identity = (str(target["fact_type_key"]), str(target["object_id"]))
-            read = edge_card_reads[identity]
+            identity = (
+                ("uid", str(target["object_uid"]))
+                if isinstance(target.get("object_uid"), str)
+                else (
+                    "legacy",
+                    str(target["governed_project_id"]),
+                    str(target["fact_type_key"]),
+                    str(target["object_id"]),
+                )
+            )
+            _card_project, _card_root, _card_type, read = edge_card_reads[identity]
             assert read.fields is not None
-            _, matched = _source_filter_reasons(domain, read.fields)
+            _, matched = _source_filter_reasons(filter_domain, read.fields, configuration_index)
             reasons = page_card_reasons.setdefault(identity, [])
             for reason in [
                 *matched,
@@ -780,11 +1061,11 @@ def _execute(
                 if reason not in reasons:
                     reasons.append(reason)
         cards = [
-            _card(domain, project_id, root, fact_type_key, edge_card_reads[identity], reasons)
+            _card(domain, card_project_id, card_root, fact_type_key, read, reasons)
             for identity, reasons in page_card_reasons.items()
-            for fact_type_key in (identity[0],)
+            for card_project_id, card_root, fact_type_key, read in (edge_card_reads[identity],)
         ]
-        cards.sort(key=lambda item: (item["fact_ref"]["fact_type_key"], item["fact_ref"]["object_id"]))  # type: ignore[index]
+        cards.sort(key=lambda item: _ref_sort_key(item.get("fact_ref")))
     else:
         page_edges = []
         cards = page_members
@@ -855,20 +1136,13 @@ def _execute(
             },
         )
     incomplete_types = {
-        item["fact_ref"]["fact_type_key"] for item in [*invalid, *unavailable] if isinstance(item.get("fact_ref"), dict)
+        item["fact_ref"]["fact_type_key"]
+        for item in [*invalid, *unavailable]
+        if isinstance(item.get("fact_ref"), dict) and isinstance(item["fact_ref"].get("fact_type_key"), str)
     }
     incomplete_types.update(item["fact_type_key"] for item in structural if isinstance(item.get("fact_type_key"), str))
-    incomplete_types.update(
-        str(item["source_ref"]["fact_type_key"])
-        for item in incomplete_sources
-        if isinstance(item.get("source_ref"), dict)
-    )
-    incomplete_types.update(
-        str(edge["target_ref"]["fact_type_key"])
-        for edge in failed_edges
-        if isinstance(edge.get("target_ref"), dict)
-        and any(str(reason).startswith("target-") for reason in edge["reasons"])
-    )
+    if incomplete_sources or failed_edges:
+        incomplete_types.update(domain.fact_type_keys)
     completed_scope = tuple(scope for scope in requested if scope["fact_type_key"] not in incomplete_types)
     not_completed_scope = tuple(scope for scope in requested if scope["fact_type_key"] in incomplete_types)
     return OperationExecution(

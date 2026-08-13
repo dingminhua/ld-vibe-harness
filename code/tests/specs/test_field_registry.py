@@ -17,7 +17,7 @@ def test_current_registry_is_complete_and_resolves_all_current_types(current_spe
 
     assert inspection.complete is True
     assert len(inspection.structures) == 24
-    assert len(inspection.registrations) == 189
+    assert len(inspection.registrations) == 192
     assert {item.fact_type_key for item in inspection.fact_types} == {
         "spark",
         "workcase",

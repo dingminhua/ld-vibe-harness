@@ -8,7 +8,9 @@ from pathlib import Path
 from typing import Any
 
 from ldvh.facts.candidate_discovery import discover_fact_candidates
+from ldvh.facts.configuration_index import ConfigurationFactIndex
 from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.identity import canonical_object_uid
 from ldvh.governance.models import ObjectStatus
 from ldvh.governance.resolver import GovernanceResolutionRun
 from ldvh.helper.operation_runtime import OperationExecution
@@ -50,12 +52,41 @@ def reading_boundary(run: GovernanceResolutionRun) -> tuple[str, Path, Path] | N
     )
 
 
+def configuration_reading_boundaries(
+    run: GovernanceResolutionRun,
+) -> tuple[tuple[str, Path, Path], ...] | None:
+    """Return every validated project in the one selected configuration."""
+
+    if run.result is None or run.technical_non_completions or len(run.completed_scope) != len(run.requested_scope):
+        return None
+    candidates = run.result.registered_project_candidates
+    if not candidates:
+        return None
+    selected = reading_boundary(run)
+    boundaries: list[tuple[str, Path, Path]] = []
+    for candidate in candidates:
+        if selected is not None and candidate.governed_project_id == selected[0]:
+            boundaries.append(selected)
+            continue
+        if candidate.git_worktree_root is None or candidate.git_common_dir is None:
+            return None
+        boundaries.append(
+            (
+                candidate.governed_project_id,
+                Path(candidate.git_worktree_root),
+                Path(candidate.git_common_dir),
+            )
+        )
+    return tuple(boundaries)
+
+
 def post_write_integrity_audit(
     execution: OperationExecution,
     *,
     boundary: Any,
     schemas: dict[str, Any],
     audit_contract: dict[str, Any],
+    configuration_boundaries: tuple[tuple[str, Path, Path], ...] | None = None,
 ) -> OperationExecution:
     """Attach the independent whole-library audit required after a fact write.
 
@@ -68,13 +99,38 @@ def post_write_integrity_audit(
         status = "unavailable"
         problems: list[dict[str, Any]] = [{"summary": "当前规则源不能形成五类型完整派生 Schema"}]
     else:
-        snapshot = discover_fact_candidates(
-            boundary.worktree_root,
-            boundary.governed_project_id,
-            boundary.git_common_dir,
-            schemas,
+        boundaries = configuration_boundaries or (
+            (boundary.governed_project_id, boundary.worktree_root, boundary.git_common_dir),
         )
-        status, problems = assess_fact_snapshot(snapshot)
+        configuration_index = ConfigurationFactIndex(boundaries, schemas)
+        if not configuration_index.prepare():
+            status = "unavailable"
+            problems = [{"summary": "配置级 UID 全扫描未能完整形成"}]
+        else:
+            snapshots = tuple(
+                discover_fact_candidates(root, project_id, common_dir, schemas, index=index)
+                for project_id, root, common_dir, index in configuration_index.project_indexes
+            )
+            assessed = tuple(assess_fact_snapshot(snapshot) for snapshot in snapshots)
+            status = (
+                "unavailable"
+                if any(item_status == "unavailable" for item_status, _ in assessed)
+                else "partial"
+                if any(item_status != "complete" for item_status, _ in assessed)
+                else "complete"
+            )
+            problems = [problem for _item_status, item_problems in assessed for problem in item_problems]
+            uid_counts: dict[str, int] = {}
+            for snapshot in snapshots:
+                for key in snapshot.keys:
+                    read = snapshot.index.cache[key]
+                    object_uid = canonical_object_uid(None if read.fields is None else read.fields.get("object_uid"))
+                    if object_uid is not None:
+                        uid_counts[object_uid] = uid_counts.get(object_uid, 0) + 1
+            duplicates = sorted(uid for uid, count in uid_counts.items() if count > 1)
+            if duplicates and status == "complete":
+                status = "partial"
+            problems.extend({"summary": f"object_uid 在当前选定管辖配置中重复: {uid}"} for uid in duplicates)
 
     audit = {
         "check": "事实写入后的独立全库机械完整性审计",
@@ -103,4 +159,4 @@ def post_write_integrity_audit(
     )
 
 
-__all__ = ["plain", "post_write_integrity_audit", "reading_boundary"]
+__all__ = ["configuration_reading_boundaries", "plain", "post_write_integrity_audit", "reading_boundary"]

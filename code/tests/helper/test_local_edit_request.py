@@ -84,6 +84,26 @@ def test_parses_study_target_with_fixed_body_heading() -> None:
     assert parsed.request.study.fact_ref.object_id == "study-0001"
 
 
+def test_parses_study_uid_target_without_guessing_type_or_path() -> None:
+    uid = "0198f1c7-8a2b-7c3d-9e4f-123456789abc"
+    parsed = parse_local_edit_request(
+        _request(
+            {
+                "source_kind": "study",
+                "fact_ref": {"object_uid": uid},
+                "body_heading": "建议",
+            },
+            locators=("/project",),
+        ),
+        OperationExecutionContext(Path("/project")),
+    )
+
+    assert parsed.problems == ()
+    assert parsed.request is not None
+    assert parsed.request.study is not None
+    assert parsed.request.study.fact_ref.to_json() == {"object_uid": uid}
+
+
 @pytest.mark.parametrize(
     "arguments",
     (

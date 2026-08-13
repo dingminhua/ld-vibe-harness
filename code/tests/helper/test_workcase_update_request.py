@@ -253,7 +253,7 @@ def test_retired_delta_arguments_are_unknown(parser: Parser, arguments: dict[str
     assert any("arguments 包含未知字段" in problem for problem in parsed.problems)
 
 
-@pytest.mark.parametrize("field", ("object_id", "fact_type_key", "created_at", "updated_at"))
+@pytest.mark.parametrize("field", ("object_uid", "object_id", "fact_type_key", "created_at", "updated_at"))
 def test_complete_after_rejects_code_managed_fields(field: str) -> None:
     parsed = _parse(
         parse_update_workcase_request,

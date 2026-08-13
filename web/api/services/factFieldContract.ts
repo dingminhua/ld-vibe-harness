@@ -19,6 +19,7 @@ export type FactFieldContract = Readonly<Record<string, Readonly<{
 const field = (fieldKey: string, expected: FieldExpectation, required: boolean) => ({ fieldKey, expected, required })
 
 const common = {
+  object_uid: field('object-uid', 'string', false),
   object_id: field('object-id', 'string', true),
   fact_type_key: field('fact-type-key', 'string', true),
   title: field('title', 'string', true),

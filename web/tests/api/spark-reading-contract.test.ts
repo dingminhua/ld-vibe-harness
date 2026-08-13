@@ -18,11 +18,11 @@ test('every fact list card shows exact-read formal associations in a minimal sec
   assert.match(source, /dedupeFactCardAssociations\(associations\)/);
   assert.match(source, /visibleAssociations\.map/);
   assert.match(source, /whitespace-normal break-words/);
-  assert.match(source, /openPanel\(\{ type: 'object', title, objectType: target\.factTypeKey, objectId: target\.objectId \}\)/);
+  assert.match(source, /openPanel\(\{ type: 'object', title, objectType: legacyTarget\.factTypeKey, objectId: legacyTarget\.objectId \}\)/);
   assert.doesNotMatch(source, /StatusBadge status=\{association\.status\}/);
   assert.match(source, /function isDiscardedWorkCaseAssociation/);
   assert.match(source, /function getFactAssociationState/);
-  assert.match(source, /association\.target\?\.factTypeKey === 'spark'/);
+  assert.match(source, /targetType === 'spark'/);
   assert.match(source, /association\.status === 'open'\) return 'pending'/);
   assert.match(source, /association\.progressGroup === 'plan_confirmation' \|\| association\.progressGroup === 'closure_confirmation'/);
   assert.match(source, /<FactAssociationStateIcon state=\{associationState\} tooltip=\{associationStateTooltip\} \/>/);

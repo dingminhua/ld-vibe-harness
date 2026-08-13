@@ -49,6 +49,8 @@ type CognitionIssue = { section: string; code: string; message: string; object_r
 
 /** 决定依据投影中属于对象身份的字段，不重复收入 card。 */
 const IDENTITY_PROJECTION_KEYS = new Set([
+  'object_uid',
+  'short_ref',
   'object_id',
   'fact_type_key',
   'title',
@@ -71,6 +73,8 @@ interface InboxBuildItem {
   type: InboxObjectType
   inboxKind: InboxKind
   object_id: string
+  object_uid?: string
+  short_ref?: string
   title: string
   title_en?: string
   title_zh?: string
@@ -93,6 +97,8 @@ interface ActiveWorkCaseBuildItem {
   lifecycle_position: ResolvedWorkCasePresentationProjection['lifecycle_position']
   blocking_overlay: boolean
   object_id: string
+  object_uid?: string
+  short_ref?: string
   title: string
   title_en?: string
   title_zh?: string
@@ -108,6 +114,8 @@ interface ActiveWorkCaseBuildItem {
 interface RecentActivityBuildItem {
   type: ObjectType
   object_id: string
+  object_uid?: string
+  short_ref?: string
   title: string
   title_en?: string
   title_zh?: string
@@ -135,6 +143,8 @@ interface RecentActivityAttributionUsage {
 
 interface SparkHealthBuildItem {
   object_id: string
+  object_uid?: string
+  short_ref?: string
   title: string
   title_en?: string
   title_zh?: string
@@ -158,6 +168,8 @@ interface FactChangeSignature {
 export interface RecentHotspotBuildItem {
   type: ObjectType
   object_id: string
+  object_uid?: string
+  short_ref?: string
   title: string
   title_en?: string
   title_zh?: string
@@ -205,8 +217,10 @@ function canonicalPath(type: InboxObjectType, objectId: string): string {
   return `ldvh-base/${type === 'workcase' ? 'workcases' : 'pitfalls'}/${objectId}.yaml`
 }
 
-function factKey(type: string, objectId: string): string {
-  return `${type}:${objectId}`
+function factKey(type: string, objectId: string, objectUid?: string): string {
+  return objectUid && /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(objectUid)
+    ? `uid:${objectUid}`
+    : `legacy:${type}:${objectId}`
 }
 
 function deriveInboxKind(projection: ResolvedWorkCasePresentationProjection): InboxKind | null {
@@ -294,6 +308,8 @@ function buildRecentActivityItem(
   return {
     type,
     object_id,
+    ...(typeof raw.object_uid === 'string' ? { object_uid: raw.object_uid } : {}),
+    ...(typeof raw.short_ref === 'string' ? { short_ref: raw.short_ref } : {}),
     title: String(raw.title ?? object_id),
     ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
     ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
@@ -392,9 +408,20 @@ export function buildRecentActivityView(builds: RecentActivityBuildItem[]): {
   const byObject = new Map<string, RecentActivityObjectItem>()
   const models = new Map<string, number>()
   const environments = new Map<string, number>()
+  const uidObjects = new Map<string, Set<string>>()
+  for (const build of builds) {
+    if (!build.object_uid) continue
+    const legacyKey = `${build.type}:${build.object_id}`
+    const identities = uidObjects.get(build.object_uid) ?? new Set<string>()
+    identities.add(legacyKey)
+    uidObjects.set(build.object_uid, identities)
+  }
 
   for (const build of builds) {
-    const key = `${build.type}:${build.object_id}`
+    const uniqueUid = build.object_uid && uidObjects.get(build.object_uid)?.size === 1
+      ? build.object_uid
+      : undefined
+    const key = factKey(build.type, build.object_id, uniqueUid)
     const existing = byObject.get(key)
     if (!existing) {
       byObject.set(key, { ...build, activity_count: 1 })
@@ -476,6 +503,8 @@ export function buildSparkHealth(rawItems: Array<Record<string, unknown>>, obser
     const signature = getLatestFactChangeSignature(raw.change_log)
     const item: SparkHealthBuildItem = {
       object_id: String(raw.object_id ?? ''),
+      ...(typeof raw.object_uid === 'string' ? { object_uid: raw.object_uid } : {}),
+      ...(typeof raw.short_ref === 'string' ? { short_ref: raw.short_ref } : {}),
       title: String(raw.title ?? raw.object_id ?? ''),
       ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
       ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
@@ -600,14 +629,32 @@ export function buildRecentHotspots(
   activityByFact: Map<string, RecentHotspotRef[]>,
   governedProjectId: string,
 ) {
-  const byKey = new Map(facts.map((item) => [factKey(item.type, item.object_id), item]))
+  const uidCounts = new Map<string, number>()
+  for (const item of facts) {
+    if (item.object_uid) uidCounts.set(item.object_uid, (uidCounts.get(item.object_uid) ?? 0) + 1)
+  }
+  const nodeKey = (item: RecentHotspotBuildItem) => factKey(
+    item.type,
+    item.object_id,
+    item.object_uid && uidCounts.get(item.object_uid) === 1 ? item.object_uid : undefined,
+  )
+  const byKey = new Map(facts.map((item) => [nodeKey(item), item]))
+  const byLegacyKey = new Map<string, string | null>()
+  for (const item of facts) {
+    const legacyKey = factKey(item.type, item.object_id)
+    const authorityKey = nodeKey(item)
+    if (!byLegacyKey.has(legacyKey)) byLegacyKey.set(legacyKey, authorityKey)
+    else if (byLegacyKey.get(legacyKey) !== authorityKey) byLegacyKey.set(legacyKey, null)
+  }
+  const activityKey = (key: string) => byKey.has(key) ? key : (byLegacyKey.get(`legacy:${key}`) ?? undefined)
   const hotspots = new Set([...activityByFact.entries()]
     .filter(([, refs]) => refs.length > 0)
-    .map(([key]) => key)
+    .map(([key]) => activityKey(key))
+    .filter((key): key is string => typeof key === 'string')
     .filter((key) => byKey.has(key)))
   const edges = new Map<string, RecentHotspotEdge>()
   for (const source of facts) {
-    const sourceKey = factKey(source.type, source.object_id)
+    const sourceKey = nodeKey(source)
     if (!Array.isArray(source.relations)) continue
     for (const relation of source.relations) {
       if (!relation || typeof relation !== 'object' || Array.isArray(relation)) continue
@@ -615,10 +662,23 @@ export function buildRecentHotspots(
       const target = record.target
       if (typeof record.relation_key !== 'string' || !target || typeof target !== 'object' || Array.isArray(target)) continue
       const targetRecord = target as Record<string, unknown>
-      if (targetRecord.governed_project_id !== governedProjectId
-        || typeof targetRecord.fact_type_key !== 'string'
-        || typeof targetRecord.object_id !== 'string') continue
-      const targetKey = factKey(targetRecord.fact_type_key, targetRecord.object_id)
+      const targetFields = new Set(Object.keys(targetRecord))
+      let targetKey: string | undefined
+      if (targetFields.size === 1 && targetFields.has('object_uid')
+        && typeof targetRecord.object_uid === 'string'
+        && uidCounts.get(targetRecord.object_uid) === 1
+        && factKey('', '', targetRecord.object_uid).startsWith('uid:')) targetKey = `uid:${targetRecord.object_uid}`
+      else {
+        if (targetFields.size !== 3
+          || !targetFields.has('governed_project_id')
+          || !targetFields.has('fact_type_key')
+          || !targetFields.has('object_id')
+          || targetRecord.governed_project_id !== governedProjectId
+          || typeof targetRecord.fact_type_key !== 'string'
+          || typeof targetRecord.object_id !== 'string') continue
+        targetKey = byLegacyKey.get(factKey(targetRecord.fact_type_key, targetRecord.object_id)) ?? undefined
+      }
+      if (!targetKey) continue
       const targetFact = byKey.get(targetKey)
       if (!targetFact || targetKey === sourceKey || (!hotspots.has(sourceKey) && !hotspots.has(targetKey))) continue
       if (!isDisplayableFormalRelation(source, targetFact, record.relation_key)) continue
@@ -631,10 +691,14 @@ export function buildRecentHotspots(
   const makeNode = (key: string): RecentHotspotNode => {
     const item = byKey.get(key)
     if (!item) throw new Error(`Recent hotspot fact not found: ${key}`)
-    const refs = [...(activityByFact.get(key) ?? [])].sort(compareRecentHotspotRef)
+    const legacyActivityKey = `${item.type}:${item.object_id}`
+    const refs = [...(activityByFact.get(key) ?? activityByFact.get(legacyActivityKey) ?? [])]
+      .sort(compareRecentHotspotRef)
     return {
       type: item.type,
       id: item.object_id,
+      ...(item.object_uid !== undefined ? { object_uid: item.object_uid } : {}),
+      ...(item.short_ref !== undefined ? { short_ref: item.short_ref } : {}),
       title: item.title,
       ...(item.title_en !== undefined ? { title_en: item.title_en } : {}),
       ...(item.title_zh !== undefined ? { title_zh: item.title_zh } : {}),
@@ -731,6 +795,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
             lifecycle_position: progress.lifecycle_position,
             blocking_overlay: progress.blocking_overlay,
             object_id, title: String(raw.title ?? object_id),
+            ...(typeof raw.object_uid === 'string' ? { object_uid: raw.object_uid } : {}),
+            ...(typeof raw.short_ref === 'string' ? { short_ref: raw.short_ref } : {}),
             ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
             ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
             priority: typeof raw.priority === 'string' ? raw.priority : undefined,
@@ -749,6 +815,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
           lifecycle_position: progress.lifecycle_position,
           blocking_overlay: progress.blocking_overlay,
           object_id, title: String(raw.title ?? object_id),
+          ...(typeof raw.object_uid === 'string' ? { object_uid: raw.object_uid } : {}),
+          ...(typeof raw.short_ref === 'string' ? { short_ref: raw.short_ref } : {}),
           ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
           ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
           priority: typeof raw.priority === 'string' ? raw.priority : undefined,
@@ -772,6 +840,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         const object_id = String(raw.object_id ?? '')
         builds.push({
           type: 'pitfall', inboxKind: 'pitfall_confirmation', object_id, title: String(raw.title ?? object_id),
+          ...(typeof raw.object_uid === 'string' ? { object_uid: raw.object_uid } : {}),
+          ...(typeof raw.short_ref === 'string' ? { short_ref: raw.short_ref } : {}),
           ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
           ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
           updated_at: typeof raw.updated_at === 'string' ? raw.updated_at : undefined,
@@ -829,7 +899,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
           if (!projected) continue
           graphFacts.push(projected)
           activityByFact.set(
-            factKey(projected.type, projected.object_id),
+            factKey(projected.type, projected.object_id, projected.object_uid),
             buildFactActivityItems(item.fact_object ?? {}, type, hotspotStart, parseTimestamp(generatedAt)).map((activity) => ({
               occurred_at: activity.occurred_at,
               activity: activity.activity,
@@ -856,6 +926,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       const entry: Record<string, unknown> = {
         type: build.type,
         id: build.object_id,
+        ...(build.object_uid ? { object_uid: build.object_uid } : {}),
+        ...(build.short_ref ? { short_ref: build.short_ref } : {}),
         title: build.title,
         ...(build.title_en !== undefined ? { title_en: build.title_en } : {}),
         ...(build.title_zh !== undefined ? { title_zh: build.title_zh } : {}),
@@ -890,6 +962,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       const entry: Record<string, unknown> = {
         type: 'workcase',
         id: build.object_id,
+        ...(build.object_uid ? { object_uid: build.object_uid } : {}),
+        ...(build.short_ref ? { short_ref: build.short_ref } : {}),
         title: build.title,
         ...(build.title_en !== undefined ? { title_en: build.title_en } : {}),
         ...(build.title_zh !== undefined ? { title_zh: build.title_zh } : {}),
@@ -915,6 +989,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     const recentItems = recentActivityView.items.map((build) => ({
       type: build.type,
       id: build.object_id,
+      ...(build.object_uid ? { object_uid: build.object_uid } : {}),
+      ...(build.short_ref ? { short_ref: build.short_ref } : {}),
       title: build.title,
       ...(build.title_en !== undefined ? { title_en: build.title_en } : {}),
       ...(build.title_zh !== undefined ? { title_zh: build.title_zh } : {}),
@@ -968,6 +1044,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
           openItems: sparkHealth.openItems.map((item) => ({
             type: 'spark',
             id: item.object_id,
+            ...(item.object_uid ? { object_uid: item.object_uid } : {}),
+            ...(item.short_ref ? { short_ref: item.short_ref } : {}),
             title: item.title,
             ...(item.title_en !== undefined ? { title_en: item.title_en } : {}),
             ...(item.title_zh !== undefined ? { title_zh: item.title_zh } : {}),
@@ -983,6 +1061,8 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
           silentItems: sparkHealth.silentItems.map((item) => ({
             type: 'spark',
             id: item.object_id,
+            ...(item.object_uid ? { object_uid: item.object_uid } : {}),
+            ...(item.short_ref ? { short_ref: item.short_ref } : {}),
             title: item.title,
             ...(item.title_en !== undefined ? { title_en: item.title_en } : {}),
             ...(item.title_zh !== undefined ? { title_zh: item.title_zh } : {}),

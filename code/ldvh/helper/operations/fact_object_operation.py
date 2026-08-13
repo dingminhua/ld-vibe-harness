@@ -5,8 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from ldvh.facts.configuration_index import ConfigurationFactEntry, ConfigurationFactIndex
 from ldvh.facts.contracts import LAYOUTS
-from ldvh.facts.models import FactReferenceScope
+from ldvh.facts.models import FactReference, FactReferenceScope, UIDFactReference
 from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.relations import ProjectFactIndex
 from ldvh.facts.repository import FactReadResult, read_fact_object
@@ -26,7 +27,7 @@ from ldvh.helper.operations.fact_object_request import (
     FactObjectRequest,
     parse_fact_object_request,
 )
-from ldvh.helper.operations.fact_operation_support import plain, reading_boundary
+from ldvh.helper.operations.fact_operation_support import configuration_reading_boundaries, plain, reading_boundary
 from ldvh.helper.requests import CommonRequest
 from ldvh.helper.responses import source_reference
 from ldvh.specs.repository import RepositoryInspection
@@ -64,9 +65,9 @@ def _scope_json(scope: FactReferenceScope) -> dict[str, object]:
     return scope.to_json()
 
 
-def _item_sources(root: Path, scope: FactReferenceScope, canonical_path: str) -> list[dict[str, Any]]:
+def _item_sources(root: Path, fact_type_key: str, canonical_path: str) -> list[dict[str, Any]]:
     return [
-        source_reference("rule", _TYPE_SOURCES[scope.requested_ref.fact_type_key]),
+        source_reference("rule", _TYPE_SOURCES[fact_type_key]),
         {
             "kind": "working_tree",
             "locator": (root / canonical_path).as_posix(),
@@ -76,8 +77,13 @@ def _item_sources(root: Path, scope: FactReferenceScope, canonical_path: str) ->
     ]
 
 
-def _item(scope: FactReferenceScope, root: Path, read: FactReadResult) -> dict[str, Any]:
-    sources = _item_sources(root, scope, read.canonical_path)
+def _item(
+    scope: FactReferenceScope,
+    root: Path,
+    fact_type_key: str,
+    read: FactReadResult,
+) -> dict[str, Any]:
+    sources = _item_sources(root, fact_type_key, read.canonical_path)
     fact_object: dict[str, Any] | None = None
     if read.fields is not None and (
         read.check_status == "mechanically_valid" or read.content_fingerprint is not None
@@ -88,6 +94,19 @@ def _item(scope: FactReferenceScope, root: Path, read: FactReadResult) -> dict[s
     item = {
         "fact_ref_index": scope.fact_ref_index,
         "requested_ref": scope.requested_ref.to_json(),
+        "resolved_ref": (
+            {"object_uid": read.fields["object_uid"]}
+            if read.fields is not None and isinstance(read.fields.get("object_uid"), str)
+            else (
+                {
+                    "governed_project_id": scope.requested_ref.governed_project_id,
+                    "fact_type_key": fact_type_key,
+                    "object_id": read.fields["object_id"],
+                }
+                if isinstance(scope.requested_ref, FactReference) and read.fields is not None
+                else None
+            )
+        ),
         "canonical_path": read.canonical_path,
         "carrier": read.carrier,
         "check_status": read.check_status,
@@ -106,7 +125,7 @@ def _item(scope: FactReferenceScope, root: Path, read: FactReadResult) -> dict[s
         "source_refs": sources,
     }
     if (
-        scope.requested_ref.fact_type_key == "workcase"
+        fact_type_key == "workcase"
         and read.check_status == "mechanically_valid"
         and fact_object is not None
         and read.content_fingerprint is not None
@@ -117,6 +136,29 @@ def _item(scope: FactReferenceScope, root: Path, read: FactReadResult) -> dict[s
             read.content_fingerprint,
         )
     return item
+
+
+def _unresolved_uid_item(scope: FactReferenceScope, status: str) -> dict[str, Any]:
+    summary = {
+        "not_found": "当前选定管辖配置中不存在该 object_uid",
+        "duplicate": "object_uid 在当前选定管辖配置中重复，不能唯一解析",
+        "unavailable": "未能完整扫描当前选定管辖配置中的 object_uid",
+        "invalid": "object_uid 不是 canonical 小写 UUIDv7",
+    }.get(status, "object_uid 未能唯一解析")
+    check_status = "not_found" if status == "not_found" else "invalid" if status == "duplicate" else "unavailable"
+    return {
+        "fact_ref_index": scope.fact_ref_index,
+        "requested_ref": scope.requested_ref.to_json(),
+        "resolved_ref": None,
+        "canonical_path": None,
+        "carrier": None,
+        "check_status": check_status,
+        "fact_object": None,
+        "content_fingerprint": None,
+        "current_snapshot_projection": None,
+        "issues": [{"category": "identity" if status == "duplicate" else "reference", "field_path": "requested_ref.object_uid", "summary": summary, "source_refs": []}],
+        "source_refs": [],
+    }
 
 
 def _boundary_gap(domain: FactObjectRequest, run: GovernanceResolutionRun) -> dict[str, Any]:
@@ -137,7 +179,8 @@ def _execute(
     requested = tuple(_scope_json(scope) for scope in domain.fact_scopes)
     governance_json = None if run.result is None else run.result.to_json()
     boundary = reading_boundary(run)
-    if boundary is None:
+    configuration_boundaries = configuration_reading_boundaries(run)
+    if boundary is None or configuration_boundaries is None:
         return OperationExecution(
             outcome="unavailable",
             summary="当前管辖结果不能形成唯一事实对象读取边界",
@@ -150,28 +193,50 @@ def _execute(
 
     project_id, root, common_dir = boundary
     schemas = project_fact_schemas(repository)
-    fact_index = ProjectFactIndex(root, project_id, schemas, common_dir)
-    first_pass: dict[int, FactReadResult] = {}
-    seed_keys: list[tuple[str, str]] = []
+    boundaries_by_project = {item[0]: item for item in configuration_boundaries}
+    project_indexes: dict[str, ProjectFactIndex] = {}
+    configuration_index = ConfigurationFactIndex(configuration_boundaries, schemas)
+    resolved: dict[int, tuple[Path, str, FactReadResult, ProjectFactIndex] | str] = {}
+    seed_keys: dict[int, list[tuple[str, str]]] = {}
     for scope in domain.fact_scopes:
         reference = scope.requested_ref
+        if isinstance(reference, UIDFactReference):
+            entry, status = configuration_index.resolve_uid(reference.object_uid)
+            if entry is None:
+                resolved[scope.fact_ref_index] = status
+                continue
+            resolved[scope.fact_ref_index] = (entry.root, entry.fact_type_key, entry.read, entry.project_index)
+            seed_keys.setdefault(id(entry.project_index), []).append((entry.fact_type_key, entry.object_id))
+            continue
+        target_boundary = boundaries_by_project.get(reference.governed_project_id)
         layout = LAYOUTS[reference.fact_type_key]
         schema = schemas.get(reference.fact_type_key)
-        if reference.governed_project_id != project_id or schema is None:
+        if target_boundary is None or schema is None:
+            resolved[scope.fact_ref_index] = "unavailable"
             continue
+        target_project_id, target_root, target_common_dir = target_boundary
+        index = project_indexes.setdefault(
+            target_project_id,
+            ProjectFactIndex(target_root, target_project_id, schemas, target_common_dir),
+        )
         read = read_fact_object(
-            root,
+            target_root,
             layout,
             schema,
             reference.object_id,
-            expected_common_dir=common_dir,
+            expected_common_dir=target_common_dir,
         )
-        first_pass[scope.fact_ref_index] = read
         key = (reference.fact_type_key, reference.object_id)
-        fact_index.cache[key] = read
-        fact_index.base_cache[key] = read
-        seed_keys.append(key)
-    stabilize_project_index(fact_index, seed_keys)
+        index.cache[key] = read
+        index.base_cache[key] = read
+        resolved[scope.fact_ref_index] = (target_root, reference.fact_type_key, read, index)
+        seed_keys.setdefault(id(index), []).append(key)
+    indexes = {id(index): index for index in project_indexes.values()}
+    for value in resolved.values():
+        if isinstance(value, tuple):
+            indexes[id(value[3])] = value[3]
+    for index_id, keys in seed_keys.items():
+        stabilize_project_index(indexes[index_id], keys)
 
     items: list[dict[str, Any]] = []
     completed: list[dict[str, object]] = []
@@ -179,53 +244,26 @@ def _execute(
     all_sources: list[dict[str, Any]] = []
     for scope in domain.fact_scopes:
         reference = scope.requested_ref
-        layout = LAYOUTS[reference.fact_type_key]
-        schema = schemas.get(reference.fact_type_key)
-        if reference.governed_project_id != project_id:
-            read = FactReadResult(
-                layout.canonical_path(reference.object_id),
-                layout.carrier,
-                "unavailable",
-                None,
-                None,
-                (),
-            )
-        elif schema is None:
-            read = FactReadResult(
-                layout.canonical_path(reference.object_id),
-                layout.carrier,
-                "unavailable",
-                None,
-                None,
-                (),
-            )
+        resolution = resolved.get(scope.fact_ref_index, "unavailable")
+        if isinstance(resolution, str):
+            item = _unresolved_uid_item(scope, resolution) if isinstance(reference, UIDFactReference) else {
+                **_unresolved_uid_item(scope, "unavailable"),
+                "issues": [{"category": "location", "field_path": "requested_ref.governed_project_id", "summary": "请求项目未形成当前配置中的实际 Working Tree", "source_refs": []}],
+            }
         else:
-            read = fact_index.cache.get(
-                (reference.fact_type_key, reference.object_id),
-                first_pass[scope.fact_ref_index],
+            item_root, fact_type_key, base_read, index = resolution
+            assert base_read.fields is None or isinstance(base_read.fields.get("object_id"), str)
+            key = (
+                fact_type_key,
+                str(base_read.fields["object_id"]) if base_read.fields is not None else (
+                    reference.object_id if isinstance(reference, FactReference) else ""
+                ),
             )
-        item = _item(scope, root, read)
-        if reference.governed_project_id != project_id:
-            item["issues"] = [
-                {
-                    "category": "location",
-                    "field_path": "requested_ref.governed_project_id",
-                    "summary": "请求项目与实际 Working Tree 的管辖项目不一致",
-                    "source_refs": item["source_refs"],
-                }
-            ]
-        elif schema is None:
-            item["issues"] = [
-                {
-                    "category": "schema",
-                    "field_path": None,
-                    "summary": "当前规则源未能形成该类型的完整派生 Schema",
-                    "source_refs": item["source_refs"],
-                }
-            ]
+            read = index.cache.get(key, base_read)
+            item = _item(scope, item_root, fact_type_key, read)
         items.append(item)
         all_sources.extend(item["source_refs"])
-        target = completed if read.check_status != "unavailable" else not_completed
+        target = completed if item["check_status"] != "unavailable" else not_completed
         target.append(_scope_json(scope))
 
     if completed and not_completed:

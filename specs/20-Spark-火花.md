@@ -104,6 +104,7 @@ AI 创建在写入前满足上述全部条件；既有对象的确定性候选�
 | field_key | presence | constraint_ref |
 |---|---|---|
 | `object-id` | required | `spark-fact-type::5. Spark 类型定义` |
+| `object-uid` | conditional | `spark-fact-type::5. Spark 类型定义` |
 | `fact-type-key` | required | `inherit` |
 | `title` | required | `spark-fact-type::5. Spark 类型定义` |
 | `created-at` | required | `inherit` |
@@ -129,7 +130,7 @@ AI 创建在写入前满足上述全部条件；既有对象的确定性候选�
 
 ### Schema 与对象载体
 
-Spark 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为管辖项目仓库中的 `ldvh-base/sparks/<object_id>.yaml`。`object_id` 必须匹配 `spark-[0-9]{4,}`；文件名必须与 `object_id` 完全一致，分配后的身份不得因短标题、路径、状态或内容改变。`title` 只用一句短语或问题标识核心议题，不承担创建原因、当前判断或处置结论；`intent` 回答为什么创建并保留该入口；`summary` 表达当前已经形成的语义快照。三者不得互相复制后冒充分工成立。未知或不适用的条件字段必须省略，不使用显式 `null`、空字符串、空数组、占位时间或默认关系。
+Spark 对象使用 UTF-8 YAML，一文件一对象，当前权威位置固定为管辖项目仓库中的 `ldvh-base/sparks/<object_id>.yaml`。`object_id` 必须匹配 `spark-[0-9]{4,}`且与文件名完全一致，只承担兼容定位和命名空间职责；具有 `object_uid` 时其权威身份、legacy 缺失兼容和不可变边界统一按 05 §7.3–§7.4，新建 Spark 必须由 Code 生成 UID。`title` 只用一句短语或问题标识核心议题，不承担创建原因、当前判断或处置结论；`intent` 回答为什么创建并保留该入口；`summary` 表达当前已经形成的语义快照。三者不得互相复制后冒充分工成立。未知或不适用的条件字段必须省略，不使用显式 `null`、空字符串、空数组、占位时间或默认关系。
 
 完整 Schema 由统一登记的 `fact-object` 直接字段、本节绑定、类型专属字段定义及 `value_structure` 递归组合。Spark 不得出现未登记字段，也不得向 retired 结构添加类型私有扩展；创建原因由 `intent` 据实提炼，当前内容由 `summary` 表达，二者不得互相冒充。本文没有授权附件，Schema、Code 常量和 test fixture 都只能从当前来源派生。
 
@@ -201,7 +202,7 @@ Web 不创建 Spark。Spark 只可依 31 的受控创建行动形成，并由类
 
 ### 主动召回与消费时机
 
-Spark 在当前行动进入新主题、准备结束或交还、准备创建新事实对象，或当前输入命中已知关系或未处置议题时产生召回机会。F2 Spark 候选卡只直接投影 `object_id`、`title`、`status`、`priority` 和 `updated_at`，并按 05 的统一候选契约携带从命中的 `intent` 或完整 `summary` 形成的有界确定性摘录、原字段路径及其完整/截断标记；摘录不是事实字段、AI 摘要或第二权威。旧对象缺失 `intent` 时只能从实际存在的 `summary` 召回，不得为了候选卡补造创建原因。默认候选只包含与当前主题可能相关的 `open` Spark，`priority` 只影响这些候选的比较顺序，不能单独证明相关或要求当次处置。上下文压缩后只恢复当次已判断相关且仍未承接的 `open` Spark 卡片，不全量注入全部 `open` Spark；任何需要判断对象语义、边界或剩余问题的消费都必须按稳定引用展开 F3 完整对象。
+Spark 在当前行动进入新主题、准备结束或交还、准备创建新事实对象，或当前输入命中已知关系或未处置议题时产生召回机会。F2 Spark 候选卡只直接投影条件出现的 `object_uid`、以及 `object_id`、`title`、`status`、`priority` 和 `updated_at`，并按 05 的统一候选契约携带从命中的 `intent` 或完整 `summary` 形成的有界确定性摘录、原字段路径及其完整/截断标记；摘录不是事实字段、AI 摘要或第二权威。旧对象缺失 `intent` 或 `object_uid` 时只投影实际存在字段，不得补造。默认候选只包含与当前主题可能相关的 `open` Spark，`priority` 只影响这些候选的比较顺序，不能单独证明相关或要求当次处置。上下文压缩后只恢复当次已判断相关且仍未承接的 `open` Spark 卡片，不全量注入全部 `open` Spark；任何需要判断对象语义、边界或剩余问题的消费都必须按稳定引用展开 F3 完整对象。
 
 `implemented` 和 `discarded` Spark 不进入普通未处置候选；18 个历史 routed Spark 只在当前输入精确引用或需要追溯历史基线时以 legacy/read-only 对象展开。AI 展开候选后必须重新比较当前主题、摘要和处置状态；Spark 被召回不表示应创建 WorkCase、恢复旧议题或提高其优先级。
 

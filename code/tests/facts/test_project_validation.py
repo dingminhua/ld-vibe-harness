@@ -12,6 +12,8 @@ from ldvh.facts.repository import FactReadResult
 from ldvh.facts.schema import FactSchema
 
 _PROJECT = "sample"
+_UID_A = "0198f1c7-8a2b-7c3d-9e4f-123456789abc"
+_UID_B = "0198f1c7-8a2b-7c3d-9e4f-123456789abd"
 
 
 def _target(fact_type_key: str, object_id: str) -> dict[str, str]:
@@ -29,6 +31,26 @@ def _relation(relation_key: str, fact_type_key: str, object_id: str) -> dict[str
     }
 
 
+def test_configuration_uid_target_in_another_project_is_not_folded_into_local_graph() -> None:
+    source = _read(
+        "study",
+        "study-0001",
+        "active",
+        object_uid=_UID_A,
+        relations=[{"relation_key": "informs", "target": {"object_uid": _UID_B}}],
+    )
+    remote = _read("workcase", "workcase-0002", "open", phase="executing", object_uid=_UID_B)
+    index = _IncompleteScanIndex(source)
+    index.configuration_uid_resolver = lambda object_uid: (
+        ("other", "workcase", "workcase-0002", remote),
+        "resolved",
+    )
+
+    stabilize_project_index(index, (("study", "study-0001"),))
+
+    assert index.cache[("study", "study-0001")].check_status == "mechanically_valid"
+
+
 def _read(
     fact_type_key: str,
     object_id: str,
@@ -36,6 +58,7 @@ def _read(
     *,
     phase: str | None = None,
     relations: list[dict[str, object]] | None = None,
+    object_uid: str | None = None,
 ) -> FactReadResult:
     fields: dict[str, object] = {
         "object_id": object_id,
@@ -47,6 +70,8 @@ def _read(
         fields["phase"] = phase
     if relations is not None:
         fields["relations"] = relations
+    if object_uid is not None:
+        fields["object_uid"] = object_uid
     return FactReadResult(
         LAYOUTS[fact_type_key].canonical_path(object_id),
         LAYOUTS[fact_type_key].carrier,
@@ -112,6 +137,21 @@ class _IncompleteScanIndex:
         self.read(fact_type_key, object_id)
         return self.base_cache.get((fact_type_key, object_id))
 
+    def resolve_uid(self, object_uid: str) -> tuple[FactReadResult | None, str]:
+        matches = [
+            read
+            for read in self.storage.values()
+            if read.fields is not None and read.fields.get("object_uid") == object_uid
+        ]
+        for read in self.cache.values():
+            if read.fields is not None and read.fields.get("object_uid") == object_uid and read not in matches:
+                matches.append(read)
+        if len(matches) > 1:
+            return None, "duplicate"
+        if not matches:
+            return None, "not_found"
+        return matches[0], "resolved"
+
     def scan_valid_objects(
         self,
         fact_type_key: str,
@@ -162,6 +202,42 @@ def test_fixed_point_absorbs_recursive_targets_across_relation_keys_when_scans_a
     assert index.cache[("study", "study-0001")].check_status == "invalid"
     assert index.cache[("workcase", "workcase-0002")].check_status == "not_found"
     assert index.scan_calls == 0
+
+
+def test_fixed_point_follows_uid_targets_and_propagates_invalidity() -> None:
+    candidate = _read(
+        "study",
+        "study-0001",
+        "active",
+        object_uid=_UID_A,
+        relations=[{"relation_key": "informs", "target": {"object_uid": _UID_B}}],
+    )
+    workcase = _read(
+        "workcase",
+        "workcase-0001",
+        "open",
+        phase="executing",
+        object_uid=_UID_B,
+        relations=[_relation("depends-on", "workcase", "workcase-0002")],
+    )
+    index = _IncompleteScanIndex(candidate, workcase)
+
+    stabilize_project_index(index, (("study", "study-0001"),))  # type: ignore[arg-type]
+
+    assert index.cache[("workcase", "workcase-0001")].check_status == "invalid"
+    assert index.cache[("study", "study-0001")].check_status == "invalid"
+
+
+def test_duplicate_object_uid_invalidates_candidate_without_guessing() -> None:
+    candidate = _read("spark", "spark-0001", "open", object_uid=_UID_A)
+    duplicate = _read("workcase", "workcase-0001", "open", phase="executing", object_uid=_UID_A)
+    index = _IncompleteScanIndex(candidate, duplicate)
+
+    stabilize_project_index(index, (("spark", "spark-0001"),))  # type: ignore[arg-type]
+
+    result = index.cache[("spark", "spark-0001")]
+    assert result.check_status == "invalid"
+    assert any(issue.category == "identity" and "object_uid" in issue.summary for issue in result.issues)
 
 
 def test_incomplete_unrelated_scans_do_not_poison_a_relation_free_candidate() -> None:

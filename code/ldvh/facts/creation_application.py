@@ -11,6 +11,7 @@ from typing import Any, Literal
 
 from ldvh.facts.carriers.study_markdown import parse_study_markdown
 from ldvh.facts.carriers.yaml_object import parse_yaml_object
+from ldvh.facts.configuration_index import ConfigurationFactIndex
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.creation import (
     AllocationCommitResult,
@@ -22,6 +23,7 @@ from ldvh.facts.creation import (
     rollback_created_text,
     serialize_fact_object,
 )
+from ldvh.facts.identity import generate_object_uid
 from ldvh.facts.models import FactIssue
 from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.relations import ProjectFactIndex, validate_project_relations
@@ -61,6 +63,7 @@ class FactCreationCommand:
     requested_candidate_id: str
     supplied: Mapping[str, Any]
     body: str | None
+    configuration_boundaries: tuple[tuple[str, Path, Path], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,12 +81,14 @@ class FactCreationResult:
     allocation_status: str | None = None
     allocation_result: AllocationCommitResult | None = None
     coordination_release_uncertain: bool = False
+    attempted_object_uid: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
 class PreparedFactCreation:
     command: FactCreationCommand
     observed_at: str
+    object_uid: str
 
 
 def _freeze_json(value: Any) -> Any:
@@ -207,10 +212,12 @@ def _preflight(
     command: FactCreationCommand,
     object_id: str,
     now: str,
+    object_uid: str,
 ) -> tuple[dict[str, Any], str, tuple[FactIssue, ...], bool]:
     layout = LAYOUTS[command.fact_type_key]
     fields = {
         **_thaw_json(command.supplied),
+        "object_uid": object_uid,
         "object_id": object_id,
         "fact_type_key": command.fact_type_key,
         "created_at": now,
@@ -248,6 +255,12 @@ def prepare_fact_creation(
             "candidate_rejected",
             issues=(FactIssue("schema", "事实对象包含不可冻结的非 JSON/YAML 值"),),
         )
+    managed = sorted(set(supplied) & {"object_uid", "object_id", "fact_type_key", "created_at", "updated_at"})
+    if managed:
+        return FactCreationResult(
+            "candidate_rejected",
+            issues=(FactIssue("schema", f"调用方不得填写 Code 托管字段: {', '.join(managed)}"),),
+        )
     snapshot = FactCreationCommand(
         boundary=command.boundary,
         fact_type_key=command.fact_type_key,
@@ -256,16 +269,58 @@ def prepare_fact_creation(
         requested_candidate_id=command.requested_candidate_id,
         supplied=supplied,
         body=command.body,
+        configuration_boundaries=command.configuration_boundaries,
     )
     now = utc_now_iso() if observed_at is None else canonical_utc_timestamp(observed_at) or observed_at
-    _, _, candidate_issues, candidate_unavailable = _preflight(snapshot, snapshot.requested_candidate_id, now)
+    boundaries = snapshot.configuration_boundaries or (
+        (
+            snapshot.boundary.governed_project_id,
+            snapshot.boundary.worktree_root,
+            snapshot.boundary.git_common_dir,
+        ),
+    )
+    uid_index = ConfigurationFactIndex(boundaries, dict(snapshot.schemas))
+    object_uid: str | None = None
+    for _attempt in range(3):
+        try:
+            candidate_uid = generate_object_uid()
+        except (OSError, RuntimeError, ValueError):
+            return FactCreationResult(
+                "candidate_unavailable",
+                issues=(FactIssue("resource", "无法生成 UUIDv7 object_uid", "object_uid"),),
+            )
+        _existing, uid_status = uid_index.resolve_uid(candidate_uid)
+        if uid_status == "not_found":
+            object_uid = candidate_uid
+            break
+        if uid_status == "unavailable":
+            return FactCreationResult(
+                "candidate_unavailable",
+                issues=(FactIssue("resource", "配置级 UID 全扫描未能完整形成", "object_uid"),),
+            )
+        if uid_status not in {"resolved", "duplicate"}:
+            return FactCreationResult(
+                "candidate_unavailable",
+                issues=(FactIssue("identity", "生成的 object_uid 未形成合法配置级唯一性候选", "object_uid"),),
+            )
+    if object_uid is None:
+        return FactCreationResult(
+            "candidate_unavailable",
+            issues=(FactIssue("identity", "连续三次生成的 object_uid 均与配置内既有对象重复", "object_uid"),),
+        )
+    _, _, candidate_issues, candidate_unavailable = _preflight(
+        snapshot,
+        snapshot.requested_candidate_id,
+        now,
+        object_uid,
+    )
     if candidate_unavailable:
         return FactCreationResult("candidate_unavailable", issues=candidate_issues)
     if candidate_issues:
         return FactCreationResult("candidate_rejected", issues=candidate_issues)
     if not native_atomic_fact_writes_supported():
         return FactCreationResult("durability_unavailable")
-    return PreparedFactCreation(snapshot, now)
+    return PreparedFactCreation(snapshot, now, object_uid)
 
 
 def _complete_created_fact(
@@ -356,7 +411,12 @@ def create_fact_object_locked(prepared: PreparedFactCreation, counter_path: Path
         )
 
     actual_id = allocation.object_id
-    actual_fields, actual_text, issues, unavailable = _preflight(command, actual_id, now)
+    actual_fields, actual_text, issues, unavailable = _preflight(
+        command,
+        actual_id,
+        now,
+        prepared.object_uid,
+    )
     if issues or unavailable:
         return FactCreationResult(
             "final_unavailable" if unavailable else "final_rejected",
@@ -410,9 +470,13 @@ def create_fact_object(command: FactCreationCommand, *, observed_at: str | None 
     except OSError:
         if completed is None:
             raise
-        return replace(completed, coordination_release_uncertain=True)
+        return replace(
+            completed,
+            coordination_release_uncertain=True,
+            attempted_object_uid=prepared.object_uid,
+        )
     assert completed is not None
-    return completed
+    return replace(completed, attempted_object_uid=prepared.object_uid)
 
 
 __all__ = [

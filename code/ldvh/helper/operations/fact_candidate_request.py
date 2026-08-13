@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Literal
 
 from ldvh.facts.contracts import LAYOUTS
-from ldvh.facts.models import FactReference
+from ldvh.facts.models import FactReference, StableFactReference, UIDFactReference
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
+from ldvh.helper.operations.fact_reference_support import parse_stable_fact_reference
 from ldvh.helper.requests import CommonRequest
 
 REQUIRED_INPUTS = ("arguments.governed_project_id", "arguments.card_layer")
@@ -19,6 +21,7 @@ OPTIONAL_INPUTS = (
     "arguments.fact_type_keys",
     "arguments.statuses",
     "arguments.exact_refs",
+    "arguments.short_refs",
     "arguments.relation_targets",
     "arguments.relation_source_refs",
     "arguments.relation_keys",
@@ -38,6 +41,7 @@ _ARGUMENT_FIELDS = frozenset(
         "fact_type_keys",
         "statuses",
         "exact_refs",
+        "short_refs",
         "relation_targets",
         "relation_source_refs",
         "relation_keys",
@@ -96,6 +100,7 @@ _F2_ONLY_FIELDS = frozenset(
         "fact_type_keys",
         "statuses",
         "exact_refs",
+        "short_refs",
         "relation_targets",
         "relation_source_refs",
         "relation_keys",
@@ -119,12 +124,13 @@ class FactCandidateRequest:
     card_layer: Literal["F1", "F2"]
     fact_type_keys: tuple[str, ...]
     statuses: tuple[str, ...] | None
-    exact_refs: tuple[FactReference, ...]
-    relation_targets: tuple[FactReference, ...]
-    relation_source_refs: tuple[FactReference, ...]
+    exact_refs: tuple[StableFactReference, ...]
+    short_refs: tuple[str, ...]
+    relation_targets: tuple[StableFactReference, ...]
+    relation_source_refs: tuple[StableFactReference, ...]
     relation_keys: tuple[str, ...]
-    current_workcase_ref: FactReference | None
-    selected_fact_refs: tuple[FactReference, ...]
+    current_workcase_ref: StableFactReference | None
+    selected_fact_refs: tuple[StableFactReference, ...]
     locator_text: str | None
     text_match: TextMatch | None
     page_size: int
@@ -158,38 +164,28 @@ def _references(
     path: str,
     governed_project_id: str | None,
     selected_types: tuple[str, ...],
-) -> tuple[tuple[FactReference, ...], list[str]]:
+) -> tuple[tuple[StableFactReference, ...], list[str]]:
     if not isinstance(value, list) or not 1 <= len(value) <= 128:
         return (), [f"{path} 必须是包含 1–128 项的 array"]
     problems: list[str] = []
-    references: list[FactReference] = []
+    references: list[StableFactReference] = []
     for index, item in enumerate(value):
         prefix = f"{path}[{index}]"
-        if not isinstance(item, dict):
-            problems.append(f"{prefix} 必须是 object")
+        reference, member_problems = parse_stable_fact_reference(item, prefix)
+        problems.extend(member_problems)
+        if reference is None:
             continue
-        unknown = sorted(set(item) - _REFERENCE_FIELDS)
-        if unknown:
-            problems.append(f"{prefix} 包含未知字段: {', '.join(unknown)}")
-        values: dict[str, str] = {}
-        for field in sorted(_REFERENCE_FIELDS):
-            raw = item.get(field)
-            if not isinstance(raw, str) or not raw:
-                problems.append(f"{prefix}.{field} 必须是非空 string")
-            else:
-                values[field] = raw
-        if len(values) != 3:
-            continue
-        layout = LAYOUTS.get(values["fact_type_key"])
-        if layout is None or layout.object_id_pattern.fullmatch(values["object_id"]) is None:
-            problems.append(f"{prefix} 未形成当前类型的合法稳定引用")
-            continue
-        if governed_project_id is not None and values["governed_project_id"] != governed_project_id:
+        if isinstance(reference, FactReference) and governed_project_id is not None and reference.governed_project_id != governed_project_id:
             problems.append(f"{prefix}.governed_project_id 必须等于 arguments.governed_project_id")
-        if selected_types and values["fact_type_key"] not in selected_types:
+        if isinstance(reference, FactReference) and selected_types and reference.fact_type_key not in selected_types:
             problems.append(f"{prefix}.fact_type_key 必须位于 arguments.fact_type_keys")
-        references.append(FactReference(values["governed_project_id"], values["fact_type_key"], values["object_id"]))
-    identities = [(item.governed_project_id, item.fact_type_key, item.object_id) for item in references]
+        references.append(reference)
+    identities = [
+        ("uid", item.object_uid)
+        if isinstance(item, UIDFactReference)
+        else ("legacy", item.governed_project_id, item.fact_type_key, item.object_id)
+        for item in references
+    ]
     if len(identities) != len(set(identities)):
         problems.append(f"{path} 不得包含重复稳定引用")
     return tuple(references), problems
@@ -254,19 +250,32 @@ def parse_fact_candidate_request(
         if invalid:
             problems.append(f"arguments.statuses 包含所选类型不允许的状态: {', '.join(invalid)}")
 
-    exact_refs: tuple[FactReference, ...] = ()
+    exact_refs: tuple[StableFactReference, ...] = ()
     if layer == "F2" and "exact_refs" in request.arguments:
         exact_refs, reference_problems = _references(
             request.arguments["exact_refs"], "arguments.exact_refs", project_id, fact_type_keys
         )
         problems.extend(reference_problems)
-    relation_targets: tuple[FactReference, ...] = ()
+    short_refs: tuple[str, ...] = ()
+    if layer == "F2" and "short_refs" in request.arguments:
+        short_refs, short_ref_problems = _unique_strings(
+            request.arguments["short_refs"], "arguments.short_refs", minimum=1, maximum=128
+        )
+        problems.extend(short_ref_problems)
+        invalid_short_refs = [item for item in short_refs if re.fullmatch(r"[ACPST][A-Z]{5}", item) is None]
+        if invalid_short_refs:
+            problems.append("arguments.short_refs 每项必须精确匹配 [ACPST][A-Z]{5}")
+        type_by_code = {"A": "adr", "C": "workcase", "P": "pitfall", "S": "spark", "T": "study"}
+        incompatible = [item for item in short_refs if item and type_by_code.get(item[0]) not in fact_type_keys]
+        if incompatible:
+            problems.append("arguments.short_refs 的类型码必须包含在 arguments.fact_type_keys")
+    relation_targets: tuple[StableFactReference, ...] = ()
     if layer == "F2" and "relation_targets" in request.arguments:
         relation_targets, reference_problems = _references(
             request.arguments["relation_targets"], "arguments.relation_targets", project_id, ()
         )
         problems.extend(reference_problems)
-    relation_source_refs: tuple[FactReference, ...] = ()
+    relation_source_refs: tuple[StableFactReference, ...] = ()
     if layer == "F2" and "relation_source_refs" in request.arguments:
         relation_source_refs, reference_problems = _references(
             request.arguments["relation_source_refs"], "arguments.relation_source_refs", project_id, ()
@@ -280,9 +289,10 @@ def parse_fact_candidate_request(
             request.arguments["relation_keys"], "arguments.relation_keys", minimum=1, maximum=32
         )
         problems.extend(key_problems)
-        if relation_source_refs:
+        legacy_source_refs = tuple(item for item in relation_source_refs if isinstance(item, FactReference))
+        if legacy_source_refs and len(legacy_source_refs) == len(relation_source_refs):
             allowed_keys = set.intersection(
-                *(set(LAYOUTS[reference.fact_type_key].relation_keys) for reference in relation_source_refs)
+                *(set(LAYOUTS[reference.fact_type_key].relation_keys) for reference in legacy_source_refs)
             )
             invalid_keys = sorted(set(relation_keys) - allowed_keys)
             if invalid_keys:
@@ -291,7 +301,7 @@ def parse_fact_candidate_request(
                     + ", ".join(invalid_keys)
                 )
 
-    current_workcase_ref: FactReference | None = None
+    current_workcase_ref: StableFactReference | None = None
     if "current_workcase_ref" in request.arguments:
         current_refs, reference_problems = _references(
             [request.arguments["current_workcase_ref"]],
@@ -302,7 +312,7 @@ def parse_fact_candidate_request(
         problems.extend(reference_problems)
         if current_refs:
             current_workcase_ref = current_refs[0]
-    selected_fact_refs: tuple[FactReference, ...] = ()
+    selected_fact_refs: tuple[StableFactReference, ...] = ()
     if "selected_fact_refs" in request.arguments:
         selected_fact_refs, reference_problems = _references(
             request.arguments["selected_fact_refs"],
@@ -374,6 +384,7 @@ def parse_fact_candidate_request(
             fact_type_keys,
             statuses,
             exact_refs,
+            short_refs,
             relation_targets,
             relation_source_refs,
             relation_keys,

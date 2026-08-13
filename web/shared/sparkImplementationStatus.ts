@@ -11,7 +11,7 @@ export interface SparkAssociationLike {
   closureOutcome?: string;
   target?: {
     factTypeKey?: string;
-  };
+  } | { objectUid: string };
 }
 
 /**
@@ -26,7 +26,9 @@ export function hasSparkOpenAssociation(
   if (!associations || associations.length === 0) return false;
   return associations.some((association) => {
     if (!association.available || !association.status) return false;
-    const factType = association.target?.factTypeKey;
+    const factType = association.target && 'factTypeKey' in association.target
+      ? association.target.factTypeKey
+      : undefined;
     if (factType === 'spark') {
       return association.status === 'open';
     }

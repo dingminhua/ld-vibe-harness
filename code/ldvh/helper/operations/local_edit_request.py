@@ -6,10 +6,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from ldvh.facts.contracts import LAYOUTS
-from ldvh.facts.models import FactReference
+from ldvh.facts.models import FactReference, StableFactReference
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
+from ldvh.helper.operations.fact_reference_support import parse_stable_fact_reference
 from ldvh.helper.requests import CommonRequest
 
 SourceKind = Literal["rule", "study"]
@@ -36,7 +36,6 @@ _ARGUMENT_FIELDS = frozenset(
         "candidate_after",
     }
 )
-_FACT_REF_FIELDS = frozenset({"governed_project_id", "fact_type_key", "object_id"})
 _STUDY_BODY_HEADINGS = frozenset({"研究问题", "输入与边界", "关键发现", "建议", "后续分流"})
 
 
@@ -50,7 +49,7 @@ class RuleLocalEditRequest:
 
 @dataclass(frozen=True, slots=True)
 class StudyLocalEditRequest:
-    fact_ref: FactReference
+    fact_ref: StableFactReference
     body_heading: str
     expected_baseline: str | None
     candidate_after: str | None
@@ -142,27 +141,12 @@ def _study_request(
         else:
             locators.append(locator)
 
-    raw_ref = request.arguments.get("fact_ref")
-    values: dict[str, str] = {}
-    if not isinstance(raw_ref, dict):
-        problems.append("arguments.fact_ref 在 source_kind=study 时必须是 object")
-    else:
-        missing = sorted(_FACT_REF_FIELDS - set(raw_ref))
-        unknown = sorted(set(raw_ref) - _FACT_REF_FIELDS)
-        if missing:
-            problems.append(f"arguments.fact_ref 缺少字段: {', '.join(missing)}")
-        if unknown:
-            problems.append(f"arguments.fact_ref 包含未知字段: {', '.join(unknown)}")
-        for field in sorted(_FACT_REF_FIELDS):
-            value = raw_ref.get(field)
-            if not isinstance(value, str) or not value:
-                problems.append(f"arguments.fact_ref.{field} 必须是非空 string")
-            else:
-                values[field] = value
-        if values.get("fact_type_key") != "study":
-            problems.append("arguments.fact_ref.fact_type_key 在 source_kind=study 时必须精确等于 study")
-        elif LAYOUTS["study"].object_id_pattern.fullmatch(values.get("object_id", "")) is None:
-            problems.append("arguments.fact_ref.object_id 不符合 study 当前格式")
+    fact_ref, reference_problems = parse_stable_fact_reference(
+        request.arguments.get("fact_ref"), "arguments.fact_ref"
+    )
+    problems.extend(reference_problems)
+    if isinstance(fact_ref, FactReference) and fact_ref.fact_type_key != "study":
+        problems.append("arguments.fact_ref.fact_type_key 在 source_kind=study 时必须精确等于 study")
 
     body_heading = request.arguments.get("body_heading")
     if body_heading not in _STUDY_BODY_HEADINGS:
@@ -177,11 +161,11 @@ def _study_request(
     )
     if not context.cwd.is_absolute():
         problems.append("Helper 进程实际 cwd 必须是绝对路径")
-    if problems or len(values) != len(_FACT_REF_FIELDS) or not isinstance(body_heading, str):
+    if problems or fact_ref is None or not isinstance(body_heading, str):
         return None
     scope = explicit_scope(locators) if locators else cwd_scope(str(context.cwd))
     return StudyLocalEditRequest(
-        FactReference(values["governed_project_id"], "study", values["object_id"]),
+        fact_ref,
         body_heading,
         expected,
         candidate,

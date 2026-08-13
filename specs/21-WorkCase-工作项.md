@@ -176,7 +176,7 @@ checklist 与 Helper 只读检查只提供机械或标准化验证，不能单�
 ldvh-base/workcases/<object_id>.yaml
 ```
 
-`object_id` 必须匹配 `workcase-[0-9]{4,}`，文件名必须与 `object_id` 完全一致。身份分配后不得因标题、路径、状态或内容变化而改变。`title` 只简短识别工作责任，不复制 `goal`、当前摘要或关闭结论。
+`object_id` 必须匹配 `workcase-[0-9]{4,}`，文件名必须与 `object_id` 完全一致，只承担兼容定位和命名空间职责。具有 `object_uid` 时其权威身份、legacy 缺失兼容和不可变边界统一按 05 §7.3–§7.4，新建 WorkCase 必须由 Code 生成 UID。`title` 只简短识别工作责任，不复制 `goal`、当前摘要或关闭结论。
 
 未知或不适用的条件字段必须省略，不写 `null`、空字符串、空数组、占位时间、默认状态或默认关系。本文不定义 `closed_at`；`created_at` 表示对象创建，`updated_at` 表示当前内容最近一次实质变化并成功回读的时间，终态更正同样更新 `updated_at`。
 
@@ -195,6 +195,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | field_key | presence | constraint_ref |
 |---|---|---|
 | `object-id` | required | `workcase-fact-type::5. WorkCase 类型定义` |
+| `object-uid` | conditional | `workcase-fact-type::5. WorkCase 类型定义` |
 | `fact-type-key` | required | `inherit` |
 | `title` | required | `workcase-fact-type::5. WorkCase 类型定义` |
 | `created-at` | required | `inherit` |
@@ -263,7 +264,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-success-result` | 对一项当前成功标准的实际结果判断与范围说明 | 不表示 Code 已证明正文、Reviewer 结论、Human 已验收或命令成功 | 必须按 `criterion_id` 精确覆盖全部当前定义；unknown 通过 `not_verified` 表达，不补猜 |
 | `workcase-closure-proposal` | Controller 提交 Human 判断的一份完整关闭方案 | 不表示 Human 已同意、终态已成立、结果主体或证明收据 | 只在关闭准备与关闭待确认期间出现；始终整体形成，不持久化半成品 |
 | `workcase-residual-decision` | 关闭提案中一项剩余责任及其 `route_existing`、`suggest_spark` 或 `accept_stop` 建议 | 不表示终态责任已经转交、Spark 已建立或 Human 已接受停止 | route_existing 必须有 proposal target；suggest_spark 必须引用同一 proposal 的 constrained suggestion；accept_stop 二者均禁止；所有当前剩余责任必须精确覆盖 |
-| `workcase-proposed-route-target` | 拟路由目标的稳定三元身份与当次完整内容 fingerprint | 不表示 terminal relation、Human 阅读对象、目标接受责任或目标完成 | 只服务关闭事务的目标重读与精确比较；四个成员全部必填，关闭后删除 |
+| `workcase-proposed-route-target` | 拟路由目标的 05 §11.0 UID/legacy 互斥身份与当次完整内容 fingerprint | 不表示 terminal relation、Human 阅读对象、目标接受责任或目标完成 | 只服务关闭事务的目标重读与精确比较；`content_fingerprint` 加一种完整身份形状，关闭后删除 |
 | `workcase-residual-responsibility` | closed 中没有符合转交条件目标、且 Human 已接受停止的一项具体责任 | 不表示建议、已处理、已完成、route target 或其它对象已经承接 | 只含 `residual_id` 与 `summary`；已路由责任不得同时保留为 residual |
 | `workcase-spark-suggestion` | 一项尚未建立 Spark、供 Human 日后独立判断的结构化建议 | 不表示 Spark 已建立、已获批、已承接或必须推进 | `constrained_responsibility` 保留当前 scope 内受限事项的原因、影响、恢复条件和后续定位；`follow_up_opportunity` 保留 scope 外机会，不伪造受限原因；不保存未来对象 ID |
 | `workcase-termination` | Human 主动中止的起始现场、有限善后和实际降级质量链 | 不表示宿主 Hook、自动物理回滚、Gate2 决定、结果复核或其它 WorkCase 已同步处置 | 只由 `begin-workcase-termination` 形成；`termination_preparing` 中持续更新善后事实，由 `complete-workcase-termination` 原样保留到 closed；Helper 不执行文件删除、回滚或提交 |
@@ -374,9 +375,10 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-residual-decision-disposition` | `proposed_disposition` | string | Controller 对该剩余责任提出的处置方向 | 不表示 Human 决定或 terminal 值 | 闭集 `route_existing`、`suggest_spark`、`accept_stop` |
 | `workcase-residual-decision-route-target` | `route_target` | object | `route_existing` 建议对应的当前目标快照绑定 | 不表示 terminal relation 或目标接受 | `route_existing` 时必填，其它值时禁止 |
 | `workcase-residual-decision-spark-suggestion-id` | `spark_suggestion_id` | string | `suggest_spark` 责任在同一 proposal 中对应的建议身份 | 不表示 Spark object_id、relation target 或未来绑定 | `suggest_spark` 时必填，必须精确引用一项 `suggestion_kind=constrained_responsibility` 的 proposal suggestion；其它处置时禁止 |
-| `workcase-proposed-route-target-governed-project-id` | `governed_project_id` | string | 拟路由目标所属当前管辖项目身份 | 不表示跨项目授权或项目路径 | 必须等于 source 当前选定的同一 `governed_project_id` |
-| `workcase-proposed-route-target-fact-type-key` | `fact_type_key` | string | 拟路由目标事实类型 | 不表示关系 key 或类型兼容 | 闭集 `workcase`、`spark` |
-| `workcase-proposed-route-target-object-id` | `object_id` | string | 拟路由目标稳定身份 | 不表示标题或责任已经覆盖 | 必须引用实际可读且形成时为 open/blocked 的同项目 WorkCase，或 `status=open` 的同项目 Spark |
+| `workcase-proposed-route-target-object-uid` | `object_uid` | string | 拟路由 UID 目标的权威身份 | 不表示标题、类型或责任已经覆盖 | UID 形状必填且为身份唯一成员；canonical UUIDv7；必须解析为形成时 open/blocked 的同项目 WorkCase，或 `status=open` 的同项目 Spark |
+| `workcase-proposed-route-target-governed-project-id` | `governed_project_id` | string | legacy 拟路由目标所属当前管辖项目身份 | 不表示跨项目授权或项目路径 | legacy 形状必填；必须等于 source 当前选定的同一 `governed_project_id` |
+| `workcase-proposed-route-target-fact-type-key` | `fact_type_key` | string | legacy 拟路由目标事实类型 | 不表示关系 key 或类型兼容 | legacy 形状必填；闭集 `workcase`、`spark` |
+| `workcase-proposed-route-target-object-id` | `object_id` | string | legacy 拟路由目标兼容身份 | 不表示标题或责任已经覆盖 | legacy 形状必填；必须引用实际可读且形成时为 open/blocked 的同项目 WorkCase，或 `status=open` 的同项目 Spark |
 | `workcase-proposed-route-target-content-fingerprint` | `content_fingerprint` | string | 目标当次完整 UTF-8 载体 bytes 的 SHA-256 fingerprint | 不表示 Human 阅读、语义充分或证明材料 | 精确匹配 `[0-9a-f]{64}`，不带算法前缀；必须原样复用实际 `read-fact-objects` 返回的 `content_fingerprint`，禁止重新序列化或另算 canonical-object hash；受控事务时重新比较 |
 | `workcase-residual-id` | `residual_id` | string | terminal accepted-stop 责任的稳定局部身份 | 不表示 proposal 顺序或 relation identity | 匹配 `residual-[a-z0-9][a-z0-9-]*`；对象内唯一 |
 | `workcase-residual-summary` | `summary` | string | Human 已接受不再由当前 WorkCase 推进的具体责任、事实边界和风险 | 不表示已处理、已完成、route target 或建议 | 必填非空；只保留 proposal 中经 Human 决定的 `accept_stop` 项 |
@@ -407,6 +409,8 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-termination-quality-steps` | `quality_steps` | array | 正常结果复核、closure proposal 与 Gate2 在本次终止中的实际执行或跳过状态 | 不表示被跳过的关口已完成 | 必须逐项且仅一次使用 `independent_result_review:<disposition>`、`closure_proposal:<disposition>`、`gate_2:<disposition>`；活动善后允许 `not_reached / actual / skipped`，closed 禁止 `not_reached` |
 | `workcase-termination-cleanup-status` | `cleanup_status` | string | 专属善后当前是否仍需处理 | 不表示 WorkCase status 或物理文件状态 | 闭集 `pending`、`blocked`、`completed`；只有 `completed` 可由完成事务消费 |
 | `workcase-termination-cleanup-summary` | `cleanup_summary` | string | 善后已形成事实、未完成范围和恢复入口的当前摘要 | 不表示命令日志或未执行计划 | 必填非空；每个稳定善后检查点覆盖更新 |
+
+`workcase-proposed-route-target` 除始终必填的 `content_fingerprint` 外，身份成员必须恰好使用 05 §11.0 的 UID 或 legacy 形状之一。目标已有 UID 时必须保存 UID 形状；只有目标仍是 legacy 对象时才保存三元组。关闭映射形成的 `routed-to` 使用相同身份形状，不复制另一形状。
 
 同一 `creation_reviews` 或 `result_reviews` 数组内，`reviewer + reviewed_at + subject_version` 三元组必须唯一，并只作为 Code 识别同一 review 事件、执行字段所有权与获授权事实更正的机械复合身份；它不表示数组顺序、审核先后、review 次数或 Reviewer 独立性。Reviewer 自有内容被获授权更正时该三元组保持不变；新的实际复核必须形成新的 `reviewed_at`，不得覆盖既有事件冒充同一次 review。
 
@@ -690,7 +694,7 @@ canonical result projection 由以下完整结构组成：
 3. Human 作出决定前，已实际取得并可以阅读目标、scope、成功标准与逐项结果、总体结果、验证边界、独立复核处置和完整 proposal；Human 决定是否关闭、停止边界和责任处置，不为技术结果真实性背书；
 4. 操作绑定完整 source before fingerprint、Human 当次决定和 proposal 中全部 route_existing target fingerprint；
 5. 操作重新读取每个 target；任何变化、缺失、机械无效、不可读、状态不适合形成关系或 fingerprint 不匹配，都拒绝关闭，source 保持不变；Gate2 决定已绑定旧 before，不得在同一运行自动重建 proposal 或重新索取 Human 决定；
-6. after 的 `closure_outcome` 必须精确等于 `proposed_outcome`，`disposition_summary` 必须精确等于 `proposed_disposition_summary`，`residual_responsibilities` 必须精确等于全部 `accept_stop` decision 的 `residual_id + summary`，`spark_suggestions` 必须精确等于 proposal 的同名数组，`routed-to` targets 必须精确等于全部 `route_existing` decision 的稳定三元组按目标去重集合；before 中与该集合任一 target 相同的 `related-to` 不复制到 after，由对应 `routed-to` 覆盖；其它 `related-to` 仍按 §8.2–§8.3 保留。不得改写 proposal 自然语言、漏项或增加第二目标/建议清单；`suggest_spark` 不形成任何 relation，`contributed-to` 不属于本映射；
+6. after 的 `closure_outcome` 必须精确等于 `proposed_outcome`，`disposition_summary` 必须精确等于 `proposed_disposition_summary`，`residual_responsibilities` 必须精确等于全部 `accept_stop` decision 的 `residual_id + summary`，`spark_suggestions` 必须精确等于 proposal 的同名数组，`routed-to` targets 必须精确等于全部 `route_existing` decision 的 05 §11.0 权威引用按目标去重集合；before 中与该集合任一 target 相同的 `related-to` 不复制到 after，由对应 `routed-to` 覆盖；其它 `related-to` 仍按 §8.2–§8.3 保留。不得改写 proposal 自然语言、漏项或增加第二目标/建议清单；`suggest_spark` 不形成任何 relation，`contributed-to` 不属于本映射；
 8. routed 项不再复制为 terminal residual；accepted-stop 项不形成 routed-to；suggest-spark 项只保留为 suggestion，Human 可在 Spark 尚未创建时先关闭 WC；
 9. 任一校验、CAS、写入或回读失败都不得声称关闭成功；
 10. Human 拒绝关闭或要求修改时不压缩对象、不改 phase；当前运行不恢复执行或关闭准备，新工作只能由新的 WorkCase/Gate1 承接；
@@ -779,7 +783,7 @@ WorkCase 的普通活动期写入必须使用 `update-workcase`；Human 主动�
 
 - 共同请求中 `arguments.fact_ref` 必填，成员闭集为 `governed_project_id`、固定值 `fact_type_key=workcase` 与 `object_id`；`arguments.workspace_root` 和顶层 `work_object_locators` 可选并复用 05 §11.1 的当前 Working Tree 管辖定位语义。其它领域参数禁止，`observed_context`、`authorization_reference` 必须为空，`requested_disclosure` 必须为 `null` 或省略；
 - source 必须是当前 Working Tree 中完整、mechanically valid、`status=open` 且 `phase=human_closure_confirming` 的 WorkCase，并有完整当前 `closure_proposal`。invalid、unavailable、not-found、blocked、closed 或其它 phase 不产生候选；
-- `mapping_basis` 字段闭集只有 `proposal_route_targets`。其数组按 target 稳定三元组排序去重，每项字段闭集为 `target` 和 `content_fingerprint`，只原样复制当前 proposal 的 `route_existing` 决策已经保存的目标观察；没有 route target 时为空数组。它不表示 target 当前仍存在、有效、处于允许状态或指纹未变；本操作不得读取任何 target、入向依赖或关系图来补强该结论；
+- `mapping_basis` 字段闭集只有 `proposal_route_targets`。其数组按 05 §11.0 target 排序去重，每项字段闭集为 `target` 和 `content_fingerprint`，只原样复制当前 proposal 的 `route_existing` 决策已经保存的目标观察；没有 route target 时为空数组。它不表示 target 当前仍存在、有效、处于允许状态或指纹未变；本操作不得读取任何 target、入向依赖或关系图来补强该结论；
 - `source_content_fingerprint` 精确绑定形成候选的 source bytes。source 后续变化即使自然语言相似，旧候选也不得作为真实关闭的 `expected_content_fingerprint`；必须重新读取并重新投影。操作不接收 expected fingerprint、Human 决定、route target 第二清单或授权回指；
 - 成功只说明对当次完整 source 完成确定性只读投影。响应和 Code 均不得据此声称 Human 已批准、Gate2 已完成、关闭前提齐备、目标可用、“已准备好关闭”或工作完成；真正关闭仍必须调用 `close-workcase`，在事务内重新读取 source 与全部 target、执行 CAS、指纹、状态、入向依赖和关系图检查并成功回读；
 - source 资格不成立返回 `rejected`，管辖、Schema 或读取技术边界无法完成返回 `unavailable`，均为零写入；操作不生成或改写任何 WorkCase 自然语言事实。
@@ -829,7 +833,7 @@ WorkCase 的普通活动期写入必须使用 `update-workcase`；Human 主动�
 
 - before 必须是 mechanically valid 的 closed WorkCase，after 必须仍完全满足 §6.1 closed 必填集、条件集与禁止集，并按 05 §11.7 严格追加本次终态更正流水。若 Working Tree 与同路径 HEAD before 都机械有效且完全缺少 `change_log`，本次原本合法的终态更正可以建立恰好一条当前三字段流水；该条只记录本次更正并说明此前历史未恢复，不补造关闭时或活动期记录。HEAD 已有流水但 Working Tree 删除、HEAD 不存在/不可用/无效、旧署名或多条首写均零写入拒绝。status 不变，不重开 phase；`termination` 的出现性与完整值必须原样保持，禁止把普通 Gate2 关闭与 Human 主动终止关闭互相改写。invalid、unavailable、not-found 或只能解析部分字段的 before 一律拒绝且零写入；本操作不提供旧形状转换或 invalid 记录修复入口；
 - 更正只能修复原关闭时已经成立但被记错或遗漏的事实；不得把关闭后才出现的新目标、新责任、新验收边界、target 后续进展或事后方向变化写成原关闭时的事实。新责任必须建立新 WorkCase，必要时由当前 disposition、`routed-to` 链或新对象承接；
-- `route_target_fingerprints[]` 成员字段闭集为 `target` 和 `content_fingerprint`；`target` 使用 05 稳定三元组，`content_fingerprint` 原样复用该 target 当次 `read-fact-objects` 的完整载体 bytes 指纹；数组必须按目标去重，并与 after 全部 `routed-to` targets 精确相等，没有 target 时为空数组；
+- `route_target_fingerprints[]` 成员字段闭集为 `target` 和 `content_fingerprint`；`target` 使用 05 §11.0 权威引用，`content_fingerprint` 原样复用该 target 当次 `read-fact-objects` 的完整载体 bytes 指纹；数组必须按目标去重，并与 after 全部 `routed-to` targets 精确相等，没有 target 时为空数组；
 - `independent_review_reference` 非空时精确复用 04.Att.01 的单个“来源回指字段” object，不新建裸 string 引用形状；它只定位当次实际独立复核输入，不因存在就证明 Reviewer 独立或结论正确；
 - 操作在同一事务重新读取全部 after route targets 并比较指纹。before 已有且 after 未变的 target 可以继续自身生命周期；after 新增的 target 在形成时必须为同项目 mechanically valid `open` / `blocked` WorkCase 或 open Spark，并完成引用、去重、自指、强边环、入向责任与关系图检查；任一 target 缺失、不可读、指纹变化或检查未完成时 source 零写入；
 - after 必须继续满足 §6.7 outcome 一致性与剩余责任完整处置；任一 criterion result 为 `not_satisfied` 或 `not_verified` 时，Code 必须要求 after 至少存在一项 `residual_responsibilities`、`routed-to` 或 `suggestion_kind=constrained_responsibility` 的 `spark_suggestions`；Controller、Reviewer 与 Human 必须确认 disposition 与结构化处置无损覆盖全部仍适用的未完成 scope，Code 不猜测自然语言对应；
@@ -896,7 +900,7 @@ WorkCase 只允许五种正向关系；反向导航由 Code 派生，不写第�
 - 同一 `relation_key + target` 最多一项；数组顺序无语义；没有关系时省略；
 - `depends-on` 与 item `depends_on` 不同，不能相互替代；
 - `routed-to` 指向 Spark 只表示问题已由存量 open Spark 稳定承载，不表示已开始执行或完成责任；
-- 关闭投影中，若 before 的 `related-to` 与 proposal 的 `route_existing` 指向同一稳定三元组，`routed-to` 作为更具体的终态责任关系覆盖该 `related-to`：closed 只保留一条 `routed-to`，不保留同目标 `related-to`。这只适用于同一 target；指向其它 target 的 `related-to` 仍原样保留；
+- 关闭投影中，若 before 的 `related-to` 与 proposal 的 `route_existing` 经 05 §11.0 解析后指向同一权威目标，`routed-to` 作为更具体的终态责任关系覆盖该 `related-to`：closed 只保留一条 `routed-to`，不保留同目标 `related-to`。这只适用于同一 target；指向其它 target 的 `related-to` 仍原样保留；
 - `contributed-to` 的 target 闭集缩减为 `pitfall`，并且首次形成时必须为 draft；不指向 Spark、ADR、Study 或 WorkCase；
 - `contributed-to` 不构成 §6.7 剩余责任处置：验收基线内的未完成责任只能由 `residual_decisions` 覆盖，创建贡献对象与写入本边均不免除该义务（§6.8 划界判据）；
 - 入向 `contributed-to` 不构成 22 §7、23 §7 所排除的来源关系、证明材料或准入依据，不影响 ADR / Pitfall 各自的准入条件与对象语义；
@@ -928,12 +932,12 @@ WorkCase 只允许五种正向关系；反向导航由 Code 派生，不写第�
 
 `current_workcase_ref` 只能来自 Human 明确引用、当前环境实际提供的稳定引用或已按规则建立的精确绑定。标题相似、唯一候选、优先级、Web 选择状态或关系边都不能自动绑定。
 
-WorkCase F1 恢复基线固定包含当前项目全部 mechanically valid `open` / `blocked` WorkCase；必须沿 `next_cursor` 持续分页，直至读完全部页，才可声称该类型 F1 完整。其最小 `fields` 投影闭集为 `object_id`、`title`、`status`、`phase`、`goal`、`scope`、`summary`、`priority`、`blocking_summary`、`updated_at` 及派生 `work_item_counts`；条件字段在对象中不存在时省略。`work_item_counts` 不写回事实源，字段闭集和顺序为 `pending`、`in_progress`、`blocked`、`completed`、`cancelled`，每项是从当前 `work_items` 机械计数的非负整数。F1 不含摘录，不表示对象全文已读或行动获准。
+WorkCase F1 恢复基线固定包含当前项目全部 mechanically valid `open` / `blocked` WorkCase；必须沿 `next_cursor` 持续分页，直至读完全部页，才可声称该类型 F1 完整。其最小 `fields` 投影闭集为条件出现的 `object_uid`、以及 `object_id`、`title`、`status`、`phase`、`goal`、`scope`、`summary`、`priority`、`blocking_summary`、`updated_at` 及派生 `work_item_counts`；条件字段在对象中不存在时省略。`work_item_counts` 不写回事实源，字段闭集和顺序为 `pending`、`in_progress`、`blocked`、`completed`、`cancelled`，每项是从当前 `work_items` 机械计数的非负整数。F1 不含摘录，不表示对象全文已读或行动获准。
 
 F2 候选使用 05 已定义的类型、状态、精确引用、直接关系、locator 和字段文本确定性条件，不做语义相似度。省略显式状态时，WorkCase F2 默认也只取 `open` / `blocked`；`closed` 只在显式状态、精确引用或已知直接关系目标下进入候选，不因终态历史无差别恢复。F2 `fields` 投影为：
 
 - active：与 F1 相同，包含派生 `work_item_counts`；
-- closed：`object_id`、`title`、`status`、`goal`、`scope`、`result_summary`、`closure_outcome`、`disposition_summary`、`spark_suggestions`、`updated_at`；其中条件字段不存在时省略；
+- closed：条件出现的 `object_uid`、以及 `object_id`、`title`、`status`、`goal`、`scope`、`result_summary`、`closure_outcome`、`disposition_summary`、`spark_suggestions`、`updated_at`；其中条件字段不存在时省略；
 - 两者都不生成摘录。WorkCase F2 允许精确文本匹配的完整直接字段只有 `title`、`goal`、`scope`、`summary`、`blocking_summary`、`result_summary`、`validation_summary` 和 `disposition_summary`；匹配不会把未入投影的完整字段附带返回。
 
 AI 选中候选后使用稳定引用进入 F3，并按当次语义展开：

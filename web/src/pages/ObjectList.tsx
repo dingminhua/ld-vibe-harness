@@ -1053,7 +1053,7 @@ function WorkCaseClosedContent({ goal, terminal, termination }: { goal?: string;
           {terminal.routedTo.length > 0 && (
             <ul className="grid min-w-0 gap-2">
               {terminal.routedTo.map((target) => (
-                <li key={`route/${target.factTypeKey}/${target.objectId}`} className={`min-w-0 rounded-md border border-l-2 px-3.5 py-3 ${PROPOSED_DISPOSITION_NOTICE_CLASS.route_existing}`}>
+                <li key={`route/${target.objectUid ?? `${target.factTypeKey}/${target.objectId}`}`} className={`min-w-0 rounded-md border border-l-2 px-3.5 py-3 ${PROPOSED_DISPOSITION_NOTICE_CLASS.route_existing}`}>
                   <div className="flex min-w-0 items-center gap-2">
                     <ArrowRight size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-emerald-600 dark:text-emerald-200" aria-hidden="true" />
                     <span className={`ldvh-card-decision-title min-w-0 ${PROPOSED_DISPOSITION_TEXT_CLASS.route_existing}`}>
@@ -1114,7 +1114,7 @@ export function WorkCaseContributionsContent({
       <div className="mt-1.5 divide-y divide-ldvh-border/45">
         {contributions.map((target) => (
           <WorkCaseContributionTargetRow
-            key={`${target.governedProjectId}/${target.factTypeKey}/${target.objectId}`}
+            key={target.objectUid ?? `${target.governedProjectId}/${target.factTypeKey}/${target.objectId}`}
             target={target}
             locale={locale}
             onOpenTarget={onOpenTarget}
@@ -1134,6 +1134,10 @@ function WorkCaseContributionTargetRow({ target, locale, showStatus = true, comp
   useEffect(() => {
     let cancelled = false;
     setDetail(null);
+    if (!target.factTypeKey || !target.objectId) {
+      setReadState('unavailable');
+      return () => { cancelled = true; };
+    }
     setReadState('loading');
     fetchObjectDetail(target.factTypeKey, target.objectId)
       .then((value) => {
@@ -1154,7 +1158,7 @@ function WorkCaseContributionTargetRow({ target, locale, showStatus = true, comp
   const readMeta = getFactReadMeta(detail?.data);
   const readable = Boolean(detail && isReadableFact(readMeta));
   const title = contributionTargetTitle(detail, readMeta, locale);
-  const targetStatus = showStatus && readable && typeof detail?.data.status === 'string'
+  const targetStatus = showStatus && readable && target.factTypeKey && typeof detail?.data.status === 'string'
     ? getObjectStatusLocale(target.factTypeKey, detail.data.status, locale)
     : null;
   const readStatus = readable
@@ -1162,7 +1166,8 @@ function WorkCaseContributionTargetRow({ target, locale, showStatus = true, comp
     : readState === 'loading'
       ? t('objectList.workcaseTargetReading')
       : getFieldValueLabel('read_status', readMeta.readStatus ?? 'unreadable', locale);
-  const typeColor = CATEGORY_COLORS[target.factTypeKey] || CATEGORY_COLORS.other;
+  const typeColor = target.factTypeKey ? (CATEGORY_COLORS[target.factTypeKey] || CATEGORY_COLORS.other) : CATEGORY_COLORS.other;
+  const canOpenTarget = Boolean(onOpenTarget && target.factTypeKey && target.objectId);
   const rowClassName = `flex min-w-0 items-center gap-2 rounded-md px-1.5 text-left ${compact ? 'pb-1 pt-1.5' : 'py-2'}`;
   const rowContent = (
     <>
@@ -1170,14 +1175,14 @@ function WorkCaseContributionTargetRow({ target, locale, showStatus = true, comp
       <span className="ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words text-left">
         {title}
       </span>
-      <span className="ldvh-meta-muted shrink-0">{target.objectId}</span>
-      {onOpenTarget && <ArrowRight size={13} className="shrink-0 text-ldvh-text-secondary/70" aria-hidden="true" />}
+      <span className="ldvh-meta-muted shrink-0">{target.objectId ?? target.objectUid}</span>
+      {canOpenTarget && <ArrowRight size={13} className="shrink-0 text-ldvh-text-secondary/70" aria-hidden="true" />}
       {targetStatus && <span className="ldvh-meta-muted shrink-0">{targetStatus}</span>}
       {readStatus && <span className="ldvh-meta-muted shrink-0">{readStatus}</span>}
     </>
   );
 
-  if (onOpenTarget) {
+  if (onOpenTarget && canOpenTarget) {
     return (
       <button
         type="button"
@@ -1266,6 +1271,7 @@ export function ObjectCardFrame({
           statusLabel={getObjectStatusLocale(obj.type, presentedStatus, locale)}
           objectType={obj.type}
           target={obj.id}
+          shortRef={obj.short_ref}
           statusLeadingBadges={<WorkCaseCapabilityStatusBadge source={obj} />}
           copyLabel={t('common.copyObjectId')}
           copiedLabel={t('common.copiedObjectId')}
@@ -1365,16 +1371,21 @@ function FactAssociationsCardContent({ associations }: { associations?: FactCard
   return (
     <section onClick={(event) => event.stopPropagation()} className="min-w-0 border-t border-ldvh-border/60 pt-2">
       <div className="divide-y divide-ldvh-border/45">
-        {visibleAssociations.map((association, index) => <FactAssociationCardRow key={`${association.target?.governedProjectId ?? 'unavailable'}:${association.target?.factTypeKey ?? 'unknown'}:${association.target?.objectId ?? index}:${index}`} association={association} locale={locale} unavailableLabel={t('objectList.associationUnavailable')} />)}
+        {visibleAssociations.map((association, index) => <FactAssociationCardRow key={`${association.target && 'objectUid' in association.target ? association.target.objectUid : `${association.target?.governedProjectId ?? 'unavailable'}:${association.target?.factTypeKey ?? 'unknown'}:${association.target?.objectId ?? index}`}:${index}`} association={association} locale={locale} unavailableLabel={t('objectList.associationUnavailable')} />)}
       </div>
     </section>
   );
 }
 
 function isDiscardedWorkCaseAssociation(association: FactCardAssociation): boolean {
-  return association.target?.factTypeKey === 'workcase'
+  return associationLocator(association)?.factTypeKey === 'workcase'
     && association.status === 'closed'
     && association.closureOutcome === 'cancelled';
+}
+
+function associationLocator(association: FactCardAssociation) {
+  if (association.resolvedTarget) return association.resolvedTarget;
+  return association.target && !('objectUid' in association.target) ? association.target : null;
 }
 
 function dedupeFactCardAssociations(associations: FactCardAssociation[]): FactCardAssociation[] {
@@ -1382,7 +1393,9 @@ function dedupeFactCardAssociations(associations: FactCardAssociation[]): FactCa
   return associations.filter((association) => {
     const target = association.target;
     if (!target) return true;
-    const targetKey = `${target.governedProjectId}\u0000${target.factTypeKey}\u0000${target.objectId}`;
+    const targetKey = 'objectUid' in target
+      ? `uid\u0000${target.objectUid}`
+      : `${target.governedProjectId}\u0000${target.factTypeKey}\u0000${target.objectId}`;
     if (seenTargets.has(targetKey)) return false;
     seenTargets.add(targetKey);
     return true;
@@ -1395,9 +1408,10 @@ function FactAssociationCardRow({ association, locale, unavailableLabel }: { ass
   const title = association.available
     ? getLocalizedObjectTitle(association, locale)
     : unavailableLabel;
-  const typeColor = target ? (CATEGORY_COLORS[target.factTypeKey] || CATEGORY_COLORS.other) : CATEGORY_COLORS.other;
+  const legacyTarget = associationLocator(association);
+  const typeColor = legacyTarget ? (CATEGORY_COLORS[legacyTarget.factTypeKey] || CATEGORY_COLORS.other) : CATEGORY_COLORS.other;
   const { openPanel } = usePanel();
-  const canOpen = Boolean(association.available && target);
+  const canOpen = Boolean(association.available && legacyTarget);
   const associationState = getFactAssociationState(association);
   const isDiscarded = associationState === 'discarded';
   const associationStateTooltip = associationState === null ? null : {
@@ -1408,8 +1422,8 @@ function FactAssociationCardRow({ association, locale, unavailableLabel }: { ass
     active: t('objectList.associationState.active'),
   }[associationState];
   const open = () => {
-    if (!canOpen || !target) return;
-    openPanel({ type: 'object', title, objectType: target.factTypeKey, objectId: target.objectId });
+    if (!canOpen || !legacyTarget) return;
+    openPanel({ type: 'object', title, objectType: legacyTarget.factTypeKey, objectId: legacyTarget.objectId });
   };
   return (
     <div
@@ -1423,7 +1437,7 @@ function FactAssociationCardRow({ association, locale, unavailableLabel }: { ass
       }}
       className={`group flex min-w-0 items-center gap-2 rounded-md px-1.5 py-2 text-left transition-colors ${isDiscarded ? 'text-slate-400/70 dark:text-slate-500/70' : ''} ${canOpen ? (isDiscarded ? 'cursor-pointer hover:bg-slate-500/5 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-slate-400/30' : 'cursor-pointer hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50') : 'cursor-default'}`}
     >
-      <ObjectTypeIcon type={target?.factTypeKey} size={13} className={`shrink-0 ${isDiscarded ? 'text-slate-400/65 dark:text-slate-500/60' : ''}`} style={isDiscarded ? undefined : { color: typeColor }} />
+      <ObjectTypeIcon type={legacyTarget?.factTypeKey} size={13} className={`shrink-0 ${isDiscarded ? 'text-slate-400/65 dark:text-slate-500/60' : ''}`} style={isDiscarded ? undefined : { color: typeColor }} />
       <span className={`ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words ${isDiscarded ? 'text-slate-400/65 dark:text-slate-500/60' : 'text-ldvh-text-secondary/85 group-hover:text-ldvh-accent'}`}>{title}</span>
       {associationState !== null && associationStateTooltip !== null && <FactAssociationStateIcon state={associationState} tooltip={associationStateTooltip} />}
     </div>
@@ -1442,16 +1456,17 @@ const FACT_ASSOCIATION_STATE_RANK: Record<FactAssociationState, number> = {
 
 function getFactAssociationState(association: FactCardAssociation): FactAssociationState | null {
   if (!association.available || !association.status) return null;
-  if (association.target?.factTypeKey === 'spark') {
+  const targetType = associationLocator(association)?.factTypeKey;
+  if (targetType === 'spark') {
     if (association.status === 'open') return 'pending';
     if (association.status === 'discarded') return 'discarded';
     if (association.status === 'implemented') return 'closed';
   }
-  if (association.target?.factTypeKey === 'pitfall') {
+  if (targetType === 'pitfall') {
     if (association.status === 'draft') return 'pending';
     if (association.status === 'discarded') return 'discarded';
   }
-  if (association.target?.factTypeKey === 'workcase') {
+  if (targetType === 'workcase') {
     if (isDiscardedWorkCaseAssociation(association)) return 'discarded';
     if (association.status === 'closed') return 'closed';
     if (association.progressGroup === 'plan_confirmation' || association.progressGroup === 'closure_confirmation') return 'pending';

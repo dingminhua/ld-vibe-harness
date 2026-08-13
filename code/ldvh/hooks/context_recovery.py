@@ -298,14 +298,23 @@ def _project_binding(
 def _fact_ref(value: Any, field: str) -> JsonObject:
     if not isinstance(value, dict):
         raise ContextRecoveryError(f"{field} must be a fact reference")
+    if set(value) == {"object_uid"}:
+        from ldvh.facts.identity import canonical_object_uid
+
+        object_uid = canonical_object_uid(value.get("object_uid"))
+        if object_uid is None:
+            raise ContextRecoveryError(f"{field}.object_uid must be a canonical lowercase UUIDv7")
+        return {"object_uid": object_uid}
     required = ("governed_project_id", "fact_type_key", "object_id")
     if set(value) != set(required) or any(not isinstance(value.get(key), str) or not value[key] for key in required):
         raise ContextRecoveryError(f"{field} must be one exact stable fact reference")
     return {key: value[key] for key in required}
 
 
-def _ref_key(value: JsonObject) -> tuple[str, str, str]:
-    return value["governed_project_id"], value["fact_type_key"], value["object_id"]
+def _ref_key(value: JsonObject) -> tuple[str, ...]:
+    if "object_uid" in value:
+        return ("uid", value["object_uid"])
+    return ("legacy", value["governed_project_id"], value["fact_type_key"], value["object_id"])
 
 
 def _compact_card(value: JsonObject) -> JsonObject:
@@ -316,13 +325,20 @@ def _compact_card(value: JsonObject) -> JsonObject:
         or value.get("excerpts") != []
     ):
         raise ContextRecoveryError("F1 response contains an invalid card")
-    if ref["fact_type_key"] not in {"adr", "workcase"}:
+    object_id = value["fields"].get("object_id")
+    fact_type_key = (
+        "adr" if isinstance(object_id, str) and object_id.startswith("adr-")
+        else "workcase" if isinstance(object_id, str) and object_id.startswith("workcase-")
+        else None
+    )
+    if fact_type_key not in {"adr", "workcase"}:
         raise ContextRecoveryError("F1 response contains a type outside the recovery baseline")
-    if ref["fact_type_key"] == "workcase" and value["fields"].get("status") not in ACTIVE_STATUSES:
+    if fact_type_key == "workcase" and value["fields"].get("status") not in ACTIVE_STATUSES:
         raise ContextRecoveryError("F1 response contains a terminal WorkCase")
     source_locators, omitted = _source_locators(value.get("source_refs"), limit=3)
     return {
         "fact_ref": ref,
+        "fact_type_key": fact_type_key,
         "fields": value["fields"],
         "source_locators": source_locators,
         "omitted_source_locator_count": omitted,
@@ -795,8 +811,16 @@ def recover_context(
         coverage_complete = False
         diagnostics.append({"code": "resource_budget_exceeded", "summary": str(error)})
 
-    workcase_cards = [card for card in cards if card["fact_ref"]["fact_type_key"] == "workcase"]
-    adr_cards = [card for card in cards if card["fact_ref"]["fact_type_key"] == "adr"]
+    workcase_cards = [
+        {key: value for key, value in card.items() if key != "fact_type_key"}
+        for card in cards
+        if card["fact_type_key"] == "workcase"
+    ]
+    adr_cards = [
+        {key: value for key, value in card.items() if key != "fact_type_key"}
+        for card in cards
+        if card["fact_type_key"] == "adr"
+    ]
     projection["adr_cards"] = adr_cards
     projection["workcase_binding"].update(
         {

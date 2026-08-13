@@ -8,10 +8,11 @@ from pathlib import Path
 from typing import Any
 
 from ldvh.facts.contracts import LAYOUTS
-from ldvh.facts.models import FactReference
+from ldvh.facts.models import FactReference, StableFactReference, UIDFactReference
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
 from ldvh.helper.operations.fact_creation_request import observed_signature_injection_problems
+from ldvh.helper.operations.fact_reference_support import parse_stable_fact_reference
 from ldvh.helper.requests import CommonRequest
 from ldvh.source_references import source_reference_problems
 
@@ -50,7 +51,7 @@ _CORRECT_ARGUMENT_FIELDS = frozenset(
 )
 _FACT_REF_FIELDS = frozenset({"governed_project_id", "fact_type_key", "object_id"})
 _ROUTE_TARGET_FINGERPRINT_FIELDS = frozenset({"target", "content_fingerprint"})
-_CODE_MANAGED_FIELDS = frozenset({"object_id", "fact_type_key", "created_at", "updated_at"})
+_CODE_MANAGED_FIELDS = frozenset({"object_uid", "object_id", "fact_type_key", "created_at", "updated_at"})
 _FINGERPRINT = re.compile(r"[0-9a-f]{64}\Z")
 
 
@@ -58,7 +59,7 @@ _FINGERPRINT = re.compile(r"[0-9a-f]{64}\Z")
 class WorkCaseWriteRequest:
     workspace_root: Path | None
     governance_scope: tuple[ScopeDescriptor, ...]
-    fact_ref: FactReference
+    fact_ref: StableFactReference
     expected_content_fingerprint: str
     fact_object: dict[str, Any]
     authorization_reference: tuple[dict[str, Any], ...]
@@ -87,7 +88,7 @@ class CompleteWorkCaseTerminationRequest(WorkCaseWriteRequest):
 
 @dataclass(frozen=True, slots=True)
 class RouteTargetFingerprint:
-    target: FactReference
+    target: StableFactReference
     content_fingerprint: str
 
 
@@ -107,7 +108,7 @@ class WorkCaseWriteRequestParseResult:
 class _ParsedBase:
     workspace_root: Path | None
     governance_scope: tuple[ScopeDescriptor, ...]
-    fact_ref: FactReference
+    fact_ref: StableFactReference
     expected_content_fingerprint: str
     fact_object: dict[str, Any]
     authorization_reference: tuple[dict[str, Any], ...]
@@ -192,7 +193,14 @@ def _parse_base(
         else:
             workspace_root = Path(value)
 
-    fact_ref = _fact_reference(request.arguments.get("fact_ref"), "arguments.fact_ref", problems)
+    raw_fact_ref = request.arguments.get("fact_ref")
+    fact_ref: StableFactReference | None
+    if isinstance(raw_fact_ref, dict) and set(raw_fact_ref) == {"object_uid"}:
+        parsed_uid, fact_ref_problems = parse_stable_fact_reference(raw_fact_ref, "arguments.fact_ref")
+        problems.extend(fact_ref_problems)
+        fact_ref = parsed_uid if isinstance(parsed_uid, UIDFactReference) else None
+    else:
+        fact_ref = _fact_reference(raw_fact_ref, "arguments.fact_ref", problems)
 
     fingerprint = request.arguments.get("expected_content_fingerprint")
     if not isinstance(fingerprint, str) or _FINGERPRINT.fullmatch(fingerprint) is None:
@@ -288,7 +296,7 @@ def _route_target_fingerprints(
         problems.append(f"{path} 必须是 array")
         return ()
     parsed: list[RouteTargetFingerprint] = []
-    identities: set[tuple[str, str, str]] = set()
+    identities: set[tuple[object, ...]] = set()
     for index, item in enumerate(value):
         member_path = f"{path}[{index}]"
         if not isinstance(item, dict):
@@ -302,13 +310,18 @@ def _route_target_fingerprints(
         missing = sorted(_ROUTE_TARGET_FINGERPRINT_FIELDS - set(item))
         if missing:
             problems.append(f"{member_path} 缺少字段: {', '.join(missing)}")
-        target = _fact_reference(item.get("target"), f"{member_path}.target", problems)
+        target, target_problems = parse_stable_fact_reference(item.get("target"), f"{member_path}.target")
+        problems.extend(target_problems)
         fingerprint = item.get("content_fingerprint")
         if not isinstance(fingerprint, str) or _FINGERPRINT.fullmatch(fingerprint) is None:
             problems.append(f"{member_path}.content_fingerprint 必须是 64 位小写十六进制 string")
         if target is None or not isinstance(fingerprint, str) or _FINGERPRINT.fullmatch(fingerprint) is None:
             continue
-        identity = (target.governed_project_id, target.fact_type_key, target.object_id)
+        identity = (
+            ("uid", target.object_uid)
+            if isinstance(target, UIDFactReference)
+            else ("legacy", target.governed_project_id, target.fact_type_key, target.object_id)
+        )
         if identity in identities:
             problems.append(f"{path} 不得包含重复 target")
             continue
@@ -342,7 +355,11 @@ def parse_correct_closed_workcase_request(
 
     if parsed is not None:
         for index, target in enumerate(route_targets):
-            if target.target.governed_project_id != parsed.fact_ref.governed_project_id:
+            if (
+                isinstance(target.target, FactReference)
+                and isinstance(parsed.fact_ref, FactReference)
+                and target.target.governed_project_id != parsed.fact_ref.governed_project_id
+            ):
                 problems.append(
                     f"arguments.route_target_fingerprints[{index}].target.governed_project_id "
                     "必须与 source WorkCase 属于同一项目"

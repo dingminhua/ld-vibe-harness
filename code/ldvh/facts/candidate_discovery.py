@@ -70,10 +70,12 @@ def discover_fact_candidates(
     project_id: str,
     common_dir: Path,
     schemas: dict[str, FactSchema],
+    *,
+    index: ProjectFactIndex | None = None,
 ) -> FactCandidateSnapshot:
     """Scan canonical identities once and bind the snapshot to content-sensitive fingerprints."""
 
-    index = ProjectFactIndex(root, project_id, schemas, common_dir)
+    index = index or ProjectFactIndex(root, project_id, schemas, common_dir)
     keys: list[tuple[str, str]] = []
     structural: list[dict[str, object]] = []
     complete = True

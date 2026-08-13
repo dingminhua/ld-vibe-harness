@@ -96,7 +96,11 @@ function RelationTarget({ relation, currentProjectId, locale, showRelationKey }:
   showRelationKey: boolean;
 }) {
   const target = relation.target;
-  if (currentProjectId && target.governedProjectId === currentProjectId) {
+  if ('objectUid' in target && relation.resolvedTarget
+    && currentProjectId && relation.resolvedTarget.governedProjectId === currentProjectId) {
+    return <ReadableRelationTarget relation={relation} locale={locale} showRelationKey={showRelationKey} />;
+  }
+  if ('governedProjectId' in target && currentProjectId && target.governedProjectId === currentProjectId) {
     return <ReadableRelationTarget relation={relation} locale={locale} showRelationKey={showRelationKey} />;
   }
   return <ExternalRelationTarget relation={relation} locale={locale} showRelationKey={showRelationKey} />;
@@ -108,26 +112,30 @@ function ReadableRelationTarget({ relation, locale, showRelationKey }: {
   showRelationKey: boolean;
 }) {
   const target = relation.target;
+  const locator = relation.resolvedTarget ?? ('governedProjectId' in target ? target : null);
+  if (!locator) {
+    return <ExternalRelationTarget relation={relation} locale={locale} showRelationKey={showRelationKey} />;
+  }
   const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
   const [detail, setDetail] = useState<ObjectDetail | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     setDetail(null);
-    fetchObjectDetail(target.factTypeKey, target.objectId)
+    fetchObjectDetail(locator.factTypeKey, locator.objectId)
       .then((value) => { if (!cancelled) setDetail(value); })
       .catch(() => { if (!cancelled) setDetail(null); });
     return () => { cancelled = true; };
-  }, [target.factTypeKey, target.objectId]);
+  }, [locator.factTypeKey, locator.objectId]);
 
   const status = detail?.summary.status;
   const readMeta = getFactReadMeta(detail?.data);
   const title = relationTargetTitle(detail, readMeta, locale);
-  const typeColor = CATEGORY_COLORS[target.factTypeKey] || CATEGORY_COLORS.other;
+  const typeColor = CATEGORY_COLORS[locator.factTypeKey] || CATEGORY_COLORS.other;
   const isCurrentPanelOpen = Boolean(panelOpen && panelContent?.type === 'object'
-    && panelContent.objectType === target.factTypeKey && panelContent.objectId === target.objectId);
+    && panelContent.objectType === locator.factTypeKey && panelContent.objectId === locator.objectId);
   const PanelIcon = isCurrentPanelOpen ? ChevronLeft : ChevronRight;
-  const open = () => openPanel({ type: 'object', title, objectType: target.factTypeKey, objectId: target.objectId });
+  const open = () => openPanel({ type: 'object', title, objectType: locator.factTypeKey, objectId: locator.objectId });
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'Enter' && event.key !== ' ') return;
     event.preventDefault();
@@ -136,10 +144,10 @@ function ReadableRelationTarget({ relation, locale, showRelationKey }: {
 
   return (
     <div role="button" tabIndex={0} onClick={open} onKeyDown={onKeyDown} className="group flex min-w-0 cursor-pointer items-center gap-2 rounded-md px-1.5 py-2 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50">
-      <ObjectTypeIcon type={target.factTypeKey} size={13} className="shrink-0" style={{ color: typeColor }} />
+      <ObjectTypeIcon type={locator.factTypeKey} size={13} className="shrink-0" style={{ color: typeColor }} />
       {showRelationKey && <RelationKeyChip relationKey={relation.relationKey} locale={locale} />}
       <span className="ldvh-meta-primary min-w-0 flex-1 truncate group-hover:text-ldvh-accent">{title}</span>
-      {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(target.factTypeKey, status, locale)} objectType={target.factTypeKey} size="xs" />}
+      {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(locator.factTypeKey, status, locale)} objectType={locator.factTypeKey} size="xs" />}
       <PanelIcon size={16} className="shrink-0 text-ldvh-text-secondary/70 transition-colors group-hover:text-ldvh-accent" aria-hidden="true" />
     </div>
   );
@@ -158,13 +166,15 @@ function ExternalRelationTarget({ relation, locale, showRelationKey }: {
   showRelationKey: boolean;
 }) {
   const target = relation.target;
-  const typeColor = CATEGORY_COLORS[target.factTypeKey] || CATEGORY_COLORS.other;
+  const isUid = 'objectUid' in target;
+  const factTypeKey = isUid ? 'uid' : target.factTypeKey;
+  const typeColor = CATEGORY_COLORS[factTypeKey] || CATEGORY_COLORS.other;
   return (
     <div className="flex min-w-0 items-center gap-2 rounded-md px-1.5 py-2">
-      <ObjectTypeIcon type={target.factTypeKey} size={13} className="shrink-0" style={{ color: typeColor }} />
+      <ObjectTypeIcon type={factTypeKey} size={13} className="shrink-0" style={{ color: typeColor }} />
       {showRelationKey && <RelationKeyChip relationKey={relation.relationKey} locale={locale} />}
-      <span className="ldvh-meta-primary min-w-0 flex-1 truncate">{target.objectId}</span>
-      <span className="ldvh-meta-muted shrink-0">{target.governedProjectId}</span>
+      <span className="ldvh-meta-primary min-w-0 flex-1 truncate">{isUid ? target.objectUid : target.objectId}</span>
+      {!isUid && <span className="ldvh-meta-muted shrink-0">{target.governedProjectId}</span>}
     </div>
   );
 }

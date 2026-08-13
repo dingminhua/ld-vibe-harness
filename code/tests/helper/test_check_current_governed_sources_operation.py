@@ -90,7 +90,13 @@ def test_complete_check_preserves_raw_subreports_and_excludes_business_files(
         }
         assert set(report["scope"]) == {"requested", "completed", "not_completed"}
     facts = response["result"]["facts"]
-    assert facts["result"] == {"status": "complete", "object_count": 1, "problems": []}
+    assert facts["result"] == {
+        "status": "complete",
+        "object_count": 1,
+        "uid_index_object_count": 1,
+        "short_ref_collision_group_count": 0,
+        "problems": [],
+    }
     assert response["scope"]["requested"][0]["check_scope"] == "current_rule_source"
     assert response["scope"]["requested"][1] == {
         "check_scope": "complete_governed_fact_library",

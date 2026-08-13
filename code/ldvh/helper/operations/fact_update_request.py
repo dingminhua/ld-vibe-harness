@@ -7,11 +7,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ldvh.facts.contracts import LAYOUTS, WRITABLE_FACT_TYPE_KEYS
-from ldvh.facts.models import FactReference
+from ldvh.facts.contracts import WRITABLE_FACT_TYPE_KEYS
+from ldvh.facts.models import FactReference, StableFactReference
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
 from ldvh.helper.operations.fact_creation_request import observed_signature_injection_problems
+from ldvh.helper.operations.fact_reference_support import parse_stable_fact_reference
 from ldvh.helper.requests import CommonRequest
 
 REQUIRED_INPUTS = (
@@ -25,7 +26,6 @@ OPTIONAL_INPUTS = (
     "authorization_reference",
 )
 _ARGUMENT_FIELDS = frozenset({"workspace_root", "fact_ref", "expected_content_fingerprint", "fact_object"})
-_FACT_REF_FIELDS = frozenset({"governed_project_id", "fact_type_key", "object_id"})
 _FINGERPRINT = re.compile(r"[0-9a-f]{64}\Z")
 
 
@@ -33,7 +33,7 @@ _FINGERPRINT = re.compile(r"[0-9a-f]{64}\Z")
 class FactUpdateRequest:
     workspace_root: Path | None
     governance_scope: tuple[ScopeDescriptor, ...]
-    fact_ref: FactReference
+    fact_ref: StableFactReference
     expected_content_fingerprint: str
     fact_object: dict[str, Any]
     authorization_reference: tuple[dict[str, Any], ...]
@@ -73,33 +73,10 @@ def parse_fact_update_request(
         else:
             workspace_root = Path(value)
 
-    fact_ref: FactReference | None = None
-    raw_ref = request.arguments.get("fact_ref")
-    if not isinstance(raw_ref, dict):
-        problems.append("arguments.fact_ref 必须是 object")
-    else:
-        unknown_ref = sorted(set(raw_ref) - _FACT_REF_FIELDS)
-        if unknown_ref:
-            problems.append(f"arguments.fact_ref 包含未知字段: {', '.join(unknown_ref)}")
-        values: dict[str, str] = {}
-        for name in sorted(_FACT_REF_FIELDS):
-            value = raw_ref.get(name)
-            if not isinstance(value, str) or not value:
-                problems.append(f"arguments.fact_ref.{name} 必须是非空 string")
-            else:
-                values[name] = value
-        if len(values) == len(_FACT_REF_FIELDS):
-            layout = LAYOUTS.get(values["fact_type_key"])
-            if layout is None or values["fact_type_key"] not in WRITABLE_FACT_TYPE_KEYS:
-                problems.append("arguments.fact_ref.fact_type_key 未匹配当前支持通用更新的五类事实类型")
-            elif layout.object_id_pattern.fullmatch(values["object_id"]) is None:
-                problems.append("arguments.fact_ref.object_id 与事实类型格式不一致")
-            else:
-                fact_ref = FactReference(
-                    values["governed_project_id"],
-                    values["fact_type_key"],
-                    values["object_id"],
-                )
+    fact_ref, reference_problems = parse_stable_fact_reference(request.arguments.get("fact_ref"), "arguments.fact_ref")
+    problems.extend(reference_problems)
+    if isinstance(fact_ref, FactReference) and fact_ref.fact_type_key not in WRITABLE_FACT_TYPE_KEYS:
+        problems.append("arguments.fact_ref.fact_type_key 未匹配当前支持通用更新的五类事实类型")
 
     fingerprint = request.arguments.get("expected_content_fingerprint")
     if not isinstance(fingerprint, str) or _FINGERPRINT.fullmatch(fingerprint) is None:
@@ -110,7 +87,7 @@ def parse_fact_update_request(
         problems.append("arguments.fact_object 必须是 object")
         fact_object = {}
     if isinstance(fact_object, dict):
-        if fact_ref is None or fact_ref.fact_type_key != "workcase":
+        if not isinstance(fact_ref, FactReference) or fact_ref.fact_type_key != "workcase":
             problems.extend(observed_signature_injection_problems(request.observed_context, fact_object))
     if request.requested_disclosure is not None:
         problems.append("requested_disclosure 对事实对象更新操作必须为 null 或省略")

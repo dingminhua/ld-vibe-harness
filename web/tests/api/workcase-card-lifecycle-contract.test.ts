@@ -417,9 +417,9 @@ test('Card targets remain plain relationship facts while Focus may opt into seco
   assert.match(target, /flex min-w-0 items-center gap-2/);
   assert.match(target, /size=\{13\} className="shrink-0"/);
   assert.match(target, /<span className="ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words text-left">[\s\S]*\{title\}/);
-  assert.match(target, /\{target\.objectId\}/);
+  assert.match(target, /\{target\.objectId \?\? target\.objectUid\}/);
   assert.match(target, /onOpenTarget\?: \(target: WorkCaseContributionTarget, title: string\) => void/);
-  assert.match(target, /if \(onOpenTarget\) \{/);
+  assert.match(target, /if \(onOpenTarget && canOpenTarget\) \{/);
   assert.match(target, /<button[\s\S]*onClick=\{\(\) => onOpenTarget\(target, title\)\}/);
   assert.match(target, /<div className=\{rowClassName\}>\{rowContent\}<\/div>/);
   assert.match(frame, /role="button"[\s\S]*tabIndex=\{0\}[\s\S]*onClick=\{\(\) => onOpen\(obj\.id\)\}[\s\S]*onKeyDown=/);
@@ -552,14 +552,14 @@ test('closure confirmation cards render the closure-decision input zone and shar
   assert.match(contributions, /onOpenTarget\?: \(target: WorkCaseContributionTarget, title: string\) => void;/);
   assert.match(contributions, /fetchObjectDetail\(target\.factTypeKey, target\.objectId\)/);
   assert.match(contributions, /<ObjectTypeIcon type=\{target\.factTypeKey\}/);
-  assert.match(contributions, /\{target\.objectId\}/);
+  assert.match(contributions, /\{target\.objectId \?\? target\.objectUid\}/);
   assert.doesNotMatch(contributions, /getTypeLabel\(target\.factTypeKey, locale\)/);
   assert.match(contributions, /if \(!detail \|\| !isReadableFact\(readMeta\)\) return '—';/);
   assert.match(contributions, /objectList\.workcaseTargetReading/);
   assert.match(contributions, /getFieldValueLabel\('read_status', readMeta\.readStatus \?\? 'unreadable', locale\)/);
   assert.match(contributions, /whitespace-normal break-words/);
   assert.doesNotMatch(contributions, /flex-1 truncate/);
-  assert.match(contributions, /if \(onOpenTarget\) \{/);
+  assert.match(contributions, /if \(onOpenTarget && canOpenTarget\) \{/);
   assert.match(contributions, /onClick=\{\(\) => onOpenTarget\(target, title\)\}/);
   assert.match(contributions, /<ArrowRight size=\{13\}/);
 
@@ -671,6 +671,34 @@ test('closure confirmation projects a stable closure-proposal subset only when w
     ],
     sparkSuggestions: [{ suggestionId: 'suggestion-next', suggestionKind: 'follow_up_opportunity', summary: '保留后续机会', followUpSummary: '由 Human 日后判断是否建立 Spark。' }],
   });
+});
+
+test('closure confirmation preserves UID route targets without rewriting them to legacy triples', () => {
+  const objectUid = '0198f1c7-8a2b-7c3d-9e4f-123456789abc';
+  const projected = projectCurrentCard({
+    object_id: 'workcase-0112',
+    fact_type_key: 'workcase',
+    title: '等待关闭确认',
+    status: 'open',
+    phase: 'human_closure_confirming',
+    updated_at: '2026-07-27T00:00:00+08:00',
+    goal: '保留 UID 路由身份。',
+    closure_proposal: {
+      proposed_outcome: 'partial',
+      proposed_disposition_summary: '路由剩余责任。',
+      residual_decisions: [{
+        residual_id: 'residual-uid',
+        summary: '继续跟进',
+        proposed_disposition: 'route_existing',
+        route_target: { object_uid: objectUid, content_fingerprint: 'a'.repeat(64) },
+      }],
+    },
+  });
+
+  const closureProposal = projected.closureProposal as {
+    residualDecisions: Array<{ routeTarget?: Record<string, string> }>;
+  };
+  assert.deepEqual(closureProposal.residualDecisions[0].routeTarget, { objectUid });
 });
 
 test('closure confirmation rejects route targets without an exact fingerprint and proposals with unknown members', () => {

@@ -23,6 +23,7 @@ from ldvh.facts.relations import (
     ProjectFactIndex,
     WorkCaseRouteTargetSnapshot,
     proposal_route_target_snapshots,
+    resolve_workcase_route_target_snapshot,
     validate_workcase_incoming_dependencies,
     validate_workcase_route_target_alignment,
     validate_workcase_route_target_snapshots,
@@ -143,6 +144,7 @@ def _complete_after(
 ) -> dict[str, Any]:
     fields = {
         **dict(command.supplied),
+        **({"object_uid": before["object_uid"]} if "object_uid" in before else {}),
         "object_id": before["object_id"],
         "fact_type_key": before["fact_type_key"],
         "created_at": before["created_at"],
@@ -789,15 +791,28 @@ def _project_stable_route_target_issues(
 ) -> tuple[tuple[FactIssue, ...], bool]:
     """Confirm that freshly read targets remain valid after project relation stabilization."""
 
-    stabilize_project_index(
-        index,
-        ((snapshot.target.fact_type_key, snapshot.target.object_id) for snapshot in snapshots),
-    )
     issues: list[FactIssue] = []
     unavailable = False
+    resolved: list[tuple[WorkCaseRouteTargetSnapshot, str, str]] = []
     for snapshot in snapshots:
+        target_type, target_id, _target_read, status = resolve_workcase_route_target_snapshot(
+            index, snapshot, fresh=False
+        )
+        if status == "unavailable":
+            unavailable = True
+            continue
+        if status != "resolved" or not isinstance(target_type, str) or not isinstance(target_id, str):
+            issues.append(
+                FactIssue("relation", "WorkCase route target 未能稳定解析", snapshot.origin_path)
+            )
+            continue
+        resolved.append((snapshot, target_type, target_id))
+    if issues or unavailable:
+        return tuple(issues), unavailable
+    stabilize_project_index(index, ((target_type, target_id) for _, target_type, target_id in resolved))
+    for snapshot, target_type, target_id in resolved:
         path = snapshot.origin_path
-        target_read = index.cache.get((snapshot.target.fact_type_key, snapshot.target.object_id))
+        target_read = index.cache.get((target_type, target_id))
         if target_read is None or target_read.fields is None:
             if target_read is not None and target_read.check_status == "unavailable":
                 unavailable = True

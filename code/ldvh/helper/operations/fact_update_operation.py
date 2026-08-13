@@ -25,10 +25,12 @@ from ldvh.helper.operation_runtime import (
 from ldvh.helper.operations.fact_creation_operation import inject_observed_write_signature
 from ldvh.helper.operations.fact_creation_request import observed_write_signature_required_problem
 from ldvh.helper.operations.fact_operation_support import (
+    configuration_reading_boundaries,
     plain,
     post_write_integrity_audit,
     reading_boundary,
 )
+from ldvh.helper.operations.fact_reference_support import ResolvedFactReference, resolve_stable_fact_reference
 from ldvh.helper.operations.fact_update_request import (
     OPTIONAL_INPUTS,
     REQUIRED_INPUTS,
@@ -50,14 +52,14 @@ _IMPLEMENTATION_SOURCE = source_reference(
     "implementation",
     "code/ldvh/helper/operations/fact_update_operation.py",
 )
-_MANAGED_FIELDS = frozenset({"object_id", "fact_type_key", "created_at", "updated_at"})
+_MANAGED_FIELDS = frozenset({"object_uid", "object_id", "fact_type_key", "created_at", "updated_at"})
 
 
 def _validated_request(request: CommonRequest, context: OperationExecutionContext) -> FactUpdateRequest:
     parsed = parse_fact_update_request(request, context)
     if parsed.request is None:
         raise OperationRequestError(parsed.problems, sources=(_CONTRACT,))
-    if parsed.request.fact_ref.fact_type_key == "workcase":
+    if hasattr(parsed.request.fact_ref, "fact_type_key") and parsed.request.fact_ref.fact_type_key == "workcase":
         raise OperationRequestError(
             (
                 "通用 update-fact-object 不接受 WorkCase；活动期更新、主动终止开始、主动终止完成、"
@@ -295,12 +297,13 @@ def _rollback_failure_prefix(rollback: object) -> str:
 
 def _result(read: FactReadResult, project_id: str, fact_type_key: str, object_id: str, previous: str) -> dict[str, Any]:
     assert read.content_fingerprint is not None
+    assert read.fields is not None
     return {
-        "actual_ref": {
-            "governed_project_id": project_id,
-            "fact_type_key": fact_type_key,
-            "object_id": object_id,
-        },
+        "actual_ref": (
+            {"object_uid": read.fields["object_uid"]}
+            if isinstance(read.fields.get("object_uid"), str)
+            else {"governed_project_id": project_id, "fact_type_key": fact_type_key, "object_id": object_id}
+        ),
         "canonical_path": read.canonical_path,
         "carrier": read.carrier,
         "previous_content_fingerprint": previous,
@@ -603,7 +606,17 @@ def _execute(
     reference = domain.fact_ref
     requested = (reference.to_json(),)
     run = _governance(domain)
-    boundary = _boundary(run)
+    schemas = project_fact_schemas(repository)
+    if hasattr(reference, "governed_project_id"):
+        boundary = _boundary(run)
+        resolved_reference = (
+            None
+            if boundary is None or boundary.governed_project_id != reference.governed_project_id
+            else ResolvedFactReference(reference, boundary)
+        )
+    else:
+        resolved_reference, _ = resolve_stable_fact_reference(run, reference, schemas)
+        boundary = None if resolved_reference is None else resolved_reference.boundary
     request_sources = (
         *tuple(plain(source) for source in run.sources),
         *tuple(plain(source) for source in domain.authorization_reference),
@@ -625,10 +638,9 @@ def _execute(
                 },
             ),
         )
-    if boundary.governed_project_id != reference.governed_project_id:
-        return _rejected(domain, run, "请求项目与实际管辖项目不一致", "fact_ref 已过期或属于另一项目", request_sources)
-
-    schemas = project_fact_schemas(repository)
+    reference = resolved_reference.reference
+    if reference.fact_type_key == "workcase":
+        return _rejected(domain, run, "通用更新不接受 WorkCase", "请使用 WorkCase 专属更新操作", request_sources)
     schema = schemas.get(reference.fact_type_key)
     if schema is None:
         return OperationExecution(
@@ -812,6 +824,7 @@ def _execute(
         boundary=boundary,
         schemas=schemas,
         audit_contract=_INTEGRITY_CONTRACT,
+        configuration_boundaries=configuration_reading_boundaries(run),
     )
 
 
@@ -835,10 +848,20 @@ def _check_availability(
             ),
         )
     run = _governance(domain)
-    boundary = _boundary(run)
     schemas = project_fact_schemas(repository)
-    schema = schemas.get(domain.fact_ref.fact_type_key)
-    if boundary is None or boundary.governed_project_id != domain.fact_ref.governed_project_id or schema is None:
+    if hasattr(domain.fact_ref, "governed_project_id"):
+        boundary = _boundary(run)
+        resolved_reference = (
+            None
+            if boundary is None or boundary.governed_project_id != domain.fact_ref.governed_project_id
+            else ResolvedFactReference(domain.fact_ref, boundary)
+        )
+    else:
+        resolved_reference, _ = resolve_stable_fact_reference(run, domain.fact_ref, schemas)
+        boundary = None if resolved_reference is None else resolved_reference.boundary
+    reference = None if resolved_reference is None else resolved_reference.reference
+    schema = None if reference is None else schemas.get(reference.fact_type_key)
+    if boundary is None or reference is None or schema is None or reference.fact_type_key == "workcase":
         return AvailabilityEvaluation(
             availability="unavailable_for_request",
             unavailable_scope=(requested,),
@@ -853,8 +876,8 @@ def _check_availability(
     current = _current_read(
         boundary,
         schemas,
-        domain.fact_ref.fact_type_key,
-        domain.fact_ref.object_id,
+        reference.fact_type_key,
+        reference.object_id,
     )
     if (
         current.check_status == "unavailable"

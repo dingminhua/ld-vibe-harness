@@ -198,8 +198,8 @@ def _read_unchecked(
 
 def _mutable(item: dict[str, object]) -> dict[str, object]:
     fields = deepcopy(item["fact_object"])
-    for key in ("object_id", "fact_type_key", "created_at", "updated_at"):
-        fields.pop(key)
+    for key in ("object_uid", "object_id", "fact_type_key", "created_at", "updated_at"):
+        fields.pop(key, None)
     return fields
 
 
@@ -314,6 +314,72 @@ def test_update_replaces_full_target_and_preserves_managed_identity(tmp_path: Pa
     assert working_tree_source["observed_at"] == after_fields["updated_at"]
     assert fact.stat().st_mode & 0o777 == 0o640
     assert response["changes"][0]["status"] == "updated"
+
+
+def test_uid_object_update_preserves_uid_and_returns_uid_authority(tmp_path: Path) -> None:
+    workspace, project, fact = _fixture(tmp_path)
+    object_uid = "0198f1c7-8a2b-7c3d-9e4f-123456789abc"
+    fact.write_text(
+        fact.read_text(encoding="utf-8").replace(
+            "object_id: spark-0001\n",
+            f"object_id: spark-0001\nobject_uid: {object_uid}\n",
+            1,
+        ),
+        encoding="utf-8",
+    )
+    before = _read(workspace, project, {"object_uid": object_uid})
+    target = _mutable(before)
+    target["summary"] = "UID remains authoritative after update"
+    _append_update_log(target)
+
+    response = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(
+            workspace,
+            project,
+            before["content_fingerprint"],
+            target,
+            {"object_uid": object_uid},
+        ),
+    ).response
+
+    assert response["outcome"] == "ok"
+    assert response["result"]["actual_ref"] == {"object_uid": object_uid}
+    assert response["result"]["fact_object"]["object_uid"] == object_uid
+    assert _read(workspace, project, {"object_uid": object_uid})["fact_object"]["object_uid"] == object_uid
+
+
+def test_uid_object_update_rejects_caller_supplied_uid_without_writing(tmp_path: Path) -> None:
+    workspace, project, fact = _fixture(tmp_path)
+    object_uid = "0198f1c7-8a2b-7c3d-9e4f-123456789abc"
+    fact.write_text(
+        fact.read_text(encoding="utf-8").replace(
+            "object_id: spark-0001\n",
+            f"object_id: spark-0001\nobject_uid: {object_uid}\n",
+            1,
+        ),
+        encoding="utf-8",
+    )
+    original = fact.read_bytes()
+    before = _read(workspace, project, {"object_uid": object_uid})
+    target = _mutable(before)
+    target["object_uid"] = "0198f1c7-8a2b-7c3d-9e4f-123456789abd"
+
+    response = handle_request(
+        "call",
+        "update-fact-object",
+        _update_payload(
+            workspace,
+            project,
+            before["content_fingerprint"],
+            target,
+            {"object_uid": object_uid},
+        ),
+    ).response
+
+    assert response["outcome"] == "invalid_request"
+    assert fact.read_bytes() == original
 
 
 def test_observed_partial_signature_and_session_survive_real_generic_update_schema_validation(
@@ -1314,7 +1380,7 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
             "更新后的正文不会积累空行，启发是保持一次完整替换；不等于任意内容均可更新。",
         ),
     }
-    for key in ("object_id", "fact_type_key", "created_at", "updated_at"):
+    for key in ("object_uid", "object_id", "fact_type_key", "created_at", "updated_at"):
         target["frontmatter"].pop(key)
     target["frontmatter"]["change_log"].append(
         {

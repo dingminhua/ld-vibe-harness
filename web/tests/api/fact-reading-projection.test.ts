@@ -25,6 +25,32 @@ test('contributed-to relations project through with their stable target', () => 
   assert.deepEqual(projected.unresolved, []);
 });
 
+test('UID relation targets remain visible as stable references', () => {
+  const objectUid = '0198f1c7-8a2b-7c3d-9e4f-123456789abc';
+  const projected = projectFactReadingAssociations({
+    relations: [{ relation_key: 'related-to', target: { object_uid: objectUid } }],
+  });
+  assert.deepEqual(projected.relations, [{
+    originPath: 'relations[0]', relationKey: 'related-to', target: { objectUid },
+  }]);
+  assert.deepEqual(projected.unresolved, []);
+});
+
+test('a uniquely resolved UID relation keeps UID authority and a separate detail locator', () => {
+  const objectUid = '0198f1c7-8a2b-7c3d-9e4f-123456789abc';
+  const resolvedTarget = { governedProjectId: 'sample', factTypeKey: 'workcase', objectId: 'workcase-0002' };
+  const projected = projectFactReadingAssociations({
+    relations: [{ relation_key: 'related-to', target: { object_uid: objectUid } }],
+    factAssociations: [{ target: { objectUid }, resolvedTarget, available: true }],
+  });
+  assert.deepEqual(projected.relations, [{
+    originPath: 'relations[0]', relationKey: 'related-to', target: { objectUid }, resolvedTarget,
+  }]);
+  assert.deepEqual(groupRelationsByTargetType(projected.relations), [{
+    factTypeKey: 'workcase', relations: projected.relations,
+  }]);
+});
+
 test('reading presents one association per target even when multiple relation keys point to it', () => {
   const projected = projectFactReadingAssociations({
     relations: [
@@ -57,7 +83,7 @@ test('groups ordinary relations by target type rather than their relation key', 
       { relation_key: 'related-to', target: { governed_project_id: 'sample', fact_type_key: 'spark', object_id: 'spark-0003' } },
     ],
   }).relations;
-  assert.deepEqual(groupRelationsByTargetType(relations).map((group) => [group.factTypeKey, group.relations.map((relation) => relation.target.objectId)]), [
+  assert.deepEqual(groupRelationsByTargetType(relations).map((group) => [group.factTypeKey, group.relations.map((relation) => 'objectId' in relation.target ? relation.target.objectId : relation.target.objectUid)]), [
     ['spark', ['spark-0002', 'spark-0003']],
     ['study', ['study-0001']],
   ]);

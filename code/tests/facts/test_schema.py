@@ -34,3 +34,12 @@ def test_projected_field_retains_definition_and_constraint_refs_and_fingerprint_
     )
     changed_definition_schema = FactSchema(schema.fact_type_key, changed_definition_fields)
     assert schema_fingerprint(changed_definition_schema) != schema_fingerprint(schema)
+
+
+def test_object_uid_is_conditionally_projected_for_every_fact_type(
+    current_fact_schemas: Mapping[str, FactSchema],
+) -> None:
+    for schema in current_fact_schemas.values():
+        object_uid = next(field for field in schema.fields if field.path == "object_uid")
+        assert object_uid.presence == "conditional"
+        assert object_uid.json_type == "string"

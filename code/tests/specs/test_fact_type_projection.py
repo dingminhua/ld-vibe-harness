@@ -29,4 +29,5 @@ def test_current_fact_type_field_projection_is_complete_and_derived(
     assert "| `object_id` | `object-id` | `string` | `required` |" in rendered
     assert "| `evolution` | `evolution` | `array` | `conditional` | `spark-evolution-entry` |" in rendered
     assert "| `evolution[].at` | `evolution-at` | `string` | `required` |" in rendered
-    assert "| `relations[].target.object_id` | `relation-target-object-id` | `string` | `required` |" in rendered
+    assert "| `relations[].target.object_uid` | `relation-target-object-uid` | `string` | `conditional` |" in rendered
+    assert "| `relations[].target.object_id` | `relation-target-object-id` | `string` | `conditional` |" in rendered

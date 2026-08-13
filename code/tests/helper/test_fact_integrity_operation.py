@@ -97,7 +97,9 @@ def test_complete_library_reports_complete_with_contract_shape(tmp_path: Path) -
     assert result.exit_code == 0
     assert result.response["outcome"] == "ok"
     domain = result.response["result"]
-    assert set(domain) == {"status", "object_count", "problems"}
+    assert set(domain) == {
+        "status", "object_count", "uid_index_object_count", "short_ref_collision_group_count", "problems"
+    }
     assert domain["status"] == "complete"
     assert domain["object_count"] == 1
     assert domain["problems"] == []
@@ -117,7 +119,7 @@ def test_invalid_object_reports_partial_with_precise_problem(tmp_path: Path) -> 
     assert domain["object_count"] == 1
     assert len(domain["problems"]) == 1
     problem = domain["problems"][0]
-    assert set(problem) == {"fact_type_key", "canonical_path", "check_status", "issues"}
+    assert set(problem) == {"fact_type_key", "canonical_path", "related_paths", "check_status", "issues"}
     assert problem["fact_type_key"] == "spark"
     assert problem["canonical_path"] == "ldvh-base/sparks/spark-0001.yaml"
     assert problem["check_status"] == "invalid"

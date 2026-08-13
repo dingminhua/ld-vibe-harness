@@ -5,12 +5,15 @@ from pathlib import Path
 import pytest
 
 from ldvh.facts.models import FactIssue
+from ldvh.facts.creation import CreationBoundary
+from ldvh.facts.models import FactReference
 from ldvh.facts.repository import FactReadResult
 from ldvh.facts.schema import FactSchema
 from ldvh.governance.resolver import GovernanceResolutionRun
 from ldvh.helper.operation_runtime import OperationExecutionContext
 from ldvh.helper.operations import IMPLEMENTATIONS
 from ldvh.helper.operations import workcase_close_candidate_operation as operation
+from ldvh.helper.operations.fact_reference_support import ResolvedFactReference
 from ldvh.helper.requests import CommonRequest
 
 
@@ -101,6 +104,31 @@ def _install_read(monkeypatch: pytest.MonkeyPatch, fields: dict[str, object], *,
     monkeypatch.setattr(operation, "project_fact_schemas", lambda repository: {"workcase": FactSchema("workcase", ())})
     monkeypatch.setattr(operation, "read_fact_object", fake_read)
     return calls
+
+
+def test_candidate_operation_resolves_uid_reference_before_projection(monkeypatch) -> None:
+    calls = _install_read(monkeypatch, _fields())
+    uid = "0198f1c7-8a2b-7c3d-9e4f-123456789abc"
+    monkeypatch.setattr(
+        operation,
+        "resolve_stable_fact_reference",
+        lambda run, reference, schemas: (
+            ResolvedFactReference(
+                FactReference("sample", "workcase", "workcase-0047"),
+                CreationBoundary("sample", Path("/project"), Path("/git")),
+            ),
+            "resolved",
+        ),
+    )
+    request = _request()
+    request.arguments["fact_ref"] = {"object_uid": uid}
+
+    execution = operation._call(request, object(), OperationExecutionContext(Path("/project")))  # type: ignore[arg-type]
+
+    assert execution.outcome == "ok"
+    assert calls == ["workcase-0047"]
+    assert execution.result is not None
+    assert execution.result["actual_ref"] == {"object_uid": uid}
 
 
 def test_candidate_operation_is_registered_as_one_read_only_input_shape() -> None:

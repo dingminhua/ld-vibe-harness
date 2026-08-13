@@ -6,6 +6,7 @@ from dataclasses import replace
 import pytest
 
 from ldvh.diagnostics import Issue, SourceLocation
+from ldvh.facts.models import FactReference
 from ldvh.helper.operations import local_edit_candidates
 from ldvh.helper.operations.local_edit_candidates import LocalEditSelectionError, read_local_edit_candidates
 from ldvh.helper.operations.local_edit_request import LocalEditRequest, RuleLocalEditRequest
@@ -133,6 +134,31 @@ def test_study_candidate_uses_full_object_fingerprint_and_fixed_h2_target() -> N
         "后续分流",
     }
     assert any(gap.get("code") == "baseline_stale" for gap in response["gaps"])
+
+
+def test_study_uid_request_reads_the_resolved_locator_and_preserves_requested_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    object_uid = "0198f1c7-8a2b-7c3d-9e4f-123456789abc"
+    payload = json.loads(_study_payload())
+    payload["arguments"]["fact_ref"] = {"object_uid": object_uid}
+    original_resolver = local_edit_candidates.resolve_stable_fact_reference
+
+    def resolve_existing_study(run, _reference, schemas):
+        return original_resolver(run, FactReference("ldvh", "study", "study-0030"), schemas)
+
+    monkeypatch.setattr(local_edit_candidates, "resolve_stable_fact_reference", resolve_existing_study)
+
+    response = handle_request(
+        "call",
+        "prepare-local-edit-candidates",
+        json.dumps(payload, ensure_ascii=False),
+    ).response
+
+    assert response["outcome"] == "ok"
+    item = response["result"]["items"][0]
+    assert item["target"]["fact_ref"] == {"object_uid": object_uid}
+    assert item["source_ranges"][0]["source_ref"]["locator"].endswith("/ldvh-base/studies/study-0030.md")
 
 
 def test_study_selection_error_is_rejected(monkeypatch: pytest.MonkeyPatch) -> None:

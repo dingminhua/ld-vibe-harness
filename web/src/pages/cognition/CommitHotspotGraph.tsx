@@ -63,7 +63,7 @@ const RELATION_PHRASE_KEYS: Record<string, LocaleKey> = {
 };
 
 function nodeKey(node: CognitionRecentHotspotNode): string {
-  return `${node.type}:${node.id}`;
+  return node.object_uid ? `uid:${node.object_uid}` : `legacy:${node.type}:${node.id}`;
 }
 
 function safeId(value: string): string {

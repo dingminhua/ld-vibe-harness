@@ -314,8 +314,11 @@ def test_create_supports_all_yaml_fact_types(
     ).response
 
     assert response["outcome"] == "ok"
-    assert response["result"]["actual_ref"]["fact_type_key"] == fact_type_key
-    assert response["result"]["actual_ref"]["object_id"] == f"{fact_type_key}-0001"
+    assert set(response["result"]["actual_ref"]) == {"object_uid"}
+    created_object = response["result"]["fact_object"]
+    created_fields = created_object["frontmatter"] if fact_type_key == "study" else created_object
+    assert created_fields["fact_type_key"] == fact_type_key
+    assert created_fields["object_id"] == f"{fact_type_key}-0001"
 
 
 def test_create_rejects_non_open_workcase_initial_state(tmp_path: Path) -> None:
@@ -508,6 +511,7 @@ def _assert_creation_result_matrix(response: dict[str, object], fact_type_key: s
     assert isinstance(allocation, dict)
     assert isinstance(target, dict)
     assert set(allocation) == {
+        "attempted_object_uid",
         "attempted_object_id",
         "allocated_object_id",
         "counter_state",
@@ -667,7 +671,7 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
     ).response["result"]["items"][0]
     assert read["check_status"] == "mechanically_valid"
     target = deepcopy(read["fact_object"])
-    for key in ("object_id", "fact_type_key", "created_at", "updated_at"):
+    for key in ("object_uid", "object_id", "fact_type_key", "created_at", "updated_at"):
         target.pop(key)
     target["summary"] = "Waiting for Human execution approval after a real update."
     target["change_log"].append(
@@ -743,7 +747,7 @@ def test_prepare_has_no_canonical_side_effect_and_create_injects_managed_fields(
     assert response["outcome"] == "ok"
     _assert_creation_result_matrix(response)
     assert response["result"]["requested_candidate_id"] == "spark-0001"
-    assert response["result"]["actual_ref"]["object_id"] == "spark-0001"
+    assert response["result"]["fact_object"]["object_id"] == "spark-0001"
     assert set(response["result"]) == {
         "requested_candidate_id",
         "allocation",
@@ -753,6 +757,7 @@ def test_prepare_has_no_canonical_side_effect_and_create_injects_managed_fields(
         "fact_object",
     }
     assert response["result"]["allocation"] == {
+        "attempted_object_uid": response["result"]["actual_ref"]["object_uid"],
         "attempted_object_id": "spark-0001",
         "allocated_object_id": "spark-0001",
         "counter_state": "committed",
@@ -800,7 +805,7 @@ def test_helper_create_read_and_update_accept_ignored_current_fact(tmp_path: Pat
     assert read["check_status"] == "mechanically_valid"
 
     target = dict(read["fact_object"])
-    for key in ("object_id", "fact_type_key", "created_at", "updated_at"):
+    for key in ("object_uid", "object_id", "fact_type_key", "created_at", "updated_at"):
         target.pop(key)
     target["summary"] = "Ignored current fact updated through the Helper."
     target["change_log"].append(
@@ -979,7 +984,7 @@ def test_helper_preserves_created_result_when_coordination_release_is_uncertain(
     assert response["outcome"] == "ok"
     assert response["scope"]["completed"] == response["scope"]["requested"]
     assert response["scope"]["not_completed"] == []
-    assert response["result"]["actual_ref"]["object_id"] == "spark-0001"
+    assert response["result"]["fact_object"]["object_id"] == "spark-0001"
     assert [change["status"] for change in response["changes"]] == [
         "counter-consumed",
         "target-created",
@@ -1089,6 +1094,7 @@ def test_helper_separates_uncertain_allocator_from_unstarted_target_creation(
     assert response["result"] == {
         "requested_candidate_id": "spark-0001",
         "allocation": {
+            "attempted_object_uid": response["result"]["allocation"]["attempted_object_uid"],
             "attempted_object_id": "spark-0001",
             "allocated_object_id": None,
             "counter_state": "uncertain",
@@ -1148,6 +1154,7 @@ def test_helper_reports_known_counter_noncommit_and_unstarted_target(
     assert response["result"] == {
         "requested_candidate_id": "spark-0001",
         "allocation": {
+            "attempted_object_uid": response["result"]["allocation"]["attempted_object_uid"],
             "attempted_object_id": "spark-0001",
             "allocated_object_id": None,
             "counter_state": "not_committed",
@@ -1299,7 +1306,7 @@ def test_two_ai_drafts_with_same_candidate_receive_distinct_final_ids(tmp_path: 
         )
 
     assert all(response["outcome"] == "ok" for response in responses)
-    actual_ids = {response["result"]["actual_ref"]["object_id"] for response in responses}
+    actual_ids = {response["result"]["fact_object"]["object_id"] for response in responses}
     assert actual_ids == {"spark-0001", "spark-0002"}
     assert sorted(path.name for path in (project / "ldvh-base" / "sparks").glob("*.yaml")) == [
         "spark-0001.yaml",
@@ -1405,7 +1412,7 @@ def test_create_revalidates_cross_type_relation_with_complete_schema_set(tmp_pat
     ).response
 
     assert response["outcome"] == "ok"
-    assert response["result"]["actual_ref"]["object_id"] == "spark-0001"
+    assert response["result"]["fact_object"]["object_id"] == "spark-0001"
 
 
 def test_stale_schema_or_worktree_basis_requires_prepare_again(tmp_path: Path) -> None:
@@ -1440,7 +1447,7 @@ def test_existing_candidate_is_never_overwritten_and_allocator_advances(tmp_path
 
     assert response["outcome"] == "ok"
     assert response["result"]["requested_candidate_id"] == "spark-0001"
-    assert response["result"]["actual_ref"]["object_id"] == "spark-0002"
+    assert response["result"]["fact_object"]["object_id"] == "spark-0002"
     assert existing.read_text(encoding="utf-8") == "manual collision\n"
 
 
@@ -1476,9 +1483,9 @@ def test_linked_worktrees_share_allocator_but_write_to_the_requested_worktree(tm
     ).response
 
     assert main_response["outcome"] == linked_response["outcome"] == "ok"
-    assert main_response["result"]["actual_ref"]["object_id"] == "spark-0001"
+    assert main_response["result"]["fact_object"]["object_id"] == "spark-0001"
     assert linked_basis["candidate_object_id"] == "spark-0002"
-    assert linked_response["result"]["actual_ref"]["object_id"] == "spark-0002"
+    assert linked_response["result"]["fact_object"]["object_id"] == "spark-0002"
     assert (project / "ldvh-base" / "sparks" / "spark-0001.yaml").is_file()
     assert not (project / "facts" / "sparks" / "spark-0002.yaml").exists()
     assert (linked / "ldvh-base" / "sparks" / "spark-0002.yaml").is_file()
@@ -1851,7 +1858,7 @@ Code 可以在最终分配身份后验证完整载体，启发是保留回读；
     assert response["outcome"] == "ok"
     _assert_creation_result_matrix(response, "study")
     assert response["result"]["carrier"] == "markdown"
-    assert response["result"]["actual_ref"]["object_id"] == "study-0001"
+    assert response["result"]["fact_object"]["frontmatter"]["object_id"] == "study-0001"
     assert response["result"]["fact_object"]["body"].lstrip().startswith("## 研究问题")
     assert (project / "ldvh-base" / "studies" / "study-0001.md").is_file()
 
@@ -1893,4 +1900,4 @@ def test_real_cli_prepares_and_creates_fact_object(tmp_path: Path) -> None:
     assert create.stderr == ""
     assert_common_response(create_response)
     assert create_response["outcome"] == "ok"
-    assert create_response["result"]["actual_ref"]["object_id"] == "spark-0001"
+    assert create_response["result"]["fact_object"]["object_id"] == "spark-0001"

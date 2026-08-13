@@ -40,7 +40,7 @@ function boundPresence(type: string): Map<string, string> {
 
 test('Web field contract is exactly the 05 registry and type bindings projected through 08', () => {
   const projectionRows = new Map(rowsAfter(attachment, '## 页面消费字段投影').map((row) => [row[0], row]));
-  const identityCommon = ['object_id', 'fact_type_key', 'title', 'status', 'created_at', 'updated_at'];
+  const identityCommon = ['object_uid', 'object_id', 'fact_type_key', 'title', 'status', 'created_at', 'updated_at'];
 
   for (const type of FACT_TYPES) {
     const bindings = boundPresence(type);

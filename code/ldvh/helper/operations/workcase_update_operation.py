@@ -30,10 +30,12 @@ from ldvh.helper.operation_runtime import (
 from ldvh.helper.operations.fact_creation_operation import inject_observed_write_signature
 from ldvh.helper.operations.fact_creation_request import observed_write_signature_required_problem
 from ldvh.helper.operations.fact_operation_support import (
+    configuration_reading_boundaries,
     plain,
     post_write_integrity_audit,
     reading_boundary,
 )
+from ldvh.helper.operations.fact_reference_support import resolve_stable_fact_reference
 from ldvh.helper.operations.workcase_update_request import (
     BEGIN_TERMINATION_OPTIONAL_INPUTS,
     BEGIN_TERMINATION_REQUIRED_INPUTS,
@@ -490,12 +492,13 @@ def _result(
 ) -> dict[str, Any]:
     assert before.content_fingerprint is not None
     assert after.content_fingerprint is not None
+    assert after.fields is not None
     result = {
-        "actual_ref": {
-            "governed_project_id": project_id,
-            "fact_type_key": "workcase",
-            "object_id": object_id,
-        },
+        "actual_ref": (
+            {"object_uid": after.fields["object_uid"]}
+            if isinstance(after.fields.get("object_uid"), str)
+            else {"governed_project_id": project_id, "fact_type_key": "workcase", "object_id": object_id}
+        ),
         "canonical_path": after.canonical_path,
         "carrier": after.carrier,
         "previous_content_fingerprint": before.content_fingerprint,
@@ -633,12 +636,17 @@ def _apply_core_workcase_write(
     schema: FactSchema,
     event_at: str,
     observed_context: dict[str, Any],
+    object_id: str | None = None,
 ) -> object:
     """The only Helper-to-Core WorkCase transaction adapter."""
 
     from ldvh.facts.relations import WorkCaseRouteTargetSnapshot
     from ldvh.facts.workcase_update import WorkCaseWriteCommand, apply_workcase_write
 
+    if object_id is None:
+        object_id = getattr(domain.fact_ref, "object_id", None)
+    if not isinstance(object_id, str):
+        raise ValueError("resolved WorkCase object_id is required")
     route_targets = ()
     independent_review_reference = None
     if isinstance(domain, CorrectClosedWorkCaseRequest):
@@ -656,7 +664,7 @@ def _apply_core_workcase_write(
             boundary=boundary,
             schemas=schemas,
             schema=schema,
-            object_id=domain.fact_ref.object_id,
+            object_id=object_id,
             expected_content_fingerprint=domain.expected_content_fingerprint,
             supplied=inject_observed_write_signature(dict(domain.fact_object), observed_context),
             event_at=event_at,
@@ -935,7 +943,21 @@ def _execute(
     requested = (reference.to_json(),)
     run = _governance(domain)
     sources = _request_sources(mode, domain, run)
-    boundary = _boundary(run)
+    schemas = project_fact_schemas(repository)
+    resolved_reference = None
+    if mode == "recover":
+        boundary = _boundary(run)
+    elif hasattr(reference, "governed_project_id"):
+        boundary = _boundary(run)
+        if boundary is not None and boundary.governed_project_id == reference.governed_project_id:
+            from ldvh.helper.operations.fact_reference_support import ResolvedFactReference
+
+            resolved_reference = ResolvedFactReference(reference, boundary)
+        else:
+            boundary = None
+    else:
+        resolved_reference, _ = resolve_stable_fact_reference(run, reference, schemas)
+        boundary = None if resolved_reference is None else resolved_reference.boundary
     if boundary is None:
         return OperationExecution(
             outcome="unavailable",
@@ -952,10 +974,43 @@ def _execute(
                 },
             ),
         )
-    if boundary.governed_project_id != reference.governed_project_id:
-        return _rejected(mode, domain, run, "请求项目与实际管辖项目不一致", "fact_ref 属于另一项目", sources)
-
-    schemas = project_fact_schemas(repository)
+    if resolved_reference is not None:
+        reference = resolved_reference.reference
+    if reference.fact_type_key != "workcase":
+        return _rejected(mode, domain, run, "目标不是 WorkCase", "fact_ref 必须解析为 WorkCase", sources)
+    if isinstance(domain, CorrectClosedWorkCaseRequest):
+        resolved_route_targets: list[RouteTargetFingerprint] = []
+        for route_target in domain.route_target_fingerprints:
+            resolved_target, target_status = resolve_stable_fact_reference(run, route_target.target, schemas)
+            if resolved_target is None:
+                return OperationExecution(
+                    outcome="unavailable" if target_status == "unavailable" else "rejected",
+                    summary="WorkCase 更正的 route target 未形成唯一稳定目标",
+                    requested_scope=requested,
+                    not_completed_scope=requested,
+                    governance_resolution=run.result.to_json() if run.result else None,
+                    sources=sources,
+                    gaps=(
+                        {
+                            "summary": f"route target 解析状态为 {target_status}",
+                            "scope": [route_target.target.to_json()],
+                            "source_refs": [_CONTRACTS[mode]],
+                        },
+                    ),
+                )
+            if resolved_target.reference.governed_project_id != reference.governed_project_id:
+                return _rejected(
+                    mode,
+                    domain,
+                    run,
+                    "WorkCase route target 不属于 source 项目",
+                    "WorkCase route target 只允许同一管辖项目",
+                    sources,
+                )
+            resolved_route_targets.append(
+                RouteTargetFingerprint(route_target.target, route_target.content_fingerprint)
+            )
+        domain = replace(domain, route_target_fingerprints=tuple(resolved_route_targets))
     schema = schemas.get("workcase")
     if schema is None:
         return OperationExecution(
@@ -1052,6 +1107,7 @@ def _execute(
             schema,
             context.event_at,
             request.observed_context,
+            reference.object_id,
         )
     except FactCoordinationUnavailable as error:
         return _coordination_unavailable(
@@ -1176,10 +1232,11 @@ def _execute(
         else (),
         follow_up=(_coordination_release_follow_up(requested) if coordination_release_uncertain else None),
     ),
-        boundary=boundary,
-        schemas=schemas,
-        audit_contract=_INTEGRITY_CONTRACT,
-    )
+            boundary=boundary,
+            schemas=schemas,
+            audit_contract=_INTEGRITY_CONTRACT,
+            configuration_boundaries=configuration_reading_boundaries(run),
+        )
 
 
 def _check_availability(
@@ -1203,10 +1260,16 @@ def _check_availability(
             ),
         )
     run = _governance(domain)
-    boundary = _boundary(run)
     schemas = project_fact_schemas(repository)
     schema = schemas.get("workcase")
-    if boundary is None or boundary.governed_project_id != domain.fact_ref.governed_project_id or schema is None:
+    if mode == "recover":
+        boundary = _boundary(run)
+        reference = domain.fact_ref
+    else:
+        resolved_reference, _ = resolve_stable_fact_reference(run, domain.fact_ref, schemas)
+        boundary = None if resolved_reference is None else resolved_reference.boundary
+        reference = None if resolved_reference is None else resolved_reference.reference
+    if boundary is None or reference is None or reference.fact_type_key != "workcase" or schema is None:
         return AvailabilityEvaluation(
             availability="unavailable_for_request",
             unavailable_scope=(requested,),
@@ -1218,17 +1281,17 @@ def _check_availability(
                 },
             ),
         )
-    current = _current_read(boundary, schemas, domain.fact_ref.object_id)
+    current = _current_read(boundary, schemas, reference.object_id)
     if mode == "recover":
-        expected_check_status = _RECOVERY_REQUIRED_BEFORE_STATUS[domain.fact_ref.object_id]
+        expected_check_status = _RECOVERY_REQUIRED_BEFORE_STATUS[reference.object_id]
         recover_unavailable = (
             current.check_status != expected_check_status
             or current.fields is None
             or current.fields.get("status") != "closed"
             or current.content_fingerprint != domain.expected_content_fingerprint
-            or _has_recovery_marker(current.fields, domain.fact_ref.object_id)
+            or _has_recovery_marker(current.fields, reference.object_id)
         )
-        if not recover_unavailable and domain.fact_ref.object_id == "workcase-0093":
+        if not recover_unavailable and reference.object_id == "workcase-0093":
             prerequisite = _current_read(boundary, schemas, "workcase-0092")
             recover_unavailable = (
                 prerequisite.check_status != "mechanically_valid"

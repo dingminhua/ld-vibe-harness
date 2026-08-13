@@ -10,10 +10,12 @@ from typing import Any, Literal
 
 from ldvh.facts.carriers.study_markdown import STUDY_H2_TITLES, _body_headings
 from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.models import FactReference
 from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import project_fact_schemas
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
-from ldvh.helper.operations.fact_operation_support import plain, reading_boundary
+from ldvh.helper.operations.fact_operation_support import plain
+from ldvh.helper.operations.fact_reference_support import resolve_stable_fact_reference
 from ldvh.helper.operations.local_edit_request import LocalEditRequest, RuleLocalEditRequest, StudyLocalEditRequest
 from ldvh.helper.responses import source_reference
 from ldvh.helper.source_refs import GeneratedSourceReference, RuleReferenceBinder
@@ -246,46 +248,6 @@ def _study_read(repository: RepositoryInspection, request: StudyLocalEditRequest
     )
     requested = (_study_scope(request),)
     governance_json = None if run.result is None else plain(run.result.to_json())
-    boundary = reading_boundary(run)
-    if boundary is None:
-        return LocalEditReadResult(
-            None,
-            requested,
-            (),
-            requested,
-            governance_json,
-            tuple(plain(source) for source in run.sources),
-            (
-                {
-                    "summary": "Study 请求未形成唯一受管项目、实际 Git Working Tree 与 common-dir 读取边界",
-                    "scope": list(requested),
-                    "source_refs": [plain(source) for source in run.sources],
-                },
-            ),
-            (),
-            (),
-            "unavailable",
-        )
-    project_id, root, common_dir = boundary
-    if request.fact_ref.governed_project_id != project_id:
-        return LocalEditReadResult(
-            None,
-            requested,
-            (),
-            requested,
-            governance_json,
-            tuple(plain(source) for source in run.sources),
-            (
-                {
-                    "summary": "Study 请求项目与实际 Working Tree 的管辖项目不一致",
-                    "scope": list(requested),
-                    "source_refs": [plain(source) for source in run.sources],
-                },
-            ),
-            (),
-            (),
-            "unavailable",
-        )
     schemas = project_fact_schemas(repository)
     schema = schemas.get("study")
     if schema is None:
@@ -307,7 +269,39 @@ def _study_read(repository: RepositoryInspection, request: StudyLocalEditRequest
             (),
             "unavailable",
         )
-    read = read_fact_object(root, LAYOUTS["study"], schema, request.fact_ref.object_id, expected_common_dir=common_dir)
+    resolved, resolution = resolve_stable_fact_reference(run, request.fact_ref, schemas)
+    if resolved is None or resolved.reference.fact_type_key != "study":
+        return LocalEditReadResult(
+            None,
+            requested,
+            (),
+            requested,
+            governance_json,
+            tuple(plain(source) for source in run.sources),
+            (
+                {
+                    "summary": (
+                        "Study 请求项目与实际 Working Tree 的管辖项目不一致"
+                        if isinstance(request.fact_ref, FactReference) and resolution == "not_found"
+                        else f"Study 稳定引用未能唯一解析为 Study：{resolution}"
+                    ),
+                    "scope": list(requested),
+                    "source_refs": [plain(source) for source in run.sources],
+                },
+            ),
+            (),
+            (),
+            "unavailable",
+        )
+    root = resolved.boundary.worktree_root
+    common_dir = resolved.boundary.git_common_dir
+    read = read_fact_object(
+        root,
+        LAYOUTS["study"],
+        schema,
+        resolved.reference.object_id,
+        expected_common_dir=common_dir,
+    )
     sources = [*tuple(plain(source) for source in run.sources), _STUDY_RULE_SOURCE.copy()]
     if read.check_status != "mechanically_valid" or read.content_fingerprint is None:
         item_sources = [

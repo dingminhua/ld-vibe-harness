@@ -122,7 +122,7 @@ test('fact list cards project every formal association through exact readable ta
     await mkdir(path.join(root, 'ldvh-base', 'workcases'), { recursive: true });
     await writeFile(
       path.join(root, 'ldvh-base', 'workcases', 'workcase-0001.yaml'),
-      'object_id: workcase-0001\nfact_type_key: workcase\ntitle: Target title\ntitle_zh: 关联目标\nstatus: open\nphase: executing\n',
+      'object_uid: 0198f1c7-8a2b-7c3d-9e4f-123456789abc\nobject_id: workcase-0001\nfact_type_key: workcase\ntitle: Target title\ntitle_zh: 关联目标\nstatus: open\nphase: executing\n',
       'utf8',
     );
     await writeFile(
@@ -132,6 +132,7 @@ test('fact list cards project every formal association through exact readable ta
         '  - relation_key: related-to', '    target:', '      governed_project_id: fixture', '      fact_type_key: workcase', '      object_id: workcase-0001',
         '  - relation_key: informs', '    target:', '      governed_project_id: fixture', '      fact_type_key: workcase', '      object_id: workcase-0001',
         '  - relation_key: related-to', '    target:', '      governed_project_id: fixture', '      fact_type_key: study', '      object_id: study-9999',
+        '  - relation_key: related-to', '    target:', '      object_uid: 0198f1c7-8a2b-7c3d-9e4f-123456789abc',
         '  - malformed relation',
         '',
       ].join('\n'),
@@ -154,6 +155,15 @@ test('fact list cards project every formal association through exact readable ta
         relationKey: 'related-to',
         target: { governedProjectId: 'fixture', factTypeKey: 'study', objectId: 'study-9999' },
         available: false,
+      },
+      {
+        relationKey: 'related-to',
+        target: { objectUid: '0198f1c7-8a2b-7c3d-9e4f-123456789abc' },
+        resolvedTarget: { governedProjectId: 'fixture', factTypeKey: 'workcase', objectId: 'workcase-0001' },
+        available: true,
+        title: 'Target title',
+        status: 'open',
+        progressGroup: 'progressing',
       },
       { available: false },
     ]);

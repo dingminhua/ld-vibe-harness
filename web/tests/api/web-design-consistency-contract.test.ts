@@ -87,6 +87,7 @@ test('prominent card title follows the documented 16px by 24px hierarchy', () =>
 
 test('recent hotspots keep a compact relationship overview and a focused one-hop mind map', () => {
   const graph = read('src/pages/cognition/CommitHotspotGraph.tsx');
+  assert.match(graph, /node\.object_uid \? `uid:\$\{node\.object_uid\}` : `legacy:\$\{node\.type\}:\$\{node\.id\}`/);
   const cognitionCenter = read('src/pages/CognitionCenter.tsx');
   const styles = read('src/index.css');
 

@@ -7,6 +7,10 @@ from pathlib import Path
 import pytest
 from conftest import HELPER_EXECUTABLE, assert_common_response
 
+from ldvh.facts.carriers.yaml_object import parse_yaml_object
+from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.creation import serialize_fact_object
+from ldvh.facts.identity import short_reference
 from ldvh.helper.service import handle_request
 
 pytestmark = pytest.mark.usefixtures("use_current_rule_source_snapshot")
@@ -117,7 +121,8 @@ def _create(workspace: Path, project: Path, fact_type_key: str, fields: dict[str
         ),
     ).response
     assert response["outcome"] == "ok"
-    object_id = response["result"]["actual_ref"]["object_id"]
+    created = response["result"]["fact_object"]
+    object_id = created["frontmatter"]["object_id"] if fact_type_key == "study" else created["object_id"]
     if promote_after_create:
         path = project / "ldvh-base" / "pitfalls" / f"{object_id}.yaml"
         path.write_text(path.read_text(encoding="utf-8").replace("status: draft", "status: active"), encoding="utf-8")
@@ -388,15 +393,7 @@ def test_f1_returns_complete_active_adr_and_open_workcase_baseline_with_paginati
     assert len(first["result"]["recovery_manifest"]["counts"]) == 13
     assert first["result"]["recovery_manifest"]["current_workcase_ref"] == current_workcase_ref
     assert first["result"]["recovery_manifest"]["selected_fact_refs"] == selected_fact_refs
-    assert first["result"]["cards"][0]["fact_ref"]["fact_type_key"] == "adr"
-    assert set(first["result"]["cards"][0]["fields"]) == {
-        "object_id",
-        "title",
-        "decision_question",
-        "decision",
-        "applicability",
-        "updated_at",
-    }
+    assert set(first["result"]["cards"][0]["fact_ref"]) == {"object_uid"}
     assert first["result"]["cards"][0]["excerpts"] == []
     cursor = first["result"]["coverage"]["next_cursor"]
     assert isinstance(cursor, str) and cursor
@@ -418,8 +415,13 @@ def test_f1_returns_complete_active_adr_and_open_workcase_baseline_with_paginati
     assert second["outcome"] == "ok"
     assert second["result"]["coverage"]["offset"] == 1
     assert second["result"]["coverage"]["next_cursor"] is None
-    assert second["result"]["cards"][0]["fact_ref"]["fact_type_key"] == "workcase"
-    fields = second["result"]["cards"][0]["fields"]
+    assert set(second["result"]["cards"][0]["fact_ref"]) == {"object_uid"}
+    cards = [first["result"]["cards"][0], second["result"]["cards"][0]]
+    fields = next(card["fields"] for card in cards if card["fields"]["object_id"] == workcase_id)
+    adr_fields = next(card["fields"] for card in cards if card["fields"]["object_id"] == adr_id)
+    assert set(adr_fields) == {
+        "object_uid", "object_id", "title", "decision_question", "decision", "applicability", "updated_at"
+    }
     assert fields["phase"] == "human_plan_confirming"
     assert fields["work_item_counts"] == {
         "pending": 1,
@@ -451,8 +453,9 @@ def test_f2_workcase_uses_distinct_current_active_and_closed_projections(tmp_pat
     assert active["outcome"] == "ok"
     assert active["result"]["coverage"]["total_matching"] == 1
     active_card = active["result"]["cards"][0]
-    assert active_card["fact_ref"]["object_id"] == active_id
+    assert active_card["fields"]["object_id"] == active_id
     assert set(active_card["fields"]) == {
+        "object_uid",
         "object_id",
         "title",
         "status",
@@ -549,7 +552,7 @@ def test_discovery_text_match_fragment_combines_with_an_actual_governed_project(
     ).response
 
     assert response["outcome"] == "ok"
-    assert [card["fact_ref"]["object_id"] for card in response["result"]["cards"]] == [spark_id]
+    assert [card["fields"]["object_id"] for card in response["result"]["cards"]] == [spark_id]
     assert response["result"]["cards"][0]["match_reasons"][-1] == {
         "kind": "field-text",
         "field_path": "title",
@@ -622,6 +625,7 @@ def test_f2_projects_study_frontmatter_without_injecting_report_body(tmp_path: P
     assert response["outcome"] == "ok"
     fields = response["result"]["cards"][0]["fields"]
     assert set(fields) == {
+        "object_uid",
         "object_id",
         "title",
         "status",
@@ -685,11 +689,8 @@ def test_f2_spark_summary_is_a_bounded_verbatim_excerpt_with_f3_reference(tmp_pa
     assert response["outcome"] == "ok"
     assert response["result"]["coverage"]["total_matching"] == 1
     card = response["result"]["cards"][0]
-    assert card["fact_ref"] == {
-        "governed_project_id": "sample",
-        "fact_type_key": "spark",
-        "object_id": object_id,
-    }
+    assert set(card["fact_ref"]) == {"object_uid"}
+    assert card["fields"]["object_id"] == object_id
     assert "summary" not in card["fields"]
     assert card["excerpts"] == [{"field_path": "summary", "text": "界" * 512, "complete": False}]
     assert card["match_reasons"][-1] == {
@@ -761,6 +762,92 @@ def test_f2_spark_excerpt_marks_511_scalar_summary_complete(tmp_path: Path) -> N
     ).response
 
     assert response["result"]["cards"][0]["excerpts"] == [{"field_path": "summary", "text": summary, "complete": True}]
+
+
+def test_f2_short_ref_returns_uid_card_and_explicit_match_reason(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    object_id = _create(workspace, project, "spark", _spark("Short reference candidate"))
+    parsed = parse_yaml_object(
+        (project / "ldvh-base" / "sparks" / f"{object_id}.yaml").read_text(encoding="utf-8")
+    )
+    assert parsed.fields is not None
+    object_uid = str(parsed.fields["object_uid"])
+    short_ref = short_reference("spark", object_uid)
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["spark"], short_refs=[short_ref]),
+    ).response
+
+    assert response["outcome"] == "ok"
+    assert response["result"]["coverage"]["total_matching"] == 1
+    card = response["result"]["cards"][0]
+    assert card["fact_ref"] == {"object_uid": object_uid}
+    assert {"kind": "short-ref", "field_path": "object_uid", "matched_text": short_ref} in card["match_reasons"]
+
+
+def test_f2_exact_uid_reference_resolves_to_the_authority_card(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    object_id = _create(workspace, project, "spark", _spark("Exact UID candidate"))
+    parsed = parse_yaml_object(
+        (project / "ldvh-base" / "sparks" / f"{object_id}.yaml").read_text(encoding="utf-8")
+    )
+    assert parsed.fields is not None
+    object_uid = str(parsed.fields["object_uid"])
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["spark"],
+            exact_refs=[{"object_uid": object_uid}],
+        ),
+    ).response
+
+    assert response["outcome"] == "ok"
+    assert response["result"]["cards"][0]["fact_ref"] == {"object_uid": object_uid}
+    assert {"kind": "exact-ref", "field_path": "object_id"} in response["result"]["cards"][0]["match_reasons"]
+
+
+def test_f2_uid_relation_source_returns_its_direct_target(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    target_id = _create(workspace, project, "workcase", _workcase())
+    source = _spark("UID source")
+    source["relations"] = [
+        {
+            "relation_key": "related-to",
+            "target": {
+                "governed_project_id": "sample",
+                "fact_type_key": "workcase",
+                "object_id": target_id,
+            },
+        }
+    ]
+    source_id = _create(workspace, project, "spark", source)
+    parsed = parse_yaml_object(
+        (project / "ldvh-base" / "sparks" / f"{source_id}.yaml").read_text(encoding="utf-8")
+    )
+    assert parsed.fields is not None
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(
+            workspace,
+            project,
+            "F2",
+            fact_type_keys=["workcase"],
+            relation_source_refs=[{"object_uid": str(parsed.fields["object_uid"])}],
+        ),
+    ).response
+
+    assert response["outcome"] == "ok"
+    assert response["result"]["relation_navigation"]["edges"][0]["edge_status"] == "returned"
+    assert response["result"]["cards"][0]["fields"]["object_id"] == target_id
 
 
 def test_f2_spark_excerpt_marks_exact_513_scalar_summary_incomplete(tmp_path: Path) -> None:
@@ -857,6 +944,32 @@ def test_invalid_object_makes_coverage_partial_and_remains_observable(tmp_path: 
     assert invalid[0]["fact_ref"]["object_id"] == "spark-9999"
     assert [item["fact_type_key"] for item in response["scope"]["not_completed"]] == ["spark"]
     assert len(response["scope"]["completed"]) == 4
+
+
+def test_invalid_uid_is_observable_without_emitting_an_invalid_stable_reference(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    object_id = _create(workspace, project, "spark", _spark("Malformed UID remains observable"))
+    path = project / "ldvh-base" / "sparks" / f"{object_id}.yaml"
+    parsed = parse_yaml_object(path.read_text(encoding="utf-8"))
+    assert parsed.fields is not None
+    fields = dict(parsed.fields)
+    fields["object_uid"] = str(fields["object_uid"]).upper()
+    path.write_text(serialize_fact_object(LAYOUTS["spark"], fields, None), encoding="utf-8")
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["spark"]),
+    ).response
+
+    assert response["outcome"] == "partial"
+    assert response["result"]["cards"] == []
+    invalid = response["result"]["recovery_manifest"]["invalid_objects"]
+    assert len(invalid) == 1
+    assert "fact_ref" not in invalid[0]
+    assert invalid[0]["fact_type_key"] == "spark"
+    assert invalid[0]["canonical_path"] == f"ldvh-base/sparks/{object_id}.yaml"
+    assert any(issue["field_path"] == "object_uid" for issue in invalid[0]["issues"])
 
 
 def test_noncanonical_carrier_makes_candidate_coverage_partial_without_silent_exclusion(tmp_path: Path) -> None:
@@ -1026,7 +1139,9 @@ def test_f2_relation_source_returns_one_hop_edges_with_single_edge_cursor(tmp_pa
     cursor = first["result"]["coverage"]["next_cursor"]
     assert isinstance(cursor, str) and cursor
     navigation = first["result"]["relation_navigation"]
-    assert navigation["source_results"][0]["source_ref"] == source_ref
+    assert set(navigation["source_results"][0]["source_ref"]) == {"object_uid"}
+    assert set(navigation["edges"][0]["source_ref"]) == {"object_uid"}
+    assert set(navigation["edges"][0]["target_ref"]) == {"object_uid"}
     assert navigation["source_results"][0]["check_status"] == "mechanically_valid"
     assert navigation["edges"][0]["edge_status"] == "returned"
     assert navigation["edges"][0]["reasons"] == ["relation-source"]
@@ -1098,7 +1213,7 @@ def test_f2_relation_source_uses_the_study_relation_definition_without_crashing(
     assert response["outcome"] == "ok"
     edge = response["result"]["relation_navigation"]["edges"][0]
     assert edge["edge_status"] == "returned"
-    assert edge["target_ref"]["object_id"] == target_id
+    assert set(edge["target_ref"]) == {"object_uid"}
     assert len(edge["relation_definition_refs"]) == 1
     assert edge["relation_definition_refs"][0]["kind"] == "rule"
     assert edge["relation_definition_refs"][0]["locator"] == (
@@ -1549,7 +1664,7 @@ def test_f2_relation_source_deduplicates_target_cards_without_dropping_distinct_
     assert response["result"]["coverage"]["total_matching"] == 2
     assert len(response["result"]["relation_navigation"]["edges"]) == 2
     assert len(response["result"]["cards"]) == 1
-    assert response["result"]["cards"][0]["fact_ref"]["object_id"] == workcase_id
+    assert response["result"]["cards"][0]["fields"]["object_id"] == workcase_id
 
 
 def test_f2_relation_source_keeps_a_self_edge_as_source_invalid_without_recursing(tmp_path: Path) -> None:
@@ -1582,7 +1697,7 @@ def test_f2_relation_source_keeps_a_self_edge_as_source_invalid_without_recursin
     assert response["outcome"] == "partial"
     assert len(response["result"]["relation_navigation"]["edges"]) == 1
     edge = response["result"]["relation_navigation"]["edges"][0]
-    assert edge["target_ref"]["object_id"] == source_id
+    assert set(edge["target_ref"]) == {"object_uid"}
     assert edge["edge_status"] == "invalid"
     assert edge["reasons"] == ["source-invalid"]
     assert response["result"]["cards"] == []
@@ -1684,4 +1799,4 @@ def test_real_cli_returns_source_bound_f1_cards(tmp_path: Path) -> None:
     assert completed.stderr == ""
     assert_common_response(response)
     assert response["result"]["coverage"]["total_matching"] == 1
-    assert response["result"]["cards"][0]["fact_ref"]["fact_type_key"] == "workcase"
+    assert set(response["result"]["cards"][0]["fact_ref"]) == {"object_uid"}

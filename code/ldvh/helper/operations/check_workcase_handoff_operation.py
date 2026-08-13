@@ -13,6 +13,8 @@ from pathlib import Path
 from typing import Any
 
 from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.creation import CreationBoundary
+from ldvh.facts.models import FactReference
 from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import project_fact_schemas
 from ldvh.facts.workcase_presentation import derive_workcase_presentation
@@ -31,6 +33,7 @@ from ldvh.helper.operations.check_workcase_handoff_request import (
     parse_check_workcase_handoff_request,
 )
 from ldvh.helper.operations.fact_operation_support import plain, reading_boundary
+from ldvh.helper.operations.fact_reference_support import ResolvedFactReference, resolve_stable_fact_reference
 from ldvh.helper.requests import CommonRequest
 from ldvh.helper.responses import source_reference
 from ldvh.specs.repository import RepositoryInspection
@@ -83,10 +86,26 @@ def _execute(
     run = _governance(domain)
     requested = (domain.fact_ref.to_json(),)
     governance_json = None if run.result is None else run.result.to_json()
-    boundary = reading_boundary(run)
-    if boundary is None:
+    schemas = project_fact_schemas(repository)
+    if isinstance(domain.fact_ref, FactReference):
+        boundary = reading_boundary(run)
+        resolution_status = (
+            "unavailable"
+            if boundary is None
+            else "governance_mismatch"
+            if boundary[0] != domain.fact_ref.governed_project_id
+            else "resolved"
+        )
+        resolved = (
+            ResolvedFactReference(domain.fact_ref, CreationBoundary(*boundary))
+            if boundary is not None and boundary[0] == domain.fact_ref.governed_project_id
+            else None
+        )
+    else:
+        resolved, resolution_status = resolve_stable_fact_reference(run, domain.fact_ref, schemas)
+    if resolved is None:
         return OperationExecution(
-            outcome="unavailable",
+            outcome="rejected" if resolution_status == "governance_mismatch" else "unavailable",
             summary="当前管辖结果不能形成唯一 WorkCase 读取边界",
             requested_scope=requested,
             not_completed_scope=requested,
@@ -101,25 +120,12 @@ def _execute(
             ),
         )
 
-    project_id, root, common_dir = boundary
-    if domain.fact_ref.governed_project_id != project_id:
-        return OperationExecution(
-            outcome="rejected",
-            summary="请求 WorkCase 与当前管辖项目不一致，未形成交还判定",
-            requested_scope=requested,
-            not_completed_scope=requested,
-            governance_resolution=governance_json,
-            sources=tuple(plain(source) for source in run.sources) + (_CONTRACT,) + _IMPLEMENTATION_EVIDENCE,
-            gaps=(
-                {
-                    "summary": "fact_ref.governed_project_id 必须与当前管辖项目精确一致",
-                    "scope": list(requested),
-                    "source_refs": [_CONTRACT],
-                },
-            ),
-        )
-
-    schemas = project_fact_schemas(repository)
+    reference = resolved.reference
+    if reference.fact_type_key != "workcase":
+        raise OperationRequestError(("arguments.fact_ref 解析后的类型必须为 workcase",), sources=(_CONTRACT,))
+    project_id = resolved.boundary.governed_project_id
+    root = resolved.boundary.worktree_root
+    common_dir = resolved.boundary.git_common_dir
     schema = schemas.get("workcase")
     if schema is None:
         return OperationExecution(
@@ -142,7 +148,7 @@ def _execute(
         root,
         LAYOUTS["workcase"],
         schema,
-        domain.fact_ref.object_id,
+        reference.object_id,
         expected_common_dir=common_dir,
     )
     working_tree_source = _working_tree_source(root, read)
