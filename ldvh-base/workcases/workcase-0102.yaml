@@ -1,0 +1,124 @@
+title: 新增 git-hooks-status 公开操作：skill/hook 对齐检查一等公民
+status: closed
+goal: 把 skill 更新后的 Git Hook 部署状态与 skill 副本对齐检查提升为 Helper 一等公民公开操作 git-hooks-status（声明于 09 环境接入规范），使 Human 与 AI 都能经 ldvh call git-hooks-status 获得符合 04 机器契约的只读检查结果，替代手工拼接的检查步骤，并使检查逻辑有规范背书、可复用、可验证。
+scope: 仅修改：1) specs/09-环境接入规范.md 新增 §5.9 声明 git-hooks-status 公开操作表格与 arguments/result 字段定义；2) specs/attachments/09.Att.01-环境接入面.md 新增 git-hooks-status 入口交付行；3) specs/33-环境接入行动模板.md 部署后静态回读步骤引用 git-hooks-status；4) specs/04-Helper CLI 服务规范.md §5.1 公开调用清单提及（如需要快捷入口）；5) code/ldvh/ 下 Helper 实现：注册 git-hooks-status 公开操作，复用 git_hooks/commit_msg.py 既有逻辑，skill 副本对比/Stop gate/worktree 覆盖逻辑从 tools/check_skill_sync.py 上移；6) code/tests/ 契约测试覆盖状态分类/版本/skill 对齐/worktree 覆盖；7) tools/check_skill_sync.py 保留为便捷封装。不修改 Web、既有公开操作契约、Git Hook 部署机制、事实对象 Schema、历史事实。
+success_criterion_definitions:
+- criterion_id: criterion-contract
+  statement: git-hooks-status 作为公开操作按 04 §5.1 固定表格在 09 声明，出现在 capabilities 中，effect=read，arguments/result 字段符合 04 契约，不写事实、不推进任何状态。
+- criterion_id: criterion-reuse
+  statement: 实现复用 commit_msg.py 既有权威逻辑（state 分类、bundle 版本），不复制第二套检查逻辑；同一 worktree 下与既有 git-hook inspect（code/ldvh/git_hooks/commit_msg.py 提供）对 commit-msg 状态与版本判断一致。
+- criterion_id: criterion-coverage
+  statement: 覆盖 commit-msg 状态、bundle 版本、worktree 覆盖、skill 副本对齐、Stop gate 五个检查面；输出机器契约 JSON 且退出码语义化（0=对齐，1=有偏差）。
+- criterion_id: criterion-tests
+  statement: 契约测试覆盖 managed/outdated/absent/conflict 与 skill 不一致场景，全部通过；ruff lint 干净。
+- criterion_id: criterion-spec
+  statement: 09 §5.9、09.Att.01、33 的修订完成且互相一致；环境接入面登记 git-hooks-status 交付行。
+change_log:
+- signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-flash
+    agent_runtime_name: workbuddy
+  at: '2026-08-12T22:32:49.468688Z'
+  summary: Human 要求直接走 WorkCase 流程（跳过 spark）：受控创建 workcase-0102，将 skill/hook 对齐检查提升为 git-hooks-status 一等公民公开操作；创建前完成 3 轮只读 subagent creation review（全部 changes_required，Controller 已处置），初态为 human_plan_confirming 等待 Gate1。
+- signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-flash
+    agent_runtime_name: workbuddy
+  at: '2026-08-12T22:39:23.002905Z'
+  summary: Human Gate 1 批准 plan_version=1 执行授权基线，phase 由 human_plan_confirming 转为 executing，写入 execution_approval（subject_version=1，baseline fingerprint d4dd8526），移除 waiting_on。
+- signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-flash
+    agent_runtime_name: workbuddy
+  at: '2026-08-12T22:45:53.463344Z'
+  summary: 完成 item-spec-revision：修订 09 §5.9 声明 git-hooks-status 公开操作与 5.9.1/5.9.2 字段契约、09.Att.01 登记交付行、33 静态回读引用；ldvh check passed，操作已可发现。
+- signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-flash
+    agent_runtime_name: workbuddy
+  at: '2026-08-12T22:48:08.516904Z'
+  summary: 完成 item-helper-implementation：实现并注册 git-hooks-status 公开操作，零输入与带 locator 调用均通过，输出符合 09 §5.9.2 契约。
+- signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-flash
+    agent_runtime_name: workbuddy
+  at: '2026-08-12T22:52:40.546103Z'
+  summary: 全部 3 个 item terminal，executing → controller_checking：写 result_version=1、result_summary 与 controller_check_summary，准备独立结果复核。
+- signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-flash
+    agent_runtime_name: workbuddy
+  at: '2026-08-12T22:54:06.931836Z'
+  summary: controller_checking 内写完整 result projection（success_criterion_results 5 项 + validation_summary），result_version=1 冻结，随后转 independent_reviewing。
+- signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-flash
+    agent_runtime_name: workbuddy
+  at: '2026-08-12T22:54:20.824244Z'
+  summary: controller_checking → independent_reviewing：result projection 已冻结（result_version=1，无 ResultΔ），等待独立结果复核。
+- signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-flash
+    agent_runtime_name: workbuddy
+  at: '2026-08-12T23:05:14.946615Z'
+  summary: independent_reviewing → controller_checking：独立结果复核 feedback（changes_required）需修正结果投影，返回 controller_checking 处置。
+- signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-flash
+    agent_runtime_name: workbuddy
+  at: '2026-08-12T23:06:07.005658Z'
+  summary: controller_checking 同版本修正 validation_summary 口径（如实报告回归修复与存量基线，result_version 保持 1），随后写独立结果复核记录。
+- signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-flash
+    agent_runtime_name: workbuddy
+  at: '2026-08-12T23:06:35.001221Z'
+  summary: controller_checking → independent_reviewing：projection 已修正冻结（rv=1），进入独立复核 phase。
+- signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-flash
+    agent_runtime_name: workbuddy
+  at: '2026-08-12T23:06:49.450255Z'
+  summary: independent_reviewing 写独立结果复核记录（subject_version=1，changes_required，feedback 与 Controller 处置齐全）。
+- signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-flash
+    agent_runtime_name: workbuddy
+  at: '2026-08-12T23:07:21.750869Z'
+  summary: independent_reviewing → closure_preparing：review 完成且 feedback 全部处置，形成 closure_proposal（proposed_outcome=completed），准备提请 Gate 2。
+- signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-flash
+    agent_runtime_name: workbuddy
+  at: '2026-08-12T23:07:35.294483Z'
+  summary: closure_preparing → human_closure_confirming：完整 proposal 形成，写 Human waiting，提请 Gate 2 关闭决定。
+- signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-flash
+    agent_runtime_name: workbuddy
+  at: '2026-08-12T23:42:22.459678Z'
+  summary: Human Gate 2 批准关闭：workcase-0102 以 completed 关闭，写入 closure_outcome 与 disposition_summary（事实库已恢复 complete 后执行）。
+result_summary: 已完成 git-hooks-status 公开操作的全部 3 个 work item：规范修订（09 §5.9 声明与 5.9.1/5.9.2 字段契约、09.Att.01 登记、33 引用）、Helper 实现（复用 commit_msg.py，逻辑上移，零输入/带 locator 调用通过）、契约测试（6 项 + 相关核心测试集 50 passed，lint 干净）。
+success_criterion_results:
+- criterion_id: criterion-contract
+  outcome: satisfied
+  summary: git-hooks-status 按 04 §5.1 固定表格在 09 §5.9 声明（含 5.9.1 输入/5.9.2 结果字段），出现在 capabilities（25 个操作），effect=read，零输入与带 locator 调用均只读，不写事实不推进状态。
+- criterion_id: criterion-reuse
+  outcome: satisfied
+  summary: 实现复用 git_hooks/commit_msg.py 的 _existing_hook_state/_hook_bundle_version 权威逻辑，未复制第二套；与 ldvh git-hook inspect 对 commit-msg 状态（managed）与版本（2026-08-13 00:00）判断一致。
+- criterion_id: criterion-coverage
+  outcome: satisfied
+  summary: 覆盖 commit-msg、prepare-commit-msg、skill、stop-gate、worktrees 五个检查面；输出机器契约 JSON（status/worktree/common_hooks_dir/checks），status 语义化 aligned/misaligned。
+- criterion_id: criterion-tests
+  outcome: satisfied
+  summary: 契约测试 6 项全部通过（可发现、契约形状、locator 调用、拒绝非法输入、未管辖不静默成功）；相关核心测试集 50 passed；ruff lint 干净。
+- criterion_id: criterion-spec
+  outcome: satisfied
+  summary: 09 §5.9/5.9.1/5.9.2、09.Att.01 交付行、33 静态回读引用均完成且互相一致；ldvh check passed，契约引用精确标题解析通过。
+validation_summary: 验证包括：git-hooks-status 契约测试 6 项通过（test_git_hooks_status_operation.py）；既有契约断言同步后本 WC 引入的 3 处回归已修复（操作数 24→25、gaps 192→200、操作列表补 git-hooks-status），相关测试集 51 passed；ruff lint 干净；零输入与带 locator 调用实测 outcome=ok/status=aligned。存量基线：test_explicit_check 失败（ldvh check partial）源于既有历史 spark 的署名/关系存量问题，不在本 WC scope（prohibited：不修改历史事实）；事实库完整性审计 partial 为同一存量根因，workcase-0102 本身机械有效。未验证：真实 Git commit 事件触发下的 Git Gate 端到端（由 33 行动模板真实触发验证承接）；跨平台（Windows）行为。
+closure_outcome: completed
+disposition_summary: workcase-0102 完成 git-hooks-status 公开操作的全部落地：09 §5.9/5.9.1/5.9.2 规范声明与字段契约、09.Att.01 交付行登记、33 静态回读引用、Helper 实现（复用 commit_msg.py 权威逻辑）与注册、契约测试 6 项 + 既有断言同步（51 passed）。5 项 success_criterion 全部 satisfied；独立结果复核 changes_required 的 4 项 feedback 全部处置。存量基线（历史 spark 署名/关系问题）不在本案 scope，未修改历史事实。无剩余待处置责任。
+object_id: workcase-0102
+fact_type_key: workcase
+created_at: '2026-08-12T22:32:49.468688Z'
+updated_at: '2026-08-12T23:42:22.459678Z'
