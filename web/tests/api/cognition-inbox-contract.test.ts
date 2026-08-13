@@ -81,6 +81,17 @@ function expectedInboxKind(item: Record<string, unknown>): string | null {
   return null
 }
 
+test('Cognition list rows display short_ref while preserving full ids for actions', () => {
+  const source = readFileSync(path.resolve(repositoryRoot, 'src/pages/CognitionCenter.tsx'), 'utf8')
+  assert.match(source, /<code className="ldvh-caption min-w-0 break-all text-ldvh-text-secondary\/55">\{item\.short_ref \?\? item\.id\}<\/code>/)
+  assert.match(source, /\(item\.short_ref !== undefined \? \{ short_ref: item\.short_ref \} : \{\}\)/)
+  assert.match(source, /\(item\.object_uid !== undefined \? \{ object_uid: item\.object_uid \} : \{\}\)/)
+  assert.match(source, /openPanel\(\{ type: 'object', title, objectType: item\.type, objectId: item\.id \}\)/)
+  assert.match(source, /<ObjectReferenceCopyButton objectId=\{item\.id\} objectType=\{item\.type\} shortRef=\{item\.short_ref\} \/>/)
+  const detailSource = readFileSync(path.resolve(repositoryRoot, 'src/pages/ObjectDetail.tsx'), 'utf8')
+  assert.match(detailSource, /\{typeof source\.short_ref === 'string' \? source\.short_ref : id\}/)
+})
+
 test('cognition endpoint returns inbox, fact activity, Spark health, and fact hotspot contract shapes with observation time', async () => {
   const body = await cognition('zh')
 
@@ -137,7 +148,7 @@ test('recent hotspots preserve only fact activity and one-hop formal relation sh
   const primaryKeys = new Set<string>()
   const assertNode = (node: Record<string, unknown>) => {
     assert.ok(['workcase', 'adr', 'pitfall', 'spark', 'study'].includes(String(node.type)))
-    assert.match(String(node.id), /^(workcase|adr|pitfall|spark|study)-\d{4,}$/)
+    assert.match(String(node.id), /^(workcase|adr|pitfall|spark|study)-(?:\d{4,}|[0-7][0-9A-HJKMNP-TV-Z]{25})$/)
     assert.equal(typeof node.title, 'string')
     assert.equal(typeof node.typeColor, 'string')
     assert.ok(Array.isArray(node.activityRefs))
@@ -297,6 +308,41 @@ test('recent hotspots do not project a legacy Spark routed-to edge as a current 
   const result = buildRecentHotspots(facts, activityByFact, 'demo')
   assert.equal(result.relationTotal, 0)
   assert.equal(result.clusters.length, 0)
+})
+
+test('recent hotspot projection preserves UID identity and short_ref for readable nodes', () => {
+  const item = {
+    object_ref: { governed_project_id: 'demo', fact_type_key: 'spark', object_id: 'spark-0103' },
+    canonical_path: 'ldvh-base/sparks/spark-0103.yaml',
+    absolute_path: '/tmp/spark-0103.yaml',
+    carrier: 'yaml' as const,
+    read_status: 'readable' as const,
+    source_content_fingerprint: null,
+    fact_object: {
+      object_id: 'spark-0103',
+      object_uid: '019ffb52-ebb5-7812-9630-8e7aad44da3d',
+      short_ref: 'SABCDE',
+      title: '可读热点',
+      status: 'open',
+      relations: [],
+    },
+    field_issues: [],
+    unparsed_structures: [],
+    issues: [],
+  }
+  assert.deepEqual(
+    projectRecentHotspotFact(item, 'spark'),
+    {
+      type: 'spark',
+      object_id: 'spark-0103',
+      object_uid: '019ffb52-ebb5-7812-9630-8e7aad44da3d',
+      short_ref: 'SABCDE',
+      title: '可读热点',
+      status: 'open',
+      read_status: 'readable',
+      relations: [],
+    },
+  )
 })
 
 test('recent hotspot projection omits facts without a readable title instead of falling back to objectId', () => {

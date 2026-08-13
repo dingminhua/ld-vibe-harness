@@ -87,6 +87,7 @@ test('prominent card title follows the documented 16px by 24px hierarchy', () =>
 
 test('recent hotspots keep a compact relationship overview and a focused one-hop mind map', () => {
   const graph = read('src/pages/cognition/CommitHotspotGraph.tsx');
+  assert.match(graph, /export function nodeKey\(node: CognitionRecentHotspotNode\)/);
   assert.match(graph, /node\.object_uid \? `uid:\$\{node\.object_uid\}` : `legacy:\$\{node\.type\}:\$\{node\.id\}`/);
   const cognitionCenter = read('src/pages/CognitionCenter.tsx');
   const styles = read('src/index.css');
@@ -98,8 +99,14 @@ test('recent hotspots keep a compact relationship overview and a focused one-hop
   assert.match(graph, /const relatedSize = \{ width: primarySize\.width \* 0\.75, height: 120 \}/);
   assert.match(graph, /className={`flex h-full min-w-0 flex-col items-center justify-center px-3 py-2\.5 \$\{expanded \? 'gap-2' : 'gap-1'\}`}/);
   assert.match(graph, /className="inline-flex h-6 w-6 shrink-0 items-center justify-center"/);
-  assert.match(graph, /className={`block w-full/);
-  assert.match(graph, /data-hotspot-node-meta className="mt-0\.5 flex min-w-0/);
+  assert.match(graph, /className={`block min-w-0 max-w-full overflow-hidden break-words text-center/);
+  assert.match(graph, /data-hotspot-node-meta className="mt-0\.5 flex min-w-0 flex-wrap items-center justify-center gap-x-1\.5 gap-y-0\.5"/);
+  assert.match(graph, /data-hotspot-node-meta[\s\S]*node\.activityRefs\.length[\s\S]*<StatusBadge status=\{status\} statusLabel=\{getObjectStatusLocale\(node\.type, status, locale\)\} objectType=\{node\.type\} size="sm" \/>/);
+  assert.doesNotMatch(graph, /data-hotspot-node-header className="flex min-w-0 shrink-0 flex-wrap/);
+  assert.match(graph, /data-hotspot-node-header[\s\S]*<ObjectTypeIcon type=\{node\.type\}[\s\S]*node\.short_ref/);
+  assert.match(graph, /data-hotspot-node-title[\s\S]*text-center/);
+  assert.match(graph, /\{node\.short_ref && <code className="ldvh-meta-muted shrink-0">\{node\.short_ref\}<\/code>\}/);
+  assert.doesNotMatch(graph, /node\.short_ref \?\? node\.id/);
   assert.match(graph, /const relatedSize = \{ width: primarySize\.width \* 0\.75, height: 152 \}/);
   assert.match(graph, /position: \{ x: width \/ 2, y: firstRelatedY \+ index \* rowGap \}/);
   assert.doesNotMatch(graph, /supportedColumns|indexInRow|nodesInRow/);
@@ -129,7 +136,8 @@ test('recent hotspots keep a compact relationship overview and a focused one-hop
   assert.match(graph, /mode="compact"[\s\S]*dimmed=\{highlightedKey !== null && highlightedKey !== key\}[\s\S]*onHighlight=\{\(active\) => setHighlightedKey/);
   assert.match(graph, /aria-label=\{`\$\{roleLabel\}: \$\{title\}[\s\S]*cognition\.commitHotspots\.commitRefs/);
   assert.doesNotMatch(graph, /title=\{labels\.join\(' · '\)\}/);
-  assert.match(graph, /data-hotspot-node-header[\s\S]*PriorityIcon[\s\S]*node\.id[\s\S]*data-hotspot-node-title[\s\S]*data-hotspot-node-meta[\s\S]*node\.activityRefs\.length[\s\S]*status/);
+  assert.match(graph, /data-hotspot-node-header[\s\S]*node\.short_ref[\s\S]*PriorityIcon/);
+  assert.match(graph, /data-hotspot-node-meta[\s\S]*node\.activityRefs\.length[\s\S]*status/);
   assert.match(graph, /primary \? 18 : \(expanded \? 18 : 16\)/);
   assert.match(graph, /primary \? \(expanded \? 'text-lg font-semibold leading-6' : 'text-base font-semibold leading-\[22px\]'\) : 'text-sm font-medium leading-5'/);
   assert.match(graph, /gridColumn: '1 \/ -1'/);
@@ -139,7 +147,10 @@ test('recent hotspots keep a compact relationship overview and a focused one-hop
   assert.match(graph, /aria-expanded=\{expanded\}/);
   assert.match(graph, /aria-controls=\{contentId\}/);
   assert.match(graph, /canExpand &&/);
-  assert.match(graph, /<code className="ldvh-meta-muted shrink-0">\{node\.id\}<\/code>/);
+  assert.match(graph, /\{node\.short_ref && <code className="ldvh-meta-muted shrink-0">\{node\.short_ref\}<\/code>\}/);
+  assert.doesNotMatch(graph, /node\.short_ref \?\? node\.id/);
+  assert.match(cognitionCenter, /const clusterKey = nodeKey\(cluster\.primary\)/);
+  assert.match(cognitionCenter, /expandedHotspotKey === clusterKey/);
   assert.doesNotMatch(graph, /forceSimulation|d3-force|semanticSimilarity|multiHop/);
   assert.match(cognitionCenter, /ldvh-hotspot-grid min-w-0 items-start/);
   assert.match(cognitionCenter, /type RecentHotspotStatusFilter = 'all' \| 'progressing' \| 'decision' \| 'settled'/);

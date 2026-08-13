@@ -1048,21 +1048,6 @@ function WorkCaseClosedContent({ goal, terminal, termination }: { goal?: string;
       {terminal ? (
         <>
           <WorkCaseOutcomeNotice outcome={terminal.outcome} dispositionSummary={terminal.dispositionSummary} mode="terminal" />
-          {terminal.routedTo.length > 0 && (
-            <ul className="grid min-w-0 gap-2">
-              {terminal.routedTo.map((target) => (
-                <li key={`route/${target.objectUid ?? `${target.factTypeKey}/${target.objectId}`}`} className={`min-w-0 rounded-md border border-l-2 px-3.5 py-3 ${PROPOSED_DISPOSITION_NOTICE_CLASS.route_existing}`}>
-                  <div className="flex min-w-0 items-center gap-2">
-                    <ArrowRight size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-emerald-600 dark:text-emerald-200" aria-hidden="true" />
-                    <span className={`ldvh-card-decision-title min-w-0 ${PROPOSED_DISPOSITION_TEXT_CLASS.route_existing}`}>
-                      {getFieldValueLabel('proposed_disposition', 'route_existing', locale)}
-                    </span>
-                  </div>
-                  <WorkCaseContributionTargetRow target={target} locale={locale} showStatus={false} compact />
-                </li>
-              ))}
-            </ul>
-          )}
           {terminal.acceptedStop.length > 0 && (
             <ul className="grid min-w-0 gap-2">
               {terminal.acceptedStop.map((residual) => (
@@ -1173,7 +1158,6 @@ function WorkCaseContributionTargetRow({ target, locale, showStatus = true, comp
       <span className="ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words text-left">
         {title}
       </span>
-      <span className="ldvh-meta-muted shrink-0">{target.objectId ?? target.objectUid}</span>
       {canOpenTarget && <ArrowRight size={13} className="shrink-0 text-ldvh-text-secondary/70" aria-hidden="true" />}
       {targetStatus && <span className="ldvh-meta-muted shrink-0">{targetStatus}</span>}
       {readStatus && <span className="ldvh-meta-muted shrink-0">{readStatus}</span>}
@@ -1258,7 +1242,7 @@ export function ObjectCardFrame({
           >
             {getTypeLabel(obj.type, locale)}
           </span>
-          <span className="ldvh-meta-muted min-w-0 truncate">{obj.id}</span>
+          <span className="ldvh-meta-muted min-w-0 truncate">{obj.short_ref ?? obj.id}</span>
           <PriorityIcon source={obj} type={obj.type} locale={locale} size="xs" />
         </div>
         {/* List cards expose a stable object identity, not an exact-read source path. */}

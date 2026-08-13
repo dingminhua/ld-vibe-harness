@@ -9,7 +9,7 @@ function read(relativePath: string) {
 
 test('fact-object copy controls prefer the type-bearing short UID reference with legacy fallback', async () => {
   const { formatObjectReference } = await import('../../src/utils/objectReference.ts');
-  assert.equal(formatObjectReference('sample', 'spark-0001', 'spark', 'SABCDE'), 'spark SABCDE');
+  assert.equal(formatObjectReference('sample', 'spark-0001', 'spark', 'SABCDE'), 'sample@SABCDE');
   assert.equal(formatObjectReference('sample', 'spark-0001'), 'sample@spark-0001');
   assert.equal(formatObjectReference('sample', 'spark-0001', 'spark', 'AABCDE'), 'sample@spark-0001');
   assert.equal(formatObjectReference('sample', 'spark-0001', 'spark', 'SABC1E'), 'sample@spark-0001');

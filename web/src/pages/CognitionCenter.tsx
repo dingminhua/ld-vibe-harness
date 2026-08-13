@@ -29,7 +29,7 @@ import {
 import StatusBadge from '@/components/StatusBadge';
 import PriorityIcon from '@/components/PriorityIcon';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
-import { CommitHotspotCluster, CommitHotspotRelationLegend } from '@/pages/cognition/CommitHotspotGraph';
+import { CommitHotspotCluster, CommitHotspotRelationLegend, nodeKey } from '@/pages/cognition/CommitHotspotGraph';
 import {
   fetchCognition,
   type CognitionActiveWorkCaseItem,
@@ -267,6 +267,8 @@ function toObjectCard(item: CognitionCardItem): ObjectItem {
     ...(item.priority ? { priority: item.priority } : {}),
     object_id: item.id,
     fact_type_key: item.type,
+    ...(item.short_ref !== undefined ? { short_ref: item.short_ref } : {}),
+    ...(item.object_uid !== undefined ? { object_uid: item.object_uid } : {}),
     ...(item.canonical_path ? { canonical_path: item.canonical_path } : {}),
     read_status: item.read_status as ObjectItem['read_status'],
   };
@@ -386,7 +388,7 @@ function RecentActivityRow({ item }: { item: CognitionRecentActivityItem }) {
     <li className="min-w-0 py-3">
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <span className="ldvh-caption shrink-0 text-ldvh-text-secondary">{item.relativeTime}</span>
-        <code className="ldvh-caption min-w-0 break-all text-ldvh-text-secondary/55">{item.id}</code>
+        <code className="ldvh-caption min-w-0 break-all text-ldvh-text-secondary/55">{item.short_ref ?? item.id}</code>
         <PriorityIcon source={item} type={item.type} locale={locale} size="xs" />
         <span
           className="inline-flex shrink-0 items-center justify-center gap-1 rounded-full border border-ldvh-accent/25 bg-ldvh-accent/5 px-1.5 py-0.5 text-[11px] font-medium leading-none text-ldvh-accent"
@@ -467,7 +469,7 @@ function SparkHealthRow({ item }: { item: CognitionSparkHealthItem }) {
         <span className="ldvh-caption shrink-0 text-amber-700/85 dark:text-amber-300/85">
           {t('cognition.sparkHealth.silentDays', { days: String(item.silentDays) })}
         </span>
-        <code className="ldvh-caption min-w-0 break-all text-ldvh-text-secondary/55">{item.id}</code>
+        <code className="ldvh-caption min-w-0 break-all text-ldvh-text-secondary/55">{item.short_ref ?? item.id}</code>
         <PriorityIcon source={item} type="spark" locale={locale} size="xs" />
         <span className="ml-auto shrink-0">
           <ObjectReferenceCopyButton objectId={item.id} objectType="spark" shortRef={item.short_ref} />
@@ -1111,18 +1113,19 @@ export default function CognitionCenter() {
                     <p className="ldvh-body-muted">{t('cognition.commitHotspots.filterEmpty')}</p>
                   ) : (
                     <div className="ldvh-hotspot-grid min-w-0 items-start">
-                      {filteredRecentHotspotClusters.map((cluster, index) => (
-                        <CommitHotspotCluster
-                          key={`${cluster.primary.type}:${cluster.primary.id}`}
-                          cluster={cluster}
-                          index={index}
-                          canExpand={cluster.relations.length > 0}
-                          expanded={expandedHotspotKey === `${cluster.primary.type}:${cluster.primary.id}`}
-                          onExpandedChange={(expanded) => setExpandedHotspotKey(
-                            expanded ? `${cluster.primary.type}:${cluster.primary.id}` : null,
-                          )}
-                        />
-                      ))}
+                      {filteredRecentHotspotClusters.map((cluster, index) => {
+                        const clusterKey = nodeKey(cluster.primary);
+                        return (
+                          <CommitHotspotCluster
+                            key={clusterKey}
+                            cluster={cluster}
+                            index={index}
+                            canExpand={cluster.relations.length > 0}
+                            expanded={expandedHotspotKey === clusterKey}
+                            onExpandedChange={(expanded) => setExpandedHotspotKey(expanded ? clusterKey : null)}
+                          />
+                        );
+                      })}
                     </div>
                   )}
                 </div>

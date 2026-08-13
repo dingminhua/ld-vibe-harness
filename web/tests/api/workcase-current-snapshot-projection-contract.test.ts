@@ -110,7 +110,7 @@ test('current Card and Cognition consumers never manufacture a source fingerprin
   const factsSource = await readFile(path.join(repositoryRoot, 'web/api/services/facts.ts'), 'utf8')
   const cognitionSource = await readFile(path.join(repositoryRoot, 'web/api/routes/cognition.ts'), 'utf8')
   assert.doesNotMatch(sharedSource, /repeat\(64\)/)
-  assert.match(factsSource, /projectCurrentWorkCaseCard\(source, item\.source_content_fingerprint\)/)
+  assert.match(factsSource, /projectCurrentWorkCaseCard\(source, item\.source_content_fingerprint, uidTargets\)/)
   assert.doesNotMatch(factsSource, /export function projectWorkCaseCard\b/)
   assert.doesNotMatch(cognitionSource, /deriveWorkCaseProgressProjection/)
   assert.match(cognitionSource, /currentWorkCaseProjection\(raw\)/)

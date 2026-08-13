@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { History, Maximize2, Minimize2 } from 'lucide-react';
 import PriorityIcon from '@/components/PriorityIcon';
+import StatusBadge from '@/components/StatusBadge';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { useI18n } from '@/i18n/context';
 import { getFieldLabel, getLocalizedObjectTitle, getObjectStatusLocale, type LocaleKey } from '@/i18n/locales';
@@ -62,7 +63,7 @@ const RELATION_PHRASE_KEYS: Record<string, LocaleKey> = {
   'incoming:contributed-to': 'cognition.commitHotspots.workRelation.contributesToHotspot',
 };
 
-function nodeKey(node: CognitionRecentHotspotNode): string {
+export function nodeKey(node: CognitionRecentHotspotNode): string {
   return node.object_uid ? `uid:${node.object_uid}` : `legacy:${node.type}:${node.id}`;
 }
 
@@ -431,17 +432,19 @@ function HotspotNodeCard({
           <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center">
             <ObjectTypeIcon type={node.type} size={primary ? 18 : (expanded ? 18 : 16)} style={{ color: node.typeColor }} />
           </span>
+          {node.short_ref && <code className="ldvh-meta-muted shrink-0">{node.short_ref}</code>}
           <PriorityIcon source={node} type={node.type} locale={locale} size="sm" />
-          <code className="ldvh-meta-muted shrink-0">{node.id}</code>
         </div>
-        <span
-          data-hotspot-node-title
-          title={title}
-          className={`block w-full overflow-hidden break-words text-center text-ldvh-text-primary ${primary ? (expanded ? 'text-lg font-semibold leading-6' : 'text-base font-semibold leading-[22px]') : 'text-sm font-medium leading-5'}`}
-          style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: expanded ? 3 : 2 }}
-        >
-          {title}
-        </span>
+        <div className="flex min-w-0 w-full items-start justify-center text-center">
+          <span
+            data-hotspot-node-title
+            title={title}
+            className={`block min-w-0 max-w-full overflow-hidden break-words text-center text-ldvh-text-primary ${primary ? (expanded ? 'text-lg font-semibold leading-6' : 'text-base font-semibold leading-[22px]') : 'text-sm font-medium leading-5'}`}
+            style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: expanded ? 3 : 2 }}
+          >
+            {title}
+          </span>
+        </div>
         <div data-hotspot-node-meta className="mt-0.5 flex min-w-0 flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5">
           {node.activityRefs.length > 0 && (
             <span
@@ -452,7 +455,7 @@ function HotspotNodeCard({
               {node.activityRefs.length}
             </span>
           )}
-          {status && <span className="ldvh-caption shrink-0 text-ldvh-text-secondary/70">{getObjectStatusLocale(node.type, status, locale)}</span>}
+          {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(node.type, status, locale)} objectType={node.type} size="sm" />}
         </div>
       </div>
     </button>

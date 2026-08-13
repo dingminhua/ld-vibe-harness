@@ -590,7 +590,7 @@ export function ObjectIdentityHeader({
             >
               {typeLabel}
             </span>
-            <span className="ldvh-meta-muted min-w-0 truncate">{id}</span>
+            <span className="ldvh-meta-muted min-w-0 truncate">{typeof source.short_ref === 'string' ? source.short_ref : id}</span>
             {extraBadges}
             <PriorityIcon source={source} type={objectType} locale={locale} size="sm" />
             {(capabilityStatusBadge || status || actionBadges || showCopyAction) && (

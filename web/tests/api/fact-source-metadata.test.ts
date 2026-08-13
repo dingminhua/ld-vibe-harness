@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { listObjects, showObject } from '../../api/services/facts.ts';
-import type { LocalFactScope } from '../../api/services/localFactReader.ts';
+import { shortFactReference, type LocalFactScope } from '../../api/services/localFactReader.ts';
 
 const fixtures = [
   { type: 'adr', id: 'adr-0001', directory: 'adrs', carrier: 'yaml', body: 'object_id: adr-0001\nfact_type_key: adr\ntitle: ADR fixture\nstatus: active\n' },
@@ -47,6 +47,62 @@ test('local exact reads carry source metadata for each local carrier, while list
     assert.deepEqual(candidate?.read_issues, []);
     assert.equal(candidate?.report_body, undefined);
 
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('fact list projections preserve short references for UID-native cards across types', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'ldvh-web-facts-'));
+  const scope: LocalFactScope = { worktreeLocator: root, governedProjectId: 'fixture' };
+  const adrUid = '0198f1c7-8a2b-7c3d-9e4f-123456789abc';
+  const workCaseUid = '0198f1c7-8a2b-7c3d-9e4f-123456789abd';
+  try {
+    await mkdir(path.join(root, 'ldvh-base', 'adrs'), { recursive: true });
+    await mkdir(path.join(root, 'ldvh-base', 'workcases'), { recursive: true });
+    await writeFile(
+      path.join(root, 'ldvh-base', 'adrs', 'adr-0001.yaml'),
+      `object_uid: ${adrUid}\nobject_id: adr-0001\nfact_type_key: adr\ntitle: UID ADR\nstatus: active\n`,
+      'utf8',
+    );
+    await writeFile(
+      path.join(root, 'ldvh-base', 'workcases', 'workcase-0001.yaml'),
+      `object_uid: ${workCaseUid}\nobject_id: workcase-0001\nfact_type_key: workcase\ntitle: UID WorkCase\nstatus: open\nphase: executing\n`,
+      'utf8',
+    );
+
+    const adrList = await listObjects('adr', undefined, undefined, scope);
+    const workCaseList = await listObjects('workcase', undefined, undefined, scope);
+    if (!adrList.ok || !workCaseList.ok) throw new Error('fact list unavailable');
+    const adr = (adrList.data.items as Array<Record<string, unknown>>)[0];
+    const workCase = (workCaseList.data.items as Array<Record<string, unknown>>)[0];
+    assert.equal(adr?.short_ref, shortFactReference('adr', adrUid));
+    assert.equal(adr?.object_uid, adrUid);
+    assert.equal(workCase?.short_ref, shortFactReference('workcase', workCaseUid));
+    assert.equal(workCase?.object_uid, workCaseUid);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('UID-native object ids open through the exact-read detail path', async () => {
+  const root = await mkdtemp(path.join(tmpdir(), 'ldvh-web-facts-'));
+  const scope: LocalFactScope = { worktreeLocator: root, governedProjectId: 'fixture' };
+  const objectId = 'spark-01KZXN5TXNFTKR60XNHDPSKV6D';
+  const objectUid = '019ffb52-ebb5-724c-881f-4f0f7d97038f';
+  try {
+    await mkdir(path.join(root, 'ldvh-base', 'sparks'), { recursive: true });
+    await writeFile(
+      path.join(root, 'ldvh-base', 'sparks', `${objectId}.yaml`),
+      `object_uid: ${objectUid}\nobject_id: ${objectId}\nfact_type_key: spark\ntitle: UID Spark\nstatus: open\n`,
+      'utf8',
+    );
+    const result = await showObject(objectId, scope);
+    assert.equal(result.ok, true);
+    if (!result.ok) return;
+    assert.equal(result.data.object_id, objectId);
+    assert.equal(result.data.object_uid, objectUid);
+    assert.equal(result.data.short_ref, shortFactReference('spark', objectUid));
   } finally {
     await rm(root, { recursive: true, force: true });
   }

@@ -7,7 +7,7 @@ export function formatObjectReference(
 ): string | undefined {
   const typeCode = { adr: 'A', workcase: 'C', pitfall: 'P', spark: 'S', study: 'T' }[objectType ?? ''];
   if (typeCode && shortRef?.startsWith(typeCode) && /^[ACPST][A-Z]{5}$/.test(shortRef)) {
-    return `${objectType} ${shortRef}`;
+    return projectId ? `${projectId}@${shortRef}` : shortRef;
   }
   if (!projectId || !objectId) return undefined;
   return `${projectId}@${objectId}`;

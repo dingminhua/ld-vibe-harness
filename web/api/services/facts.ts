@@ -2,6 +2,7 @@
 import {
   listLocalFacts,
   readLocalFact,
+  shortFactReference,
   type LocalFactItem,
   type LocalFactMetadata,
   type LocalFactScope,
@@ -75,13 +76,21 @@ function readFailure(id: string, type: ObjectType, metadata: LocalFactMetadata, 
   return response
 }
 
-function projectListItem(type: ObjectType, item: LocalFactItem): Record<string, unknown> {
+function projectFactIdentity(type: ObjectType, source: Record<string, unknown>): Record<string, unknown> {
+  const projected = copyPresentFields(source, ['object_uid'])
+  const shortRef = shortFactReference(type, source.object_uid)
+  if (shortRef !== undefined) projected.short_ref = shortRef
+  return projected
+}
+
+function projectListItem(type: ObjectType, item: LocalFactItem, uidTargets?: FactUidTargetIndex): Record<string, unknown> {
   const source = item.fact_object ?? {}
   const base = type === 'workcase'
-    ? projectCurrentWorkCaseCard(source, item.source_content_fingerprint)
+    ? projectCurrentWorkCaseCard(source, item.source_content_fingerprint, uidTargets)
     : copyPresentFields(source, FACT_LIST_FIELD_NAMES[type])
   return {
     ...base,
+    ...projectFactIdentity(type, source),
     // Cards use this only to render the latest update attribution.  Keep the
     // raw carrier so its signature remains traceable to the fact's change log.
     ...copyPresentFields(source, ['change_log']),
@@ -212,7 +221,7 @@ async function projectListItemWithAssociations(
 ): Promise<Record<string, unknown>> {
   const associations = await projectFactCardAssociations(item, scope, uidTargets)
   return {
-    ...projectListItem(type, item),
+    ...projectListItem(type, item, uidTargets),
     ...(associations.length > 0 ? { factAssociations: associations } : {}),
   }
 }
@@ -250,7 +259,7 @@ function projectCriterionStatements(value: unknown): string[] {
     .filter((statement): statement is string => statement !== null)
 }
 
-function projectContributedToTargets(value: unknown): Array<Record<string, string>> {
+function projectContributedToTargets(value: unknown, uidTargets?: FactUidTargetIndex): Array<Record<string, string>> {
   if (!Array.isArray(value)) return []
   return value.flatMap<Record<string, string>>((candidate) => {
     if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) return []
@@ -260,7 +269,12 @@ function projectContributedToTargets(value: unknown): Array<Record<string, strin
     if (!target || typeof target !== 'object' || Array.isArray(target)) return []
     const triple = target as Record<string, unknown>
     if (Object.keys(triple).length === 1 && typeof triple.object_uid === 'string' && UUID_V7_PATTERN.test(triple.object_uid)) {
-      return [{ objectUid: triple.object_uid }]
+      const resolvedTarget = uidTargets?.get(triple.object_uid)
+      return [{ objectUid: triple.object_uid, ...(resolvedTarget ? {
+        governedProjectId: resolvedTarget.governedProjectId,
+        factTypeKey: resolvedTarget.factTypeKey,
+        objectId: resolvedTarget.objectId,
+      } : {}) }]
     }
     if (typeof triple.governed_project_id !== 'string' || !triple.governed_project_id.trim()
       || triple.fact_type_key !== 'pitfall'
@@ -272,11 +286,16 @@ function projectContributedToTargets(value: unknown): Array<Record<string, strin
 const CLOSURE_PROPOSAL_OUTCOMES = new Set(['completed', 'partial', 'not-achieved', 'cancelled'])
 const RESIDUAL_DISPOSITIONS = new Set(['route_existing', 'suggest_spark', 'accept_stop'])
 
-function projectRelationTarget(value: unknown): Record<string, string> | null {
+function projectRelationTarget(value: unknown, uidTargets?: FactUidTargetIndex): Record<string, string> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const target = value as Record<string, unknown>
   if (Object.keys(target).length === 1 && typeof target.object_uid === 'string' && UUID_V7_PATTERN.test(target.object_uid)) {
-    return { objectUid: target.object_uid }
+    const resolvedTarget = uidTargets?.get(target.object_uid)
+    return { objectUid: target.object_uid, ...(resolvedTarget ? {
+      governedProjectId: resolvedTarget.governedProjectId,
+      factTypeKey: resolvedTarget.factTypeKey,
+      objectId: resolvedTarget.objectId,
+    } : {}) }
   }
   if (typeof target.governed_project_id !== 'string' || !target.governed_project_id.trim()
     || typeof target.fact_type_key !== 'string' || !target.fact_type_key.trim()
@@ -284,14 +303,14 @@ function projectRelationTarget(value: unknown): Record<string, string> | null {
   return { governedProjectId: target.governed_project_id, factTypeKey: target.fact_type_key, objectId: target.object_id }
 }
 
-function projectProposalRouteTarget(value: unknown): Record<string, string> | null {
+function projectProposalRouteTarget(value: unknown, uidTargets?: FactUidTargetIndex): Record<string, string> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const target = value as Record<string, unknown>
   const allowed = new Set(['object_uid', 'governed_project_id', 'fact_type_key', 'object_id', 'content_fingerprint'])
   if (Object.keys(target).some((key) => !allowed.has(key))
     || typeof target.content_fingerprint !== 'string'
     || !/^[0-9a-f]{64}$/.test(target.content_fingerprint)) return null
-  const projected = projectRelationTarget(Object.fromEntries(Object.entries(target).filter(([key]) => key !== 'content_fingerprint')))
+  const projected = projectRelationTarget(Object.fromEntries(Object.entries(target).filter(([key]) => key !== 'content_fingerprint')), uidTargets)
   if (projected === null) return null
   if ('objectUid' in projected) return projected
   if (projected.factTypeKey === 'workcase' && !/^workcase-[0-9]{4,}$/.test(projected.objectId)) return null
@@ -340,6 +359,7 @@ function projectResidualDecisions(
   value: unknown,
   outcome: string,
   suggestions: Array<Record<string, string>>,
+  uidTargets?: FactUidTargetIndex,
 ): Array<Record<string, unknown>> | null {
   if (value === undefined) return outcome === 'completed' ? [] : null
   if (!Array.isArray(value) || value.length === 0 || outcome === 'completed') return null
@@ -355,7 +375,7 @@ function projectResidualDecisions(
       || identifiers.has(decision.residual_id)) return null
     if (typeof decision.summary !== 'string' || !decision.summary.trim()) return null
     if (typeof decision.proposed_disposition !== 'string' || !RESIDUAL_DISPOSITIONS.has(decision.proposed_disposition)) return null
-    const routeTarget = decision.proposed_disposition === 'route_existing' ? projectProposalRouteTarget(decision.route_target) : null
+    const routeTarget = decision.proposed_disposition === 'route_existing' ? projectProposalRouteTarget(decision.route_target, uidTargets) : null
     if (decision.proposed_disposition === 'route_existing'
       && (routeTarget === null || ('factTypeKey' in routeTarget && !['workcase', 'spark'].includes(routeTarget.factTypeKey)))) return null
     if (decision.proposed_disposition !== 'route_existing' && decision.route_target !== undefined) return null
@@ -379,7 +399,7 @@ function projectResidualDecisions(
  * projection is dropped unless every required proposal member is readable and
  * complete. No malformed decision or suggestion is silently omitted.
  */
-function projectClosureProposal(value: unknown): Record<string, unknown> | null {
+function projectClosureProposal(value: unknown, uidTargets?: FactUidTargetIndex): Record<string, unknown> | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null
   const proposal = value as Record<string, unknown>
   const allowed = new Set(['proposed_outcome', 'proposed_disposition_summary', 'residual_decisions', 'spark_suggestions'])
@@ -390,7 +410,7 @@ function projectClosureProposal(value: unknown): Record<string, unknown> | null 
   if (suggestions === null) return null
   if (proposal.proposed_outcome === 'completed'
     && suggestions.some((item) => item.suggestionKind === 'constrained_responsibility')) return null
-  const decisions = projectResidualDecisions(proposal.residual_decisions, proposal.proposed_outcome, suggestions)
+  const decisions = projectResidualDecisions(proposal.residual_decisions, proposal.proposed_outcome, suggestions, uidTargets)
   if (decisions === null) return null
   return {
     proposedOutcome: proposal.proposed_outcome,
@@ -400,7 +420,7 @@ function projectClosureProposal(value: unknown): Record<string, unknown> | null 
   }
 }
 
-function projectClosedDisposition(fact: Record<string, unknown>): Record<string, unknown> | null {
+function projectClosedDisposition(fact: Record<string, unknown>, uidTargets?: FactUidTargetIndex): Record<string, unknown> | null {
   if (typeof fact.closure_outcome !== 'string' || !CLOSURE_PROPOSAL_OUTCOMES.has(fact.closure_outcome)) return null
   if (typeof fact.disposition_summary !== 'string' || !fact.disposition_summary.trim()) return null
   const suggestions = projectSparkSuggestions(fact.spark_suggestions)
@@ -411,7 +431,7 @@ function projectClosedDisposition(fact: Record<string, unknown>): Record<string,
       if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) continue
       const relation = candidate as Record<string, unknown>
       if (relation.relation_key !== 'routed-to') continue
-      const target = projectRelationTarget(relation.target)
+      const target = projectRelationTarget(relation.target, uidTargets)
       if (target === null || ('factTypeKey' in target && !['workcase', 'spark'].includes(target.factTypeKey))) return null
       routedTo.push(target)
     }
@@ -448,6 +468,7 @@ function projectClosedDisposition(fact: Record<string, unknown>): Record<string,
 function projectCurrentWorkCaseCardShape(
   fact: Record<string, unknown>,
   currentSnapshotProjection: WorkCaseCurrentSnapshotProjection,
+  uidTargets?: FactUidTargetIndex,
 ): Record<string, unknown> {
   const projected = copyPresentFields(fact, ['object_id', 'fact_type_key', 'title', 'status', 'phase', 'updated_at', 'change_log'])
   projected.current_snapshot_projection = currentSnapshotProjection
@@ -477,15 +498,15 @@ function projectCurrentWorkCaseCardShape(
     Object.assign(projected, copyPresentFields(fact, ['priority', 'goal', 'waiting_on', 'termination']))
   } else if (progress?.progress_group === 'closure_confirmation') {
     Object.assign(projected, copyPresentFields(fact, ['goal']))
-    const closureProposal = projectClosureProposal(fact.closure_proposal)
+    const closureProposal = projectClosureProposal(fact.closure_proposal, uidTargets)
     if (closureProposal) projected.closureProposal = closureProposal
-    const contributedTo = projectContributedToTargets(fact.relations)
+    const contributedTo = projectContributedToTargets(fact.relations, uidTargets)
     if (contributedTo.length > 0) projected.contributedTo = contributedTo
   } else if (progress?.progress_group === 'closed') {
     Object.assign(projected, copyPresentFields(fact, ['goal', 'termination', 'closure_outcome']))
-    const closureTerminal = projectClosedDisposition(fact)
+    const closureTerminal = projectClosedDisposition(fact, uidTargets)
     if (closureTerminal) projected.closureTerminal = closureTerminal
-    const contributedTo = projectContributedToTargets(fact.relations)
+    const contributedTo = projectContributedToTargets(fact.relations, uidTargets)
     if (contributedTo.length > 0) projected.contributedTo = contributedTo
   }
   if (progress?.blocking_overlay) {
@@ -501,13 +522,14 @@ function projectCurrentWorkCaseCardShape(
 export function projectCurrentWorkCaseCard(
   fact: Record<string, unknown>,
   sourceContentFingerprint: string | null,
+  uidTargets?: FactUidTargetIndex,
 ): Record<string, unknown> {
   const currentSnapshotProjection = deriveWorkCasePresentationProjection(
     fact.status,
     fact.phase,
     sourceContentFingerprint,
   )
-  return projectCurrentWorkCaseCardShape(fact, currentSnapshotProjection)
+  return projectCurrentWorkCaseCardShape(fact, currentSnapshotProjection, uidTargets)
 }
 
 export async function listObjects(type: ObjectType, _baseDir?: string, status?: string, scope?: LocalFactScope): Promise<WebFactResult | WebFactError> {
@@ -537,7 +559,7 @@ export async function listObjects(type: ObjectType, _baseDir?: string, status?: 
   }
 }
 
-const OBJECT_ID_PATTERN = /^(workcase|adr|pitfall|spark|study)-\d+$/
+const OBJECT_ID_PATTERN = /^(workcase|adr|pitfall|spark|study)-(?:\d+|[0-7][0-9A-HJKMNP-TV-Z]{25})$/
 
 export async function showObject(id: string, scope?: LocalFactScope): Promise<WebFactResult | WebFactError> {
   const match = OBJECT_ID_PATTERN.exec(id)
@@ -559,7 +581,8 @@ export async function showObject(id: string, scope?: LocalFactScope): Promise<We
       unparsed_structures: item.unparsed_structures,
       read_issues: item.issues,
     }
-    const associations = await projectFactCardAssociations(item, resolvedScope, await currentProjectUidTargets(resolvedScope))
+    const uidTargets = await currentProjectUidTargets(resolvedScope)
+    const associations = await projectFactCardAssociations(item, resolvedScope, uidTargets)
     if (associations.length > 0) data.factAssociations = associations
     if (type === 'workcase') {
       const projection = deriveWorkCasePresentationProjection(
@@ -568,6 +591,8 @@ export async function showObject(id: string, scope?: LocalFactScope): Promise<We
         item.source_content_fingerprint,
       )
       data.current_snapshot_projection = projection
+      const currentCard = projectCurrentWorkCaseCard(item.fact_object, item.source_content_fingerprint, uidTargets)
+      Object.assign(data, currentCard)
       if (projection.resolution === 'resolved') {
         data.progress_group = projection.progress_group
         if (projection.progress_step) data.progress_step = projection.progress_step

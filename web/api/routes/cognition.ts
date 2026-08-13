@@ -554,6 +554,8 @@ export function projectRecentHotspotFact(item: LocalFactItem, type: ObjectType):
   return {
     type,
     object_id: objectId,
+    ...(typeof raw.object_uid === 'string' ? { object_uid: raw.object_uid } : {}),
+    ...(typeof raw.short_ref === 'string' ? { short_ref: raw.short_ref } : {}),
     title,
     ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
     ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),

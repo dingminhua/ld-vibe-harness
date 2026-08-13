@@ -398,7 +398,7 @@ test('semantic WorkCase cards share one title-to-body spacing token', () => {
     assert.match(section, /WORKCASE_CARD_TITLE_BODY_GAP_CLASS/);
   }
   assert.match(closure, /showStatus=\{false\} compact/);
-  assert.match(closed, /showStatus=\{false\} compact/);
+  assert.doesNotMatch(closed, /showStatus=\{false\} compact/);
 
   // 彩色 Card 正文使用与背景同色相的低饱和深色，避免高饱和标题色贯穿长正文。
   assert.match(goal, /text-violet-950\/65 dark:text-violet-100\/75/);
@@ -417,7 +417,7 @@ test('Card targets remain plain relationship facts while Focus may opt into seco
   assert.match(target, /flex min-w-0 items-center gap-2/);
   assert.match(target, /size=\{13\} className="shrink-0"/);
   assert.match(target, /<span className="ldvh-meta-primary min-w-0 flex-1 whitespace-normal break-words text-left">[\s\S]*\{title\}/);
-  assert.match(target, /\{target\.objectId \?\? target\.objectUid\}/);
+  assert.doesNotMatch(target, /\{target\.objectId \?\? target\.objectUid\}/);
   assert.match(target, /onOpenTarget\?: \(target: WorkCaseContributionTarget, title: string\) => void/);
   assert.match(target, /if \(onOpenTarget && canOpenTarget\) \{/);
   assert.match(target, /<button[\s\S]*onClick=\{\(\) => onOpenTarget\(target, title\)\}/);
@@ -551,7 +551,7 @@ test('closure confirmation cards render the closure-decision input zone and shar
   assert.match(contributions, /onOpenTarget\?: \(target: WorkCaseContributionTarget, title: string\) => void;/);
   assert.match(contributions, /fetchObjectDetail\(target\.factTypeKey, target\.objectId\)/);
   assert.match(contributions, /<ObjectTypeIcon type=\{target\.factTypeKey\}/);
-  assert.match(contributions, /\{target\.objectId \?\? target\.objectUid\}/);
+  assert.doesNotMatch(contributions, /\{target\.objectId \?\? target\.objectUid\}/);
   assert.doesNotMatch(contributions, /getTypeLabel\(target\.factTypeKey, locale\)/);
   assert.match(contributions, /if \(!detail \|\| !isReadableFact\(readMeta\)\) return '—';/);
   assert.match(contributions, /objectList\.workcaseTargetReading/);
@@ -582,14 +582,14 @@ test('closed cards use terminal closure content while unclassified cards stay mi
   assert.match(list, /<WorkCaseClosedContent goal=\{obj\.goal\} terminal=\{obj\.closureTerminal\} termination=\{obj\.termination\} \/>/);
   assert.doesNotMatch(terminalBranch, /<WorkCaseContributionsContent contributions=\{obj\.contributedTo\}/);
   assert.match(list, /<FactAssociationsCardContent associations=\{obj\.factAssociations\} \/>/);
-  assert.match(list, /getFieldValueLabel\('proposed_disposition', 'route_existing', locale\)/);
+  assert.doesNotMatch(list, /getFieldValueLabel\('proposed_disposition', 'route_existing', locale\)/);
   assert.match(list, /getFieldValueLabel\('proposed_disposition', 'suggest_spark', locale\)/);
   assert.match(closedContent, /<WorkCaseOutcomeNotice outcome=\{terminal\.outcome\} dispositionSummary=\{terminal\.dispositionSummary\} mode="terminal" \/>/);
-  assert.match(closedContent, /terminal\.routedTo\.map/);
+  assert.doesNotMatch(closedContent, /terminal\.routedTo/);
   assert.match(closedContent, /terminal\.acceptedStop\.map/);
   assert.match(closedContent, /<WorkCaseSparkSuggestions suggestions=\{terminal\.sparkSuggestions\} \/>/);
   assert.match(closedContent, /CircleMinus size=\{WORKCASE_SECTION_ICON_SIZE\}/);
-  assert.match(closedContent, /ArrowRight size=\{WORKCASE_SECTION_ICON_SIZE\}/);
+  assert.doesNotMatch(closedContent, /ArrowRight size=\{WORKCASE_SECTION_ICON_SIZE\}/);
   assert.doesNotMatch(closedContent, /border-t border-ldvh-border\/45/);
   assert.doesNotMatch(terminalBranch, /executionItems|successCriteria|RecordItem|Integrity|Evidence|BlockingNotice|blocking_summary/);
   assert.doesNotMatch(list, /hasClosureRequestedAt|hasClosureEvidence|hasClosedIntegrityIssue|WorkCaseRecordItem/);
@@ -698,6 +698,41 @@ test('closure confirmation preserves UID route targets without rewriting them to
     residualDecisions: Array<{ routeTarget?: Record<string, string> }>;
   };
   assert.deepEqual(closureProposal.residualDecisions[0].routeTarget, { objectUid });
+});
+
+test('UID-only WorkCase route targets resolve to readable locators when the UID is unique', () => {
+  const objectUid = '0198f1c7-8a2b-7c3d-9e4f-123456789abc';
+  const uidTargets = new Map([[objectUid, {
+    governedProjectId: 'sample',
+    factTypeKey: 'spark',
+    objectId: 'spark-01KZXN5TXNE0QB8DXQKC9HMXDX',
+  }]])
+  const projected = projectCurrentWorkCaseCard({
+    object_id: 'workcase-0113',
+    fact_type_key: 'workcase',
+    title: 'UID 路由目标',
+    status: 'open',
+    phase: 'human_closure_confirming',
+    updated_at: '2026-07-27T00:00:00+08:00',
+    goal: '解析 UID 路由。',
+    closure_proposal: {
+      proposed_outcome: 'partial',
+      proposed_disposition_summary: '路由剩余责任。',
+      residual_decisions: [{
+        residual_id: 'residual-uid-resolved',
+        summary: '继续跟进',
+        proposed_disposition: 'route_existing',
+        route_target: { object_uid: objectUid, content_fingerprint: 'a'.repeat(64) },
+      }],
+    },
+  }, sourceContentFingerprint, uidTargets)
+  const closureProposal = projected.closureProposal as { residualDecisions: Array<{ routeTarget?: Record<string, string> }> }
+  assert.deepEqual(closureProposal.residualDecisions[0].routeTarget, {
+    objectUid,
+    governedProjectId: 'sample',
+    factTypeKey: 'spark',
+    objectId: 'spark-01KZXN5TXNE0QB8DXQKC9HMXDX',
+  })
 });
 
 test('closure confirmation rejects route targets without an exact fingerprint and proposals with unknown members', () => {
