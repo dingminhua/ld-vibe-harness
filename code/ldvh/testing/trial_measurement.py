@@ -889,6 +889,11 @@ class SafeTrialTempRoot:
                 handle.write(payload)
                 handle.flush()
                 os.fsync(handle.fileno())
+            parent_descriptor = os.open(output.parent, os.O_RDONLY)
+            try:
+                os.fsync(parent_descriptor)
+            finally:
+                os.close(parent_descriptor)
         except BaseException:
             try:
                 output.unlink()
@@ -899,6 +904,44 @@ class SafeTrialTempRoot:
         if output.is_symlink() or not _contained(output.resolve(strict=True), self._resolved_root):
             raise TrialMeasurementError("output path changed after write")
         return output
+
+    def read_json(self, relative_path: str) -> dict[str, Any]:
+        """Read one runner-owned regular JSON file without following links."""
+
+        self._verify_root()
+        path = self._output_path(relative_path)
+        try:
+            info = path.lstat()
+        except FileNotFoundError as error:
+            raise TrialMeasurementError("trial artifact is missing") from error
+        if stat.S_ISLNK(info.st_mode) or not stat.S_ISREG(info.st_mode):
+            raise TrialMeasurementError("trial artifact must be a regular file")
+        if not _contained(path.resolve(strict=True), self._resolved_root):
+            raise TrialMeasurementError("trial artifact escaped temporary root")
+        if path.parent not in self._created_directories:
+            raise TrialMeasurementError("trial artifact parent is not runner-owned")
+        flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+        try:
+            descriptor = os.open(path, flags)
+        except OSError as error:
+            raise TrialMeasurementError("trial artifact could not be opened without following links") from error
+        try:
+            opened = os.fstat(descriptor)
+            if not stat.S_ISREG(opened.st_mode) or (opened.st_dev, opened.st_ino) != (info.st_dev, info.st_ino):
+                raise TrialMeasurementError("trial artifact identity changed before read")
+            with os.fdopen(descriptor, "rb") as handle:
+                descriptor = -1
+                raw = handle.read()
+            payload = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise TrialMeasurementError("trial artifact is not valid JSON") from error
+        finally:
+            if descriptor >= 0:
+                os.close(descriptor)
+        if not isinstance(payload, dict):
+            raise TrialMeasurementError("trial artifact must contain a JSON object")
+        self._verify_root()
+        return payload
 
 
 def synthetic_trial(
