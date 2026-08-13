@@ -90,6 +90,7 @@ _CLOSED_REQUIRED = frozenset(
 _CLOSED_ALLOWED = frozenset(
     {
         *_CLOSED_REQUIRED,
+        "object_uid",
         "change_log",
         "residual_responsibilities",
         "spark_suggestions",
@@ -1003,7 +1004,7 @@ def _validate_relations(fields: Mapping[str, object], issues: list[FactIssue]) -
         if status == "closed"
         else {"depends-on", "contributed-to", "related-to"}
     )
-    observed: list[tuple[object, object, object, object]] = []
+    observed: list[tuple[object, ...]] = []
     for index, relation in enumerate(relations):
         path = f"relations[{index}]"
         if not isinstance(relation, Mapping):
@@ -1015,6 +1016,12 @@ def _validate_relations(fields: Mapping[str, object], issues: list[FactIssue]) -
             _issue(issues, f"当前 WorkCase 只允许 {'/'.join(sorted(allowed))} relation", f"{path}.relation_key")
         target = relation.get("target")
         if not isinstance(target, Mapping):
+            continue
+        if set(target) == {"object_uid"}:
+            target_uid = target.get("object_uid")
+            if target_uid == fields.get("object_uid"):
+                _issue(issues, "WorkCase relation 禁止自指", f"{path}.target.object_uid")
+            observed.append((relation_key, "uid", target_uid))
             continue
         target_id = target.get("object_id")
         if relation_key == "contributed-to":
@@ -1068,9 +1075,9 @@ def _validate_relations(fields: Mapping[str, object], issues: list[FactIssue]) -
         observed.append(identity)
     if len(observed) != len(set(observed)):
         _issue(issues, "同一 relation_key 与 target 不得重复", "relations")
-    keys_by_target: dict[tuple[object, object, object], set[object]] = {}
-    for relation_key, project_id, target_type, target_id in observed:
-        target_identity = (project_id, target_type, target_id)
+    keys_by_target: dict[tuple[object, ...], set[object]] = {}
+    for identity in observed:
+        relation_key, target_identity = identity[0], identity[1:]
         keys_by_target.setdefault(target_identity, set()).add(relation_key)
     if any("related-to" in keys and len(keys) > 1 for keys in keys_by_target.values()):
         _issue(issues, "related-to 不得与同一 target 的强关系重叠", "relations")

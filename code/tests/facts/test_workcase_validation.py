@@ -621,6 +621,26 @@ def test_contributed_to_targets_pitfall_in_active_and_closed_snapshots() -> None
     assert validate_workcase_snapshot(closed) == ()
 
 
+def test_uid_relations_and_closed_uid_identity_are_accepted_by_snapshot_layer() -> None:
+    source_uid = "0198f1c7-8a2b-7c3d-9e4f-123456789abc"
+    target_uid = "0198f1c7-8a2b-7c3d-9e4f-123456789abd"
+    closed = _closed()
+    closed["object_uid"] = source_uid
+    closed["relations"] = [
+        {"relation_key": "related-to", "target": {"object_uid": target_uid}}
+    ]
+
+    assert validate_workcase_snapshot(closed) == ()
+
+    closed["relations"] = [
+        {"relation_key": "related-to", "target": {"object_uid": source_uid}}
+    ]
+    assert any(
+        issue.field_path == "relations[0].target.object_uid"
+        for issue in validate_workcase_snapshot(closed)
+    )
+
+
 def test_contributed_to_rejects_non_pitfall_targets_and_mismatched_object_id() -> None:
     for fact_type_key, object_id in (
         ("workcase", "workcase-0007"),
