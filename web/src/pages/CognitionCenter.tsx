@@ -48,7 +48,8 @@ import {
 import { usePanel } from '@/utils/panelContext';
 import { useProjectScope } from '@/utils/projectContext';
 import { useI18n } from '@/i18n/context';
-import { getFieldLabel, getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale, type LocaleKey } from '@/i18n/locales';
+import { getFieldLabel, getFieldValueLabel, getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel, type LocaleKey } from '@/i18n/locales';
+import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { getDefaultSparkHealthAgeFilter, type SparkHealthAgeFilter } from '@/utils/cognitionSparkHealth';
 
 /** 首屏截断阈值：Web 展示参数，不是事实；截断时底部如实提示总数与未显示数量。 */
@@ -378,27 +379,39 @@ function RecentActivityReadNotes({ item, locale }: { item: CognitionRecentActivi
   );
 }
 
+function ActivityCountBadge({ count, label }: { count: number; label: string }) {
+  return (
+    <span
+      className="ldvh-chip inline-flex h-[18px] shrink-0 items-center justify-center gap-1 rounded-md border border-ldvh-accent/25 bg-ldvh-accent/5 px-[5px] text-[10px] font-medium leading-3 text-ldvh-accent"
+      title={label}
+    >
+      <History size={12} aria-hidden="true" />
+      <span>{count}</span>
+    </span>
+  );
+}
+
 function RecentActivityRow({ item }: { item: CognitionRecentActivityItem }) {
   const { t, locale } = useI18n();
   const { openPanel } = usePanel();
   const title = getLocalizedObjectTitle(item, locale, item.id);
   const status = item.type === 'workcase' ? item.progress_group : item.status;
+  const typeColor = CATEGORY_COLORS[item.type] || CATEGORY_COLORS.other;
   const open = () => openPanel({ type: 'object', title, objectType: item.type, objectId: item.id });
   return (
     <li className="min-w-0 py-3">
       <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
         <span className="ldvh-caption shrink-0 text-ldvh-text-secondary">{item.relativeTime}</span>
-        <code className="ldvh-caption min-w-0 break-all text-ldvh-text-secondary/55">{item.short_ref ?? item.id}</code>
-        <PriorityIcon source={item} type={item.type} locale={locale} size="xs" />
         <span
-          className="inline-flex shrink-0 items-center justify-center gap-1 rounded-full border border-ldvh-accent/25 bg-ldvh-accent/5 px-1.5 py-0.5 text-[11px] font-medium leading-none text-ldvh-accent"
-          title={t('cognition.recent.activityCount', { count: String(item.activityCount) })}
+          className="ldvh-chip inline-flex h-[18px] shrink-0 items-center justify-center rounded-md border px-1.5 text-[10px] font-medium leading-3"
+          style={{ backgroundColor: `${typeColor}18`, borderColor: `${typeColor}55`, color: typeColor }}
         >
-          <History size={12} aria-hidden="true" />
-          <span>{item.activityCount}</span>
+          {getTypeLabel(item.type, locale)}
         </span>
+        <PriorityIcon source={item} type={item.type} locale={locale} size="xs" />
+        <ActivityCountBadge count={item.activityCount} label={t('cognition.recent.activityCount', { count: String(item.activityCount) })} />
         <span className="ml-auto flex shrink-0 items-center gap-1.5">
-          {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(item.type, status, locale)} objectType={item.type} />}
+          {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(item.type, status, locale)} objectType={item.type} size="xs" variant="compact" />}
           <ObjectReferenceCopyButton objectId={item.id} objectType={item.type} shortRef={item.short_ref} />
         </span>
       </div>
@@ -407,13 +420,13 @@ function RecentActivityRow({ item }: { item: CognitionRecentActivityItem }) {
         tabIndex={0}
         onClick={open}
         onKeyDown={(event) => openOnKeyboard(event, open)}
-        className="group mt-2 flex min-w-0 cursor-pointer items-center gap-1.5 rounded-md py-1 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
+        className="group mt-1.5 flex min-w-0 cursor-pointer items-center gap-1.5 rounded-md text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
       >
         <ObjectTypeIcon type={item.type} size={15} className="shrink-0" style={{ color: item.typeColor }} />
         <h4 className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words group-hover:text-ldvh-accent">{title}</h4>
       </div>
       <RecentActivityReadNotes item={item} locale={locale} />
-      <div className="mt-1.5 flex min-w-0 items-center justify-end text-right">
+      <div className="mt-2 flex min-w-0 items-center justify-end text-right opacity-70">
         <ObjectUpdatedMeta source={{}} updatedAt={item.occurredAt} signature={item.signature} />
       </div>
     </li>
@@ -469,8 +482,14 @@ function SparkHealthRow({ item }: { item: CognitionSparkHealthItem }) {
         <span className="ldvh-caption shrink-0 text-amber-700/85 dark:text-amber-300/85">
           {t('cognition.sparkHealth.silentDays', { days: String(item.silentDays) })}
         </span>
-        <code className="ldvh-caption min-w-0 break-all text-ldvh-text-secondary/55">{item.short_ref ?? item.id}</code>
+        <span
+          className="ldvh-chip inline-flex h-[18px] shrink-0 items-center justify-center rounded-md border px-1.5 text-[10px] font-medium leading-3"
+          style={{ backgroundColor: `${item.typeColor}18`, borderColor: `${item.typeColor}55`, color: item.typeColor }}
+        >
+          {getTypeLabel(item.type, locale)}
+        </span>
         <PriorityIcon source={item} type="spark" locale={locale} size="xs" />
+        <ActivityCountBadge count={item.activityCount} label={t('cognition.recent.activityCount', { count: String(item.activityCount) })} />
         <span className="ml-auto shrink-0">
           <ObjectReferenceCopyButton objectId={item.id} objectType="spark" shortRef={item.short_ref} />
         </span>
@@ -480,7 +499,7 @@ function SparkHealthRow({ item }: { item: CognitionSparkHealthItem }) {
         tabIndex={0}
         onClick={open}
         onKeyDown={(event) => openOnKeyboard(event, open)}
-        className="group mt-2 flex min-w-0 cursor-pointer items-center gap-1.5 rounded-md py-1 text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
+        className="group mt-1.5 flex min-w-0 cursor-pointer items-center gap-1.5 rounded-md text-left transition-colors hover:bg-ldvh-border/25 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50"
       >
         <ObjectTypeIcon type="spark" size={15} className="shrink-0" style={{ color: item.typeColor }} />
         <h4 className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words group-hover:text-ldvh-accent">{title}</h4>
@@ -502,7 +521,7 @@ function SparkHealthRow({ item }: { item: CognitionSparkHealthItem }) {
           </p>
         ))}
       </div>}
-      <div className="mt-1.5 flex min-w-0 items-center justify-end text-right">
+      <div className="mt-2 flex min-w-0 items-center justify-end text-right opacity-70">
         <ObjectUpdatedMeta source={{}} updatedAt={item.updatedAt} signature={item.signature} />
       </div>
     </li>

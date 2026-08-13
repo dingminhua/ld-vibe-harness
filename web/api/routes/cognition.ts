@@ -152,6 +152,8 @@ interface SparkHealthBuildItem {
   updated_at: string
   /** 取最近一条具备完整署名的事实流水，与对象卡片落款规则一致。 */
   signature?: FactChangeSignature
+  /** 当前对象可读 change_log 中的受控修改流水数。 */
+  activity_count: number
   silent_days: number
   read_status: string
   field_issues: Array<Record<string, unknown>>
@@ -353,6 +355,16 @@ function getLatestFactChangeSignature(changeLog: unknown): FactChangeSignature |
   return undefined
 }
 
+/** 只统计带有效发生时刻的对象修改流水；未解析成员不作为修改数。 */
+function getFactChangeLogCount(changeLog: unknown): number {
+  if (!Array.isArray(changeLog)) return 0
+  return changeLog.filter((entry) => {
+    if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) return false
+    const at = (entry as Record<string, unknown>).at
+    return typeof at === 'string' && Number.isFinite(parseTimestamp(at))
+  }).length
+}
+
 /**
  * 将事实对象自身的流水转为近期动态。流水只约定 `at`，没有独立动作字段；
  * 因此第一条有效记录表示受控创建，之后的记录表示受控更新。没有可读流水的
@@ -511,6 +523,7 @@ export function buildSparkHealth(rawItems: Array<Record<string, unknown>>, obser
       ...(priority ? { priority } : {}),
       updated_at: updatedAt,
       ...(signature ? { signature } : {}),
+      activity_count: getFactChangeLogCount(raw.change_log),
       silent_days: days,
       read_status: String(raw.read_status ?? 'unknown'),
       field_issues: Array.isArray(raw.field_issues) ? raw.field_issues as Array<Record<string, unknown>> : [],
@@ -1054,6 +1067,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
             ...(item.priority !== undefined ? { priority: item.priority } : {}),
             updatedAt: item.updated_at,
             ...(item.signature !== undefined ? { signature: item.signature } : {}),
+            activityCount: item.activity_count,
             silentDays: item.silent_days,
             typeColor: getTypeColor('spark'),
             read_status: item.read_status,
@@ -1071,6 +1085,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
             ...(item.priority !== undefined ? { priority: item.priority } : {}),
             updatedAt: item.updated_at,
             ...(item.signature !== undefined ? { signature: item.signature } : {}),
+            activityCount: item.activity_count,
             silentDays: item.silent_days,
             typeColor: getTypeColor('spark'),
             read_status: item.read_status,

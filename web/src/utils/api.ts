@@ -637,6 +637,8 @@ export interface CognitionSparkHealthItem {
   updatedAt: string;
   /** 最近一条完整 change_log 署名，与事实卡片落款一致。 */
   signature?: CommitSignature;
+  /** 该 Spark 可读 change_log 中的受控修改流水数。 */
+  activityCount: number;
   /** 距 API 本次 generatedAt 的完整静默天数。 */
   silentDays: number;
   typeColor: string;

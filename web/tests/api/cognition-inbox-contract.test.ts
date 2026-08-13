@@ -81,9 +81,14 @@ function expectedInboxKind(item: Record<string, unknown>): string | null {
   return null
 }
 
-test('Cognition list rows display short_ref while preserving full ids for actions', () => {
+test('recent activity rows display localized type labels while preserving full ids for actions', () => {
   const source = readFileSync(path.resolve(repositoryRoot, 'src/pages/CognitionCenter.tsx'), 'utf8')
-  assert.match(source, /<code className="ldvh-caption min-w-0 break-all text-ldvh-text-secondary\/55">\{item\.short_ref \?\? item\.id\}<\/code>/)
+  const recentActivityRow = source.slice(source.indexOf('function RecentActivityRow'), source.indexOf('function RecentActivityUsageBars'))
+  assert.match(recentActivityRow, /getTypeLabel\(item\.type, locale\)/)
+  assert.match(recentActivityRow, /const typeColor = CATEGORY_COLORS\[item\.type\] \|\| CATEGORY_COLORS\.other/)
+  assert.match(recentActivityRow, /style=\{\{ backgroundColor: `\$\{typeColor\}18`, borderColor: `\$\{typeColor\}55`, color: typeColor \}\}/)
+  assert.match(recentActivityRow, /<StatusBadge status=\{status\}[\s\S]*size="xs" variant="compact" \/>/)
+  assert.doesNotMatch(recentActivityRow, /item\.short_ref \?\? item\.id/)
   assert.match(source, /\(item\.short_ref !== undefined \? \{ short_ref: item\.short_ref \} : \{\}\)/)
   assert.match(source, /\(item\.object_uid !== undefined \? \{ object_uid: item\.object_uid \} : \{\}\)/)
   assert.match(source, /openPanel\(\{ type: 'object', title, objectType: item\.type, objectId: item\.id \}\)/)
@@ -380,6 +385,7 @@ test('Spark health splits the current pool into terminal and open items, with si
     const item = openItems[index]
     assert.equal(item.type, 'spark')
     assert.equal(typeof item.id, 'string')
+    assert.ok(Number(item.activityCount) >= 0)
     assert.ok(Number(item.silentDays) >= 0)
     assert.equal(typeof item.updatedAt, 'string')
     if (index > 0) assert.ok(Number(openItems[index - 1].silentDays) >= Number(item.silentDays))
@@ -390,6 +396,7 @@ test('Spark health splits the current pool into terminal and open items, with si
     const item = silentItems[index]
     assert.equal(item.type, 'spark')
     assert.equal(typeof item.id, 'string')
+    assert.ok(Number(item.activityCount) >= 0)
     assert.ok(Number(item.silentDays) >= Number(health.silentThresholdDays))
     assert.ok(openItems.some((openItem) => openItem.id === item.id))
     assert.equal(typeof item.updatedAt, 'string')
@@ -548,12 +555,13 @@ test('Spark health reuses the newest complete change-log signature for its card-
     object_id: 'spark-0003', title: 'Spark attribution', status: 'open', priority: 'P1',
     updated_at: '2026-08-01T03:00:00Z', read_status: 'readable',
     change_log: [
-      { signature: { model_id: 'legacy-model', agent_workbench: 'legacy-runtime' } },
-      { signature: { model_id: 'partial' } },
-      { signature: { product_name: 'Cindy', model_name: 'gpt-5.6-luna', agent_runtime_name: 'codex-cli' } },
+      { at: '2026-08-01T01:00:00Z', signature: { model_id: 'legacy-model', agent_workbench: 'legacy-runtime' } },
+      { at: '2026-08-01T02:00:00Z', signature: { model_id: 'partial' } },
+      { at: '2026-08-01T03:00:00Z', signature: { product_name: 'Cindy', model_name: 'gpt-5.6-luna', agent_runtime_name: 'codex-cli' } },
     ],
   }], Date.parse('2026-08-08T00:00:00Z'))
   assert.deepEqual(health.openItems[0]?.signature, { productName: 'Cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: 'Codex' })
+  assert.equal(health.openItems[0]?.activity_count, 3)
 })
 
 test('fact activity builder reads change_log first and only falls back for legacy facts without usable entries', async () => {
