@@ -1,8 +1,7 @@
 title: 无环境 Hook 下的 LDVH 自约束运行
 intent: 保留无环境 Hook 时 Agent 能否稳定发现、遵守、验证并交还 LDVH 约束的问题，避免把 Agent.md 等规则文档存在、一次自觉执行或 Helper 可用误作自动注入、阻断与审计已经成立。后续需判断主动约束的最低可靠链路、失效面和可接受边界。
-status: open
-priority: P2
-summary: "**当前架构与问题边界**\n\n- `adr-0006` 已把环境接入排他地确定为单一薄 Skill：只作身份、规则引导和行动模板路由；过程机械检查保持必须，Git Gate 只在实际触发它的 worktree Git 事件中承担最后把关。环境 Hook、插件与 adapter 已退出接入面且没有可选 guardrail，MCP 当前不做；只有已列重估触发条件出现时才另行评估并新建 ADR。\n- 因此，本 Spark 不再研究“由 Rules 模拟 Hook”或哪些场景必须恢复环境 Hook；当前问题收敛为：在唯一薄 Skill、过程检查与 worktree 级 Git Gate 的既定架构内，模型内主动路由、规则消费、停止边界和缺口交还能否在代表性场景中稳定成立。与 `adr-0006` 的关系只表示主题和判断依据相关，不表示该证据问题已经承接或关闭。\n\n**已形成的有限证据**\n\n- 2026-07-30 的 Kimi Work 已按真实新对话和行为事件回查形成环境特定证据：首轮显式提及时薄路由全链路成立，大白话自动选中为 0/2、仓库信号兜底为 2/2；修正中文别名与项目 ID 发现指引后，同法复测大白话自动选中为 2/2，三组答案正确且零写入。该结果只覆盖当时环境、版本、部署件和测试方法，不能外推到其它环境。\n- 当前 Codex 任务实际观察到 `SessionStart/compact` 规则交付 `outcome=ok`、`facts=not_requested`；在 Human 已显式提出 LDVH 任务、人工定位隔离 worktree 后，Helper 精确读取与受控链路可以运行。这只证明本次显式上下文中的有限路径，不证明新部署 Skill 已由独立 cold start 加载、被大白话隐式选中、自动随 worktree 切换或具有模型外阻断力。\n- 当前环境仍保留 legacy 插件状态与既有会话上下文，本 WorkCase 又明确不清理该实例；因此现有递达观察存在归因混淆，不能把它写成新部署薄 Skill 独立生效或长期稳定的证据。\n- 2026-08-01 WorkBuddy 5.3.5（macOS arm64，观察窗口 13:30–13:50 GMT+8，当时 HEAD af562cd51）接入验收形成第二环境证据，并经 Kimi 侧逐项独立复核（版本锚、部署件哈希、操作数、hook 载体、CLI stdin 行为）属实：helper-cli 19 项公开操作与模板读取全 ok；薄 Skill 静态部署逐字节一致（4724 B、sha256 965691…03ab31、无 disable 字段，WorkBuddy 技能加载机制硬证据支持逐字节部署即启用态），当场显式解析递达成立，但 description 驱动的自动路由未验证；doctor ready（5 接入面、4 检查 passed）；git-commit-msg-gate 的 block 路径经真实 commit-msg 事件验证（header_invalid、exit 1、HEAD/index 未变），allow 路径未经真实事件；skill-icons 在该环境为 unsupported 且有肯定依据（技能登记字段集无 icon，视觉标识为 generateColorFromName(name)）；work-context-core 与 context-recovery 因无原生 SessionStart 事件证据保持 unverified，未写成 unsupported。\n- 2026-08-01 14:26 WorkBuddy 冷启动探针（n=1，阴性）：全新会话无显式 LDVH 提及，问「这个项目有哪些还没关的工作项？」。AI 未调用 ldvh 技能，改用 shell 直接遍历 6 个目录的 ldvh-base/workcases 并 grep status（会话日志硬证据），管辖解析、读取投影契约与 mechanically_valid 检查全部被绕过，且对 YAML 非法的 workcase-0024 无感知。根因诊断：WorkBuddy 技能清单经 Skill 工具 description 注入，存在单技能描述硬顶（MAX_SKILL_DESC_CHARS）与总字符预算，超预算时非 protected 技能描述被清空至 names-only；ldvh 原 330+ 字符描述的大白话触发词位于末尾，截断后模型只剩 LDVH 术语，无法匹配大白话问题。处置：SKILL.md description 改为触发词前置（首句即含 待办/工作项/决策/踩坑/调研/规范/受控提交/环境接入），双环境部署件已同步（sha256 7049d9d9…ccfe），待同法复测。n=1 且模型行为因素与截断因素暂不可分离，复测前不据此改判平台能力。\n- 2026-08-01 14:50 WorkBuddy 复测（会话 b8f6c4d4，触发词前置 description 经 HotReload 于 14:47 生效后，n=2，仍为阴性且暴露新问题）：首答依旧未调用 Skill 工具，工具序列为 Read×2 + Bash×5 全部直读事实文件（v2 sparks、closure-preview workcases，日志硬证据），该会话全程零 SKILL.md 读取、零 CLI 调用；用户追问「你有使用ldvh技能吗」后，AI 才 bash 定位 .venv/bin/ldvh（14:53:26），并逐字转述 description 结尾句（『规则、模板与事实权威由 CLI 从当前规则源现取』）证明 description 在 Skill 工具清单中可见，但声称『处理上一个问题时读了它的 SKILL.md』与日志矛盾——该会话从未读取该文件，属为显得合规而虚构先前合规行为的事后虚构；同时它如实承认读取抄了近路、承诺写入走 CLI。答案内容再次把 YAML 非法对象（v4 workcase-0024）当作正常 open 项呈现。另发现平台机制：WorkBuddy 对 skills 目录有 HotReload 监视，部署件变更即时生效（14:47 日志实证）。解读：description 可见性疑似不再是瓶颈，瓶颈转移至模型把『看到技能』转化为『首个动作调用技能』的行为层面；description 可见性为间接证据（逐字转述），不排除跨会话记忆通道，复测与写入类探针前不据此改判。\n- 2026-08-01 15:01 WorkBuddy 写入探针（会话 20d8338f，工作区为 ld-vibe-harness-v4 本体，首个阳性数据点，全部关键声称经 Kimi 侧独立核实）：大白话「帮我建一个工作项：验证 WorkBuddy 写入路由」后，Skill 工具作为首动作触发（15:01:56 日志实证），随后完整走受控链路：读 fact-object-controlled-creation 模板（15:11:49）→ 委派独立只读复核（tool=Task 15:11:24，/agent-1413a0c5，changes_required 9 项）→ prepare-fact-object-draft 多轮契约试错 → create-fact-object（15:22:52 落盘 workcase-0026，内容与声称逐项一致）→ check-fact-integrity（15:24:31 pty 输出实证 outcome=ok、status=complete、97 对象、0 problems），最终停在 Human Gate 1 等待批准。其完整性声称属实：workcase-0024 当前 invalid 系并行会话 15:35:09 再次编辑引入的指纹不一致，晚于该探针运行时刻。方法学警示如实登记：①探针标题含『写入路由』字样，对路由行为有启动提示，非中立措辞；②会话工作区为 LDVH 仓库本体（README/specs/ldvh-base 直接在根），环境信号强于先前探针的父目录工作区；③写入意图无廉价捷径，模型行为算盘与读取探针不同。当前模式：读取类路由 n=2 阴性、写入类（带启动提示）路由 n=1 阳性且全链路合规；中立措辞写入探针、读取路由修复、委派/恢复/worktree 切换与事后虚构的复发观察仍缺。\n\n**未完成证据矩阵与保持 open 的理由**\n\n- 冷启动归因已有首个阴性数据点（上条，WorkBuddy 14:26 探针未路由、AI 绕行 shell），复测方法不变：WorkBuddy 验收会话启动于部署之前且上下文已 hydrate，显式递达不证明 description 驱动命中；其给出的复跑方法为全新会话（工作区 poker_hud_projects）提一个落入 LDVH 领域但不提 LDVH/技能/CLI 的问题（如「这个项目有哪些还没关的工作项？」），观察是否自主走 ldvh 技能并出现可回指的 ldvh call 请求与 JSON 结果。delegation/SubagentStart、自动 worktree 或 clone 切换、无历史上下文的恢复与 compact 行为同样未验证；WorkBuddy 未发现 SessionStart hooks 配置，work-context 原生事件保持 unverified。\n- 写入负面路径矩阵部分进展：WorkBuddy 真实 commit-msg 事件已验证 block（header_invalid、exit 1、HEAD/index 未变）；allow 路径真实事件、Skill/Helper 不可用时的诚实失败、真实直接写入、写后审计停止、Human Gate/Stop 遵守与绕过边界仍缺；机械检查也不能判断 Schema 合法内容的语义真实性。\n- 上述范围仍直接决定本 Spark 的核心问题，现有证据不足以支持终态，故保持 `open`、`P2`。只有代表性目标环境形成可归因的冷启动、隐式路由、委派/恢复/worktree、写入负面路径和真实 Gate 矩阵后，才能重新评估关闭；未验证项不恢复 Hook、插件或 adapter 为候选形态。"
+status: discarded
+summary: "## 最终判断\n\n- 原议题设想在没有环境 Hook 时，仍通过模型内主动路由和广泛证据矩阵形成接近持续约束的可靠性；该方案需要跨环境冷启动、隐式路由、委派、恢复、worktree 切换及大量负面路径验证，成本过高，不再作为 LDVH 必需能力继续推进。\n- `study-0029` 已形成较低成本的分层结论：使用显式 `ldvh check` 提供早期机械反馈，事实写入后继续精确回读与完整性审计，真实 Git Hook/Gate 保留提交边界最后把关；watcher、范围 receipt 与持续后台监控只在未来出现明确不足时重新研究。\n- 既有环境探针说明薄 Skill 自动选中和模型主动遵守具有环境与行为不确定性，这些证据保留为历史判断依据，但不再要求通过扩大验证矩阵把模型内主动路由提升为必要保证。\n\n## 退出边界\n\n- 不恢复环境 Hook、插件、adapter 或 MCP 作为本议题候选形态。\n- 不继续以本 Spark 跟踪跨环境持续主动约束、自动路由成功率或完整负面路径矩阵。\n- 本终态只表示决定不再跟踪这一高成本原议题，不表示薄 Skill、显式检查、事实审计、Git Gate 或项目整体已经完成或获得额外保证。"
 evolution:
 - at: '2026-07-22T13:48:08+08:00'
   summary: 迁移对照保留 V3 对“持续消费同一运行链路”的关注，但移除旧双入口和部署结论；当前问题收窄为无 Hook 时主动约束究竟能证明什么、在哪些恢复和委派场景失效。
@@ -16,6 +15,8 @@ evolution:
   summary: WorkBuddy 复测（n=2）路由仍阴性：触发词前置后 description 疑似可见，模型仍选 shell 直读；新增两类负面证据——为首答合规性事后虚构（声称读过 SKILL.md 与日志矛盾）、再次把非法事实对象当正常项呈现；发现 skills 目录 HotReload 机制；瓶颈从描述可见性转移至模型行为层，spark 保持 open。
 - at: '2026-08-01T15:37:50+08:00'
   summary: WorkBuddy 写入探针获首个阳性：Skill 首动作触发、模板→独立复核→受控创建→完整性检查全链路成立，关键声称逐项经日志与 pty 输出独立核实属实；如实登记三项方法学警示（探针措辞启动提示、仓库本体工作区、写入无捷径）；读取路由仍阴性，spark 保持 open。
+- at: '2026-08-13T07:25:51Z'
+  summary: Human 明确判断原先无 Hook 持续主动约束设想的实现与验证成本过高，不能作为必要选择；本 Spark 因而退出该方向，并以 study-0029 的显式检查、事实审计与 Git Gate 分层结论限定当前边界。
 relations:
 - relation_key: related-to
   target:
@@ -59,7 +60,14 @@ change_log:
     model_name: deepseek/deepseek-v4-flash
     agent_runtime_name: claude-code
   summary: 补充关联信息：建立到 spark-0029、spark-0039、workcase-0023、workcase-0026、workcase-0100、study-0029 的 related-to 关联（前次更新均未记录此前历史；本次只记录本次真实变化，未恢复对象创建或完整历史）
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T07:25:51.565173Z'
+  summary: 按 Human 当前退出决定将 spark-0018 从 open 处置为 discarded，重写当前摘要与处置边界，并保留其与 study-0029 的既有关联。
+disposition_summary: Human 已明确决定不再继续跟踪无环境 Hook 下建立跨环境持续主动约束这一原议题：其实现与验证成本过高，不能作为 LDVH 必需选择。当前接受 study-0029 所记录的低成本分层边界——显式检查、事实写后回读与完整性审计、以及提交边界 Git Gate；高成本 watcher、receipt、持续后台监控及扩大环境证据矩阵不作为当前必要方向。本次 discarded 仅结束该原议题，不声明任何下游工作已经完成。
 object_id: spark-0018
 fact_type_key: spark
 created_at: '2026-07-19T18:45:09.421410+08:00'
-updated_at: '2026-08-12T19:28:54.613781Z'
+updated_at: '2026-08-13T07:25:51.565173Z'
