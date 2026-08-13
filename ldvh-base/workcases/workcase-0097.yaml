@@ -99,12 +99,19 @@ change_log:
     agent_runtime_name: claude-code
   at: '2026-08-12T18:19:06.518185Z'
   summary: Human 批准关闭 workcase-0097。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:09:11.536885Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: partial
 disposition_summary: 前三项 continuation 标准 satisfied；criterion-4 的 Gate2 投影只能在关闭提案形成后的下一合法转换验证。剩余仅为进入 human_closure_confirming 并由 Human 决定关闭。
 residual_responsibilities:
 - residual_id: residual-gate2-transition
   summary: 进入 human_closure_confirming 后验证 gate2_waiting/human_gate_2 投影。
 object_id: workcase-0097
+object_uid: 019ffb52-ebb5-79b8-bf55-e06e986cc363
 fact_type_key: workcase
 created_at: '2026-08-12T11:16:56.347708Z'
-updated_at: '2026-08-12T18:19:06.518185Z'
+updated_at: '2026-08-13T14:09:11.536885Z'

@@ -6,9 +6,7 @@ summary: "**当前判断**\n\n- AI 回复中的内联可视化渲染效果由宿
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: study
-    object_id: study-0020
+    object_uid: 019ffb52-ebb5-7b78-858d-6870100e6fd4
 change_log:
 - signature:
     agent_id: hy3
@@ -52,7 +50,14 @@ change_log:
     agent_runtime_name: claude-code
   at: '2026-08-12T19:57:49.657353Z'
   summary: 按 Human 当前指令，将优先级从 P2 调整为 P3。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:41.253895Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0049
+object_uid: 019ffb52-ebb5-74f1-8a92-d88ef630ebe2
 fact_type_key: spark
 created_at: '2026-08-03T15:26:53.713420+08:00'
-updated_at: '2026-08-12T19:57:49.657353Z'
+updated_at: '2026-08-13T14:01:41.253895Z'

@@ -4,39 +4,25 @@ status: implemented
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0005
+    object_uid: 019ffb52-ebb5-708d-9aea-bd20a22543bd
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0009
+    object_uid: 019ffb52-ebb5-70f7-ba7a-52c4319cacb3
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0014
+    object_uid: 019ffb52-ebb5-7e22-9902-d95399137d0b
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0015
+    object_uid: 019ffb52-ebb5-76a2-9fd2-67498f5dd5ea
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: study
-    object_id: study-0017
+    object_uid: 019ffb52-ebb5-7efb-96ce-5c4abefd4496
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0013
+    object_uid: 019ffb52-ebb5-7209-a05f-0be04a54b149
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0021
+    object_uid: 019ffb52-ebb5-791f-a1ab-a358b90f4843
 summary: "## 当前结论：HV1-HV5 已进入 00（Human 2026-07-31）\n\n- Human 已明确决定：本次决定正式取代 2026-07-29 的“先 Web 实践、2–3 个阶段后复评”；LDVH 在保持 AI 执行者为第一服务对象的同时，也直接服务 Human。\n- 最终五项标准为：HV1「决策提请清晰可决」、HV2「授权执行受控可续」、HV3「入档闭环节点可验」、HV4「积累效用直观可见」、HV5「项目演进脉络可循」。\n- specs/00 已按 Human 逐段审议结果修改并由 commit f7188e00e 入库；V1-V8 与 HV1-HV5 按实际服务对象分别判断，不以一方价值替代另一方。\n- 当前 LDVH 尚未完整具备 HV4。事实对象、规则、工具、提交或页面的存在和数量只证明有积累或呈现，不证明积累被实际使用或复用、产生可观察效用。\n- 下位承接由 workcase-0021 推进：对齐基础规范、事实类型、Web 上位规范、README、认知中心设计和本 Spark 当前状态；不在该 WorkCase 中新增 HV4 产品机制。\n\n---\n\n## 历史记录（截至 2026-07-30，原文保留）\n\n## 已确认：H1-H6 Human 价值评判标准（Human 已明确同意）\n\n**核心边界**：LDVH 不代替 Human 产生认知、决定与对齐，只提供支撑这三者的方法与工具。价值的主体永远是人，LDVH 是器械。\n\n| 编号 | 标准 | 判断问题 | 不满足时的表现 |\n|---|---|---|---|\n| H1 | 项目认知接续 | LDVH 是否为 Human 形成对项目过去（演进）、现在（现状）、未来（计划与候选方向）的清晰认知提供了方法与工具，而无须依赖对话记忆或 AI 当次转述 | 回到项目无法恢复认知，只能问 AI 并得到无法核对的转述；衍生开放项被遗忘 |\n| H2 | 决定依据完备 | 需要 Human 决定时，能否快速获得准确且全面的依据，包括内部现状与外部最佳实践等辅助信息 | 依据残缺需自行翻找；只有内部视角缺少外部参照；匆忙决定质量低 |\n| H3 | 决定负担有界 | 提请 Human 决定是否限于必要范围、依据未变不重复、多个事项按优先级组织，使 Human 以尽量少的打断作出质量尽量高的决定 | 被频繁打断、同一问题反复提请、重要决定被淹没，最终草率同意或回避 |\n| H4 | 人机理解对齐 | LDVH 是否提供使 Human 能够确认并保持 AI 的理解与自身理解一致的方法与工具（规范源、决定记录、计划批准、交还与复核） | AI 按自己的理解推进，与人的意图渐行渐远，发现时已大量返工；对齐只能靠人逐行检查 |\n| H5 | 项目方向锚定 | Human 的长期意图是否锚定于稳定事实；模糊目标能否借助项目积累获得启发、经 Human 明确后形成锚点；能否对照锚点判断是否仍在既定方向 | 意图随会话流失；目标始终模糊，项目看似前进实则无向；漂移发现时已显著偏离 |\n| H6 | 提及事项闭环 | Human 在项目中提及的事项是否都有稳定的捕获位置与处置结果，并能在之后追溯其去向 | 人随口提过的事无人记得、无处置记录；人失去\"说话算数\"的信任 |\n\n**关键洞察**：规范源本身是最大的对齐工具（Human 原话：用 00 要求各项工作就是对齐的一种方式）；方向含自下而上的目标浮现——最终目标人自己可能只有模糊概念，事实源是一面镜子，帮助澄清后再锚定；人能把控的核心是 AI 理解与人理解的一致性；AI 合规核查与人意图核查不互相替代，机械核查结果是人的信任校准输入。**考虑过但不收**：可离开性（并入 H1）、人的学习成长（Pitfall/Study 副产品）、控制感（六项满足后的自然结果）。\n\n## 00 修改方向（Human 指示：依据六点重新梳理，不考虑成本，关键是整体性）\n\n- 从\"仅新增 §8.4\"扩展为整体性整合：§1 设计理念与最终目标、§6 价值评判标准章（H 表与 V 表同章）、§7.3、§8.4（Human 项目把控架构原则）、§9 验证要求表、§10 Human Gate 保护、§11 Stop Conditions、yaml 头部均在梳理范围；\n- V1-V8 表本身不动一个字；H1-H6 为独立新增集合；主要服务 AI 的实践按 V 判断、主要服务 Human 的实践按 H 判断、两者兼顾分别成立；冲突与重大取舍由 Human Gate 决定；\n- 逐段确认流程不变：每段【位置/原文/修改后/意图】经 Human 同意后，一次性写入并回读验证；\n- 此前已确认的 §8.4 开篇段与认知连续段可能因整体性重梳理而修订，将重新提交 Human 确认。\n\n## 既有分析（保留有效）\n\n- **问题定位**：00 中 Human 只有决定者（Human Gate）与被交付者（V7、Web→Human→AI）两种身份，缺\"认知主体\"第三种身份；V1-V8 受益人全部为 AI，Human 向机制无价值依据，只能借道\"最终帮助 AI\"论证。\n- **AI 核查 vs 人核查**：合规 vs 合意、穷举 vs 抽样、流程驱动 vs 异常驱动、确立技术真相 vs 校准信任、全量成本 vs 分钟级成本。\n- **Web 功能原型**：docs/human-cognition-web-mockup.html 与同名 .png——只读版五模块（Human Gate 收件箱、我离开期间、演进时间线、Spark 池健康、Roadmap），全部由真实项目数据派生；Human 指出 Web 只读约束后，按钮已改为只读三件套（查看详情/复制待决引用/复制交还摘要），决定在 AI 对话中作出（Web→Human→AI）。\n- **设计红线**：派生视图来源唯一、默认只读、不新增事实字段、如实标注身份/观察时间/过期。\n- **规划设想**：A 档纯派生（异常摘要页、信任标记、方向对照视图）；B 档流程约定（会话交接摘要、提及闭环清单、人的决定日志）；C 档远期（ADR 主动召回、Human 参与度成熟度模型、人作为第二执行者）。\n- **相邻议题**：spark-0005、spark-0009、spark-0014、spark-0015。\n\n## 外部对照（study-0017，观察时点 2026-07-29）\n\n以 H1-H6 为度量对两个最接近的外部产品完成对照研究（study-0017），两条反证直接服务 00 重梳理：\n\n- **Kiro（AWS spec-driven IDE）强在 H2/H4，但证伪\"H4 做足则 H5 自动成立\"**：其 requirements/design/tasks 三文件 + 人工审批门 + EARS + steering files 是实在的 H2（决定依据完备）与 H4（人机理解对齐）机制，并独立印证了\"规范源是最大对齐工具\"的判断；但其组织单位是单个 feature，不存在全项目方向层——长期意图无处锚定、方向漂移无对照面。H5 必须作为独立机制设计，不能指望从 feature 级契约涌现；重梳理 H5 段落时以\"Kiro 缺什么\"为反例清单（意图锚定于什么稳定事实、模糊目标如何浮现并经 Human 明确、如何对照锚点判断漂移）。\n- **Beads（git-backed agent 记忆/issue tracker）是 H1/H6 近邻，但证伪\"持久记忆等于 Human 价值\"**：bd ready 依赖图、hash ID 防冲突、discovered-from 捕获顺路发现、compaction 记忆衰减构成完整的跨会话记忆（H1）与事项闭环（H6）机制；但其世界观中 issue 由 agent 创建/认领/关闭，Human 是旁观者，H2-H5 全面缺位。LDVH 的事实对象体系必须把 Human 决定位、认知接续与方向锚定写成显式设计目标，不能交由 agent 自治。\n- **H 表外部检验结果**：两个机制成熟、方向各异的产品在 H 表两侧各自走强、共同留下\"Human 作为认知主体\"的空白；六项标准未发现冗余（每项都有\"只满足它而不满足其他\"的真实产品形态）或漏项（两产品全部 Human 相关机制均可落入六项之一）。支持不重开标准修订、直接进入重梳理；对照总表与时效边界见 study-0017。\n\n**承接状态**：外部对照由 study-0017 承载；00 重梳理按 C 路径冻结、缓立宪（复评闸门：认知中心视图群经历 2–3 个真实工作阶段后复盘 H 表与立宪必要度）；Web 设计基线已落入 web/docs/02-Dashboard.md；本 Spark 保持 open，因为项目认知中心尚未实现、H1-H6 尚未经真实使用检验。\n\n## 路线定调：先 Web 实践，缓立宪（Human 2026-07-29）\n\n- Human 采纳 C 路径：00 的整体性重梳理与逐段立宪流程冻结、暂缓；先把 H1-H6 经 Web 视图群实践出来，由真实使用检验后再评估是否立宪。实践名分依据：08 §1 已定义 Web 服务 Human 看清项目当前状态与待决定事项。\n- 两条建造约束（Human 定）：① 围绕 H1-H6——作为北极星与验收框架，不是功能清单，建造顺序由真实痛点驱动（收件箱第一）；② 符合当前 Web 设计语言与规范——08 规范硬合规，并复用五个基准模块的视觉语言与组件契约。\n- 口号结论：宪法层定位与\"以 AI 执行者为第一服务对象\"表述不变；README 表达层是否补下半句，随立宪复评一并再议。\n\n## Web 实践落地：废弃 Dashboard，以项目认知中心取代（Human 2026-07-29 决定）\n\n- Human 在 AI 对话中明确决定：废弃路由 `/` 的 Dashboard 仪表盘，以\"项目认知中心\"取代。\n- 设计已落地为当前设计基线：`web/docs/02-Dashboard.md` 重写（含 08 §9 变更决定记录、五模块规格、H1-H6 映射、派生纪律、API 契约、验收标准、三期建设顺序）；`01-全局设计约束.md` 与 `10-Web开发现状与设计语言基线.md` 的索引、页面状态、移动端表与复制语义表已同步；WorkCase 呈现契约测试 9/9 通过。文件名与实现资产更名随实现一并完成。\n- 五模块与 H 映射（建设期）：待决定事项收件箱 + 全局信任标记（H2/H3/H4，第一期）、我离开期间 + Spark 池健康（H1/H6，第二期）、演进时间线 + 方向对照（H1/H5，第三期）。\n- 真实数据基线（验收用）：当前待决定 3 项（wc-0016 待确认关闭，wc-0015、wc-0008 待批准计划）、wc-0013 阻塞；31 个 open Spark（17 个 P1）、23 个静默 ≥5 天、终态收敛 6/37。\n- 视觉原型：`docs/human-cognition-web-mockup.html`（已改只读三件套：查看详情 / 复制引用 / 复制摘要；决定在 AI 对话中作出）。\n- 下一步候选：按 02 第一期实现\"待决定事项收件箱 + 全局信任标记\"；是否立 WorkCase 承接由 Human 决定。\n\n## 接续检验（计划阶段）：通过（2026-07-29）\n\n- 方式：Human 换用第二个 AI（Claude，k3-256k），仅给最小引导语（通读 specs/00、web/docs/02-Dashboard.md、经 Helper 读本 Spark），不喂任何对话背景——盲测接续能力。\n- 结果：新 AI 独立立 wc-0017（mechanically_valid；目标逐字对应 02 §11 第一期，成功标准取自 02 §10，主动 related-to 本 Spark）；创建前完成两轮独立复核（changes_required×2）+ 终局确认 pass；并反向修正 02 两处笔误：§7.7 复制语义悬空引用（表在 10 §5）、§10.1 基线\"3 项\"应为 4 项（§4.1 收录规则含\"已阻塞待处置\"，wc-0013 blocked/P1 经实证）。\n- 第三方复核：Kimi（未参与计划形成的独立上下文）逐项复核计划与 10 项待决定建议，实证 wc-0013 blocked/P1、闭环候选机械有效性（wc-0008/0013/0016 valid、wc-0015 invalid）、测试基线 120/120，结论：计划符合要求、10 项建议全部可采纳（问题 7 附\"走查清单覆盖 02 §10 页面级条目\"条件）。Human 据此批准执行。\n- 结论：接续在计划阶段成立——零记忆新 AI 能重建任务认知、走完 Human Gate 流程并产出可批准计划；实现阶段的检验随 wc-0017 执行继续。\n\n## H2 真实案例：Human Gate 交还内容未留痕\n\nwc-0017 交还的 10 项待决定问题只存在于交还对话中、未随 WorkCase 写入事实源；第三方无法从事实源复核问题与选项本身，Human 离开该对话即丢失决定依据。命中 H2（决定依据完备）与 H4（可核对性）。候选改进方向（待 Human 决定是否立项）：在 21 或相应规范中定义 Human Gate 交还的问题清单、选项与决定的最低留痕要求（作为 WorkCase 计划材料或决定记录的一部分）。\n\n## 接续检验设计扩展：三 AI 接力（Human 2026-07-29）\n\n- Human 决定：第二个 AI（Claude）完成 wc-0017 的计划与文书（含 Human 批准后经受控写入的 execution approval），**第三个 AI 零对话记忆接手正式执行**。接续检验从计划阶段扩展到执行阶段——第三个 AI 只能凭规范源与事实源重建执行上下文。\n- 关键前置要求（H2 案例的即时兑现）：Human 对 10 项待决定问题的逐项答复，必须经受控写入随 wc-0017 留痕（execution approval 或修订后的计划材料，位置按 21 安排）。否则第三个 AI 无法从事实源取得决定依据（canonical_path 契约走向、图标选择、02 更名目标、派生确定性边界等），接力将恰好断在 H2 已预警的位置。\n- 交还自检：第二个 AI 完成文书后须如实说明答复留痕位置、plan_version 变化，以及接手者开始 item-01 前所需信息是否已全部进入事实源。\n\n## 接力发棒验证：通过（2026-07-29，Kimi 独立回读）\n\nwc-0017 文书完成后经 Kimi 逐字段验证：phase=executing、全部 item pending；execution_approval（subject_version=1、approved_at=18:19:42）summary 完整承载 10 项决定的内容（含 Q4 canonical_path 主选项、Q7 走查条件、Q9 闭环候选等），source_refs 回指 Human 批准原话（会话 ID + observed_at）；creation_reviews 与 waiting_on 按 21 §6.5 同事务移除；git 提交 ae8b123f4 仅含该 WorkCase 文件（spec 30 隔离）。**结论：第三个 AI 仅凭事实源即可取得完整计划与全部决定依据，接力包成立。**\n\nH2 案例据此修正结局：Human Gate 交还的问题清单本身不持久，但决定内容经 execution_approval 完整留痕，接力不依赖任何对话——规范的 approval 契约自带留痕牙齿。残余开放项：交还阶段的问题与选项原文是否值得独立留痕（供第三方复核决定输入而非仅决定结果），仍待 Human 权衡。\n\n## Skill 路由 = 环境接入的程序性形态（Human 提问触发，2026-07-30）\n\n- 问题：通过 skill 路由能否完成 WorkCase 整个流程？\n- 结论：能扛起\"程序\"部分——识别立 WC、计划形成、执行编排、关闭提案、交还标准化；扛不起两个东西：**独立性**（创建前复核与结果复核必须路由到真正隔离的上下文，skill 只能定义要求，环境须提供子代理/新会话机制）与**人**（Human Gate 不可路由，skill 只能优化交还形式与决定回写）。\n- 三条硬条件：① skill 是薄投影、不是第二规则源（规则唯一权威在规范源，状态读写走 Helper——00 §8.2 薄引用原则在程序性接入上的翻版）；② 独立性不能自封；③ Human Gate 不可路由。\n- 架构定位：落在 00 §7\"环境 Hook / adapter\"一族——环境原生的程序性入口，不需新增构成要素，但值得在环境接入契约中显式命名这种形态。**与 wc-0013（环境安装、接入与验证契约收束，blocked/P1）是同一块版图，解阻塞时应作为输入。**\n- 实证对照：三 AI 接力无 skill 路由也走通（最小引导语 + AI 主动读规范），说明 skill 解决的是\"自动加载、免引导语、防漏读\"，不是能力有无；引导语是底线能力，skill 是增强交付。代价：随规范演进的维护面 + 环境依赖。"
 evolution:
 - at: '2026-07-28T16:53:08.058141+08:00'
@@ -82,8 +68,15 @@ change_log:
     agent_workbench: Cindy
     model_id: glm-5.2
   session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:06.597384Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 disposition_summary: 本 Spark 的原始议题（Human 认知主体在 00 的定位 + Web 派生视图体现）已由 workcase-0021 完整承接：以 commit f7188e00e 生效的 specs/00 为上位基线，完成基础规范、事实类型、Web 上位规范、README、认知中心设计和本 Spark 当前状态的对齐；残余开放项（HV4 产品缺口、交还留痕改进）属于范围外长期议题，已明确记录。
 object_id: spark-0037
+object_uid: 019ffb52-ebb5-7ee2-a408-38b8fd5e8ba9
 fact_type_key: spark
 created_at: '2026-07-28T16:53:08.058141+08:00'
-updated_at: '2026-08-11T13:56:18.108706Z'
+updated_at: '2026-08-13T14:01:06.597384Z'

@@ -9,9 +9,7 @@ evolution:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: pitfall
-    object_id: pitfall-0005
+    object_uid: 019ffb52-ebb5-777b-99f4-543318c03fc1
 change_log:
 - at: '2026-08-11T13:55:04.467542Z'
   summary: 经逐条 Human 授权，历史 routed Spark 迁移为 implemented；旧 routed-to 已转为 related-to。
@@ -19,7 +17,14 @@ change_log:
     agent_workbench: Cindy
     model_id: glm-5.2
   session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:46.338973Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0030
+object_uid: 019ffb52-ebb5-7273-a338-90020e4472db
 fact_type_key: spark
 created_at: '2026-07-23T20:01:04.538394+08:00'
-updated_at: '2026-08-11T13:55:04.467542Z'
+updated_at: '2026-08-13T14:00:46.338973Z'

@@ -138,21 +138,26 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
-
 - at: '2026-08-10T09:15:34.450524Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-ai -> hy3; 1: workbuddy-ai -> hy3; 2: workbuddy-ai -> hy3; 3: workbuddy-ai -> hy3; 4: workbuddy-ai -> hy3; 5: workbuddy-ai -> hy3; 6: workbuddy-ai -> hy3; 7: workbuddy-ai -> hy3; 8: workbuddy-ai -> hy3; 9: workbuddy-ai -> hy3; 10: workbuddy-ai -> hy3; 11: workbuddy-ai -> hy3; 12: workbuddy-ai -> hy3; 13: workbuddy-ai -> hy3; 14: workbuddy-ai -> hy3; 15: workbuddy-ai -> hy3; 16: workbuddy-ai -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-identity-id-migration-20260810
-
 - at: '2026-08-10T09:33:32.614584Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 17: claude -> glm-5.2。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:22.636635Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: workcase-0079
+object_uid: 019ffb52-ebb5-7cae-9e75-cf66bd893f80
 fact_type_key: workcase
 created_at: '2026-08-08T21:39:25.951649+08:00'
-updated_at: '2026-08-10T09:33:32.614584Z'
+updated_at: '2026-08-13T14:08:22.636635Z'

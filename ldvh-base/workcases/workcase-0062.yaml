@@ -117,6 +117,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-identity-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:33.042383Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: cancelled
 disposition_summary: Human 已决定不再继续投入 WC-0062；当前目标未按批准方向实现，提交过程性标准又因历史证据不足而无法完整评价。提案按 cancelled 停止，不修正当前 21/34 的反向规则、不更正 spark-0061 的失真承接记录、不补造 Git Gate 或提交后完整性历史证据；三项剩余责任全部由 Human 明确接受停止，不路由到其它对象，也不建立 Spark 建议。
 residual_responsibilities:
@@ -129,10 +135,9 @@ residual_responsibilities:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0061
+    object_uid: 019ffb52-ebb5-7de6-9de3-8319a47efad4
 object_id: workcase-0062
+object_uid: 019ffb52-ebb5-7266-963f-1ac93a1f3e79
 fact_type_key: workcase
 created_at: '2026-08-06T14:30:00+08:00'
-updated_at: '2026-08-10T09:15:28.493154Z'
+updated_at: '2026-08-13T14:07:33.042383Z'

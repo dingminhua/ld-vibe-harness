@@ -144,6 +144,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-identity-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:41.729584Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: partial
 disposition_summary: WC0065 的 Gate 1 能力限制披露、creation-review bootstrap、Gate 1 后 fallback 约束、Web 呈现、机械校验、spark-0061 路由及本地受控提交均已形成稳定结果；当前 WorkCase 在 partial 分类下停止。唯一未满足责任是仓库 Web 全量测试中的六项既有非本 WC 契约失败，Human 接受后不再由 WC0065 推进；这不表示六项失败已解决，也不把它们归因于本提交。
 residual_responsibilities:
@@ -152,10 +158,9 @@ residual_responsibilities:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0061
+    object_uid: 019ffb52-ebb5-7de6-9de3-8319a47efad4
 object_id: workcase-0065
+object_uid: 019ffb52-ebb5-7633-8c81-b68d2e7e4800
 fact_type_key: workcase
 created_at: '2026-08-06T23:09:02.682802+08:00'
-updated_at: '2026-08-10T09:15:31.472536Z'
+updated_at: '2026-08-13T14:07:41.729584Z'

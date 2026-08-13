@@ -134,6 +134,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:06:55.062801Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: cancelled
 disposition_summary: 本次运行只完成清除前盘点，四项实施成功标准明确未满足，退役后验证标准因没有实施候选而未验证；按当前结果分类规则，本运行提议 cancelled。Gate 1 冻结路径遗漏 4 个已直接证明必需的当前消费者，且 Gate 1 后不得扩权，因此三个 FileAsset、namespace、规则、Code、Web 和 docs 均保持原样。建议关闭当前安全收敛运行，不复用旧批准；后续若继续用户既定目标，应以新的 WorkCase/Gate 1 承接，在批准前纳入 4 个已证明路径，并通过实际实现 diff 判定另外 3 个通用依赖。
 spark_suggestions:
@@ -145,6 +151,7 @@ spark_suggestions:
   resume_condition: Human 关闭 workcase-0048 后，形成新的 WorkCase 候选；其 Gate 1 前范围至少纳入 4 个已证明路径，并用实际实现 diff 决定 creation_application.py 及两个通用测试是否需要修改。
   follow_up_summary: 不得复用 workcase-0048 的 execution_approval；后续必须走新的方案复核与 Human Gate 1。
 object_id: workcase-0048
+object_uid: 019ffb52-ebb5-7810-845a-f514f9e2a041
 fact_type_key: workcase
 created_at: '2026-08-03T12:17:18.588386+08:00'
-updated_at: '2026-08-10T09:23:01.224817Z'
+updated_at: '2026-08-13T14:06:55.062801Z'

@@ -7,6 +7,14 @@ rationale: 信息投递层的本质内容是劝告性规则引导——劝告内
 consequences: 正面：默认接入简化为'装包、放一个 Skill、受管项目装 git hook'；规则权威保持单一，无第二副本；默认路径的安装/部署/接入/验证四层塌缩为 Skill 递达证据一个问题；分环境答案可以共存。负面与限制：启动注入的到达必然性让渡给模型自觉，drift 窗口由行动模板检查、事实完整性校验与读取路径报警压缩而非消除；schema 合法但语义造假的事实为各方案共同残留风险；Skill 递达的长期行为稳定性未验证。后续义务：git Gate 事实机械校验与 fact_integrity 一等化（spark-0039 第 1、2 项，本决定成立的前置义务）；共享 SKILL.md 环境中性化与分发方式落地（静态写死路径或 Helper 生成式渲染，未决）；README 与 33 行动模板按'降级不删除'原则清理环境 Hook 描述；Codex PreToolUse deny 能力的报告矛盾待以当前官方资料复核；WorkBuddy V3 残留插件清理与 stdin 陷阱的 Pitfall 评估。本 ADR 被规范、Code 或行动模板吸收后不自动退休，退出需 Human 另行授权。
 disposition_summary: 决定范围由 adr-0006 整体覆盖：Human 于 2026-07-30 撤回插件可选加固与环境 Hook 知识降级保留，确立单一薄 Skill 为唯一接入载体、过程机械检查必须、git Gate 终局把关，本对象不再约束当前选择。
 object_id: adr-0005
+object_uid: 019ffb52-ebb5-7eb5-ad94-e0e4bcd66b86
 fact_type_key: adr
 created_at: '2026-07-30T13:33:03.425655+08:00'
-updated_at: '2026-07-30T14:19:27.211359+08:00'
+updated_at: '2026-08-13T13:58:50.423443Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:58:50.423443Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

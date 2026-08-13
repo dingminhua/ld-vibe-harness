@@ -39,23 +39,24 @@ change_log:
     agent_runtime_name: claude-code
   at: '2026-08-12T20:41:02.202881Z'
   summary: '补充 relations: related-to workcase:workcase-0011'
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:54.912751Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0008
+    object_uid: 019ffb52-ebb5-7270-bc33-57c7ec37f724
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0015
+    object_uid: 019ffb52-ebb5-76a2-9fd2-67498f5dd5ea
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0011
+    object_uid: 019ffb52-ebb5-724c-80a6-91b618ceaa78
 object_id: spark-0033
+object_uid: 019ffb52-ebb5-7d62-833c-b1a3d9be93d8
 fact_type_key: spark
 created_at: '2026-07-24T09:46:14.094720+08:00'
-updated_at: '2026-08-12T20:41:02.202881Z'
+updated_at: '2026-08-13T14:00:54.912751Z'

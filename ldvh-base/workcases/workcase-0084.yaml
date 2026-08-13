@@ -102,6 +102,12 @@ change_log:
   session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
   at: '2026-08-09T13:00:57.608476Z'
   summary: Human 在 Gate 2 明确同意 completed 关闭；按当前完整 closure proposal 形成终态。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:37.032122Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: WorkCase-0084 原 scope 的规则、模型、Helper、恢复/Web 呈现和验证责任均已完成，七项成功标准全部 satisfied，无未满足、未验证或需转交的剩余责任；两项 Reviewer 建议仅作为范围外防回归增强机会保留。
 spark_suggestions:
@@ -116,10 +122,9 @@ spark_suggestions:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0063
+    object_uid: 019ffb52-ebb5-7f1f-9db6-4320b72ba90e
 object_id: workcase-0084
+object_uid: 019ffb52-ebb5-7554-9019-ed3266d3278a
 fact_type_key: workcase
 created_at: '2026-08-09T16:14:38.868279+08:00'
-updated_at: '2026-08-09T13:00:57.608476Z'
+updated_at: '2026-08-13T14:08:37.032122Z'

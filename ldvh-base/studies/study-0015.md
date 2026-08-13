@@ -16,9 +16,17 @@ research_question: Obsidian 作为 LLM Wiki 对 LDVH 有什么价值？两者应
 abstract: Obsidian 作为 LLM Wiki 提供的是以本地 Vault、Markdown、链接、属性、搜索或图谱视图和插件为基础的探索性材料层。它适合 Human 沉淀阅读材料、草稿和自由关联，也能让 AI 或检索层发现可能有用的内容。LDVH 面向 AI 的价值则是"当前工作可以依据什么"：来源可回指、稳定对象身份、来源定义的关系、渐进式读取、coverage/gaps、验证与 Human Gate。两者更可能分层协作而非彼此替代。
 recommendation_summary: Obsidian 承载 Human 的广泛探索与项目背景；LDVH 承载当前规则、受管事实、工作责任和受控上下文。若未来存在真实需求，Obsidian 只能向 AI 提供可回指的候选材料、精确读取入口、已读取范围和缺口，不能替代 LDVH 的事实源。现有 Helper 的事实候选与一跳关系导航仍独立成立，尚未建立对任何外部知识系统的桥接。
 object_id: study-0015
+object_uid: 019ffb52-ebb5-7172-a008-bb74dd268099
 fact_type_key: study
 created_at: '2026-07-24T13:30:00+08:00'
-updated_at: '2026-07-24T13:30:00+08:00'
+updated_at: '2026-08-13T14:03:49.346988Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:03:49.346988Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 ---
 
 ## 研究问题

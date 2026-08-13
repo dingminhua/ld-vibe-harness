@@ -66,6 +66,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:04:58.879038Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 status: closed
 goal: 在 Human 指定并授权的原生 Windows（win32/nt，NTFS 固定卷）runner 上，通过 tools/verify_native_windows.py 的 preflight 与 core-readonly 两阶段，为 spark-0004 「原生 Windows 支持范围与真实验收」形成可读、可复核的真实验收证据；明确记录未验证范围， 不把只读/策略阶段结果扩大为写能力通过。
 scope: 覆盖 tools/verify_native_windows.py 的 preflight（8 个基础探针）与 core-readonly （追加 public_write_fail_closed 策略探针及 ruff 检查）两阶段在真 Windows 上的实际运行与证据收集； 覆盖 evidence 落盘（源码树外固定 NTFS 卷、干净 Git worktree）与 core-summary.json 等产物的读取。 排除 core-full 写矩阵（受 file_only 耐久性 Human Gate 阻塞，不在本案范围）、adapter-handoff （独立 Human Gate，本案只记录不执行），以及任何 Git commit/push/PR 与远端发布动作。 本 WorkCase 推进 spark-0004 的「真实支持范围/未支持范围/验收结论」中的只读与公开写策略部分； 写能力的耐久性等 Human 决定项保持为 spark-0004 的未决风险，不在本案关闭。
@@ -99,6 +105,7 @@ residual_responsibilities:
 - residual_id: residual-wc0008-not-verified
   summary: 四项目成功标准全部 not_verified，因 Windows runner 从未就位、项目状态已变化，继续等待不再具备实际价值。
 object_id: workcase-0008
+object_uid: 019ffb52-ebb5-790d-b8ed-9ebca5fcb8ae
 fact_type_key: workcase
 created_at: '2026-07-21T04:23:03+08:00'
-updated_at: '2026-08-10T09:35:05.931543Z'
+updated_at: '2026-08-13T14:04:58.879038Z'

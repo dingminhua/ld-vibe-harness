@@ -11,6 +11,14 @@ evolution:
   summary: 协作治理已从待形成的角色与 worktree 纪律收敛为现行规则和执行模板中的主控、委派、复核与接续边界，因此该问题不再需要独立跟踪。
 disposition_summary: 主控责任、委派边界、只读与独立复核、隔离 worktree、子任务结论核验以及运行期状态不进入事实对象等协作纪律，已由现行规则与执行模板直接落实。原议题没有事实承接目标或剩余责任；具体平台能力仍在每次使用时据实验证。
 object_id: spark-0010
+object_uid: 019ffb52-ebb5-76ef-9c50-676fab7c57d7
 fact_type_key: spark
 created_at: '2026-07-19T10:28:37.087505+08:00'
-updated_at: '2026-08-01T02:00:51.055545+08:00'
+updated_at: '2026-08-13T13:59:48.754887Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:59:48.754887Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

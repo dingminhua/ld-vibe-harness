@@ -112,22 +112,26 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-workcase-signature-migration-20260810
-
 - at: '2026-08-10T09:24:02.667762Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5; 12: codex -> gpt-5; 13: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:13.660347Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: '已完成 Spark-0067 缺陷 #2 的限定语义覆盖核验：当前 F2 关联与 closed 状态只能发现候选，不能证明缺陷级覆盖；现有事实未提供稳定机器可读的缺陷单元及 WorkCase—缺陷映射，故不建设或宣称生产覆盖查询/摘要。#8 在本矩阵中仅表示 WorkCase-0074 的当前受限收敛，不表示原始“合法值闭集内联”设想已完整实现；原 scope 内没有未满足或未验证责任。'
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0067
+    object_uid: 019ffb52-ebb5-7f8e-b1d7-5da96f3f18a1
 object_id: workcase-0076
+object_uid: 019ffb52-ebb5-7fba-8c59-77d13b25f503
 fact_type_key: workcase
 created_at: '2026-08-08T20:48:33.429650+08:00'
-updated_at: '2026-08-10T09:24:02.667762Z'
+updated_at: '2026-08-13T14:08:13.660347Z'

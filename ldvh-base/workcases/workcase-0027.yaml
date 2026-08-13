@@ -88,15 +88,20 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:05:53.796051Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: not-achieved
 disposition_summary: 本 WorkCase 未执行原计划，未形成任何成功标准所要求的稳定结果，因此停止该工作责任。后续判断 LDVH 对 AI 工作实践影响及其改进方向的剩余责任，已转交给当前 open 的 spark-0053；该 Spark 的存在不表示原计划已经执行或验收标准已经满足。
 relations:
 - relation_key: routed-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0053
+    object_uid: 019ffb52-ebb5-7f52-9f61-22b6c11bb58f
 object_id: workcase-0027
+object_uid: 019ffb52-ebb5-7e5c-9f62-4305204172b3
 fact_type_key: workcase
 created_at: '2026-08-01T22:17:04.632849+08:00'
-updated_at: '2026-08-10T09:34:28.117050Z'
+updated_at: '2026-08-13T14:05:53.796051Z'

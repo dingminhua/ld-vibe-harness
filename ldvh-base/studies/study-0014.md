@@ -49,9 +49,17 @@ research_question: 主流 AI agent 产品如何组织 agent 输出？为什么 T
 abstract: 调研 Trae、Cursor、Claude Code、OpenAI Codex、GitHub Copilot、Windsurf/Cascade、Devin 和 Replit 等主流 agent 产品的输出组织方式。结论是：Trae 输出显得更有条理，主要因为它把 agent 过程渲染成计划、任务、工具面板、命令卡片、阶段状态和结果摘要，而不是只依赖模型自然语言。Codex 可以通过明确输出契约、AGENTS/Skill、plan/progress/final discipline 达到相近的人类可读效果；在 JSONL 事件流、output schema、App Server、structured outputs 和 traces 层，Codex/OpenAI 生态还具备更先进的机器可消费格式。
 recommendation_summary: LDVH 应把 agent 输出分成两层治理：第一层是人类可读的简洁输出契约，用于 Codex 对话、review、handoff 和最终汇报；第二层是机器可读的 Agent Output Envelope，用事件、状态、计划项、工具调用、验证证据、风险、Human Gate 和事实源吸收结果支撑 Web、Code、Hook 和未来编排。
 object_id: study-0014
+object_uid: 019ffb52-ebb5-7ead-a694-70845998ef8c
 fact_type_key: study
 created_at: '2026-07-24T13:30:00+08:00'
-updated_at: '2026-07-24T13:30:00+08:00'
+updated_at: '2026-08-13T14:03:46.417702Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:03:46.417702Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 ---
 
 ## 研究问题

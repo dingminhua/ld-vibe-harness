@@ -30,13 +30,12 @@ input_refs:
 relations:
 - relation_key: inspired-by
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0032
+    object_uid: 019ffb52-ebb5-79d6-9813-3baeb71710b5
 object_id: study-0026
+object_uid: 019ffb52-ebb5-7ce4-9c43-fba3a264ef95
 fact_type_key: study
 created_at: '2026-08-08T00:00:00+08:00'
-updated_at: '2026-08-10T09:15:19.591623Z'
+updated_at: '2026-08-13T14:04:21.148081Z'
 change_log:
 - summary: 补建变更流水以支持受控提交；事实内容（Obsidian 技术对 LDVH AI 关联发现的价值评估）由其他会话产出，此处仅补审计签名。
   signature:
@@ -50,13 +49,18 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
-
 - at: '2026-08-10T09:15:19.591623Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-ai -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-identity-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:04:21.148081Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 ---
 
 ## 研究问题

@@ -24,6 +24,14 @@ validation_summary: 通过 .venv/bin/pytest code/tests/facts/test_workcase_appli
 closure_outcome: completed
 disposition_summary: 已在获批范围内修复共享测试夹具回归并完成记录的验证与独立结果复核；无剩余责任、无路由或建议事项。
 object_id: workcase-0034
+object_uid: 019ffb52-ebb5-74cb-ab23-d2c9045eca3c
 fact_type_key: workcase
 created_at: '2026-08-02T01:29:54.076809+08:00'
-updated_at: '2026-08-02T01:41:31.278625+08:00'
+updated_at: '2026-08-13T14:06:14.243233Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:06:14.243233Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

@@ -5,14 +5,10 @@ summary: "## 背景\n\n### LDVH 行动模板现状\n\n当前 5 个行动模板�
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0009
+    object_uid: 019ffb52-ebb5-70f7-ba7a-52c4319cacb3
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0065
+    object_uid: 019ffb52-ebb5-71cb-be5a-db0dc274de76
 change_log:
 - at: '2026-08-07T12:24:06.941988+08:00'
   session_id: glm-5.2-spark-0066-create-20260807
@@ -50,11 +46,18 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-model-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:02:30.514008Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 evolution:
 - at: '2026-08-09T14:07:42.895338+08:00'
   summary: 本 Spark 原开放问题（Workflow 脚本能否作为行动模板执行载体、是否新增 workflow-execution 模板）经核查判定为不追：所担忧的编排/子 agent 缺口在环境无关核心已由既有行动模板与 Helper 操作覆盖（尤其 34 号 workcase-approved-plan-execution 已定义执行控制闭环、稳定检查点、结果复核与关闭链，见 spark-0071——缺口不是再造全局调度器，而是让执行者稳定消费既有的内部控制闭环）；事实对象的受控创建/更新/读取已由环境无关 Helper 操作（create-fact-object、update-fact-object、read-fact-objects 等 18 项公开操作）原子化承载；宿主专属的 Workflow 工具与子 agent 委派在公共环境已有替代——按 WC0009/WC0014 环境无关原则，核心只提供环境无关入口与 Codex 参考实现，其余宿主以薄 skill 适配（本会话已用 WorkBuddy 的 ldvh skill 经 Helper CLI 读回 spark-0066 验证）。据此将状态由 open 收口为 discarded。
 disposition_summary: 经核查当前 LDVH 实现，决定停止跟踪本 Spark，不新增 workflow-execution 行动模板，也不采用 Workflow 脚本作为行动模板执行载体。理由：（1）本 Spark 担忧的"编排/多子 agent"缺口在环境无关核心内已有实现——5 个行动模板（尤其 34 号 workcase-approved-plan-execution）已定义执行控制闭环、稳定检查点、结果复核与关闭链（spark-0071 明确：缺口不是再造全局调度器，而是让执行者稳定消费既有的内部控制闭环）；事实对象的受控创建/更新/读取均由环境无关 Helper 操作（create-fact-object、update-fact-object、read-fact-objects 等 18 项公开操作）原子化承载，不存在需要 Workflow 载体填补的机械缺口。（2）宿主专属的 Workflow 工具与子 agent 委派在公共环境已有替代：按 WC0009/WC0014 的环境无关原则，核心只提供环境无关入口与 Codex 参考实现，其余宿主（含 WorkBuddy）以薄 skill 适配——本会话已用 WorkBuddy 的 ldvh skill 经 Helper CLI 读回 spark-0066 验证该跨环境机制可用。因此该方向无剩余待处置内容，按 open→discarded 收口。仍处未验证边界（依 WC0009 不自动形成）：具体宿主的真实触发与机械落地的端到端验证。
 object_id: spark-0066
+object_uid: 019ffb52-ebb5-74db-86a6-be5416180411
 fact_type_key: spark
 created_at: '2026-08-07T12:24:06.941988+08:00'
-updated_at: '2026-08-10T09:12:37.303679Z'
+updated_at: '2026-08-13T14:02:30.514008Z'

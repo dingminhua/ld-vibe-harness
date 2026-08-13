@@ -44,6 +44,14 @@ status: closed
 closure_outcome: completed
 disposition_summary: 七项成功标准均满足：严格双 Gate、完整 Gate1 授权基线、包内自动 PlanDelta、SafeConvergence、模板授权消费、Web 双决定入口和六对象一次性迁移均已交付并验证；临时迁移入口已删除，当前范围没有需要转交、接受停止或另建 Spark 的剩余责任。
 object_id: workcase-0020
+object_uid: 019ffb52-ebb5-73a4-a8fc-9a575d61cb92
 fact_type_key: workcase
 created_at: '2026-07-30T12:21:28.204075+08:00'
-updated_at: '2026-07-30T14:48:10.734860+08:00'
+updated_at: '2026-08-13T14:05:33.707159Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:05:33.707159Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

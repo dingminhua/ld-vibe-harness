@@ -79,7 +79,14 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:05:50.994695Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: workcase-0026
+object_uid: 019ffb52-ebb5-7735-aecd-9a309abfaead
 fact_type_key: workcase
 created_at: '2026-08-01T15:22:52.156302+08:00'
-updated_at: '2026-08-10T09:34:26.484295Z'
+updated_at: '2026-08-13T14:05:50.994695Z'

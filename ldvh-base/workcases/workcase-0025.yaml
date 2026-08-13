@@ -42,6 +42,14 @@ spark_suggestions:
   resume_condition: Human 在当前 WorkCase Gate2 后独立决定是否建立新的 WorkCase，并在其 Gate1 中明确授权实际 07 路径及所需验证范围；表格拆分附件变更应先或同次明确测试预期的承接责任。
   follow_up_summary: 如 Human 决定继续，创建新的受控 WorkCase：先精确读取实际 07 与当前 FileAsset 规则，形成正确文件 target_scope、独立审核和 Gate1；随后编辑、运行定向验证，并对 specs 测试数量预期漂移建立独立、可回指的修复或承接。
 object_id: workcase-0025
+object_uid: 019ffb52-ebb5-7bfb-94d1-27f7758b7924
 fact_type_key: workcase
 created_at: '2026-08-01T14:52:37.067513+08:00'
-updated_at: '2026-08-01T21:44:20.292605+08:00'
+updated_at: '2026-08-13T14:05:48.149734Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:05:48.149734Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

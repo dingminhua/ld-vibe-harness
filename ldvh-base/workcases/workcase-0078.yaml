@@ -129,22 +129,26 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-workcase-signature-migration-20260810
-
 - at: '2026-08-10T09:24:41.708772Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5; 12: codex -> gpt-5; 13: codex -> gpt-5; 14: codex -> gpt-5; 15: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:19.572299Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: 完成本 WorkCase 的只读核验与决策责任：当前不实施 per-object manifest 或 changed_since。F1 已提供当前 cards 和集合级变化锚点，但缺少前后逐对象版本或受契约支持的身份级 delta；测试专用投影不能证明真实生产净收益。若未来出现可观察的真实跨会话消费需求，须以新的 WorkCase、新的 Human Gate 及收益/成本证据重新判断。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0067
+    object_uid: 019ffb52-ebb5-7f8e-b1d7-5da96f3f18a1
 object_id: workcase-0078
+object_uid: 019ffb52-ebb5-772d-a07d-822699e49377
 fact_type_key: workcase
 created_at: '2026-08-08T21:32:28.117952+08:00'
-updated_at: '2026-08-10T09:24:41.708772Z'
+updated_at: '2026-08-13T14:08:19.572299Z'

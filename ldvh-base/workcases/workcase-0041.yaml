@@ -47,6 +47,14 @@ spark_suggestions:
   summary: 继续清理 WorkCase 派生字段、提交粒度和恢复字段冗余。
   follow_up_summary: 另案评估 continuation_required、execution_stalled、下一动作和 Web 分组不入 YAML，检查点写回与 Git commit 按语义单位解耦，并进一步验证顶层 resume_from/summary、item 级恢复入口和固定 quality gate 绑定能否在不误删不同职责结构的前提下简化。
 object_id: workcase-0041
+object_uid: 019ffb52-ebb5-722d-af4c-2c52d5c36d63
 fact_type_key: workcase
 created_at: '2026-08-02T13:39:37.000653+08:00'
-updated_at: '2026-08-02T15:11:09.509131+08:00'
+updated_at: '2026-08-13T14:06:34.460985Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:06:34.460985Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

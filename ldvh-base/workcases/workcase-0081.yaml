@@ -116,15 +116,20 @@ change_log:
   session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
   at: '2026-08-09T14:32:48.363937+08:00'
   summary: 消费当前会话 Human Gate 2 关闭决定，按既有 completed 提案关闭 workcase-0081。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:28.238076Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: 建议关闭本 WorkCase：34 号模板与直接测试已形成稳定结果，五项成功标准均 satisfied，独立结果复核为 pass，原 scope 内无剩余责任。保留的停止边界是：item-02→item-03 只证明本次同一执行链中的协议遵从，不证明跨会话、跨环境、宿主事件或模型外机械续跑；本 WorkCase 未授权且未执行 commit、push、发布或清理既有脏工作树。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0071
+    object_uid: 019ffb52-ebb5-7ccc-8b77-dd230fd27660
 object_id: workcase-0081
+object_uid: 019ffb52-ebb5-7870-85bf-3893f28a1532
 fact_type_key: workcase
 created_at: '2026-08-09T13:50:28.529259+08:00'
-updated_at: '2026-08-09T14:32:48.363937+08:00'
+updated_at: '2026-08-13T14:08:28.238076Z'

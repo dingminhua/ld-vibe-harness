@@ -5,9 +5,7 @@ summary: "## 来源\n\n- 从 spark-0019 路由：机械诊断缺少直接修正�
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0019
+    object_uid: 019ffb52-ebb5-71da-8f50-223f834fad25
 change_log:
 - signature:
     product_name: Claude Code
@@ -21,11 +19,18 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T09:20:58.133282Z'
   summary: 按 Human 决定将本 Spark 处置为 discarded：取消独立跟踪并明确不构成已实现或正式承接声明。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:02:59.407730Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 disposition_summary: Human 决定不再把本议题作为独立 Spark 跟踪：其机械诊断可行动性问题与更广泛的 AI 服务质量评价范围重复，继续保留独立入口会造成重复召回与重复规划。本处置只取消独立跟踪，不表示诊断能力已经实现，不声明任何对象承担正式承接责任，也不证明提交预检或其它 Helper 操作已经完成相关改进。
 evolution:
 - at: '2026-08-13T09:20:56Z'
   summary: Human 决定取消该议题的独立跟踪，以避免与更广泛的服务可行动性和诊断性评价重复；该变化不表示相关能力已经实现。
 object_id: spark-0076
+object_uid: 019ffb52-ebb5-77ba-aafc-46b09207bc69
 fact_type_key: spark
 created_at: '2026-08-12T20:25:40.167224Z'
-updated_at: '2026-08-13T09:20:58.133282Z'
+updated_at: '2026-08-13T14:02:59.407730Z'

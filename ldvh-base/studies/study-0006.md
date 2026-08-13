@@ -2,15 +2,13 @@
 title: 代码智能索引与知识图谱实践调研
 status: retired
 disposition_summary: 已按 v3 基线决定重新研究；本旧 v4 短报告不再作为当前研究入口，外部资料、发现与后续启发须在新 Study 中重新读取和表达。
-research_question: Codebase Memory MCP 等公开工具如何建立代码知识索引、提供 Agent 查询和团队共享，哪些限制对
-  LDVH 有意义？
-abstract: 调研 DeusData/codebase-memory-mcp、Tree-sitter 公开资料。Codebase Memory MCP 以
-  AST/LSP 等索引建立持久知识图谱，通过 MCP 工具提供代码关系查询，支持本地处理和可选团队图谱工件；其自身说明不内置
-  LLM。它适合作为派生索引参考，不是权威事实源。
+research_question: Codebase Memory MCP 等公开工具如何建立代码知识索引、提供 Agent 查询和团队共享，哪些限制对 LDVH 有意义？
+abstract: 调研 DeusData/codebase-memory-mcp、Tree-sitter 公开资料。Codebase Memory MCP 以 AST/LSP 等索引建立持久知识图谱，通过 MCP 工具提供代码关系查询，支持本地处理和可选团队图谱工件；其自身说明不内置 LLM。它适合作为派生索引参考，不是权威事实源。
 object_id: study-0006
+object_uid: 019ffb52-ebb5-700f-82ff-a39b44843a70
 fact_type_key: study
 created_at: '2026-07-19T11:17:49.581725+08:00'
-updated_at: '2026-07-23T18:21:16+08:00'
+updated_at: '2026-08-13T14:03:24.371066Z'
 urls:
 - ref: https://github.com/DeusData/codebase-memory-mcp
   title: github.com/DeusData/codebase-memory-mcp
@@ -21,6 +19,13 @@ urls:
 - ref: https://github.com/tree-sitter/tree-sitter
   title: github.com/tree-sitter/tree-sitter
   summary: 曾用于旧研究的 Tree-sitter 仓库；不单独支持当前索引实现。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:03:24.371066Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 ---
 
 ## 研究问题

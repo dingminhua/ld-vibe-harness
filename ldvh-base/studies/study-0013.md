@@ -13,9 +13,17 @@ research_question: WorkBuddy 的专家团团队交互模式对 LDVH 有什么学
 abstract: WorkBuddy 值得学习的不是"多开几个 Agent"，而是把专家角色、方法论、工具链、团队席位、共享任务列表、成员状态、直接沟通、计划审批、后台任务和结果整合显性化。LDVH 应吸收为"团队编排层"的设计方向：角色契约、任务卡、计划门禁、成员消息、状态投影、质量复核和成本/权限边界都应成为可追踪结构；但 WorkBuddy 的专家团运行状态、截图 UI 或外部工具输出不能替代 LDVH 的事实源。
 recommendation_summary: LDVH 应把 WorkBuddy 式团队交互作为下一阶段行动编排和 Web 表达的重要参考。优先学习方向包括 Role Contract、Team Session/Task List、Result Review、TaskOutput 状态投影、专家/Skill/MCP 组合边界、Human Gate 与权限分层。正式落地前应先形成 WorkCase 或 ADR，避免把外部产品的专家团直接写成 LDVH 事实模型规则。
 object_id: study-0013
+object_uid: 019ffb52-ebb5-7346-ad74-1f5ee785c315
 fact_type_key: study
 created_at: '2026-07-24T13:30:00+08:00'
-updated_at: '2026-07-24T13:30:00+08:00'
+updated_at: '2026-08-13T14:03:43.462053Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:03:43.462053Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 ---
 
 ## 研究问题

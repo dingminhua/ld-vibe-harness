@@ -162,6 +162,12 @@ change_log:
     model_id: gpt-5
   session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
   at: '2026-08-09T15:31:30.968794+08:00'
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:31.247726Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: partial
 disposition_summary: 本 WorkCase 已在冻结 scope 内完成 34 号模板的 Gate 1 后五阶段统一 pre-yield 控制、四类合法出口、新 Human 决策两条安全收敛路径与阶段×出口契约矩阵，定向联跑 20 项通过，未修改 21/projection/Helper/Skill/Hook，未提交或发布。六项成功标准满足；criterion-live-chain 因 canonical result 必须在 Gate 2 前冻结，无法以自身前瞻证明随后已实际抵达 human_closure_confirming，保留单一 accepted-stop 时序验证边界。Human 接受后以 partial 关闭，并保留该 residual responsibility；没有 route target 或 Spark 建议。
 residual_responsibilities:
@@ -170,15 +176,12 @@ residual_responsibilities:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0081
+    object_uid: 019ffb52-ebb5-7870-85bf-3893f28a1532
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0071
+    object_uid: 019ffb52-ebb5-7ccc-8b77-dd230fd27660
 object_id: workcase-0082
+object_uid: 019ffb52-ebb5-7786-91ae-81083965a60c
 fact_type_key: workcase
 created_at: '2026-08-09T14:58:55.845032+08:00'
-updated_at: '2026-08-09T15:31:30.968794+08:00'
+updated_at: '2026-08-13T14:08:31.247726Z'

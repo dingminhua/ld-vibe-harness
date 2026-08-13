@@ -6,14 +6,10 @@ summary: "## 来源\n\n- 从 spark-0019 路由：read-action-template-content �
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0019
+    object_uid: 019ffb52-ebb5-71da-8f50-223f834fad25
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: study
-    object_id: study-0030
+    object_uid: 019ffb52-ebb5-7ed1-a1aa-f90dd9655d0b
 change_log:
 - signature:
     product_name: Claude Code
@@ -21,7 +17,14 @@ change_log:
     agent_runtime_name: claude-code
   at: '2026-08-12T20:24:37.099438Z'
   summary: 受控创建本 Spark：承接 spark-0019 路由的模板内容重复传输问题，聚焦 Helper 只读操作的窄输出与自解释性优化。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:02:53.871500Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0074
+object_uid: 019ffb52-ebb5-75f4-888d-2d7c6df0e8e2
 fact_type_key: spark
 created_at: '2026-08-12T20:24:37.099438Z'
-updated_at: '2026-08-12T20:24:37.099438Z'
+updated_at: '2026-08-13T14:02:53.871500Z'

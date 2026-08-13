@@ -18,9 +18,7 @@ scope: "承诺覆盖：\n- 在读取/展示侧由 code/ldvh/testing/test_runs.py
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0060
+    object_uid: 019ffb52-ebb5-7bb3-8e8b-cc5c69bbe8b4
 change_log:
 - at: '2026-08-09T15:16:49.005124+08:00'
   session_id: workbuddy-session-20260809
@@ -88,6 +86,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-workbuddy-case-normalization-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:34.201579Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 title: 全量测试耗时预估（阶段 1：记录侧派生与 status 查询接口）
 success_criterion_definitions:
 - criterion_id: criterion-1
@@ -110,6 +114,7 @@ spark_suggestions:
   resume_condition: 另立 Spark/WorkCase 明确授权修复基线 lint 后，可重新执行 full-v4 验证。
   follow_up_summary: 后续承接对象应核对 cli.py E402 的处理方式（noqa 或结构调整）与 commits/facts validation.py 的 E501 行宽修正，并重跑 full-v4。
 object_id: workcase-0083
+object_uid: 019ffb52-ebb5-7422-b1e2-a58bf9215ca7
 fact_type_key: workcase
 created_at: '2026-08-09T15:16:49.005124+08:00'
-updated_at: '2026-08-10T08:59:13.826580Z'
+updated_at: '2026-08-13T14:08:34.201579Z'

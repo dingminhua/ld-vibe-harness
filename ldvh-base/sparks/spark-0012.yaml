@@ -11,6 +11,14 @@ evolution:
   summary: 现行系统架构与 Helper 读取契约已经明确并实现规则引导、按需事实读取和 AI/Helper/Code 的职责分工，原先的消费合同候选已收敛为直接落实边界。
 disposition_summary: 规则引导优先、事实按需展开、AI 负责语义选择、Helper 负责确定性渐进读取、Code 不裁决相关性，以及来源/coverage/gap/继续入口的交付边界，已由现行系统架构、规范读取与事实读取契约及 Helper 实现直接落实。原议题没有事实承接目标或剩余责任。
 object_id: spark-0012
+object_uid: 019ffb52-ebb5-7cd7-964a-4209e5c9106f
 fact_type_key: spark
 created_at: '2026-07-19T10:28:40.159604+08:00'
-updated_at: '2026-08-01T02:00:53.346960+08:00'
+updated_at: '2026-08-13T13:59:54.501740Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:59:54.501740Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

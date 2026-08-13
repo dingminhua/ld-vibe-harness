@@ -112,15 +112,20 @@ change_log:
   session_id: 019fe4dd-df4a-7043-8e5e-926e3300b79f
   at: '2026-08-09T12:34:07.366524Z'
   summary: Human 在 Gate 2 明确接受 completed 关闭；按当前完整 proposal 形成终态。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:45.779683Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: WorkCase-0087 原 scope 的 criterion 生命周期边界、创建/执行模板同步和 source-contract 回归均已完成；三项成功标准全部 satisfied，result v1 反馈已在 v2 返工并通过独立复核，没有未满足、未验证、需转交或 accepted-stop 的剩余责任。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0086
+    object_uid: 019ffb52-ebb5-74dc-857b-cd76f1c007f4
 object_id: workcase-0087
+object_uid: 019ffb52-ebb5-7081-a0bd-478013ba8ebe
 fact_type_key: workcase
 created_at: '2026-08-09T11:33:55.387498Z'
-updated_at: '2026-08-09T12:34:07.366524Z'
+updated_at: '2026-08-13T14:08:45.779683Z'

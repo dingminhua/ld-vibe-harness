@@ -116,23 +116,27 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-workcase-signature-migration-20260810
-
 - at: '2026-08-10T09:24:28.759983Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5; 12: codex -> gpt-5; 13: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:10.639482Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0067
+    object_uid: 019ffb52-ebb5-7f8e-b1d7-5da96f3f18a1
 status: closed
 closure_outcome: completed
 disposition_summary: '已完成对 Spark-0067 缺陷 #9 的限定核验：当前公开能力不足以支持可靠的逐对象变化定位，故不选择或实现生产方案；原 scope 内没有未满足或未验证的责任。'
 object_id: workcase-0075
+object_uid: 019ffb52-ebb5-76a3-b562-f962f8b3fa6f
 fact_type_key: workcase
 created_at: '2026-08-08T20:10:10.758398+08:00'
-updated_at: '2026-08-10T09:24:28.759983Z'
+updated_at: '2026-08-13T14:08:10.639482Z'

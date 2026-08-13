@@ -6,9 +6,7 @@ summary: "## 定位\n\n本议题只承载 LDVH 的价值审计，不作为缺陷
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0067
+    object_uid: 019ffb52-ebb5-7f8e-b1d7-5da96f3f18a1
 change_log:
 - signature:
     product_name: Cindy
@@ -16,7 +14,14 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T09:13:37.930277Z'
   summary: 依据 Human 指令创建独立的 P2 LDVH 价值审计议题，并关联历史优化议题 spark-0067。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:03:07.854375Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0079
+object_uid: 019ffb52-ebb5-7ea7-8303-b58b6d99eccd
 fact_type_key: spark
 created_at: '2026-08-13T09:13:37.930277Z'
-updated_at: '2026-08-13T09:13:37.930277Z'
+updated_at: '2026-08-13T14:03:07.854375Z'

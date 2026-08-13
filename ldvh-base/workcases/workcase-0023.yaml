@@ -41,25 +41,25 @@ disposition_summary: WorkCase 按 completed 停止：五个 work item 全部 com
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0039
+    object_uid: 019ffb52-ebb5-7820-8086-25fa5aa68b26
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0018
+    object_uid: 019ffb52-ebb5-7d9e-b5cc-17beecdc5303
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0029
+    object_uid: 019ffb52-ebb5-7afc-8623-c117575e3111
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: adr
-    object_id: adr-0006
+    object_uid: 019ffb52-ebb5-78b1-b9fe-b03917f96024
 object_id: workcase-0023
+object_uid: 019ffb52-ebb5-77c5-81a7-6bdbcda15670
 fact_type_key: workcase
 created_at: '2026-08-01T01:49:52.669999+08:00'
-updated_at: '2026-08-01T03:42:58.614254+08:00'
+updated_at: '2026-08-13T14:05:42.499550Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:05:42.499550Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

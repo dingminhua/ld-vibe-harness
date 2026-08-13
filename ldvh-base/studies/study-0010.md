@@ -16,9 +16,17 @@ research_question: Codex 的子代理和 Git worktree 能如何帮助 LDVH 处�
 abstract: 官方资料表明：子代理适合边界清晰、可独立汇总的读密集任务；并行写入需要额外协调；工作树隔离并发改动但不替代环境准备、权限控制或人类决策。对 LDVH 的启发是把并行性视作按任务选择的执行策略，并始终显式保留实际工作树、写入所有者和汇总责任。
 recommendation_summary: 把并行视为按任务可分性选择的工作方式：先写清输出、汇总人与不修改范围；共享写入保留单一所有者；只有在确有需求时，以有界 WorkCase 验证 worktree 准备与交接，并由 Human 决定是否固化为长期默认。
 object_id: study-0010
+object_uid: 019ffb52-ebb5-7092-b4c0-34c698c88385
 fact_type_key: study
 created_at: '2026-07-23T20:14:44.651335+08:00'
-updated_at: '2026-07-24T09:17:23.114244+08:00'
+updated_at: '2026-08-13T14:03:35.207644Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:03:35.207644Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 ---
 
 ## 研究问题

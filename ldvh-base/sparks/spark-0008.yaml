@@ -9,6 +9,14 @@ evolution:
   summary: 当前 WorkCase 类型规则与获批计划执行模板已把控制面、检查点、恢复和审核关口完整落到可执行边界，原先的字段充分性与调度器风险已收敛，不再需要独立跟踪。
 disposition_summary: WorkCase 控制面、检查点写回、阻塞恢复、Controller/Reviewer/Human Gate 链和“不是调度器”的边界已经由现行类型规则、获批计划执行模板及其实施验证直接落实。相关 WorkCase 结果仅作为落实依据，不作为本 Spark 的事实承接目标；原范围内没有剩余责任。
 object_id: spark-0008
+object_uid: 019ffb52-ebb5-7270-bc33-57c7ec37f724
 fact_type_key: spark
 created_at: '2026-07-19T10:28:34.053553+08:00'
-updated_at: '2026-08-01T02:00:48.732091+08:00'
+updated_at: '2026-08-13T13:59:42.919025Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:59:42.919025Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

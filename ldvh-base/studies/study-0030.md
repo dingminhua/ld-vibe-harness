@@ -45,10 +45,17 @@ change_log:
     agent_runtime_name: claude-code
   summary: Human 要求将规则源与五类事实对象的不同局部编辑、治理和发布策略形成新的独立技术评估，并退休仅覆盖事实对象局部补丁问题的旧 Study。
   at: '2026-08-12T08:21:51.342725Z'
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:04:32.694549Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: study-0030
+object_uid: 019ffb52-ebb5-7ed1-a1aa-f90dd9655d0b
 fact_type_key: study
 created_at: '2026-08-12T08:21:51.342725Z'
-updated_at: '2026-08-12T08:21:51.342725Z'
+updated_at: '2026-08-13T14:04:32.694549Z'
 ---
 
 ## 研究问题

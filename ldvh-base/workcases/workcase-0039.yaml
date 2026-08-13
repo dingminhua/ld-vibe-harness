@@ -27,6 +27,14 @@ residual_responsibilities:
 - residual_id: residual-unneeded-commit
   summary: 0039 原计划的本地提交未执行，因为该 WorkCase 误建且不应作为直接 Human 提交指令的前置条件；该提交目标不再由 0039 承担。
 object_id: workcase-0039
+object_uid: 019ffb52-ebb5-7efe-b778-824c8992dbb1
 fact_type_key: workcase
 created_at: '2026-08-02T12:45:03.735371+08:00'
-updated_at: '2026-08-02T13:25:47.063254+08:00'
+updated_at: '2026-08-13T14:06:28.811094Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:06:28.811094Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

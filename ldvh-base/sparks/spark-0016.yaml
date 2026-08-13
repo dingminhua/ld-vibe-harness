@@ -41,7 +41,14 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-identity-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:05.851579Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0016
+object_uid: 019ffb52-ebb5-7fe4-a6f9-4df27c4dd6a8
 fact_type_key: spark
 created_at: '2026-07-19T10:28:46.306813+08:00'
-updated_at: '2026-08-10T09:14:49.666785Z'
+updated_at: '2026-08-13T14:00:05.851579Z'

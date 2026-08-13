@@ -40,17 +40,23 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-explicit-signature-migration-20260810
-
 - at: '2026-08-10T09:27:43.727753Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Kimi Work -> kimi。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-kimi-model-id-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:04:06.542467Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: study-0021
+object_uid: 019ffb52-ebb5-7f92-9d4f-f3afc71f8d45
 fact_type_key: study
 created_at: '2026-08-05T15:41:03.043451+08:00'
-updated_at: '2026-08-10T09:27:43.727753Z'
+updated_at: '2026-08-13T14:04:06.542467Z'
 ---
 
 ## 研究问题

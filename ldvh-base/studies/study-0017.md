@@ -35,22 +35,26 @@ urls:
 relations:
 - relation_key: inspired-by
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0037
+    object_uid: 019ffb52-ebb5-7ee2-a408-38b8fd5e8ba9
 - relation_key: informs
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0037
+    object_uid: 019ffb52-ebb5-7ee2-a408-38b8fd5e8ba9
 research_intent: spark-0037 已确立 H1–H6 Human 价值评判标准，并将据此对 00 根规范做整体性重梳理。Human 在讨论中点名 Kiro 与 Beads 是"最接近"的两个外部项目——Kiro 强在 H2/H4 但按特性组织、无全项目方向锚定，Beads 是 H1/H6 近邻但把人当 agent 记忆的旁观者。本轮研究要把这一判断从对话印象升级为可复读的外部参照：核实两个项目的真实机制，逐项对照 H1–H6，为 00 重梳理提供 H2（决定依据完备）所要求的外部最佳实践依据，并检验六项标准的覆盖性与辨识度。
 research_question: Kiro（AWS 的 spec-driven agentic IDE）与 Beads（git-backed 的 agent 记忆与图结构 issue tracker）各自的实际机制是什么？以 LDVH 的 H1–H6 Human 价值评判标准逐项衡量，两者分别满足了什么、缺失什么？两者共同留下的空白对 LDVH 的差异化定位和 00 根规范重梳理意味着什么？
 abstract: 在 2026-07-29 对 Kiro 官网与四篇第三方综述、Beads 当前维护方 README 与三篇第三方实践资料的检查中：Kiro 把"spec 是事实源、代码是构建产物"落成 requirements/design/tasks 三文件加人工审批门的强制工作流，配合 steering files、EARS 需求语法与 Agent Hooks，在 H2（决定依据完备）与 H4（人机理解对齐）上确有机制，但其组织单位是单个 feature，不存在全项目级方向锚（H5 缺位），Human 只在 spec 审批点出现。Beads 以 git 为同步层、以依赖图组织 issue，bd ready 给出无阻塞工作、hash ID 防多 agent 冲突、discovered-from 捕获顺路发现、compaction 做记忆衰减，在 H1（项目认知接续）与 H6（提及事项闭环）上是真正的近邻，但其世界观中 issue 由 agent 创建、认领、关闭，Human 是旁观者，H2–H5 全面缺位。两者的共同空白——Human 作为项目认知主体的位置——正是 spark-0037 识别出的 LDVH 差异化定位，H1–H6 六项标准在外部对照中未发现冗余或漏项。
 recommendation_summary: 不采用 Kiro 或 Beads 本身，也不照搬其机制为 LDVH 规则；本研究的主要价值是作为 00 根规范重梳理的外部参照输入。建议在重梳理 spark-0037 时引用本对照结论：Kiro 证明"形式化契约+审批门"只能做到 feature 粒度的对齐，H5 需要独立的全项目方向锚机制；Beads 证明"结构化持久记忆"可以不以 Human 为中心，LDVH 的事实对象体系必须把 Human 的决定位、认知接续与方向锚定写进设计目标而非交由 agent 自治。若未来 WorkCase/Spark 依赖组织或"顺路发现"捕获出现真实痛点，可再开一轮针对 Beads discovered-from 与 compaction 细节的专题研究。
 object_id: study-0017
+object_uid: 019ffb52-ebb5-7efb-96ce-5c4abefd4496
 fact_type_key: study
 created_at: '2026-07-29T12:40:00.000000+08:00'
-updated_at: '2026-07-29T12:40:00.000000+08:00'
+updated_at: '2026-08-13T14:03:55.221487Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:03:55.221487Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 ---
 
 ## 研究问题

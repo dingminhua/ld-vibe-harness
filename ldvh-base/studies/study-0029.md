@@ -83,16 +83,21 @@ change_log:
     agent_runtime_name: claude-code
   at: '2026-08-12T16:11:11.630084Z'
   summary: 建立 informs → spark-0018 关系：本研究关于无环境 Hook 下显式结果检查与 Git Gate 分层的发现和建议应影响该 Spark 的后续判断；不改变研究正文、结论或状态。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:04:29.764446Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 relations:
 - relation_key: informs
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0018
+    object_uid: 019ffb52-ebb5-7d9e-b5cc-17beecdc5303
 object_id: study-0029
+object_uid: 019ffb52-ebb5-751c-8041-ba92bae6c7bc
 fact_type_key: study
 created_at: '2026-08-10T23:54:37.152370Z'
-updated_at: '2026-08-12T16:11:11.630084Z'
+updated_at: '2026-08-13T14:04:29.764446Z'
 ---
 
 ## 研究问题

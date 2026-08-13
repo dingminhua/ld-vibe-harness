@@ -24,14 +24,10 @@ input_refs:
 relations:
 - relation_key: inspired-by
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0104
+    object_uid: 019ffb52-ebb5-748a-b247-38b1cc5795f9
 - relation_key: informs
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0045
+    object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
 research_question: 在 workcase-0103 形成 v2 证据信封实现、workcase-0104 完成一次受限六轨迹试跑后，这套记录与四态投影实际能够证明哪些可回放、隐私和诊断边界，哪些执行健康、真实中断耐久或产品价值结论仍不能成立？
 abstract: 本技术评估汇总一次受限 v2 六轨迹试跑及其独立复核：T1/T2 投影 observed、T3a failed、T3b timeout、T4a/T4b inconclusive，真实 Helper 调用 4 次、唯一 stale repair 1 次、响应 45977 bytes、观测耗时 4541 ms。结果支持 v2 record layer 在闭集元数据、隐私边界、原子落盘/回读和损坏 fail-closed 上形成可复读证据，但不证明 Helper 正确、事实写入、执行健康、真实跨进程中断耐久、tamper 注入原子性或产品效益。试跑暴露的旧 WorkCase 前缀硬编码和摘要根路径误用已在关闭后修复并通过 32 项定向与 213 项相关回归；未追加真实 trial。
 research_intent: spark-0045 需要判断输入、事件、外部状态和验证证据能否共同形成不冒充事实源的可回放观察。本报告把两次 WorkCase 的实现、一次受限试跑、独立复核与关闭后修复收束成可独立阅读的技术评估，避免后续把事件存在、测试通过或临时记录持久化误写为执行健康、正确性或产品价值已经成立。
@@ -43,10 +39,17 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T08:25:56.260249Z'
   summary: 汇总 workcase-0103/0104 的 v2 局部编辑证据实现、受限试跑、独立复核、关闭后 runner 修复及其可证明与未验证边界。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:04:35.664002Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: study-0031
+object_uid: 019ffb52-ebb5-7aaf-8091-950ed178c6f1
 fact_type_key: study
 created_at: '2026-08-13T08:25:56.260249Z'
-updated_at: '2026-08-13T08:25:56.260249Z'
+updated_at: '2026-08-13T14:04:35.664002Z'
 ---
 
 ## 研究问题

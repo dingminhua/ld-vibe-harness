@@ -29,6 +29,14 @@ validation_summary: 已运行 .venv/bin/pytest -q code/tests/governance/test_con
 closure_outcome: completed
 disposition_summary: 本 WorkCase 的已批准范围已经完成：单一实际 worktree 的最近祖先配置发现、fail-closed 非管辖结果、祖先 Git root 排除及回归验证均已形成；无剩余责任、路由目标或 Spark 建议。
 object_id: workcase-0040
+object_uid: 019ffb52-ebb5-7350-87f4-6fbb724a2bcb
 fact_type_key: workcase
 created_at: '2026-08-02T12:48:58.283785+08:00'
-updated_at: '2026-08-02T13:11:58.174993+08:00'
+updated_at: '2026-08-13T14:06:31.662987Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:06:31.662987Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

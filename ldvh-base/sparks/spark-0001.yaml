@@ -15,14 +15,10 @@ disposition_summary: '`adr-0006` 完整承接唯一薄 Skill 接入、规则引�
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: adr
-    object_id: adr-0006
+    object_uid: 019ffb52-ebb5-78b1-b9fe-b03917f96024
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0007
+    object_uid: 019ffb52-ebb5-744a-ac16-8d0672e1224f
 change_log:
 - at: '2026-08-11T09:20:54.260190Z'
   summary: 经逐条 Human 授权，历史 routed Spark 迁移为 implemented；旧 routed-to 已转为 related-to。
@@ -30,7 +26,14 @@ change_log:
     agent_workbench: Cindy
     model_id: chatgpt/gpt-5.6-terra
   session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:59:22.316163Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0001
+object_uid: 019ffb52-ebb5-7a52-9b2b-51225bfb3c63
 fact_type_key: spark
 created_at: '2026-07-19T08:33:47.543976+08:00'
-updated_at: '2026-08-11T09:20:54.260190Z'
+updated_at: '2026-08-13T13:59:22.316163Z'

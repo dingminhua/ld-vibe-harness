@@ -39,15 +39,19 @@ residual_responsibilities:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0041
+    object_uid: 019ffb52-ebb5-722d-af4c-2c52d5c36d63
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0043
+    object_uid: 019ffb52-ebb5-75ae-8207-e86127eebea3
 object_id: workcase-0044
+object_uid: 019ffb52-ebb5-7683-8a9b-fae93fb93840
 fact_type_key: workcase
 created_at: '2026-08-02T18:19:44.085540+08:00'
-updated_at: '2026-08-02T21:11:20.416549+08:00'
+updated_at: '2026-08-13T14:06:43.326490Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:06:43.326490Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

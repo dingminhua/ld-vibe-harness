@@ -33,13 +33,19 @@ validation_summary: 139 个目标 Python/spec/Helper tests passed；git diff --c
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0041
+    object_uid: 019ffb52-ebb5-722d-af4c-2c52d5c36d63
 status: closed
 closure_outcome: completed
 disposition_summary: workcase-0042 的原 scope 已完整交付：06 已承接最小临时工件共同边界，34 已收敛为五段 Controller 执行流程并固定 fresh projection、合法退出、Gate 2 禁语和 Reviewer 后连续受控写回纪律，Code plan 与回归测试已形成；五项成功标准均为 satisfied，139 项目标测试、模板精确回读、Git 隔离和全库事实完整性检查通过，独立只读 Reviewer 结论为 pass。本案没有未满足、未验证或需要转交的剩余责任；Web 页面迁移及其它后续结构简化仍为本案 scope 外事项，不由本关闭处置承载。
 object_id: workcase-0042
+object_uid: 019ffb52-ebb5-71b8-a543-1cb569543bb5
 fact_type_key: workcase
 created_at: '2026-08-02T16:01:35.354461+08:00'
-updated_at: '2026-08-02T16:54:44.720288+08:00'
+updated_at: '2026-08-13T14:06:37.387849Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:06:37.387849Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

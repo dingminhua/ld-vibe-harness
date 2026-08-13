@@ -1,98 +1,47 @@
 object_id: workcase-0007
+object_uid: 019ffb52-ebb5-744a-ac16-8d0672e1224f
 fact_type_key: workcase
 title: 建立 Codex startup/resume 有界责任候选恢复
 created_at: '2026-07-21T01:49:09.625339+08:00'
-updated_at: '2026-07-26T22:27:30+08:00'
+updated_at: '2026-08-13T14:04:56.053759Z'
 status: closed
-goal: >-
-  使当前 Codex SessionStart startup|resume 在合法范围内，从实际环境输入和现有 Helper
-  读取能力形成可交接的受管项目与 WorkCase 责任候选、有界恢复投影和明确的当前绑定状态；
-  只有上层提供精确引用或当前来源新增的机械条件明确允许时才形成绑定，宽 workspace、零个或
-  多个候选、输入不足或 coverage 不完整时保持 unresolved，不猜测项目、任务、授权或完成状态。
-scope: >-
-  覆盖 specs/02、必要时 02.Att.01、specs/05、09、21 中与共享上下文恢复直接相关的规则
-  澄清，README 当前能力声明，稳定 Code Implementation Plan，context_recovery.py，已有
-  Helper 读取操作的只读编排或必要最小机械投影，Codex plugin、配置、打包和相关 Python
-  tests；在独立的精确环境 Human Gate 后，覆盖当前用户 Codex 接入单元的受控升级与
-  startup/resume 真实验证。排除改变 WorkCase 生命周期或事实 Schema、新增语义裁决或自动
-  写入、把 workspace 根改写为 governed、按唯一配置项或唯一 open WorkCase 自动声称当前
-  绑定、Helper 创建工作流整体、requested_disclosure 通用校验缺陷、clear、compact、
-  SubagentStart 真实通过声明、多环境、原生 Windows、发布、Web 后续、push 和 PR。
+goal: 使当前 Codex SessionStart startup|resume 在合法范围内，从实际环境输入和现有 Helper 读取能力形成可交接的受管项目与 WorkCase 责任候选、有界恢复投影和明确的当前绑定状态； 只有上层提供精确引用或当前来源新增的机械条件明确允许时才形成绑定，宽 workspace、零个或 多个候选、输入不足或 coverage 不完整时保持 unresolved，不猜测项目、任务、授权或完成状态。
+scope: 覆盖 specs/02、必要时 02.Att.01、specs/05、09、21 中与共享上下文恢复直接相关的规则 澄清，README 当前能力声明，稳定 Code Implementation Plan，context_recovery.py，已有 Helper 读取操作的只读编排或必要最小机械投影，Codex plugin、配置、打包和相关 Python tests；在独立的精确环境 Human Gate 后，覆盖当前用户 Codex 接入单元的受控升级与 startup/resume 真实验证。排除改变 WorkCase 生命周期或事实 Schema、新增语义裁决或自动 写入、把 workspace 根改写为 governed、按唯一配置项或唯一 open WorkCase 自动声称当前 绑定、Helper 创建工作流整体、requested_disclosure 通用校验缺陷、clear、compact、 SubagentStart 真实通过声明、多环境、原生 Windows、发布、Web 后续、push 和 PR。
 success_criterion_definitions:
 - criterion_id: criterion-01
-  statement: >-
-    02 明确定义项目外 workspace 根仍为 non_governed，与可交还的登记项目候选是不同结论。
-    候选仅来自有效配置登记和现场 Git identity 并确定性去重、排序；只在来源明确允许的唯一
-    机械条件成立时形成 selected binding，其它情况保持 unresolved 并给出候选依据与 Human
-    决策需求；不得枚举任意子目录、猜测或把 workspace 根改写为 governed。
+  statement: 02 明确定义项目外 workspace 根仍为 non_governed，与可交还的登记项目候选是不同结论。 候选仅来自有效配置登记和现场 Git identity 并确定性去重、排序；只在来源明确允许的唯一 机械条件成立时形成 selected binding，其它情况保持 unresolved 并给出候选依据与 Human 决策需求；不得枚举任意子目录、猜测或把 workspace 根改写为 governed。
 - criterion_id: criterion-02
-  statement: >-
-    对唯一已解析项目完整分页读取全部 open/blocked WorkCase F1，并校验查询、对象集与 cursor
-    连续性。只有环境或上层明确提供精确 current_workcase_ref 时才声明当前绑定并展开 F3；
-    没有精确绑定时，唯一对象最多作为 sole mechanical candidate 展开且 binding=unresolved。
-    coverage 未完整时不得把已返回卡片解释为全量，也不得按标题、Git dirty、priority 或数组
-    顺序裁决；候选和 active_items 投影只包含来源实际存在的字段，不补造依据或唯一焦点。
+  statement: 对唯一已解析项目完整分页读取全部 open/blocked WorkCase F1，并校验查询、对象集与 cursor 连续性。只有环境或上层明确提供精确 current_workcase_ref 时才声明当前绑定并展开 F3； 没有精确绑定时，唯一对象最多作为 sole mechanical candidate 展开且 binding=unresolved。 coverage 未完整时不得把已返回卡片解释为全量，也不得按标题、Git dirty、priority 或数组 顺序裁决；候选和 active_items 投影只包含来源实际存在的字段，不补造依据或唯一焦点。
 - criterion_id: criterion-03
-  statement: >-
-    对两个固定回归 fixture，以完整 Codex additionalContext 的 UTF-8 bytes 计，新有界输出
-    分别不超过 13,915 bytes 和 4,830 bytes；测试包含 adapter 固定前缀和共享投影，并隔离
-    时间戳、临时路径长度等非目标波动。同时保留 operation、outcome、scope、coverage、来源
-    locator、gap/diagnostic 摘要、binding 状态和按需展开入口，不内联完整 Helper JSON、
-    事实对象或规则全文。
+  statement: 对两个固定回归 fixture，以完整 Codex additionalContext 的 UTF-8 bytes 计，新有界输出 分别不超过 13,915 bytes 和 4,830 bytes；测试包含 adapter 固定前缀和共享投影，并隔离 时间戳、临时路径长度等非目标波动。同时保留 operation、outcome、scope、coverage、来源 locator、gap/diagnostic 摘要、binding 状态和按需展开入口，不内联完整 Helper JSON、 事实对象或规则全文。
 - criterion_id: criterion-04
-  statement: >-
-    bounded recovery projection、内部 binding 状态与按需展开入口由共享 Code 实现拥有，
-    不新增 Helper 公开操作、事实字段或规则副本；adapter 只验证和传递 Codex 实际 payload 与
-    共享投影，不重新解释项目、WorkCase、coverage 或错误。startup/resume 的结果映射忠实；
-    复用事件的 contract 与 packaging 防回归不扩大真实验证结论。
+  statement: bounded recovery projection、内部 binding 状态与按需展开入口由共享 Code 实现拥有， 不新增 Helper 公开操作、事实字段或规则副本；adapter 只验证和传递 Codex 实际 payload 与 共享投影，不重新解释项目、WorkCase、coverage 或错误。startup/resume 的结果映射忠实； 复用事件的 contract 与 packaging 防回归不扩大真实验证结论。
 - criterion_id: criterion-05
-  statement: >-
-    规则、共享实现、adapter、packaging 正反与边界测试及 full-v4 通过。在精确环境 Human
-    Gate 后升级并取得 startup/resume 成功、歧义、主要失败及停用、恢复真实证据；README
-    最终声明只绑定实际重新验证的 macOS、用户、Codex 版本与事件，未验证范围如实记录。
+  statement: 规则、共享实现、adapter、packaging 正反与边界测试及 full-v4 通过。在精确环境 Human Gate 后升级并取得 startup/resume 成功、歧义、主要失败及停用、恢复真实证据；README 最终声明只绑定实际重新验证的 macOS、用户、Codex 版本与事件，未验证范围如实记录。
 success_criterion_results:
 - criterion_id: criterion-01
   outcome: satisfied
-  summary: >-
-    02 已区分 non_governed workspace、登记项目候选与 selected binding；候选只来自有效登记
-    与现场 Git identity，零、一、多及来源异常均 fail-closed；真实宽 workspace 返回三个
-    确定性候选且保持 unresolved。
+  summary: 02 已区分 non_governed workspace、登记项目候选与 selected binding；候选只来自有效登记 与现场 Git identity，零、一、多及来源异常均 fail-closed；真实宽 workspace 返回三个 确定性候选且保持 unresolved。
 - criterion_id: criterion-02
   outcome: satisfied
-  summary: >-
-    共享恢复按固定预算完整读取 F1、校验 coverage 与 cursor，并只对精确引用绑定；sole
-    candidate 保持 unresolved 但有界展开，active_items 忠实恢复 item-05，partial、error、
-    budget 分支均 fail-closed。
+  summary: 共享恢复按固定预算完整读取 F1、校验 coverage 与 cursor，并只对精确引用绑定；sole candidate 保持 unresolved 但有界展开，active_items 忠实恢复 item-05，partial、error、 budget 分支均 fail-closed。
 - criterion_id: criterion-03
   outcome: satisfied
-  summary: >-
-    两个冻结 fixture 的完整 additionalContext budgets 通过；极端长 locator、summary 另由
-    4000-byte 反例证明 hard fallback 不返回超预算 payload，同时保留实际 operation、outcome、
-    scope、首个 source、coverage、诊断与展开入口。
+  summary: 两个冻结 fixture 的完整 additionalContext budgets 通过；极端长 locator、summary 另由 4000-byte 反例证明 hard fallback 不返回超预算 payload，同时保留实际 operation、outcome、 scope、首个 source、coverage、诊断与展开入口。
 - criterion_id: criterion-04
   outcome: satisfied
-  summary: >-
-    共享 Code 拥有 ldvh-context-recovery/1、binding、展开与最终 hard byte boundary；adapter
-    只验证 payload 并包装投影。startup/resume、packaging 正反测试与实际事件通过。
+  summary: 共享 Code 拥有 ldvh-context-recovery/1、binding、展开与最终 hard byte boundary；adapter 只验证 payload 并包装投影。startup/resume、packaging 正反测试与实际事件通过。
 - criterion_id: criterion-05
   outcome: satisfied
-  summary: >-
-    full-v4 与范围检查通过；精确 Codex 环境 Gate 下的升级前失败、startup、resume、宽
-    workspace 歧义及停用、恢复均已真实验证，验证后用户配置与 LDVH 数据无变化。
-result_summary: >-
-  Codex startup/resume 已能从实际环境输入和 Helper 读取结果形成受管项目、WorkCase 候选与
-  有界恢复投影；精确引用才形成绑定，宽 workspace、输入不足和不完整 coverage 均保持
-  unresolved。共享投影具有硬字节边界，adapter 保持薄映射，当前目标环境的升级、事件和停用、
-  恢复均已完成真实验证。
-validation_summary: >-
-  五项成功标准全部满足。规则语义、共享恢复、候选与绑定、active_items、有界投影、薄
-  adapter、configure、packaging 和 full-v4 均已验证。在 macOS arm64、当前用户、Codex
-  0.145.0-alpha.18 范围内，startup、resume、宽 workspace 歧义、升级前失败和停用、恢复已
-  真实验证，用户配置与 LDVH 数据无变化。clear、compact、SubagentStart、其它平台与其它
-  Codex 版本未验证。
+  summary: full-v4 与范围检查通过；精确 Codex 环境 Gate 下的升级前失败、startup、resume、宽 workspace 歧义及停用、恢复均已真实验证，验证后用户配置与 LDVH 数据无变化。
+result_summary: Codex startup/resume 已能从实际环境输入和 Helper 读取结果形成受管项目、WorkCase 候选与 有界恢复投影；精确引用才形成绑定，宽 workspace、输入不足和不完整 coverage 均保持 unresolved。共享投影具有硬字节边界，adapter 保持薄映射，当前目标环境的升级、事件和停用、 恢复均已完成真实验证。
+validation_summary: 五项成功标准全部满足。规则语义、共享恢复、候选与绑定、active_items、有界投影、薄 adapter、configure、packaging 和 full-v4 均已验证。在 macOS arm64、当前用户、Codex 0.145.0-alpha.18 范围内，startup、resume、宽 workspace 歧义、升级前失败和停用、恢复已 真实验证，用户配置与 LDVH 数据无变化。clear、compact、SubagentStart、其它平台与其它 Codex 版本未验证。
 closure_outcome: completed
-disposition_summary: >-
-  批准目标已在 macOS arm64、当前用户、Codex 0.145.0-alpha.18 边界内完成：startup/resume
-  可恢复受管项目和有界 WorkCase 候选，宽 workspace 与输入不足保持 unresolved，字节预算
-  具备硬边界，停用、恢复可控且用户配置与 LDVH 数据无变化。原范围内没有残余责任或分流
-  对象；clear、compact、SubagentStart、其它平台或版本仅为未验证边界，不自动形成后续责任。
+disposition_summary: 批准目标已在 macOS arm64、当前用户、Codex 0.145.0-alpha.18 边界内完成：startup/resume 可恢复受管项目和有界 WorkCase 候选，宽 workspace 与输入不足保持 unresolved，字节预算 具备硬边界，停用、恢复可控且用户配置与 LDVH 数据无变化。原范围内没有残余责任或分流 对象；clear、compact、SubagentStart、其它平台或版本仅为未验证边界，不自动形成后续责任。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:04:56.053759Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

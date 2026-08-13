@@ -9,19 +9,13 @@ evolution:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0091
+    object_uid: 019ffb52-ebb5-717b-b184-0886b218acb0
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0071
+    object_uid: 019ffb52-ebb5-7ccc-8b77-dd230fd27660
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0070
+    object_uid: 019ffb52-ebb5-7283-b7d0-b234844017cb
 change_log:
 - at: '2026-08-10T05:26:01.063002Z'
   session_id: cindy-workcase-0091-gate1-analysis-20260810
@@ -35,7 +29,14 @@ change_log:
     product_name: Cindy
     model_name: deepseek/deepseek-v4-flash[1m]
     agent_runtime_name: claude-code
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:02:51.013537Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0073
+object_uid: 019ffb52-ebb5-7ace-b424-7904f95e5f41
 fact_type_key: spark
 created_at: '2026-08-10T05:26:01.063002Z'
-updated_at: '2026-08-12T16:02:11.472518Z'
+updated_at: '2026-08-13T14:02:51.013537Z'

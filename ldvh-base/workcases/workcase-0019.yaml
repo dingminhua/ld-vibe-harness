@@ -31,10 +31,16 @@ disposition_summary: plan_version=1 批准范围内的四项成功标准均已�
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0038
+    object_uid: 019ffb52-ebb5-7840-a656-ece0ce87f7e3
 object_id: workcase-0019
+object_uid: 019ffb52-ebb5-7912-9be1-996fcfa5f5a1
 fact_type_key: workcase
 created_at: '2026-07-30T09:47:58.164892+08:00'
-updated_at: '2026-08-01T00:31:18.021733+08:00'
+updated_at: '2026-08-13T14:05:30.856199Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:05:30.856199Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

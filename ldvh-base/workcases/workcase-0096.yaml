@@ -115,15 +115,20 @@ change_log:
     product_name: Cindy
     model_name: chatgpt/gpt-5.6-terra
     agent_runtime_name: claude-code
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:09:08.718417Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: 当前原 scope 内的六项成功标准均为 satisfied，已交付只读局部编辑候选能力且没有未满足或未验证的当前责任。完整 suite 中 js-yaml 缺项已作为环境排除范围内的验证边界保留在 validation_summary，不构成本 WorkCase 的剩余责任。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: study
-    object_id: study-0030
+    object_uid: 019ffb52-ebb5-7ed1-a1aa-f90dd9655d0b
 object_id: workcase-0096
+object_uid: 019ffb52-ebb5-7ff0-8e78-04c9fd8fb640
 fact_type_key: workcase
 created_at: '2026-08-12T10:16:55.455614Z'
-updated_at: '2026-08-12T14:59:10.317346Z'
+updated_at: '2026-08-13T14:09:08.718417Z'

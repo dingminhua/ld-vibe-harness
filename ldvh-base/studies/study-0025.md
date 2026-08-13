@@ -36,17 +36,23 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-codex-alias-migration-20260810
-
 - at: '2026-08-10T09:32:22.447500Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-ldvh-verify -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:04:18.234775Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: study-0025
+object_uid: 019ffb52-ebb5-7589-8adb-8984aba3476b
 fact_type_key: study
 created_at: '2026-08-07T18:56:39.522746+08:00'
-updated_at: '2026-08-10T09:32:22.447500Z'
+updated_at: '2026-08-13T14:04:18.234775Z'
 ---
 
 ## 研究问题

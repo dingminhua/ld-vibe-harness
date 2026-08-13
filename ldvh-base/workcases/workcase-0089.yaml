@@ -10,14 +10,10 @@ status: closed
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0060
+    object_uid: 019ffb52-ebb5-7bb3-8e8b-cc5c69bbe8b4
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0088
+    object_uid: 019ffb52-ebb5-770a-af4c-8e939c5728e8
 change_log:
 - at: '2026-08-09T14:24:21.589586Z'
   session_id: workbuddy-session-20260809
@@ -49,6 +45,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-workbuddy-case-normalization-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:51.727348Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 termination:
   initiated_at: '2026-08-09T22:58:00+08:00'
   source_status: open
@@ -87,6 +89,7 @@ validation_summary: 依据 specs/07 §11.4 条文与 spark-0060 的 implemented 
 closure_outcome: completed
 disposition_summary: Human 明确指令作废/中止本 WorkCase（ldvh@workcase-0089）。其目标已由 spark-0060 闭环覆盖，不再需要独立执行。保留 goal/scope/criteria 与 related-to（spark-0060、workcase-0088）；无 routed-to、无入向 depends-on 需处置。中止流程据实记录保留范围与验证缺口。
 object_id: workcase-0089
+object_uid: 019ffb52-ebb5-7d31-b4aa-57f167e88e01
 fact_type_key: workcase
 created_at: '2026-08-09T14:24:21.589586Z'
-updated_at: '2026-08-10T08:59:19.732063Z'
+updated_at: '2026-08-13T14:08:51.727348Z'

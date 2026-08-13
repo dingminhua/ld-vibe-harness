@@ -8,6 +8,14 @@ resolution: 在本项目中已改用不传 workspace_root 的自动发现方式�
 avoidance: 调用前区分项目实际 Git worktree 与存放 LDVH-GOVERNED-PROJECTS.yaml 的工作区根。除非需要固定选择配置根，否则省略 workspace_root 并传入实际 work object locator；若显式传入，先确认目标目录直接包含配置文件。出现 missing 时先检查实际选择路径和配置位置，再判断配置是否真的缺失。
 validation_summary: 2026-07-30 在 ld-vibe-harness-v4 实际验证：1) 显式 workspace_root=/Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4 时，Helper 返回 config_status=missing；2) 该目录的父目录实际存在 LDVH-GOVERNED-PROJECTS.yaml，并登记 ldvh 项目指向当前 worktree；3) 不传 workspace_root、仅提供当前 worktree locator 后，Helper 自动发现父目录配置并返回 config_status=valid、scope_status=governed_single。验证覆盖当前配置位置与当前 Helper 版本；不证明所有安装布局或未来配置发现实现都具有相同行为。
 object_id: pitfall-0005
+object_uid: 019ffb52-ebb5-777b-99f4-543318c03fc1
 fact_type_key: pitfall
 created_at: '2026-07-30T01:10:30.964641+08:00'
-updated_at: '2026-07-30T01:12:24.510742+08:00'
+updated_at: '2026-08-13T13:59:13.531536Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:59:13.531536Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

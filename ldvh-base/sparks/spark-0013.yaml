@@ -11,14 +11,10 @@ disposition_summary: '`adr-0006` 承接无 Hook/插件/adapter、薄 Skill 路�
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: adr
-    object_id: adr-0006
+    object_uid: 019ffb52-ebb5-78b1-b9fe-b03917f96024
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0013
+    object_uid: 019ffb52-ebb5-7209-a05f-0be04a54b149
 change_log:
 - at: '2026-08-11T13:55:02.674198Z'
   summary: 经逐条 Human 授权，历史 routed Spark 迁移为 implemented；旧 routed-to 已转为 related-to。
@@ -26,7 +22,14 @@ change_log:
     agent_workbench: Cindy
     model_id: glm-5.2
   session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:59:57.340736Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0013
+object_uid: 019ffb52-ebb5-7d7e-8613-02af32c80755
 fact_type_key: spark
 created_at: '2026-07-19T10:28:41.696542+08:00'
-updated_at: '2026-08-11T13:55:02.674198Z'
+updated_at: '2026-08-13T13:59:57.340736Z'

@@ -9,9 +9,10 @@ evolution:
 - at: '2026-08-08T14:44:32+08:00'
   summary: 确认 LDVH 为纯源码分发、无打包过程，原定行动模板已无必要；发布纪律议题属于 spark-0006 既有范围，该 Spark 不再独立跟踪。
 object_id: spark-0023
+object_uid: 019ffb52-ebb5-7e66-873f-a61080f299a0
 fact_type_key: spark
 created_at: '2026-07-21T09:01:55.704419+08:00'
-updated_at: '2026-08-10T09:21:05.909487Z'
+updated_at: '2026-08-13T14:00:26.113772Z'
 change_log:
 - signature:
     agent_id: gpt-5
@@ -31,3 +32,9 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:26.113772Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

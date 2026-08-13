@@ -39,8 +39,15 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-identity-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:02:39.302239Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 disposition_summary: 05 §11.2 items[] 字段闭集表（specs/05 约430-431行）已含 carrier 与 fact_object 两行，且 fact_object 语义与实现一致（fields 已安全完整解析且 mechanically_valid 或有当次 content_fingerprint 时为 object，否则 null；invalid 但可解析稳定身份且有修复指纹的对象同样返回）；表后第433行已补“返回完整对象是显式职责”说明。本 Spark 所记录的合约梯度在规范层面已消除，无剩余待处置内容，无承接事实对象。本 Spark 不再承担待处置入口。
 object_id: spark-0069
+object_uid: 019ffb52-ebb5-732a-9476-27880f2f9ca5
 fact_type_key: spark
 created_at: '2026-08-08T21:02:08.434458+08:00'
-updated_at: '2026-08-10T09:15:10.566370Z'
+updated_at: '2026-08-13T14:02:39.302239Z'

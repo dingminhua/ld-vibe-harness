@@ -9,6 +9,14 @@ evolution:
   summary: 治理解析、Helper 能力路由、行动模板和渐进式读取已经形成可执行的标准续接链，原先待完善的顺序、失败分流与可观察边界已收敛。
 disposition_summary: 显式工作对象重新解析、`governed_single` 绑定、能力与行动模板读取、最小权威信息展开、失败缺口保留以及写后验证的 Helper-first 顺序，已由现行治理、Helper 与行动模板契约和实现直接落实。原议题没有事实承接目标或剩余责任。
 object_id: spark-0024
+object_uid: 019ffb52-ebb5-7f33-9fc9-7995a1bcee65
 fact_type_key: spark
 created_at: '2026-07-21T10:34:17.820904+08:00'
-updated_at: '2026-08-01T02:01:54.720505+08:00'
+updated_at: '2026-08-13T14:00:29.011196Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:29.011196Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

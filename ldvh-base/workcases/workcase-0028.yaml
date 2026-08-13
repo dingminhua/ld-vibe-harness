@@ -29,6 +29,14 @@ status: closed
 closure_outcome: completed
 disposition_summary: 已完成当前目标及原 scope 内全部成功标准；无未满足、未验证或未完成责任，无需转交、接受停止或建立后续建议。
 object_id: workcase-0028
+object_uid: 019ffb52-ebb5-7a5f-b610-b43839d2d2ce
 fact_type_key: workcase
 created_at: '2026-08-01T23:10:56.971703+08:00'
-updated_at: '2026-08-02T00:13:39.363917+08:00'
+updated_at: '2026-08-13T14:05:56.780274Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:05:56.780274Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

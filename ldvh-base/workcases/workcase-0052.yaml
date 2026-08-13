@@ -33,9 +33,7 @@ validation_summary: 定向新增测试 19/19 通过；specs 180/180；test_cli_p
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0044
+    object_uid: 019ffb52-ebb5-7164-9615-e0da0c4c6196
 status: closed
 closure_outcome: completed
 disposition_summary: 本 WorkCase 已在其原 scope 内完成全部责任：单对象 legacy change_log 受控迁移能力已实现并长期可发现，spark-0044 已通过受控迁移建立可信 change_log 起点并转为 implemented；全部 5 项成功标准 satisfied，无未满足或未验证责任。41 个其它缺失 change_log 的 legacy 对象不在本案 scope 内，保持未迁移，作为范围外后续机会交由 Human 日后独立判断。
@@ -147,7 +145,14 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:06.731440Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: workcase-0052
+object_uid: 019ffb52-ebb5-7b75-bbd7-474401cf0b7e
 fact_type_key: workcase
 created_at: '2026-08-03T18:14:57.290810+08:00'
-updated_at: '2026-08-10T09:30:22.584036Z'
+updated_at: '2026-08-13T14:07:06.731440Z'

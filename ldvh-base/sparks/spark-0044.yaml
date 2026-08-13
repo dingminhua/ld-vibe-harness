@@ -27,11 +27,18 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-model-id-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:27.181059Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 evolution:
 - at: '2026-08-03T18:29:13.160019+08:00'
   summary: 只读关闭候选投影已实现，并与 close-workcase 复用同一纯映射；原先关于是否提供该能力及其边界的未决问题因此转为已落实范围，保留关闭授权仍由 Human/调用方取得的边界。
 disposition_summary: 本 Spark 所限定的 WorkCase closed after 只读确定性投影已由 `prepare-closed-workcase-candidate` 直接实现，并完成与 `close-workcase` 纯映射的一致性承接。候选生成不写事实、不取得或推断 Gate 2 授权，真实关闭仍由 `close-workcase` 承担；该边界不构成 Spark 的剩余责任。
 object_id: spark-0044
+object_uid: 019ffb52-ebb5-7164-9615-e0da0c4c6196
 fact_type_key: spark
 created_at: '2026-08-02T02:37:31.882443+08:00'
-updated_at: '2026-08-10T09:26:51.108389Z'
+updated_at: '2026-08-13T14:01:27.181059Z'

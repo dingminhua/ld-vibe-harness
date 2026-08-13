@@ -46,19 +46,22 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-model-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:59:31.005786Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0060
+    object_uid: 019ffb52-ebb5-79cc-8a7f-e18ce9b0691f
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: study
-    object_id: study-0025
+    object_uid: 019ffb52-ebb5-7589-8adb-8984aba3476b
 disposition_summary: 原生 Windows 支持范围与真实验收已由真机实测完成：study-0025（LDVH Windows 受控写入与环境接入的目标平台实测证据，2026-08-07）记录11 项 native_windows 测试全绿、经 Helper 端到端写入 spark 成功并读回一致、14 项 commit-msg Git Hook 测试在 Windows 经 Git Bash 真实调起全过；v4.0.0 已发布（git tag v4.0.0）。原 Spark 关注的原生 Windows 支持范围与验收执行入口已落地，无剩余待处置内容。以 related-to study-0025 保留证据回指；本 Spark 不进入 routed，未把下游对象或发布动作声明为承接。
 object_id: spark-0004
+object_uid: 019ffb52-ebb5-74ac-b57f-8adf8ea11892
 fact_type_key: spark
 created_at: '2026-07-19T08:33:52.460274+08:00'
-updated_at: '2026-08-10T09:10:49.636317Z'
+updated_at: '2026-08-13T13:59:31.005786Z'

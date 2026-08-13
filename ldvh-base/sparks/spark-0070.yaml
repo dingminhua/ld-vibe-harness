@@ -6,19 +6,13 @@ disposition_summary: WC 执行上下文透明性议题（输入侧可观测性�
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0045
+    object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0050
+    object_uid: 019ffb52-ebb5-7ee5-b317-7c9a133107f8
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0066
+    object_uid: 019ffb52-ebb5-74db-86a6-be5416180411
 evolution:
 - at: '2026-08-10T07:11:31.000Z'
   summary: 本议题内容已由 spark-0045 在行为可观测性框架中完整承接（输入侧执行上下文透明性），因此本 Spark 从 open 转为 discarded。
@@ -47,7 +41,14 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-identity-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:02:42.292109Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0070
+object_uid: 019ffb52-ebb5-7283-b7d0-b234844017cb
 fact_type_key: spark
 created_at: '2026-08-08T22:00:00+08:00'
-updated_at: '2026-08-10T09:15:13.556713Z'
+updated_at: '2026-08-13T14:02:42.292109Z'

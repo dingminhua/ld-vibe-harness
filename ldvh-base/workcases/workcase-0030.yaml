@@ -34,6 +34,14 @@ validation_summary: git diff --check 通过；公开 create-fact-object 缺 qual
 closure_outcome: completed
 disposition_summary: 本 WorkCase 的结构化质量关口、Gate 1 拒绝与冻结、存量兼容、负向与相关回归测试、规则/实现同步均已在原 scope 内完成；不存在未满足、未验证或未完成的范围内责任，无需路由、接受停止或提出 Spark 建议。
 object_id: workcase-0030
+object_uid: 019ffb52-ebb5-7aa7-8f35-a83cd0a0737b
 fact_type_key: workcase
 created_at: '2026-08-02T00:43:31.520075+08:00'
-updated_at: '2026-08-02T01:18:52.297767+08:00'
+updated_at: '2026-08-13T14:06:02.442464Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:06:02.442464Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

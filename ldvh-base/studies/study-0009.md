@@ -2,16 +2,13 @@
 title: Superpowers 工程约束工作流调研
 status: retired
 disposition_summary: 已按 v3 基线决定重新研究；本旧 v4 短报告不再作为当前研究入口，外部资料、发现与后续启发须在新 Study 中重新读取和表达。
-research_question: obra/superpowers 当前公开技能框架如何把头脑风暴、计划、工作树、TDD、并行 Agent、Review
-  和收尾串成强制工作流？
-abstract: 调研 Superpowers README 与公开技能清单。其基本流程从
-  brainstorming、worktree、writing-plans，经过
-  subagent-driven-development/TDD/review，最后到 branch finishing；项目强调 mandatory
-  workflows、evidence over claims，并以 MIT 许可发布。它提供过程设计参考，不改变 LDVH 的 Gate 术语或授权模型。
+research_question: obra/superpowers 当前公开技能框架如何把头脑风暴、计划、工作树、TDD、并行 Agent、Review 和收尾串成强制工作流？
+abstract: 调研 Superpowers README 与公开技能清单。其基本流程从 brainstorming、worktree、writing-plans，经过 subagent-driven-development/TDD/review，最后到 branch finishing；项目强调 mandatory workflows、evidence over claims，并以 MIT 许可发布。它提供过程设计参考，不改变 LDVH 的 Gate 术语或授权模型。
 object_id: study-0009
+object_uid: 019ffb52-ebb5-7322-a146-f8500cc6df9e
 fact_type_key: study
 created_at: '2026-07-19T11:17:59.111588+08:00'
-updated_at: '2026-07-23T18:21:16+08:00'
+updated_at: '2026-08-13T14:03:32.504847Z'
 urls:
 - ref: https://github.com/obra/superpowers
   title: github.com/obra/superpowers
@@ -22,6 +19,13 @@ urls:
 - ref: https://github.com/obra/superpowers/tree/main/skills
   title: github.com/obra/superpowers/tree/main/skills
   summary: 曾用于旧研究的 Superpowers skills 目录；不单独授权复制或安装技能。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:03:32.504847Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 ---
 
 ## 研究问题

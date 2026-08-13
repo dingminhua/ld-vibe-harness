@@ -52,14 +52,19 @@ change_log:
     agent_workbench: Cindy
     model_id: glm-5.2
   session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:02:16.151347Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 disposition_summary: 本 Spark 的全部原始信息需求已由同项目稳定 WorkCase workcase-0065 完整承接：能力限制证据、Gate 1 前低保证 creation-review bootstrap、Human 接受语义、Gate 1 后 PlanΔ/result fallback 绑定、实际审核方法与保证差异、Web 呈现、机械校验及验证均在其 goal/scope/criteria 中形成明确责任。此前关于 WC0062 已实现目标的载体文字已据实更正；WC0062 的 cancelled/accept_stop 终态和历史未被改写。进入 routed 仅确认当次分流成立，不表示 workcase-0065 已完成、通过验证、提交或关闭。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0065
+    object_uid: 019ffb52-ebb5-7633-8c81-b68d2e7e4800
 object_id: spark-0061
+object_uid: 019ffb52-ebb5-7de6-9de3-8319a47efad4
 fact_type_key: spark
 created_at: '2026-08-06T14:10:00+08:00'
-updated_at: '2026-08-11T13:57:59.258325Z'
+updated_at: '2026-08-13T14:02:16.151347Z'

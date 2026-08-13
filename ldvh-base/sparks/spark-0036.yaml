@@ -4,19 +4,13 @@ status: implemented
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0008
+    object_uid: 019ffb52-ebb5-7270-bc33-57c7ec37f724
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0033
+    object_uid: 019ffb52-ebb5-7d62-833c-b1a3d9be93d8
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0016
+    object_uid: 019ffb52-ebb5-78bc-a0b5-87f992bc6592
 summary: "## 已确认的目标模型（尚未实施）\n\n**WorkCase 执行边界**\n\n- 当前 WC 的 execution approval 不授权执行者在推进期间创建 Spark、ADR、Study 或新 WorkCase；Human 另行发起的独立工作不受此限制。\n- 唯一例外是推进中实际发生、已解决并验证、满足完整准入与查重要求的 `status=draft` Pitfall。WC 的 execution approval 同时覆盖该 draft 的现场保存及 WC 侧 `contributed-to` 记录，不逐对象追加 Human Gate。\n- 独立 subagent 检查只是推荐复核机制，不是 draft Pitfall 成立条件。\n\n**Pitfall 草稿生命周期**\n\n- Pitfall 需保留现有 retired，并形成 `draft → active`、`draft → discarded`、`active → retired`。\n- draft 与 active 的正文形状、核心字段、验证充分性和单一机制粒度完全相同；任何 draft 快照都必须是完整合法对象，不能以后补齐现场信息。\n- draft 可在确认前原地更正完善；Human 针对最终快照逐对象确认。promote 只做状态变化，除 Code 托管时间外不得在同一次 promote 改正文。\n- Human 不接受时转为 discarded；对象、完整正文和关系继续保留。draft、active、discarded 面向 Human 分别显示“待确认 / 已确认 / 已废弃”。\n- draft 审核独立于 WC 关闭，不批量原子处理，不设自动过期或硬数量上限；普通召回仍只把 active 作为已确认经验。\n\n**关闭责任处置**\n\n- 当前验收范围内未完成的责任必须先有具体受限原因；没有真实限制就继续完成。\n- 已由现有活动 WorkCase（`open|blocked`）或 open Spark 承接时使用 `route_existing`，关闭后形成 `routed-to`。WorkCase 目标表示执行责任覆盖，Spark 目标表示稳定承载待判断问题。\n- 尚无承接对象但受限时使用 `suggest_spark`；Human 可在新 Spark 尚未创建时关闭 WC。closed WC 以 `spark_suggestions[]` 结构化保留本地稳定 ID、责任或机会、具体原因/影响/恢复或建议跟进，但不填写未来对象 ID。\n- 后续新 Spark 由 Human 独立创建，并从自身写 `related-to → 原 WC`；不要求引用 residual ID，由 Spark 自身 intent/summary 说明具体问题。closed WC 不追加未来关系。\n- `accept_stop` 继续形成 `residual_responsibilities[]`；正面经验留在 `result_summary`，只有与停止理由相关时才进入 `disposition_summary`。\n\n**关系与呈现**\n\n- WC 新增 `related-to`，只关联已存在、同项目、mechanically valid 的事实对象；它只表示主题相关，可成环，不派生依赖、路由、贡献、来源或采纳语义。\n- 同一目标不得同时保留 `related-to` 与 `depends-on`、`routed-to` 或 `contributed-to`；发生强语义承接时应确定性替换。\n- `contributed-to` 缩减为只指向 Pitfall；边最初可指向完整 draft，Pitfall 后续 active/discarded 不使边失效。\n- 关闭时保留既有 `related-to`；错误记录可经 Human 授权更正且不重做关闭结果复核，但不能以更正名义加入关闭后才出现的对象。\n- closure Card 展示结果、处置和三类残余去向；经验区只列 Pitfall 标题与状态，不承载 promote/discard 操作；related-to 只在关系详情显示。\n\n## 审计后需要精确落字的契约\n\n同一 `spark_suggestions[]` 需要用明确成员类型或等价条件区分两种语义：\n\n- `constrained_responsibility`：验收范围内因具体限制未完成，禁止与 completed 搭配，必须记录限制、影响和恢复条件。\n- `follow_up_opportunity`：验收范围外由结果或正面经验产生的后续判断机会，可以与 completed 搭配，不要求伪造“无法继续”的限制。\n\n字段命名可在 WorkCase 计划审核时冻结，但不能把两类条件混成无法机械校验的同一形状。\n\n## 与既有议题的边界\n\n- `spark-0008` 继续关注 WorkCase 作为稳定编排控制面的整体状态充分性；本议题只收敛执行期事实创建、关闭责任与关系语义。\n- `spark-0033` 继续关注五类事实对象公共/相近字段的职责一致性；本议题只定义此次生命周期和结构新增所需的字段与消费闭集。\n- 当前 Working Tree 仍采用旧规则，本摘要只记录已确认的目标模型和后续规范化边界，不声明规则、Helper、Web 或测试已经修改。\n\n## 当前承接\n\n- `workcase-0016` 已以单一目标、完整 scope、五项成功标准和四个有依赖的工作项，承接本议题的规则源、机械实现、Web 呈现与验证闭环。\n- WorkCase 当前处于 `human_plan_confirming`；该承接只结束本 Spark 的待分流入口，不表示计划已获执行批准、规范已经修改或工作已经完成。"
 evolution:
 - at: '2026-07-28T11:07:07.624171+08:00'
@@ -29,7 +23,14 @@ change_log:
     agent_workbench: Cindy
     model_id: glm-5.2
   session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:03.605950Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0036
+object_uid: 019ffb52-ebb5-7d9a-9167-74a80558f8ad
 fact_type_key: spark
 created_at: '2026-07-28T11:04:44.202993+08:00'
-updated_at: '2026-08-11T13:56:16.204717Z'
+updated_at: '2026-08-13T14:01:03.605950Z'

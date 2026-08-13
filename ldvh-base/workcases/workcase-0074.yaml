@@ -88,22 +88,26 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-workcase-signature-migration-20260810
-
 - at: '2026-08-10T09:24:31.463986Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:07.705577Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: WorkCase-0074 已在其冻结范围内完成：草案 field_contract 现在提供唯一 definition_ref，并保持 constraint_ref 的类型收紧职责；所有成功标准已满足。已验证证据限于定向 Ruff、pytest、CLI 与事实完整性审计；全量 facts/helper 回归未取得可验证退出码，未将其作为完成依据。当前没有原 scope 内的剩余责任。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0067
+    object_uid: 019ffb52-ebb5-7f8e-b1d7-5da96f3f18a1
 object_id: workcase-0074
+object_uid: 019ffb52-ebb5-71d2-81e3-c9c34bd96a50
 fact_type_key: workcase
 created_at: '2026-08-08T16:10:34.868065+08:00'
-updated_at: '2026-08-10T09:24:31.463986Z'
+updated_at: '2026-08-13T14:08:07.705577Z'

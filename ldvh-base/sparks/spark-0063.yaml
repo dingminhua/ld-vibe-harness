@@ -33,24 +33,25 @@ change_log:
     agent_workbench: Cindy
     model_id: glm-5.2
   session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:02:21.983067Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0062
+    object_uid: 019ffb52-ebb5-7266-963f-1ac93a1f3e79
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0082
+    object_uid: 019ffb52-ebb5-7786-91ae-81083965a60c
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0084
+    object_uid: 019ffb52-ebb5-7554-9019-ed3266d3278a
 disposition_summary: WorkCase-0084 已完整承接 Human 主动终止的停止与善后链：覆盖一次指令、termination_preparing、两段专属事务、半成品保留/精确丢弃、依赖处置、诚实终态、恢复呈现和回归验证；该分流只表示稳定承接已成立，不表示下游实现或验证已经完成。
 object_id: spark-0063
+object_uid: 019ffb52-ebb5-7f1f-9db6-4320b72ba90e
 fact_type_key: spark
 created_at: '2026-08-06T09:58:00+08:00'
-updated_at: '2026-08-11T13:58:08.758376Z'
+updated_at: '2026-08-13T14:02:21.983067Z'

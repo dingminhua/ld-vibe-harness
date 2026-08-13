@@ -13,6 +13,14 @@ evolution:
   summary: 当前规则、实现与契约验证已完整覆盖 Web 完整阅读和 Helper 渐进式阅读的分工，原先的架构与验证候选从待判断问题收敛为直接落实边界，因此不再需要独立跟踪。
 disposition_summary: 原议题已由现行 Web 完整事实阅读契约与实现、Markdown 忠实呈现、错误与部分读取边界，以及 Helper 渐进式阅读契约直接落实。两类消费投影的职责、共同读取语义和第二权威禁令均已明确，相关契约验证已覆盖原先列出的剩余问题；没有事实承接目标，也没有原范围内的剩余责任。
 object_id: spark-0005
+object_uid: 019ffb52-ebb5-708d-9aea-bd20a22543bd
 fact_type_key: spark
 created_at: '2026-07-19T08:33:54.065365+08:00'
-updated_at: '2026-08-01T02:00:46.431342+08:00'
+updated_at: '2026-08-13T13:59:33.935290Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:59:33.935290Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

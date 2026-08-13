@@ -1,99 +1,57 @@
 object_id: workcase-0002
+object_uid: 019ffb52-ebb5-711f-a96a-26d4947eedb5
 fact_type_key: workcase
 title: 修正 WorkCase 独立审核反馈与关闭控制权
 created_at: '2026-07-20T04:33:43.299829+08:00'
-updated_at: '2026-07-26T22:27:30+08:00'
+updated_at: '2026-08-13T14:04:41.521322Z'
 status: closed
-goal: >-
-  使 WorkCase 独立审核只提供第二视角、问题和建议，由 Controller AI 独占反馈处置、
-  结果版本、复审、阶段推进与进入 Human 关闭确认的判断，并由 Human 对当前结果和报告
-  作最终关闭决定。
-scope: >-
-  修复仅覆盖 specs/21-WorkCase-工作项.md、code/ldvh/facts/validation.py、
-  code/ldvh/facts/transitions.py，以及与该状态机直接相关的
-  code/tests/facts/test_validation.py、code/tests/facts/test_transitions.py 和必要的
-  code/tests/helper/test_fact_update_operation.py。workcase-0002.yaml 仅作为本案受控
-  流程记录创建和更新，不属于实现修复范围。保留 specs/21 中 workcase-0001 已产生的
-  既有 Working Tree 修改。明确排除 00、其它 specs、其它 facts 模块、Helper API/
-  Schema、Web、行动模板、workcase-0001、任何 Spark、一般 Git/Working Tree 语义与
-  plan_version 机制重构；不 commit、push 或创建 PR。
+goal: 使 WorkCase 独立审核只提供第二视角、问题和建议，由 Controller AI 独占反馈处置、 结果版本、复审、阶段推进与进入 Human 关闭确认的判断，并由 Human 对当前结果和报告 作最终关闭决定。
+scope: 修复仅覆盖 specs/21-WorkCase-工作项.md、code/ldvh/facts/validation.py、 code/ldvh/facts/transitions.py，以及与该状态机直接相关的 code/tests/facts/test_validation.py、code/tests/facts/test_transitions.py 和必要的 code/tests/helper/test_fact_update_operation.py。workcase-0002.yaml 仅作为本案受控 流程记录创建和更新，不属于实现修复范围。保留 specs/21 中 workcase-0001 已产生的 既有 Working Tree 修改。明确排除 00、其它 specs、其它 facts 模块、Helper API/ Schema、Web、行动模板、workcase-0001、任何 Spark、一般 Git/Working Tree 语义与 plan_version 机制重构；不 commit、push 或创建 PR。
 success_criterion_definitions:
 - criterion_id: criterion-01
-  statement: >-
-    规范明确 Independent Reviewer 只提供咨询性判断，Controller AI 逐项处置反馈并
-    独占是否复审、返回何阶段、进入关闭准备及 Human Gate 的判断，Human 保留最终关闭决定。
+  statement: 规范明确 Independent Reviewer 只提供咨询性判断，Controller AI 逐项处置反馈并 独占是否复审、返回何阶段、进入关闭准备及 Human Gate 的判断，Human 保留最终关闭决定。
 - criterion_id: criterion-02
-  statement: >-
-    validation 只检查字段、枚举、阶段条件、版本、引用与时间绑定；四类 review
-    conclusion 均不自动推进或阻断，同时 review 和 controller_resolution 仍保持结构完整。
+  statement: validation 只检查字段、枚举、阶段条件、版本、引用与时间绑定；四类 review conclusion 均不自动推进或阻断，同时 review 和 controller_resolution 仍保持结构完整。
 - criterion_id: criterion-03
-  statement: >-
-    transitions 不再根据普通结果字段差异裁决 result_version；Controller 可在处理审核
-    反馈后选择 executing、controller_checking、继续或再次 independent_reviewing、
-    closure_preparing，且首次 controller_checking 不能绕过实际独立审核。
+  statement: transitions 不再根据普通结果字段差异裁决 result_version；Controller 可在处理审核 反馈后选择 executing、controller_checking、继续或再次 independent_reviewing、 closure_preparing，且首次 controller_checking 不能绕过实际独立审核。
 - criterion_id: criterion-04
-  statement: >-
-    closure_preparing 可在同一 result_version 下新增或完善验证总结、关闭分类、处置、
-    关系与证据而不自动使已有 review 失效；Controller 主动升版时，审核和批准只能绑定新版本。
+  statement: closure_preparing 可在同一 result_version 下新增或完善验证总结、关闭分类、处置、 关系与证据而不自动使已有 review 失效；Controller 主动升版时，审核和批准只能绑定新版本。
 - criterion_id: criterion-05
-  statement: >-
-    human_closure_confirming 只有在 Controller 形成完整报告并主动转换后成立；Human
-    closure_approval 必须绑定当前 result_version，并与 status/phase=closed 在同一受控
-    更新中写入。
+  statement: human_closure_confirming 只有在 Controller 形成完整报告并主动转换后成立；Human closure_approval 必须绑定当前 result_version，并与 status/phase=closed 在同一受控 更新中写入。
 - criterion_id: criterion-06
-  statement: >-
-    直接单元测试和 Helper 更新测试覆盖四类审核结论、Controller 四类选择、审核记录来源与
-    字段所有权、首次不得跳审、返回 executing、显式升版、关闭报告不失效 review、完整报告
-    门槛及 Human 原子关闭；聚焦验证与 full-v4 通过。
+  statement: 直接单元测试和 Helper 更新测试覆盖四类审核结论、Controller 四类选择、审核记录来源与 字段所有权、首次不得跳审、返回 executing、显式升版、关闭报告不失效 review、完整报告 门槛及 Human 原子关闭；聚焦验证与 full-v4 通过。
 - criterion_id: criterion-07
-  statement: >-
-    除限定实现与测试文件和本 WorkCase 流程记录外不产生修改；workcase-0001、Spark、
-    既有 Working Tree 修改与 Git 远端状态保持不变。
+  statement: 除限定实现与测试文件和本 WorkCase 流程记录外不产生修改；workcase-0001、Spark、 既有 Working Tree 修改与 Git 远端状态保持不变。
 success_criterion_results:
 - criterion_id: criterion-01
   outcome: satisfied
-  summary: >-
-    规范已明确 Reviewer 只提供咨询意见，Controller 独占反馈处置、复审、阶段和进入
-    Human Gate 的判断，Human 独占最终关闭决定。
+  summary: 规范已明确 Reviewer 只提供咨询意见，Controller 独占反馈处置、复审、阶段和进入 Human Gate 的判断，Human 独占最终关闭决定。
 - criterion_id: criterion-02
   outcome: satisfied
-  summary: >-
-    Validator 只检查结构、枚举、阶段、版本、引用与时间绑定；四类 conclusion 均不自动
-    推进或阻断，review 与 controller_resolution 结构保持完整。
+  summary: Validator 只检查结构、枚举、阶段、版本、引用与时间绑定；四类 conclusion 均不自动 推进或阻断，review 与 controller_resolution 结构保持完整。
 - criterion_id: criterion-03
   outcome: satisfied
-  summary: >-
-    转换器已删除普通结果字段投影裁决，支持 Controller 选择 executing、
-    controller_checking、再次 independent_reviewing 或 closure_preparing，并阻止首次跳审。
+  summary: 转换器已删除普通结果字段投影裁决，支持 Controller 选择 executing、 controller_checking、再次 independent_reviewing 或 closure_preparing，并阻止首次跳审。
 - criterion_id: criterion-04
   outcome: satisfied
-  summary: >-
-    closure_preparing 可在同一结果版本完善报告而不使 review 失效；同版本追加第二视角和
-    实质变化升版复审均已有规范与正例覆盖。
+  summary: closure_preparing 可在同一结果版本完善报告而不使 review 失效；同版本追加第二视角和 实质变化升版复审均已有规范与正例覆盖。
 - criterion_id: criterion-05
   outcome: satisfied
-  summary: >-
-    完整报告由 Controller 形成，Human 关闭决定绑定当前结果，并与 closed 在同一受控变更中形成。
+  summary: 完整报告由 Controller 形成，Human 关闭决定绑定当前结果，并与 closed 在同一受控变更中形成。
 - criterion_id: criterion-06
   outcome: satisfied
-  summary: >-
-    直接测试和 Helper 真实 CAS 生命周期覆盖所列行为；最后一次 full-v4 的 lint、779 项
-    Python 测试、Web typecheck、26 项 Web 测试和 build 全部通过，10 项平台测试按条件跳过。
+  summary: 直接测试和 Helper 真实 CAS 生命周期覆盖所列行为；最后一次 full-v4 的 lint、779 项 Python 测试、Web typecheck、26 项 Web 测试和 build 全部通过，10 项平台测试按条件跳过。
 - criterion_id: criterion-07
   outcome: satisfied
-  summary: >-
-    本案限定实现文件与 workcase-0002 流程记录之外未新增修改；workcase-0001、Spark、
-    commit、push 和 PR 均未触碰。
-result_summary: >-
-  WorkCase 的审核与关闭控制权已收敛：Reviewer 只提供咨询性第二视角，Controller 负责
-  反馈处置、复审和阶段推进，Human 保留最终关闭决定；Validator、转换器及 Helper CAS
-  生命周期已按该边界修正并通过相关验证。
-validation_summary: >-
-  七项成功标准逐项满足。首轮独立审核发现的一处规范与实现不一致已由 Controller 接受、
-  修正、升版并复审；第二次审核为 pass_with_followups，非阻断建议已由 Controller 明确
-  处置。最后一次 full-v4 全部通过。原计划排除的其它模块与远端发布行为未验证。
+  summary: 本案限定实现文件与 workcase-0002 流程记录之外未新增修改；workcase-0001、Spark、 commit、push 和 PR 均未触碰。
+result_summary: WorkCase 的审核与关闭控制权已收敛：Reviewer 只提供咨询性第二视角，Controller 负责 反馈处置、复审和阶段推进，Human 保留最终关闭决定；Validator、转换器及 Helper CAS 生命周期已按该边界修正并通过相关验证。
+validation_summary: 七项成功标准逐项满足。首轮独立审核发现的一处规范与实现不一致已由 Controller 接受、 修正、升版并复审；第二次审核为 pass_with_followups，非阻断建议已由 Controller 明确 处置。最后一次 full-v4 全部通过。原计划排除的其它模块与远端发布行为未验证。
 closure_outcome: completed
-disposition_summary: >-
-  本 WorkCase 原范围责任全部完成，无残余修复责任，不需要 routed-to 或 Spark。所有实现
-  修改和 workcase-0002 记录仍仅在 Working Tree，未 commit、push 或创建 PR。Human 正式
-  关闭后按既定顺序恢复 workcase-0001；该后续动作不是本案未完成责任。
+disposition_summary: 本 WorkCase 原范围责任全部完成，无残余修复责任，不需要 routed-to 或 Spark。所有实现 修改和 workcase-0002 记录仍仅在 Working Tree，未 commit、push 或创建 PR。Human 正式 关闭后按既定顺序恢复 workcase-0001；该后续动作不是本案未完成责任。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:04:41.521322Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

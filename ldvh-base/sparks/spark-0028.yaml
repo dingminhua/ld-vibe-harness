@@ -12,9 +12,7 @@ evolution:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0010
+    object_uid: 019ffb52-ebb5-7b3d-a86d-a1897200aefc
 disposition_summary: 原信息需求已由 open 的 workcase-0010 完整承接：其目标、范围与五项成功标准覆盖本 Spark 的机械校验闭环、未实现即 unavailable、以及候选发现如实披露。0029 的 Hook 防护与所有语义判断明确不在此承接范围。WorkCase 尚未执行不影响 Spark 的入口职责已经完成分流。
 change_log:
 - at: '2026-08-11T13:55:06.290284Z'
@@ -23,7 +21,14 @@ change_log:
     agent_workbench: Cindy
     model_id: glm-5.2
   session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:40.535208Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0028
+object_uid: 019ffb52-ebb5-7b7a-ad1c-b67bb3eb6b33
 fact_type_key: spark
 created_at: '2026-07-22T16:59:14.874483+08:00'
-updated_at: '2026-08-11T13:55:06.290284Z'
+updated_at: '2026-08-13T14:00:40.535208Z'

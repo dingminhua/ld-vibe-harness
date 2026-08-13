@@ -2,15 +2,13 @@
 title: Firecrawl 外部网页证据获取能力调研
 status: retired
 disposition_summary: 已按 v3 基线决定重新研究；本旧 v4 短报告不再作为当前研究入口，外部资料、发现与后续启发须在新 Study 中重新读取和表达。
-research_question: Firecrawl 当前 API 如何提供 Search、Scrape、Crawl、Map、Extract
-  等网页证据获取能力，其可靠性、隐私与许可边界是什么？
-abstract: 调研 Firecrawl v2 API 文档与官方仓库。API 将网页搜索、单页抓取、整站 Crawl、URL Map 和自然语言
-  Extract 分成不同入口，并可返回 Markdown/HTML/JSON 等格式；官方同时提示认证、限流、错误码、robots/网站政策和
-  AGPL/云服务差异。它可作为证据获取候选，不是证据真实性或许可自动通过器。
+research_question: Firecrawl 当前 API 如何提供 Search、Scrape、Crawl、Map、Extract 等网页证据获取能力，其可靠性、隐私与许可边界是什么？
+abstract: 调研 Firecrawl v2 API 文档与官方仓库。API 将网页搜索、单页抓取、整站 Crawl、URL Map 和自然语言 Extract 分成不同入口，并可返回 Markdown/HTML/JSON 等格式；官方同时提示认证、限流、错误码、robots/网站政策和 AGPL/云服务差异。它可作为证据获取候选，不是证据真实性或许可自动通过器。
 object_id: study-0008
+object_uid: 019ffb52-ebb5-7155-b0e0-24092ac61053
 fact_type_key: study
 created_at: '2026-07-19T11:17:55.692023+08:00'
-updated_at: '2026-07-23T18:21:16+08:00'
+updated_at: '2026-08-13T14:03:29.788456Z'
 urls:
 - ref: https://docs.firecrawl.dev/api-reference/introduction
   title: docs.firecrawl.dev/api-reference/introduction
@@ -33,6 +31,13 @@ urls:
 - ref: https://github.com/firecrawl/firecrawl
   title: github.com/firecrawl/firecrawl
   summary: 曾用于旧研究的 Firecrawl 仓库；不单独代表当前 API 契约。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:03:29.788456Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 ---
 
 ## 研究问题

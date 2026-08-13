@@ -131,7 +131,14 @@ change_log:
     agent_runtime_name: codex-cli
   summary: Human Gate 2 批准关闭；outcome=completed，无剩余责任。
   at: '2026-08-12T20:50:50.452446Z'
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:09:23.404027Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: workcase-0101
+object_uid: 019ffb52-ebb5-7b9f-9d5a-09dd64e0b003
 fact_type_key: workcase
 created_at: '2026-08-12T19:06:13.212902Z'
-updated_at: '2026-08-12T20:50:50.452446Z'
+updated_at: '2026-08-13T14:09:23.404027Z'

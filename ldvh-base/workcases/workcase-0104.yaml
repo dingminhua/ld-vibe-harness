@@ -133,35 +133,32 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T08:16:06.813418Z'
   summary: Human Gate2 接受 completed closure proposal；原子关闭 workcase-0104。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:57:42.999406Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: 六项成功标准均为 satisfied，workcase-0104 原 scope 内没有未满足、未验证或未完成责任；真实中断耐久、tamper 注入原子性、原始 run_suite 入口成功和产品效益均已作为不作声明的范围边界保留，不构成本 WorkCase 残余责任。唯一 trial 临时根已在 closure handoff 准备中核验 exact realpath、owner、lstat、六个 0600 普通 record 后安全删除。无需 route_existing、accept_stop、Spark suggestion 或其它后续处置。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0045
+    object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0069
+    object_uid: 019ffb52-ebb5-7048-bfef-5e90fc625a73
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0070
+    object_uid: 019ffb52-ebb5-759c-a4c9-64b091fcc23c
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0096
+    object_uid: 019ffb52-ebb5-7ff0-8e78-04c9fd8fb640
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0103
+    object_uid: 019ffb52-ebb5-7d07-b876-ef180359b98d
 object_id: workcase-0104
+object_uid: 019ffb52-ebb5-748a-b247-38b1cc5795f9
 fact_type_key: workcase
 created_at: '2026-08-13T07:45:35.834196Z'
-updated_at: '2026-08-13T08:16:06.813418Z'
+updated_at: '2026-08-13T13:57:42.999406Z'

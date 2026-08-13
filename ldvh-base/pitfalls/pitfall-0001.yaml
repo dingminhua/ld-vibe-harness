@@ -9,6 +9,14 @@ resolution: 在一次新的非 hydrate cold startup 中，将资产完整性、H
 avoidance: 后续排查或验收时，至少分别记录 data 完整性、注册状态、手动可执行性、实时执行记录和结果来源；会话内容、文件存在、静态配置或单次手动调用都不能替代实时触发证据。若实时执行仍不可证明，保留或新建 Spark 承接调查，不把未解运行时故障写成已验证 Pitfall 解决方案。
 disposition_summary: Human 决定重新安排 ZCode 完成一次全新安装，届时重新验证实时 Hook 触发行为；原经验因适用条件将随新安装被覆盖而退出当前选择。
 object_id: pitfall-0001
+object_uid: 019ffb52-ebb5-7bc5-86b7-fe23bb24e287
 fact_type_key: pitfall
 created_at: '2026-07-22T20:01:58.169820+08:00'
-updated_at: '2026-07-28T18:17:07.553069+08:00'
+updated_at: '2026-08-13T13:59:02.038852Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:59:02.038852Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

@@ -5,24 +5,16 @@ summary: "## 问题\n\n通过 Windows parity 方案才发现：mac 上 LDVH 的�
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0019
+    object_uid: 019ffb52-ebb5-71da-8f50-223f834fad25
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0054
+    object_uid: 019ffb52-ebb5-7a59-b088-a92a881ce590
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0060
+    object_uid: 019ffb52-ebb5-79cc-8a7f-e18ce9b0691f
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0067
+    object_uid: 019ffb52-ebb5-7f8e-b1d7-5da96f3f18a1
 change_log:
 - signature:
     agent_id: glm-5.2
@@ -72,6 +64,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:58.693535Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 evolution:
 - at: '2026-08-05T16:40:00+08:00'
   summary: study-0023 深度审计独立复证：创建单个 Spark 需要穿越 7 份规范 + 3 层交叉引用 + 23 条 Stop Conditions，验证了 spark-0055 提出的 80/20 倒置在规范密度上的表现。
@@ -81,6 +79,7 @@ evolution:
   summary: 吸收处置：流程复杂度四断面并入 spark-0067，标记为 discarded。
 disposition_summary: 流程复杂度四断面（模板激活层数、规范交叉引用深度、低风险变更、80/20 倒置）已由 spark-0067 在五问框架中完整承接，后续判断由 spark-0067 统一管理，标记为 discarded。
 object_id: spark-0055
+object_uid: 019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c
 fact_type_key: spark
 created_at: '2026-08-05T02:04:05.505223+08:00'
-updated_at: '2026-08-10T09:30:30.595513Z'
+updated_at: '2026-08-13T14:01:58.693535Z'

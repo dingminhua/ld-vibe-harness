@@ -59,11 +59,18 @@ change_log:
     agent_runtime_name: claude-code
   summary: Human 决定新建双源、六类资产技术评估并退休本报告；本报告保留历史内容，仅退出当前研究入口。
   at: '2026-08-12T08:24:05.240745Z'
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:04:26.850121Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 disposition_summary: 本报告保留为仅讨论事实源局部补丁的历史研究。其后续调研已将规则源与五类事实对象的不同编辑、治理和发布边界独立展开为 study-0030；旧报告不通过 supersedes 关系替代该新研究。
 object_id: study-0028
+object_uid: 019ffb52-ebb5-774d-90a5-e23d37bab4a3
 fact_type_key: study
 created_at: '2026-08-10T19:43:14.082563Z'
-updated_at: '2026-08-12T08:24:05.240745Z'
+updated_at: '2026-08-13T14:04:26.850121Z'
 ---
 
 ## 研究问题

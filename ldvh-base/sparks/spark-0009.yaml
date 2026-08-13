@@ -19,28 +19,27 @@ change_log:
     agent_runtime_name: claude-code
   at: '2026-08-12T20:40:53.772869Z'
   summary: '补充 relations: related-to spark:spark-0008, spark:spark-0045, spark:spark-0066, spark:spark-0010'
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:59:45.896294Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0008
+    object_uid: 019ffb52-ebb5-7270-bc33-57c7ec37f724
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0045
+    object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0066
+    object_uid: 019ffb52-ebb5-74db-86a6-be5416180411
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0010
+    object_uid: 019ffb52-ebb5-76ef-9c50-676fab7c57d7
 object_id: spark-0009
+object_uid: 019ffb52-ebb5-70f7-ba7a-52c4319cacb3
 fact_type_key: spark
 created_at: '2026-07-19T10:28:35.563830+08:00'
-updated_at: '2026-08-12T20:40:53.772869Z'
+updated_at: '2026-08-13T13:59:45.896294Z'

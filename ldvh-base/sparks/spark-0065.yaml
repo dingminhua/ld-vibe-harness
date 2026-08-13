@@ -90,14 +90,19 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T07:42:19.082871Z'
   summary: 按 Human 当前决定将 spark-0065 从 open 处置为 implemented，记录已落实范围、保证边界，并建立到 spark-0077 的 related-to 关联。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:02:27.697824Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 disposition_summary: 本 Spark 要求的 WorkCase 独立复核机制已直接落实到当前规则与行动模板：21 §4.5 定义三档 Reviewer 路由、权限状态、保证边界和可接受方法；31 的受控创建流程定义能力解锁、协作模型选择及 Gate 1 reviewer policy 冻结；34 的获批计划执行模板定义新建/恢复/压缩后继续时的能力预检、运行时降级和不限轮次 fresh review。状态改为 implemented 仅结束该机制入口，不表示特定环境能力、具体复核事件或一般 Controller 行动编排已经完成。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0077
+    object_uid: 019ffb52-ebb5-74ae-91cd-b1a9001dc76e
 object_id: spark-0065
+object_uid: 019ffb52-ebb5-71cb-be5a-db0dc274de76
 fact_type_key: spark
 created_at: '2026-08-07T02:38:47.535017+08:00'
-updated_at: '2026-08-13T07:42:19.082871Z'
+updated_at: '2026-08-13T14:02:27.697824Z'

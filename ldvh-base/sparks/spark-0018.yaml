@@ -20,39 +20,25 @@ evolution:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: adr
-    object_id: adr-0006
+    object_uid: 019ffb52-ebb5-78b1-b9fe-b03917f96024
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0029
+    object_uid: 019ffb52-ebb5-7afc-8623-c117575e3111
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0039
+    object_uid: 019ffb52-ebb5-7820-8086-25fa5aa68b26
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0023
+    object_uid: 019ffb52-ebb5-77c5-81a7-6bdbcda15670
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0026
+    object_uid: 019ffb52-ebb5-7735-aecd-9a309abfaead
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0100
+    object_uid: 019ffb52-ebb5-7c16-9c42-183e204306db
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: study
-    object_id: study-0029
+    object_uid: 019ffb52-ebb5-751c-8041-ba92bae6c7bc
 change_log:
 - at: '2026-08-12T19:28:54.613781Z'
   signature:
@@ -66,8 +52,15 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T07:25:51.565173Z'
   summary: 按 Human 当前退出决定将 spark-0018 从 open 处置为 discarded，重写当前摘要与处置边界，并保留其与 study-0029 的既有关联。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:11.755409Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 disposition_summary: Human 已明确决定不再继续跟踪无环境 Hook 下建立跨环境持续主动约束这一原议题：其实现与验证成本过高，不能作为 LDVH 必需选择。当前接受 study-0029 所记录的低成本分层边界——显式检查、事实写后回读与完整性审计、以及提交边界 Git Gate；高成本 watcher、receipt、持续后台监控及扩大环境证据矩阵不作为当前必要方向。本次 discarded 仅结束该原议题，不声明任何下游工作已经完成。
 object_id: spark-0018
+object_uid: 019ffb52-ebb5-7d9e-b5cc-17beecdc5303
 fact_type_key: spark
 created_at: '2026-07-19T18:45:09.421410+08:00'
-updated_at: '2026-08-13T07:25:51.565173Z'
+updated_at: '2026-08-13T14:00:11.755409Z'

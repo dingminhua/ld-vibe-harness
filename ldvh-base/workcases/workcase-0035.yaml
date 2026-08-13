@@ -24,6 +24,14 @@ validation_summary: 通过：code/tests/facts/test_relations.py 与 test_update_
 closure_outcome: completed
 disposition_summary: 本 WorkCase 已完成对既有单对象 Spark CAS 完整分流流程的隔离验证；该结论只覆盖 fixture 与既有单对象 CAS，不代表任何真实 Spark 已完成承接或写入，也不证明 WC/Spark 多对象原子性。
 object_id: workcase-0035
+object_uid: 019ffb52-ebb5-7bbd-b660-8d27b876ae21
 fact_type_key: workcase
 created_at: '2026-08-02T03:14:19.844294+08:00'
-updated_at: '2026-08-02T03:44:31.993164+08:00'
+updated_at: '2026-08-13T14:06:17.201269Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:06:17.201269Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

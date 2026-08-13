@@ -32,36 +32,34 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
-
 - at: '2026-08-10T09:15:16.594199Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-ai -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-identity-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:02:45.222317Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 disposition_summary: 第一版已直接落实：WorkCase 单项终结后的 fresh projection 必须重入 Controller，剩余 item 继续判断、全部 terminal 后继续既有结果链；定向契约测试与一次同链跨 item 实证通过。该处置不声称跨会话、跨环境、宿主 Hook 或模型外机械续跑，范围内无剩余责任。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0070
+    object_uid: 019ffb52-ebb5-7283-b7d0-b234844017cb
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0043
+    object_uid: 019ffb52-ebb5-7d64-bb4e-acb3e92f30e6
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0050
+    object_uid: 019ffb52-ebb5-7ee5-b317-7c9a133107f8
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0045
+    object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
 object_id: spark-0071
+object_uid: 019ffb52-ebb5-7ccc-8b77-dd230fd27660
 fact_type_key: spark
 created_at: '2026-08-08T22:00:00+08:00'
-updated_at: '2026-08-10T09:15:16.594199Z'
+updated_at: '2026-08-13T14:02:45.222317Z'

@@ -75,9 +75,16 @@ change_log:
   session_id: current-conversation
   at: '2026-08-09T08:55:23.952887Z'
   summary: 消费 Human Gate 2 决定，以 completed 关闭 WorkCase。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:40.046907Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: 测试优化目标已完成：核心热点 79 项保持全过并缩短 83.4%，全部授权范围验证通过；没有剩余受限责任。
 object_id: workcase-0085
+object_uid: 019ffb52-ebb5-7d86-8156-e3d71a01866d
 fact_type_key: workcase
 created_at: '2026-08-09T16:20:33.381545+08:00'
-updated_at: '2026-08-09T08:55:23.952887Z'
+updated_at: '2026-08-13T14:08:40.046907Z'

@@ -132,15 +132,20 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:24.355133Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: 所有受管辖新提交的普遍最低正文机械闸门、规则投影、共享 validator、Helper/native/真实 Hook 一致性、诊断聚合、测试和精确本地提交均已完成并验证；七项成功标准全部 satisfied，原 scope 内无剩余责任。Windows 原生条件测试尚未在 Windows 实机执行、提交后 WorkCase 生命周期事实尚未另行提交、Hook trace 不属于 commit 对象持久证据均已作为验证或现场边界披露，不改变本案完成分类，也不授权新的提交或远端动作。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0019
+    object_uid: 019ffb52-ebb5-71da-8f50-223f834fad25
 object_id: workcase-0058
+object_uid: 019ffb52-ebb5-70fb-96f9-09c79b3a2b0e
 fact_type_key: workcase
 created_at: '2026-08-05T02:51:23.441671+08:00'
-updated_at: '2026-08-10T09:24:38.956480Z'
+updated_at: '2026-08-13T14:07:24.355133Z'

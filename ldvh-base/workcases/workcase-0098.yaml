@@ -97,6 +97,12 @@ change_log:
     agent_runtime_name: claude-code
   at: '2026-08-12T18:19:08.785867Z'
   summary: Human 批准关闭 workcase-0098。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:09:14.548733Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: partial
 disposition_summary: criterion-1~5 satisfied；criterion-6 的全部验证已通过，但本地受控 commit 按既定范围尚未创建。Human 可在 Gate2 接受 partial，并在提交后由后续事实据实记录提交完成。
 residual_responsibilities:
@@ -105,15 +111,12 @@ residual_responsibilities:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0073
+    object_uid: 019ffb52-ebb5-7ace-b424-7904f95e5f41
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0097
+    object_uid: 019ffb52-ebb5-79b8-bf55-e06e986cc363
 object_id: workcase-0098
+object_uid: 019ffb52-ebb5-730f-91a8-67fb8225f137
 fact_type_key: workcase
 created_at: '2026-08-12T14:55:50.198279Z'
-updated_at: '2026-08-12T18:19:08.785867Z'
+updated_at: '2026-08-13T14:09:14.548733Z'

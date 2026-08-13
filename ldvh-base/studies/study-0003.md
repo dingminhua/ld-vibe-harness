@@ -2,15 +2,13 @@
 title: OpenAI Codex Harness Engineering 与 Symphony 调研
 status: retired
 disposition_summary: 已按 v3 基线决定重新研究；本旧 v4 短报告不再作为当前研究入口，外部资料、发现与后续启发须在新 Study 中重新读取和表达。
-research_question: OpenAI 的 Harness Engineering 与 Symphony 公开实践如何把 Agent
-  工作变成可验证、可编排的工程控制面？
-abstract: 调研 OpenAI Harness Engineering 文章与 Symphony
-  开源编排介绍。两者都强调环境、脚手架、反馈循环、结构化工具和可观察性；Symphony 进一步把 issue tracker
-  作为控制面，为任务分配隔离工作区并要求人工审查。结论是过程控制和证明材料比“让 Agent 自由写代码”更关键。
+research_question: OpenAI 的 Harness Engineering 与 Symphony 公开实践如何把 Agent 工作变成可验证、可编排的工程控制面？
+abstract: 调研 OpenAI Harness Engineering 文章与 Symphony 开源编排介绍。两者都强调环境、脚手架、反馈循环、结构化工具和可观察性；Symphony 进一步把 issue tracker 作为控制面，为任务分配隔离工作区并要求人工审查。结论是过程控制和证明材料比“让 Agent 自由写代码”更关键。
 object_id: study-0003
+object_uid: 019ffb52-ebb5-7978-9671-a6a1b2cab9ee
 fact_type_key: study
 created_at: '2026-07-19T11:17:42.310359+08:00'
-updated_at: '2026-07-23T18:21:16+08:00'
+updated_at: '2026-08-13T14:03:16.205134Z'
 urls:
 - ref: https://openai.com/index/harness-engineering/
   title: openai.com/index/harness-engineering/
@@ -21,6 +19,13 @@ urls:
 - ref: https://github.com/openai/symphony
   title: github.com/openai/symphony
   summary: 曾用于旧研究的 Symphony 仓库；不单独证明其行为适用于 LDVH。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:03:16.205134Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 ---
 
 ## 研究问题

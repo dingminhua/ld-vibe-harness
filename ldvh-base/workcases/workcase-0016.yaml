@@ -44,6 +44,14 @@ status: closed
 closure_outcome: completed
 disposition_summary: plan_version=3 批准范围内的七项成功标准全部满足：Pitfall 三态、legacy retired 受控修复、Spark evolution 20 项边界、三项事实迁移、Web 消费和跨层验证均已完成并通过独立复核。原 scope 内没有需要路由、建议后续建立 Spark 或接受停止的剩余责任；修改仍保留在当前 Working Tree，未 commit、push 或创建 PR，符合批准的排除边界。
 object_id: workcase-0016
+object_uid: 019ffb52-ebb5-78bc-a0b5-87f992bc6592
 fact_type_key: workcase
 created_at: '2026-07-28T11:07:07.624171+08:00'
-updated_at: '2026-07-30T10:52:05.264729+08:00'
+updated_at: '2026-08-13T14:05:22.171781Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:05:22.171781Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

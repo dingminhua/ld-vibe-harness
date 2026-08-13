@@ -5,34 +5,22 @@ summary: "**现行形态与职责边界**\n\n- 现行决定排他地确定单一
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: adr
-    object_id: adr-0006
+    object_uid: 019ffb52-ebb5-78b1-b9fe-b03917f96024
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0018
+    object_uid: 019ffb52-ebb5-7d9e-b5cc-17beecdc5303
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0022
+    object_uid: 019ffb52-ebb5-73ff-a52e-432df71a367f
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0029
+    object_uid: 019ffb52-ebb5-7afc-8623-c117575e3111
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0022
+    object_uid: 019ffb52-ebb5-7cf6-be06-10ffe049c192
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0023
+    object_uid: 019ffb52-ebb5-77c5-81a7-6bdbcda15670
 evolution:
 - at: '2026-07-29T23:07:46.892811+08:00'
   summary: 本议题源于一场关于 LDVH 交付形态的连续讨论：先在插件、Skill、MCP 三选一中否定单一载体，确立 pip 包加单 Skill 默认接入加 git Gate 防线的分工；同一讨论发现 commit-msg Gate 当前不校验事实对象内容，使'提交终闸'预期落空，该发现直接塑造了本 Spark 的工作清单、P1 优先级与'终闸落地前如实表述'的未决事项。
@@ -48,6 +36,14 @@ evolution:
   summary: 余下第 3–6 项完成后，原先的生成式分发未决和插件可选加固方向分别收敛为静态逐字节分发与无插件、无 Hook、无 adapter 的唯一薄 Skill 形态；三条能力边界及过程审计入口已固定，无 Hook 自约束的独立证据缺口则保留在 open 议题中。本 Spark 因六项限定责任已全部落实或据实处置且无自身残余，从 open 进入 implemented。
 disposition_summary: 本 Spark 限定的六项责任均已由直接工作落实或据实处置：候选级终闸与完整性能力已经形成，过程检查与 Helper-only 边界已经对齐，Skill 静态逐字节分发和双路由已决，三条能力声明及用户部署已经核对，现行形态决定无需重复，相关 guardrail 方向已废弃且无 Hook 自约束议题保持 open、P2。当前 Spark 内没有剩余待处置内容，也没有需要 routed-to 的事实承接目标，因此以 implemented 结束本入口。这不表示项目、规则、实现、Git 或下游议题整体完成；全部 related-to 只表达主题或历史关联，无 Hook 自约束议题的独立证据矩阵和列明未验证边界均未被冒充完成。
 object_id: spark-0039
+object_uid: 019ffb52-ebb5-7820-8086-25fa5aa68b26
 fact_type_key: spark
 created_at: '2026-07-29T23:07:46.892811+08:00'
-updated_at: '2026-08-01T03:22:00.934925+08:00'
+updated_at: '2026-08-13T14:01:12.506255Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:12.506255Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

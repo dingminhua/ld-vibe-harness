@@ -22,9 +22,17 @@ research_question: Codebase Memory MCP 的本地代码知识图谱能力对 LDVH
 abstract: Codebase Memory MCP 通过 tree-sitter、Hybrid LSP、SQLite 图存储、BM25/语义/结构查询、变更影响分析，把代码探索从文件级 grep/read 转为图谱级结构查询。对 LDVH 的核心启发不是直接引入该工具作为事实源，而是吸收"本地图谱索引 + 查询工具 + 非阻塞发现提醒 + 可提交图谱快照 + 明确事实源边界"的能力形态。
 recommendation_summary: Codebase Memory MCP 适合被视为 AI 代码探索的运行时扩展和 Code 辅助索引，而不是 LDVH 的最终事实源。LDVH 可吸收其结构化代码图谱、跨仓库索引、影响分析、Agent 接入安装、非阻塞 hook、团队共享索引快照、图谱 UI 和本地隐私边界；不应吸收其"运行时索引即事实"的隐含风险，也不应让 MCP 查询结果替代 specs、ldvh-base 工作对象、Git 提交记录或现有 validator。
 object_id: study-0012
+object_uid: 019ffb52-ebb5-707e-a100-6f2f8150ce24
 fact_type_key: study
 created_at: '2026-07-24T13:30:00+08:00'
-updated_at: '2026-07-24T13:30:00+08:00'
+updated_at: '2026-08-13T14:03:40.672963Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:03:40.672963Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 ---
 
 ## 研究问题

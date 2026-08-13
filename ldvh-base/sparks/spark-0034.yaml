@@ -40,14 +40,19 @@ change_log:
     agent_workbench: Cindy
     model_id: glm-5.2
   session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:57.849654Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 disposition_summary: WorkCase-0077 完成了方案 A（follow_up 引导层）的交付：config_status 为 missing/invalid/conflict 时，resolve-governance-scope 通过 follow_up 字段提供不越权的下一步引导，指向环境接入行动模板。spark-0034 的问题 b（引导层）已解决；问题 a（工作区边界发现）、c（bootstrap 责任归属）、d（多场景验证完整闭环）仍开放，后续可通过新 WorkCase 推进。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0077
+    object_uid: 019ffb52-ebb5-7938-8873-57dad055863a
 object_id: spark-0034
+object_uid: 019ffb52-ebb5-7e7a-9744-2ba5d83575fa
 fact_type_key: spark
 created_at: '2026-07-24T18:42:00+08:00'
-updated_at: '2026-08-11T13:56:14.356958Z'
+updated_at: '2026-08-13T14:00:57.849654Z'

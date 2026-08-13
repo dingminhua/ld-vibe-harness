@@ -13,14 +13,10 @@ evolution:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0022
+    object_uid: 019ffb52-ebb5-7cf6-be06-10ffe049c192
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0060
+    object_uid: 019ffb52-ebb5-79cc-8a7f-e18ce9b0691f
 change_log:
 - signature:
     agent_id: kimi
@@ -46,21 +42,26 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
-
 - at: '2026-08-10T08:55:31.579046Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Kimi Work -> Kimi; 1: Kimi Work -> Kimi。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-explicit-signature-migration-20260810
-
 - at: '2026-08-10T09:29:18.093270Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 2: trae-deepseek-v4 -> deepseek-v4-pro。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:23.172992Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0022
+object_uid: 019ffb52-ebb5-73ff-a52e-432df71a367f
 fact_type_key: spark
 created_at: '2026-07-21T04:10:57.798570+08:00'
-updated_at: '2026-08-10T09:29:18.093270Z'
+updated_at: '2026-08-13T14:00:23.172992Z'

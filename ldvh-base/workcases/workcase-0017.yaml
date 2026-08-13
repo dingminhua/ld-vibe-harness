@@ -38,13 +38,19 @@ validation_summary: 已验证：test:web:api 131/131、check EXIT 0；双语走�
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0037
+    object_uid: 019ffb52-ebb5-7ee2-a408-38b8fd5e8ba9
 status: closed
 closure_outcome: completed
 disposition_summary: 在声明范围内，6 项成功标准（api-contract / inbox-page / trust-marker / nav-i18n / cleanup / closure-loop）均满足；独立复核结论 pass_with_followups 的 feedback 已由 Controller 全部处置（文档悬空引用清理、测试计数更正为 131/131、闭环验证边界已确认）；无需要转交、接受停止或另建 Spark 的剩余责任。
 object_id: workcase-0017
+object_uid: 019ffb52-ebb5-7906-8b60-e5afd8615f31
 fact_type_key: workcase
 created_at: '2026-07-29T16:44:43.066330+08:00'
-updated_at: '2026-07-30T14:48:45.569266+08:00'
+updated_at: '2026-08-13T14:05:25.017938Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:05:25.017938Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

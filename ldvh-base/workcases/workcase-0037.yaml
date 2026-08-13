@@ -24,6 +24,14 @@ result_summary: B4 now defines one Gate 1-approved WorkCase exercise in which bo
 closure_outcome: completed
 disposition_summary: 当前本地责任已完成：B4 已明确同一 Gate 1 内的有界本地动作与只读 Reviewer 委派直接消费授权且不产生新的 LDVH Human waiting；SubagentStart 成功路径回归与 20 项定向测试均通过。真实环境强制确认 UI、其版本/政策、spawn 能力和 Reviewer 真实独立性未在本案中验证，已如实保留为非 LDVH 边界；无剩余责任、路由目标或 Spark 建议。
 object_id: workcase-0037
+object_uid: 019ffb52-ebb5-7763-85ad-1597af13b697
 fact_type_key: workcase
 created_at: '2026-08-02T12:13:30.454117+08:00'
-updated_at: '2026-08-02T14:06:43.996767+08:00'
+updated_at: '2026-08-13T14:06:23.060145Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:06:23.060145Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

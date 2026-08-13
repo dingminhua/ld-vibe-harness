@@ -36,15 +36,19 @@ disposition_summary: 已建立 21 §9.3 规范载体到唯一 Python 呈现映�
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0041
+    object_uid: 019ffb52-ebb5-722d-af4c-2c52d5c36d63
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0045
+    object_uid: 019ffb52-ebb5-74ee-a677-656ac9168c1b
 object_id: workcase-0046
+object_uid: 019ffb52-ebb5-78f7-a493-e4b3a9c5ad36
 fact_type_key: workcase
 created_at: '2026-08-03T01:24:55.038486+08:00'
-updated_at: '2026-08-03T01:55:39.683446+08:00'
+updated_at: '2026-08-13T14:06:49.193983Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:06:49.193983Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

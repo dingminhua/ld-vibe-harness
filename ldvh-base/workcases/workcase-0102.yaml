@@ -98,6 +98,12 @@ change_log:
     agent_runtime_name: workbuddy
   at: '2026-08-12T23:42:22.459678Z'
   summary: Human Gate 2 批准关闭：workcase-0102 以 completed 关闭，写入 closure_outcome 与 disposition_summary（事实库已恢复 complete 后执行）。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:09:26.312306Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 result_summary: 已完成 git-hooks-status 公开操作的全部 3 个 work item：规范修订（09 §5.9 声明与 5.9.1/5.9.2 字段契约、09.Att.01 登记、33 引用）、Helper 实现（复用 commit_msg.py，逻辑上移，零输入/带 locator 调用通过）、契约测试（6 项 + 相关核心测试集 50 passed，lint 干净）。
 success_criterion_results:
 - criterion_id: criterion-contract
@@ -119,6 +125,7 @@ validation_summary: 验证包括：git-hooks-status 契约测试 6 项通过（t
 closure_outcome: completed
 disposition_summary: workcase-0102 完成 git-hooks-status 公开操作的全部落地：09 §5.9/5.9.1/5.9.2 规范声明与字段契约、09.Att.01 交付行登记、33 静态回读引用、Helper 实现（复用 commit_msg.py 权威逻辑）与注册、契约测试 6 项 + 既有断言同步（51 passed）。5 项 success_criterion 全部 satisfied；独立结果复核 changes_required 的 4 项 feedback 全部处置。存量基线（历史 spark 署名/关系问题）不在本案 scope，未修改历史事实。无剩余待处置责任。
 object_id: workcase-0102
+object_uid: 019ffb52-ebb5-79e3-8593-d2260220ce67
 fact_type_key: workcase
 created_at: '2026-08-12T22:32:49.468688Z'
-updated_at: '2026-08-12T23:42:22.459678Z'
+updated_at: '2026-08-13T14:09:26.312306Z'

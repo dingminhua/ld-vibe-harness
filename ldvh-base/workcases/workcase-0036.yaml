@@ -24,6 +24,14 @@ goal: 核查并消除本地 LDVH 规则、技能路由、实现或测试中把�
 closure_outcome: completed
 disposition_summary: 当前本地责任已完成：已验证创建前只读 Reviewer 是质量前提而非第三个人类 Gate，未发现需修复的本地矛盾；无剩余责任、路由目标或 Spark 建议。
 object_id: workcase-0036
+object_uid: 019ffb52-ebb5-7396-9ebc-39ba0839c44e
 fact_type_key: workcase
 created_at: '2026-08-02T11:58:59.571455+08:00'
-updated_at: '2026-08-02T14:06:29.143147+08:00'
+updated_at: '2026-08-13T14:06:20.191241Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:06:20.191241Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

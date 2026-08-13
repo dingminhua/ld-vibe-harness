@@ -127,6 +127,12 @@ change_log:
   signature:
     model_id: deepseek-v4-pro
     agent_workbench: Cindy
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:57.486649Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: 全部 6 项成功标准 satisfied，原 scope 内没有未满足或未验证责任。spark-0065 的能力解锁、三档路由、模型冻结、视角上限与版本化重复复审机制已固化为规则（specs/21/31/34 + 05.Att.01）、Code/Helper 机械校验（workcase_validation/projection/transitions）、Web 分层呈现（reviewer_policy tab/ReviewMethodDisclosure/i18n）并通过 1167 Python + 175 Web 测试、git diff --check、check-fact-integrity 与 full-v4 验证。无剩余责任需转交，无 accepted-stop 项。
 spark_suggestions:
@@ -137,10 +143,9 @@ spark_suggestions:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0065
+    object_uid: 019ffb52-ebb5-71cb-be5a-db0dc274de76
 object_id: workcase-0091
+object_uid: 019ffb52-ebb5-717b-b184-0886b218acb0
 fact_type_key: workcase
 created_at: '2026-08-09T15:38:44.586633Z'
-updated_at: '2026-08-10T13:46:50.272962Z'
+updated_at: '2026-08-13T14:08:57.486649Z'

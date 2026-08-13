@@ -6,21 +6,18 @@ summary: "## 当前判断\n\n- 把 Obsidian 用作 LLM Wiki 时，它提供的�
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0016
+    object_uid: 019ffb52-ebb5-7fe4-a6f9-4df27c4dd6a8
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: study
-    object_id: study-0026
+    object_uid: 019ffb52-ebb5-7ce4-9c43-fba3a264ef95
 evolution:
 - at: '2026-07-24T12:21:12+08:00'
   summary: 本次比较将问题从“Obsidian 是否可替代 LDVH”收敛为 LLM Wiki 的探索性材料层如何与 LDVH 的执行权威层分工；当前摘要因此新增候选发现与可依赖事实的区分、层间受控交接及禁止全量注入或自动关系写回的边界。
 object_id: spark-0032
+object_uid: 019ffb52-ebb5-79d6-9813-3baeb71710b5
 fact_type_key: spark
 created_at: '2026-07-24T07:47:36.176894+08:00'
-updated_at: '2026-08-10T09:14:52.699538Z'
+updated_at: '2026-08-13T14:00:52.021706Z'
 change_log:
 - summary: 补建变更流水以支持受控提交；spark-0032 由 open 转 discarded（依据 study-0026 结论：无需引入 Obsidian），事实内容变更由其他会话产出，此处仅补审计签名。
   signature:
@@ -40,3 +37,9 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-identity-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:52.021706Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

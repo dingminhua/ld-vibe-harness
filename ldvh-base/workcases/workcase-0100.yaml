@@ -92,15 +92,20 @@ change_log:
     agent_runtime_name: claude-code
   at: '2026-08-12T19:13:31.241328Z'
   summary: Human Gate 2 接受 completed 关闭提案，原子关闭；能力已交付，真实 legacy 对象与 spark-0018 的迁移作为范围外后续机会。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:09:20.464221Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: 受控能力已按冻结范围交付并验证：HEAD/WT 双基线下无流水对象可在首次真实更新中建立当前三字段流水，普通更新默认拒绝保持不变；独立结果复核唯一反馈（Git 预检首写契约）已修复并以提交层正反测试锁定。全部 5 项成功标准 satisfied，无剩余责任。真实 legacy 对象与 spark-0018 不在 scope 内，作为范围外后续机会交由 Human 独立判断。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0018
+    object_uid: 019ffb52-ebb5-7d9e-b5cc-17beecdc5303
 object_id: workcase-0100
+object_uid: 019ffb52-ebb5-7c16-9c42-183e204306db
 fact_type_key: workcase
 created_at: '2026-08-12T17:56:13.158864Z'
-updated_at: '2026-08-12T19:13:31.241328Z'
+updated_at: '2026-08-13T14:09:20.464221Z'

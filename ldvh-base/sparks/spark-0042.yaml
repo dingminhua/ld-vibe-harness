@@ -10,9 +10,7 @@ evolution:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0030
+    object_uid: 019ffb52-ebb5-7aa7-8f35-a83cd0a0737b
 disposition_summary: workcase-0030 完整承接 Gate 1 授权完整性闭环（结构化质量关口、Gate 1 拒绝与冻结、存量兼容、负向与回归测试、规则/实现同步均已完成，无范围内残留责任）；本 Spark 经 routed-to 指向该 WorkCase，原机制缺口已闭合。
 change_log:
 - signature:
@@ -45,7 +43,14 @@ change_log:
     agent_workbench: Cindy
     model_id: glm-5.2
   session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:21.232103Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0042
+object_uid: 019ffb52-ebb5-7747-910f-57a538d62e3a
 fact_type_key: spark
 created_at: '2026-08-02T00:13:30.036887+08:00'
-updated_at: '2026-08-11T13:58:06.712051Z'
+updated_at: '2026-08-13T14:01:21.232103Z'

@@ -39,8 +39,15 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:32.808039Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 disposition_summary: 事实对象修改流水的会话与提交署名追踪已由现行规则直接落实:change_log 每条件目携带责任签名(现已进化为 model_id/agent_workbench 三元组)、会话 id、时间与摘要,Git 提交 footer 要求 Session-ID/Model-ID/Workbench-Name 并回读,signer_type 已退役,受控创建绑定事件时间、历史保留不伪造回填。无剩余待处置内容。
 object_id: spark-0046
+object_uid: 019ffb52-ebb5-7794-833a-460e842f6f70
 fact_type_key: spark
 created_at: '2026-08-03T11:31:47.779807+08:00'
-updated_at: '2026-08-10T09:22:19.088895Z'
+updated_at: '2026-08-13T14:01:32.808039Z'

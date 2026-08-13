@@ -5,9 +5,7 @@ summary: "**已决结论**\n\n外部审核与 Human 决定已将原问题收敛�
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0011
+    object_uid: 019ffb52-ebb5-724c-80a6-91b618ceaa78
 disposition_summary: 原 Spark 的全部信息需求已由 workcase-0011 完整承接：该 WorkCase 固定方案 C 的范围、成功标准、并发基线保护、规范、实现、测试和验证责任。Spark 不再承担独立的方案比较或跟踪责任；WorkCase 尚未实施的事实由其自身 status、phase 与 Human Gate 表达。
 evolution:
 - at: '2026-07-23T13:15:11.623Z'
@@ -19,7 +17,14 @@ change_log:
     agent_workbench: Cindy
     model_id: glm-5.2
   session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:49.206338Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0031
+object_uid: 019ffb52-ebb5-7dba-98eb-066d64f585d9
 fact_type_key: spark
 created_at: '2026-07-23T20:14:18.299589+08:00'
-updated_at: '2026-08-11T13:55:08.067697Z'
+updated_at: '2026-08-13T14:00:49.206338Z'

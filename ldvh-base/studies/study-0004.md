@@ -2,15 +2,13 @@
 title: AI 能力资产、Hook 与工程门禁行业实践调研
 status: retired
 disposition_summary: 已按 v3 基线决定重新研究；本旧 v4 短报告不再作为当前研究入口，外部资料、发现与后续启发须在新 Study 中重新读取和表达。
-research_question: Codex Skills/Hooks、Git hooks 与 Agent guardrails
-  的公开文档如何区分可复用能力、生命周期自动化和强制门禁？
-abstract: 调研 Codex Skills/Hooks、Git hooks 与 OpenAI Agents guardrails/HITL
-  文档。外部模式把技能视为可复用工作流，把 Hook 视为生命周期事件自动化，把 guardrail/HITL
-  视为输入输出或动作级的阻断/升级；三者职责不同，不能互称。
+research_question: Codex Skills/Hooks、Git hooks 与 Agent guardrails 的公开文档如何区分可复用能力、生命周期自动化和强制门禁？
+abstract: 调研 Codex Skills/Hooks、Git hooks 与 OpenAI Agents guardrails/HITL 文档。外部模式把技能视为可复用工作流，把 Hook 视为生命周期事件自动化，把 guardrail/HITL 视为输入输出或动作级的阻断/升级；三者职责不同，不能互称。
 object_id: study-0004
+object_uid: 019ffb52-ebb5-7eb4-b5d5-ceed927dd4e3
 fact_type_key: study
 created_at: '2026-07-19T11:17:44.511811+08:00'
-updated_at: '2026-07-23T18:21:16+08:00'
+updated_at: '2026-08-13T14:03:19.011031Z'
 urls:
 - ref: https://developers.openai.com/codex/skills
   title: developers.openai.com/codex/skills
@@ -27,6 +25,13 @@ urls:
 - ref: https://openai.github.io/openai-agents-python/human_in_the_loop/
   title: openai.github.io/openai-agents-python/human_in_the_loop/
   summary: 曾用于旧研究的人类介入文档；不单独决定项目授权。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:03:19.011031Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 ---
 
 ## 研究问题

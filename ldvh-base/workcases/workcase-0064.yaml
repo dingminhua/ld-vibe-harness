@@ -162,6 +162,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-model-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:38.773542Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: partial
 disposition_summary: WC-0064 以本地提交 49dacf286 交付核心简化并停止在未 push 状态；criterion-01 至 criterion-06 已满足，criterion-07 因组合树 full-v4 未通过保持未验证。组合历史中的 23 个 Ruff 问题、full-v4 重跑、两项 0064 提交组合验证以及取得新 Gate1 授权后的 push 作为受限后续责任保留，当前 WorkCase 不越界处理。
 spark_suggestions:
@@ -175,10 +181,9 @@ spark_suggestions:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0062
+    object_uid: 019ffb52-ebb5-7085-81cc-66cd3ebb043c
 object_id: workcase-0064
+object_uid: 019ffb52-ebb5-7812-9630-8e7aad44da3d
 fact_type_key: workcase
 created_at: '2026-08-06T16:11:46.568109+08:00'
-updated_at: '2026-08-10T09:12:54.981263Z'
+updated_at: '2026-08-13T14:07:38.773542Z'

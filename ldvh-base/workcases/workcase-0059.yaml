@@ -109,15 +109,20 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:27.182664Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: WorkCase 按 completed 停止：四个 work item 全部 completed，六项成功标准全部 satisfied，result_version 1 的正式独立结果复核为 pass。真实 commit-msg Hook 的放行取证已收敛为当次 Gate 自身的一条绑定证据，缺字段失败关闭；事实完整性审计复用经严格判定为 No-go 并保留公共全量扫描。原 scope 内没有未满足、未验证或未处置责任，因此没有 residual decision、route_existing、suggest_spark 或 accepted-stop 项。隔离 fixture 性能不可外推、No-go 分支没有不存在的漂移测试、提交后 WorkCase 生命周期事实仍为未提交残留、未 push 均已披露；这些边界不冒充验证或远端完成，也不改变 completed 分类。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0019
+    object_uid: 019ffb52-ebb5-71da-8f50-223f834fad25
 object_id: workcase-0059
+object_uid: 019ffb52-ebb5-7786-8b0c-f3865542251f
 fact_type_key: workcase
 created_at: '2026-08-05T12:00:57.607538+08:00'
-updated_at: '2026-08-10T09:24:21.310194Z'
+updated_at: '2026-08-13T14:07:27.182664Z'

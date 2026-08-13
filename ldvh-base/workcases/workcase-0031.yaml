@@ -36,10 +36,16 @@ disposition_summary: workcase-0031 未形成目标多对象原子能力并停止
 relations:
 - relation_key: routed-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0033
+    object_uid: 019ffb52-ebb5-776a-812c-5ccf1c082587
 object_id: workcase-0031
+object_uid: 019ffb52-ebb5-7a9a-aed7-f3220b76bb7f
 fact_type_key: workcase
 created_at: '2026-08-02T01:12:24.124493+08:00'
-updated_at: '2026-08-02T02:04:05.539851+08:00'
+updated_at: '2026-08-13T14:06:05.405991Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:06:05.405991Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

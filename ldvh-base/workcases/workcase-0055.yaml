@@ -155,9 +155,16 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:15.509522Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: 当前 WorkCase 的源码唯一迁移、四项接入闭环和 common-dir Git Gate 部署责任已完成；没有需要转交、建议新建 Spark 或由 Human 接受停止的剩余责任。Windows 原生未验证、既有 Web 非相关失败及保留 Hook 资产属于已记录验证/维护边界，不改变 completed 技术分类。
 object_id: workcase-0055
+object_uid: 019ffb52-ebb5-7eac-9056-035eb4672e8c
 fact_type_key: workcase
 created_at: '2026-08-04T17:46:50.456343+08:00'
-updated_at: '2026-08-10T09:24:12.468171Z'
+updated_at: '2026-08-13T14:07:15.509522Z'

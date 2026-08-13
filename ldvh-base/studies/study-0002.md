@@ -2,14 +2,13 @@
 title: OpenAI Codex 子 Agent、工作树与协作实践调研
 status: retired
 disposition_summary: 已按 v3 基线决定重新研究；本旧 v4 短报告不再作为当前研究入口，外部资料、发现与后续启发须在新 Study 中重新读取和表达。
-research_question: OpenAI Codex 官方能力如何组织子 Agent、隔离工作树、非交互执行和 App Server
-  集成，哪些边界可供 LDVH 参考？
-abstract: 调研 Codex 官方 Subagents、Worktrees、Non-interactive mode 与 App Server
-  文档。共同模式是并行的专长 Agent、隔离工作目录和机器可读事件/集成面；这些是能力边界与实现参考，不构成 LDVH 必须复制的产品行为。
+research_question: OpenAI Codex 官方能力如何组织子 Agent、隔离工作树、非交互执行和 App Server 集成，哪些边界可供 LDVH 参考？
+abstract: 调研 Codex 官方 Subagents、Worktrees、Non-interactive mode 与 App Server 文档。共同模式是并行的专长 Agent、隔离工作目录和机器可读事件/集成面；这些是能力边界与实现参考，不构成 LDVH 必须复制的产品行为。
 object_id: study-0002
+object_uid: 019ffb52-ebb5-71ff-96f6-c9e7ed52f74b
 fact_type_key: study
 created_at: '2026-07-19T11:17:40.443524+08:00'
-updated_at: '2026-07-23T18:21:16+08:00'
+updated_at: '2026-08-13T14:03:13.445133Z'
 urls:
 - ref: https://developers.openai.com/codex/subagents
   title: developers.openai.com/codex/subagents
@@ -23,6 +22,13 @@ urls:
 - ref: https://developers.openai.com/codex/app-server
   title: developers.openai.com/codex/app-server
   summary: 曾用于旧研究的 Codex App Server 文档；不单独支持当前集成边界。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:03:13.445133Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 ---
 
 ## 研究问题

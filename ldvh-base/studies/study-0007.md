@@ -2,15 +2,13 @@
 title: Task Master AI 任务编排模型调研
 status: retired
 disposition_summary: 已按 v3 基线决定重新研究；本旧 v4 短报告不再作为当前研究入口，外部资料、发现与后续启发须在新 Study 中重新读取和表达。
-research_question: Task Master AI 当前公开文档如何把 PRD、任务依赖、研究、标签/工作流与 MCP 工具组织成 AI
-  任务管理？
-abstract: 调研 Task Master AI GitHub README 与官方文档入口。其公开模型以 PRD/需求解析生成任务、任务依赖与
-  next/show/expand/research 等操作为核心，并通过 MCP
-  接入多个编辑器；支持按模式选择工具数量以降低上下文成本。它是外部产品研究，不证明其任务状态可直接替代 LDVH WorkCase。
+research_question: Task Master AI 当前公开文档如何把 PRD、任务依赖、研究、标签/工作流与 MCP 工具组织成 AI 任务管理？
+abstract: 调研 Task Master AI GitHub README 与官方文档入口。其公开模型以 PRD/需求解析生成任务、任务依赖与 next/show/expand/research 等操作为核心，并通过 MCP 接入多个编辑器；支持按模式选择工具数量以降低上下文成本。它是外部产品研究，不证明其任务状态可直接替代 LDVH WorkCase。
 object_id: study-0007
+object_uid: 019ffb52-ebb5-7db1-8431-c0fcdad598eb
 fact_type_key: study
 created_at: '2026-07-19T11:17:52.509274+08:00'
-updated_at: '2026-07-23T18:21:16+08:00'
+updated_at: '2026-08-13T14:03:27.029470Z'
 urls:
 - ref: https://github.com/eyaltoledano/claude-task-master
   title: github.com/eyaltoledano/claude-task-master
@@ -21,6 +19,13 @@ urls:
 - ref: https://docs.task-master.dev/introduction
   title: docs.task-master.dev/introduction
   summary: 曾用于旧研究的 Task Master 介绍页；不单独证明当前工具行为。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:03:27.029470Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 ---
 
 ## 研究问题

@@ -111,30 +111,29 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-explicit-signature-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:30.053446Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: 全部成功标准 satisfied，原 scope 内无剩余责任；范围外后续由既有 open 火花分别承载：spark-0022（撞号提交 Gate 前置拦截实现与远端观察边界）、spark-0055（流程复杂度待判断项：模板激活层数、规范交叉引用层数、80/20 倒置处置）、spark-0004（Windows 实测验收矩阵执行）。本 WorkCase 交付（05 §9.4 条文、火花承接更新）已随 commit 44d00c93a 固化。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0022
+    object_uid: 019ffb52-ebb5-73ff-a52e-432df71a367f
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0055
+    object_uid: 019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0004
+    object_uid: 019ffb52-ebb5-74ac-b57f-8adf8ea11892
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0022
+    object_uid: 019ffb52-ebb5-7cf6-be06-10ffe049c192
 object_id: workcase-0060
+object_uid: 019ffb52-ebb5-79cc-8a7f-e18ce9b0691f
 fact_type_key: workcase
 created_at: '2026-08-05T23:16:43.435078+08:00'
-updated_at: '2026-08-10T08:56:05.376349Z'
+updated_at: '2026-08-13T14:07:30.053446Z'

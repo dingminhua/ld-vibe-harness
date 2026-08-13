@@ -110,6 +110,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:47.305565Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: workspace_root 调用纪律已固化为规范 09 §5.2a 条文与 skill/SKILL.md 路由纪律，部署件已重部署并 SHA-256 验证逐字节一致，回归验证通过。item-05 已纠正（21 §4.3 生命周期关口误建模），5 项成功标准全部 satisfied，无剩余责任。
 spark_suggestions:
@@ -118,6 +124,7 @@ spark_suggestions:
   summary: WC-0067 执行中暴露了「work item 吸收生命周期关口」的 AI 语义审核不可靠问题，已创建 spark-0064 记录。建议后续判断是否增加 Code 机械拦截。
   follow_up_summary: 判断是否应将 21 §4.3 禁止的典型反例（受控提交、结果复核、关闭准备等）在 Code 层面做 create-fact-object 机械拦截，使 work items 校验时检测已知关键词闭集并拒绝创建，减少对 AI 语义审核的依赖。
 object_id: workcase-0067
+object_uid: 019ffb52-ebb5-79c4-a2a4-22d4f7f2121d
 fact_type_key: workcase
 created_at: '2026-08-07T01:39:28.159783+08:00'
-updated_at: '2026-08-10T08:48:03.368621Z'
+updated_at: '2026-08-13T14:07:47.305565Z'

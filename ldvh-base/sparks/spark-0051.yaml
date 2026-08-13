@@ -78,14 +78,19 @@ change_log:
     agent_workbench: Cindy
     model_id: glm-5.2
   session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:46.937340Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0080
+    object_uid: 019ffb52-ebb5-7a80-858a-b74c33e884c4
 disposition_summary: 签名三元组的字段/trailer 更名、双轨读取、footer/Helper 注入同步、attestation 边界与历史共存登记已由 workcase-0080 完整承接并关闭(partial);模型id平台可验证注入按既定边界保持 unsupported,历史错值按共存口径保留。本 Spark 不再承担待处置入口。
 object_id: spark-0051
+object_uid: 019ffb52-ebb5-7354-8d5e-9972faf8c162
 fact_type_key: spark
 created_at: '2026-08-03T22:40:16.024001+08:00'
-updated_at: '2026-08-11T13:58:01.115256Z'
+updated_at: '2026-08-13T14:01:46.937340Z'

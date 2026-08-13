@@ -19,9 +19,17 @@ abstract: 本轮读取 Agent Skills 开放规范与 Trae、Codex、Claude 四方
 research_intent: 用户将携 LDVH 薄 Skill 前往 Trae、Claude、Codex 等环境接入，要求把各环境技能登记所需字段提前调研并备好填值，使接入方照表填写即可，避免逐环境临时摸索。本研究提供字段级准备清单与照抄/现取/不预填的分工，支撑 README 一句话接入流程在任意环境的可复制，并防止接入方为凑字段而改写 canonical SKILL.md 内容。
 recommendation_summary: 接入任一新环境时先按 33 复核该环境当前官方技能资料，再按分工填值：name、description、指令正文一律照抄 skill/SKILL.md 当次内容（表单自动填充不一致时以 canonical 为准修正）；license、作者、版本、仓库 URL、图标素材按各自权威来源现取；环境私有扩展字段（agents/openai.yaml、Claude 专属 frontmatter 等）首次接入一律不预填，确有需要时在目标环境侧沉淀。SKILL.md frontmatter 维持 name/description 两字段不增补（增补引入版本漂移与重部署负担）。技能市场上架属另一议题，届时另起 Study。
 object_id: study-0019
+object_uid: 019ffb52-ebb5-7d6f-a5b9-3bf5c169d437
 fact_type_key: study
 created_at: '2026-07-31T19:51:27.592577+08:00'
-updated_at: '2026-07-31T19:51:27.592577+08:00'
+updated_at: '2026-08-13T14:04:00.951627Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:04:00.951627Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 ---
 
 ## 研究问题

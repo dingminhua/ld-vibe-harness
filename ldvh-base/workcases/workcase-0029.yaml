@@ -24,6 +24,14 @@ validation_summary: 已通过 git diff --check 与 git diff --cached --check；�
 closure_outcome: completed
 disposition_summary: 三项成功标准均已满足：specs/34 仅在 §5.3 与 §6“接续与交还”行补足临时工件处置边界，范围检查和定向测试通过，result_version 2 的独立结果复核为 pass。原 scope 内没有未满足、未验证或需转交的责任；未提交、未清理、未处理当前 Working Tree 的其它内容。
 object_id: workcase-0029
+object_uid: 019ffb52-ebb5-70bd-a9af-ec4f4c69b7d4
 fact_type_key: workcase
 created_at: '2026-08-02T00:37:51.268027+08:00'
-updated_at: '2026-08-02T00:51:46.789229+08:00'
+updated_at: '2026-08-13T14:05:59.636343Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:05:59.636343Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

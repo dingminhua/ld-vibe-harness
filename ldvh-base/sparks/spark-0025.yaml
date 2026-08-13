@@ -4,14 +4,10 @@ status: implemented
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0007
+    object_uid: 019ffb52-ebb5-7f32-aab8-c6c58b4f5296
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0021
+    object_uid: 019ffb52-ebb5-7bf4-8ed2-bce2a2d7d618
 summary: "**审视结论**\n\n- 当前已经具备多项目登记、管辖身份解析、单项目选择、稳定对象身份和严格项目/worktree 隔离；这些能力足以支撑现阶段按项目独立使用。\n- 本轮审核确认，Web“全部项目”聚合、跨项目正式关系、跨项目写入、联合事务和联合 Git Gate 并非当前版本必须补齐的成熟度缺口，不再由本 Spark 作为 P1 当前责任持续追踪。\n- 原 spark-0007 的配置拓扑议题和 spark-0021 的 Web 作用域议题已完成合并审视；仍可能有价值的聚合、导航、配置便利层和跨项目联动已由 P2 `spark-0078` 作为未来方向独立保留。\n\n**当前边界**\n\n- 事实读取、写入、关系校验、完整性审计和 Git Gate 继续绑定明确的单一管辖项目与实际 worktree；本次处置不扩大任何跨项目能力或授权。\n- 项目注册、单项目切换和隔离能力不被表述为已经实现跨项目聚合；相反，聚合是否值得实现留待真实需求和新的 Human 决定。\n- 本 Spark 的现阶段成熟度审视和缺口分流职责已经结束，没有需要继续作为当前 P1 责任保留的内容。"
 evolution:
 - at: '2026-07-22T13:48:41+08:00'
@@ -40,7 +36,14 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T07:50:02.135651Z'
   summary: 按 Human 决定将多项目聚合与联动转由 P2 spark-0078 保留，并结束 spark-0025 的当前成熟度审视入口。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:31.863740Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0025
+object_uid: 019ffb52-ebb5-7ce0-8b61-a5bc21ef2469
 fact_type_key: spark
 created_at: '2026-07-21T11:58:06.482101+08:00'
-updated_at: '2026-08-13T07:50:02.135651Z'
+updated_at: '2026-08-13T14:00:31.863740Z'

@@ -1,19 +1,22 @@
 title: 测试创建Spark
 status: discarded
-summary: 这是一个两阶段 Web/AI 流程测试：第一阶段由 Human Web 创建一个原始内容为“测试创建Spark / 测试”的
-  Spark；第二阶段由 Human 说明该对象本身是测试，并要求 AI
-  在不从标题或摘要臆造语义的前提下，基于这次明确说明补充测试意图与复现边界。当前验证目标是确认 AI 能否把 Web 初始写入保留为原始事实，再通过
-  Helper 的受控更新入口续写对象，并完成写后回读与机械校验；本次补充不代表真实业务议题已经被完整承接。
-intent: 验证 Human Web 创建“测试创建Spark / 测试”后，Human 再明确说明该对象本身是一次测试时，AI
-  能否只依据这次沟通合法补充测试意图与复现边界，并通过 Helper 受控更新和写后回读完成同一 Spark 的续写，而不从原始标题或摘要臆造其它事实。
+summary: 这是一个两阶段 Web/AI 流程测试：第一阶段由 Human Web 创建一个原始内容为“测试创建Spark / 测试”的 Spark；第二阶段由 Human 说明该对象本身是测试，并要求 AI 在不从标题或摘要臆造语义的前提下，基于这次明确说明补充测试意图与复现边界。当前验证目标是确认 AI 能否把 Web 初始写入保留为原始事实，再通过 Helper 的受控更新入口续写对象，并完成写后回读与机械校验；本次补充不代表真实业务议题已经被完整承接。
+intent: 验证 Human Web 创建“测试创建Spark / 测试”后，Human 再明确说明该对象本身是一次测试时，AI 能否只依据这次沟通合法补充测试意图与复现边界，并通过 Helper 受控更新和写后回读完成同一 Spark 的续写，而不从原始标题或摘要臆造其它事实。
 evolution:
 - at: '2026-07-22T16:48:30+08:00'
-  summary: Human 明确原始 Web 创建内容本身就是测试，并要求继续验证 AI 完善续写；AI
-    据此将测试意图、两阶段流程和受控更新验收边界补入同一对象。
+  summary: Human 明确原始 Web 创建内容本身就是测试，并要求继续验证 AI 完善续写；AI 据此将测试意图、两阶段流程和受控更新验收边界补入同一对象。
 - at: '2026-07-22T18:28:40+08:00'
   summary: Human 要求将该测试对象设为 discarded，以验证废弃终态的状态与 Web 呈现是否正常；该对象至此结束，不再进入后续处理。
 disposition_summary: 该对象仅用于已完成的 Web/AI 两阶段流程测试，不作为业务议题继续跟踪。
 object_id: spark-0020
+object_uid: 019ffb52-ebb5-7cb8-bd16-55b5b4676e65
 fact_type_key: spark
 created_at: '2026-07-21T03:31:05.954860+08:00'
-updated_at: '2026-07-23T14:21:35.783731+08:00'
+updated_at: '2026-08-13T14:00:17.483473Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:00:17.483473Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

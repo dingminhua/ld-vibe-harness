@@ -5,14 +5,10 @@ summary: "## 当前结论\n\n**现状核实**：21 号规范 §4.4 要求受控�
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0037
+    object_uid: 019ffb52-ebb5-7ee2-a408-38b8fd5e8ba9
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0056
+    object_uid: 019ffb52-ebb5-70be-98b0-0ba048ac1ff6
 evolution:
 - at: '2026-08-05T12:00:00+08:00'
   summary: Human 提出 WC 流程应当是"先受控创建，再审核，审核后修改，然后进入 Gate1"，指出当前流程与此有出入。经核实 21 号规范 §4.4，确认差异为：当前 creation_reviews 是受控创建的同事务组成部分，不是独立阶段；Human 希望解耦为创建→独立审核→完善→Gate1 四步流程。
@@ -37,8 +33,15 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:55.721728Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 disposition_summary: 本 Spark 按 Human 指令废弃。创建后独立审核阶段（受控创建→独立审核→完善→Gate1）设计方向正确，但需改动 21 §4.4、§6.2/§6.3/§6.3.2 phase 闭集与状态机及 §7 写回等整条链，风险—收益在当前阶段不成比例；且 workcase-0062/0063/0064 暴露的受控提交漏检根因是 21 §4.3 枚举闭集未点名"受控提交"，已于 2026-08-06 单点补枚举解决，不涉及 phase 编排。当前方向是强化创建前独立审核质量（4.5 已要求独立 subagent 审核，本次 creation_reviews 已由 GPT-5 等独立视角执行），待门控体系稳定后再评估是否引入 phase 层分解。本 spark 一年来无 workcase 实际承接（0056/0057 明确排除），非燃眉之急，故废弃而非延续 open。后续如有真实需求由新 spark 接替。
 object_id: spark-0054
+object_uid: 019ffb52-ebb5-7a59-b088-a92a881ce590
 fact_type_key: spark
 created_at: '2026-08-05T12:00:00+08:00'
-updated_at: '2026-08-10T08:47:00.434511Z'
+updated_at: '2026-08-13T14:01:55.721728Z'

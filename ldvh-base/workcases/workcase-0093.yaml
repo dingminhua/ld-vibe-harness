@@ -152,6 +152,12 @@ change_log:
   session_id: fde0af60-4736-4d2d-b2eb-d0be116e163a
   at: '2026-08-10T13:24:00.800947Z'
   summary: Human Gate 2 已决定按 partial 关闭 workcase-0093，接受保留 Gate1 后外部提交及 specs 变更的归因边界；未把整条提交链归功于本 WC。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:09:03.048043Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: partial
 disposition_summary: formation-time enforcement 的行为和验证证据已完成；由于 Gate1 后外部提交及 specs 变更无法清洁归因，本 WorkCase 仅按 partial 收敛，不把整条提交链归功于本 WC。
 residual_responsibilities:
@@ -160,15 +166,12 @@ residual_responsibilities:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0092
+    object_uid: 019ffb52-ebb5-7477-bad4-8724e00e5479
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0034
+    object_uid: 019ffb52-ebb5-7e7a-9744-2ba5d83575fa
 object_id: workcase-0093
+object_uid: 019ffb52-ebb5-7740-a814-f2e5e55d4570
 fact_type_key: workcase
 created_at: '2026-08-10T11:11:37.937719Z'
-updated_at: '2026-08-10T13:24:00.800947Z'
+updated_at: '2026-08-13T14:09:03.048043Z'

@@ -6,6 +6,14 @@ applicability: 适用于 LDVH 中 AI 处理 Human 的中文目标、反馈、约
 rationale: 中文表面字词与实际意图、范围和约束并不总能由英文术语、字段名或既有模板无损替代。若没有持续的中文语义视角，AI 即使形式上完成读取、结构校验或技术执行，也可能把 Human 的决策、事实边界或规范要求理解错误。只有在原本需要审核的场景加入独立核对，才能发现形成者沿用自身解释所遗漏的中文语义偏移，同时不把所有普通工作膨胀为审核流程。
 consequences: 采用本决定后，AI 在中文工作中会在行动前后主动检查中文原意是否被保留，必要时以中文重新表述其理解和边界；这会增加少量判断与表达成本。在既有审核场景中，审核结论需要单独说明中文语义是否准确、哪些范围仍不确定或需交还，不得以格式正确、测试通过或复述形成者说明替代独立核对。本决定不取代事实验证、机械校验、正式 Specs 或 Human 授权，也不把普通工作自动变成需要独立审核的工作。
 object_id: adr-0003
+object_uid: 019ffb52-ebb5-7ee2-9b1b-ef63e974b98a
 fact_type_key: adr
 created_at: '2026-07-25T00:11:49+08:00'
-updated_at: '2026-07-25T00:11:49+08:00'
+updated_at: '2026-08-13T13:58:44.751041Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:58:44.751041Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

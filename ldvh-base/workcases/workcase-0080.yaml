@@ -13,9 +13,7 @@ success_criterion_definitions:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0051
+    object_uid: 019ffb52-ebb5-7354-8d5e-9972faf8c162
 change_log:
 - signature:
     model_id: gpt-5.6-luna
@@ -89,6 +87,12 @@ change_log:
     agent_workbench: Cindy
     model_id: k3-256k
   session_id: 71a6635c-81de-4a58-b083-ccd4399bdd57
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:25.457092Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 result_summary: 签名三元组更名、双轨读取、footer/Helper 注入同步、attestation 边界与历史共存登记已形成；机械排雷及定向测试覆盖完成。回归测试主体 1508 项通过、13 项按平台/环境跳过，3 项既有规范数量断言因当前工作树额外 active spec 变更漂移，结果按 partial 保留未验证边界。
 validation_summary: PYTHONPATH=code .venv/bin/python -m pytest -q：1508 passed，13 skipped，3 failed；失败集中于 test_cli_process/test_repository 的硬编码 active spec 数量断言，原因是工作树已有额外 active spec 变更，并非签名实现定向失败。定向 tripwire/dual-read、compileall、git diff --check、read-fact-objects 与 check-fact-integrity 通过；未执行 Git commit/push/release。
 success_criterion_results:
@@ -120,6 +124,7 @@ spark_suggestions:
   summary: 旧形状手写签名与旧 trailer 路径的排雷缺口与淘汰节奏
   follow_up_summary: '判断：update 路径省略 observed_context.signature 手写旧形状签名不受排雷约束（如 spark-0066 第 4 条流水），commit gate 旧 trailer 路径亦无排雷（dcd64c7f 以 Agent-ID: workbuddy 裸别名过闸）；是否及何时收紧旧路径（补排雷覆盖或制定淘汰计划）'
 object_id: workcase-0080
+object_uid: 019ffb52-ebb5-7a80-858a-b74c33e884c4
 fact_type_key: workcase
 created_at: '2026-08-09T13:15:07.224961+08:00'
-updated_at: '2026-08-09T16:22:11.928271+08:00'
+updated_at: '2026-08-13T14:08:25.457092Z'

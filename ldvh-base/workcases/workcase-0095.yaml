@@ -110,9 +110,16 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-12T09:46:57.335470Z'
   summary: Human Gate 2 接受当前 completed 关闭提案；执行 close-workcase 原子收口。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:09:05.918047Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: 五项成功标准均已形成 satisfied 结果，原 scope 内无未满足或未验证责任；独立复核的低严重度 follow-up 已处置为非阻断边界，不改变本 WorkCase 的关闭分类。未验证的真实外部环境、watcher、Git Hook/Gate 事件、Web/build 与远端发布均明确属于 scope 外或本次未授权范围，不作为当前剩余责任。
 object_id: workcase-0095
+object_uid: 019ffb52-ebb5-7e6e-81c2-6508040f8de5
 fact_type_key: workcase
 created_at: '2026-08-12T07:55:16.209944Z'
-updated_at: '2026-08-12T09:46:57.335470Z'
+updated_at: '2026-08-13T14:09:05.918047Z'

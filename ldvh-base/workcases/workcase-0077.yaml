@@ -81,22 +81,26 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
-
 - at: '2026-08-10T09:31:48.596858Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: trae -> deepseek-v4-flash; 1: trae -> deepseek-v4-flash; 2: trae -> deepseek-v4-flash; 3: trae -> deepseek-v4-flash; 4: trae -> deepseek-v4-flash; 5: trae -> deepseek-v4-flash; 6: trae -> deepseek-v4-flash; 7: trae -> deepseek-v4-flash。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:16.574739Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: 方案 A（follow_up 引导层）已交付：config_status 非 valid 时 resolve-governance-scope 返回含 required_human_decisions、resume_conditions 和指向环境接入行动模板的 suggested_operations 的 follow_up；valid 时保持默认空结构。4 项 success criteria 全部 satisfied，独立只读结果复核 pass。spark-0034 的 a/c/d 缺口仍开放，后续可通过新 WorkCase 推进。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0034
+    object_uid: 019ffb52-ebb5-7e7a-9744-2ba5d83575fa
 object_id: workcase-0077
+object_uid: 019ffb52-ebb5-7938-8873-57dad055863a
 fact_type_key: workcase
 created_at: '2026-08-08T21:27:09.390992+08:00'
-updated_at: '2026-08-10T09:31:48.596858Z'
+updated_at: '2026-08-13T14:08:16.574739Z'

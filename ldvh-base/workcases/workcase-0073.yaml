@@ -100,22 +100,26 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-workcase-signature-migration-20260810
-
 - at: '2026-08-10T09:24:57.241129Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:04.702512Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: 已在原 scope 内完成 F2 text_match 运行时输入可发现性整改：共同 input_examples 契约、唯一来源绑定片段和定向回归均已交付并经独立只读复核通过。原 scope 内没有未满足或未验证责任，不需要路由、Spark 建议或 accepted-stop；Git commit 明确排除，现有未提交差异保留供 Human 后续处理。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0067
+    object_uid: 019ffb52-ebb5-7f8e-b1d7-5da96f3f18a1
 object_id: workcase-0073
+object_uid: 019ffb52-ebb5-73ae-9a55-8ab8d1e258f1
 fact_type_key: workcase
 created_at: '2026-08-08T15:19:48.489418+08:00'
-updated_at: '2026-08-10T09:24:57.241129Z'
+updated_at: '2026-08-13T14:08:04.702512Z'

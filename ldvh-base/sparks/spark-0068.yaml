@@ -5,9 +5,7 @@ summary: "## 终态纠偏\n\nSpark-0068 原本只是对 Spark-0067 的独立校�
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0067
+    object_uid: 019ffb52-ebb5-7f8e-b1d7-5da96f3f18a1
 change_log:
 - signature:
     agent_id: gpt-5
@@ -51,6 +49,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:02:36.437960Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 evolution:
 - at: '2026-08-07T19:12:05+08:00'
   summary: 议题边界经 Human 澄清后收敛为 spark-0067 原始判断与 spark-0068 校准判断的双向复审；取消此前误纳入的 spark-0066 编排视角。
@@ -60,6 +64,7 @@ evolution:
   summary: Human 指出后续执行已偏离解决 Spark-0067 的目标：0068 被错误地从辅助校准记录升级为行动主线。对象转为 discarded，保留为历史审查材料，不再派生 WorkCase 或决定路线。
 disposition_summary: Human 已决定停止把 Spark-0068 作为独立行动入口。保留其校准结论、审查边界与本次纠偏，供直接围绕 Spark-0067 的后续判断参考；不再由 0068 排序、拆分、派生或承接执行责任，也不把它的未验证假设转化为行动要求。
 object_id: spark-0068
+object_uid: 019ffb52-ebb5-715d-bbad-25e9382c3936
 fact_type_key: spark
 created_at: '2026-08-07T19:03:21.968580+08:00'
-updated_at: '2026-08-10T09:21:44.651423Z'
+updated_at: '2026-08-13T14:02:36.437960Z'

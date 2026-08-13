@@ -98,22 +98,26 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-workcase-signature-migration-20260810
-
 - at: '2026-08-10T09:23:46.487234Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:56.134357Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: partial
 disposition_summary: 停止本 WorkCase 中已失效的冻结批次；已形成的 v2 测量与冻结防护保留为局部价值。A 簇提示卡对照的有效任务设计、重新冻结与是否重跑，转交既有 Spark-0068 继续判断，不把零 trial 解释为提示卡收益或负效应。
 relations:
 - relation_key: routed-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0068
+    object_uid: 019ffb52-ebb5-715d-bbad-25e9382c3936
 object_id: workcase-0070
+object_uid: 019ffb52-ebb5-759c-a4c9-64b091fcc23c
 fact_type_key: workcase
 created_at: '2026-08-08T06:30:33.037307+08:00'
-updated_at: '2026-08-10T09:23:46.487234Z'
+updated_at: '2026-08-13T14:07:56.134357Z'

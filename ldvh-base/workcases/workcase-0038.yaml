@@ -24,6 +24,14 @@ validation_summary: Passed .venv/bin/pytest -q code/tests/docs/test_enablement_d
 closure_outcome: completed
 disposition_summary: 当前本地责任已完成：B4 已锁定 Human 工作意图直接覆盖创建前自动只读 Reviewer、受控创建和 Gate 1；Gate 1 后已授权动作仍直接消费批准。16 项定向测试及独立只读复核通过。真实环境 UI、spawn 能力和 Reviewer 真实独立性未验证，已保留为非 LDVH 上位边界；无剩余责任、路由目标或 Spark 建议。
 object_id: workcase-0038
+object_uid: 019ffb52-ebb5-7389-8768-a39baaadb673
 fact_type_key: workcase
 created_at: '2026-08-02T12:29:48.839236+08:00'
-updated_at: '2026-08-02T12:42:57.288949+08:00'
+updated_at: '2026-08-13T14:06:25.969148Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:06:25.969148Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

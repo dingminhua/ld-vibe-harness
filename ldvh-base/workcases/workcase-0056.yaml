@@ -137,6 +137,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-identity-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:18.385548Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: not-achieved
 disposition_summary: 0056 的两阶段 prepared/challenge/journal/alternate Index 方案及其规范、实现、测试和 Hook 升级责任全部停止，不保留交付；原方案责任作为 accepted-stop，不转交给现有对象。Human 已明确的最小提交要求作为独立后续机会保留，关闭 0056 不表示该后续要求已完成或已获执行授权。
 residual_responsibilities:
@@ -148,6 +154,7 @@ spark_suggestions:
   summary: 以现有 03、30、09 为基础，把 AI 明确候选文件并检查对应 diff、必要机械预检、本地 commit、真实执行 commit-msg Hook、不误带且不 push、源码加 Skill 且无 pip/打包/插件写成最小权威需求。
   follow_up_summary: 后续独立事项应先在 specs 明确这六项最小要求，再只评估为满足它们所需的最小代码和测试差额；不得继承 0056 的 prepared service、witness、challenge、journal 或 alternate Index 事务设计。
 object_id: workcase-0056
+object_uid: 019ffb52-ebb5-70be-98b0-0ba048ac1ff6
 fact_type_key: workcase
 created_at: '2026-08-04T22:36:38.899404+08:00'
-updated_at: '2026-08-10T09:15:25.536861Z'
+updated_at: '2026-08-13T14:07:18.385548Z'

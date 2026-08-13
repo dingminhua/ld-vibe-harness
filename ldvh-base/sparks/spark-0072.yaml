@@ -5,14 +5,10 @@ summary: "## 已落实范围\n\n- `code/ldvh/cli.py` 的 E402 基线问题已消
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0083
+    object_uid: 019ffb52-ebb5-7422-b1e2-a58bf9215ca7
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0060
+    object_uid: 019ffb52-ebb5-7bb3-8e8b-cc5c69bbe8b4
 change_log:
 - at: '2026-08-09T16:24:48.904102+08:00'
   session_id: workbuddy-session-20260809
@@ -32,11 +28,18 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-workbuddy-case-normalization-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:02:48.133358Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 disposition_summary: Spark-0072 限定的 cli.py E402 与 commits/facts validation.py E501 基线问题已直接消除；源码直调、当前 Ruff 全量检查和稳定 full-v4 六步骤均通过，范围内无剩余责任。WorkCase-0083 的历史结果不回改，Spark-0060 继续独立保留。
 evolution:
 - at: '2026-08-09T13:11:26.000Z'
   summary: 当前源码直调、Ruff 全量检查和后续稳定 full-v4 证据表明创建时的 E402/E501 阻断已经消失，因此本 Spark 从待修复转为范围内已直接落实；测试耗时预估仍由 Spark-0060 独立承接。
 object_id: spark-0072
+object_uid: 019ffb52-ebb5-7599-ac8a-740baac2be0b
 fact_type_key: spark
 created_at: '2026-08-09T16:24:48.904102+08:00'
-updated_at: '2026-08-10T08:59:10.785600Z'
+updated_at: '2026-08-13T14:02:48.133358Z'

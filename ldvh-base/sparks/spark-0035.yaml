@@ -5,14 +5,20 @@ summary: "**当前结论**\n\n- Web 当前存在的项目级内容统一消费�
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0021
+    object_uid: 019ffb52-ebb5-7bf4-8ed2-bce2a2d7d618
 disposition_summary: 当前 Web 项目级读取已经统一绑定顶部所选管辖项目，并通过稳定项目 ID、服务端登记解析、实际 worktree 校验、项目切换失效与相关契约测试直接落实。现有 `related-to → spark-0021` 仅保留相邻的多项目切换/聚合议题，不是承接目标；本 Spark 原范围内没有剩余责任。
 evolution:
 - at: '2026-08-01T01:58:26+08:00'
   summary: 项目级页面和服务端请求已统一消费同一受管项目上下文，并具备切换时的隔离与验证边界，原先的跨页面项目混读风险已收敛为直接落实结果。
 object_id: spark-0035
+object_uid: 019ffb52-ebb5-77ac-960c-df23689a8369
 fact_type_key: spark
 created_at: '2026-07-26T23:55:40.750956+08:00'
-updated_at: '2026-08-01T02:01:56.952036+08:00'
+updated_at: '2026-08-13T14:01:00.676606Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:00.676606Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

@@ -40,9 +40,17 @@ research_question: addyosmani/agent-skills 如何把软件工程实践组织成�
 abstract: 在 2026-07-29 对 main 分支 revision 7829ffd 的检查中，agent-skills 是一个以 24 个 Markdown 技能为核心、覆盖 Define—Plan—Build—Verify—Review—Ship 的工程工作流包，并辅以 8 个命令、4 个评审 persona、共享参考资料、宿主适配器和三层评测。其关键价值是把工程纪律写成“触发—步骤—反合理化—红旗—证据门禁”的行为契约，并对目录结构与路由进行机械评测；本次实际运行结构、命令和 Tier-2 路由检查均通过，路由 rank-1 为 86%。但这不证明真实任务质量：Tier 2 只是词法近似，Tier 3 默认按需且依赖模型；不同宿主只共享部分能力；单技能安装可能丢失共享引用；技能文本本身不能强制权限、Human Gate 或完成判断。
 recommendation_summary: LDVH 不应整体复制该项目或把其技能内容提升为规则。最值得吸收的是五个可分离机制：明确的触发/排除契约、步骤与停止条件、反逃避信号、证据化完成门禁、结构/路由/行为分层评测；同时应保留 LDVH 的来源与职责边界，让 Helper/Code 只做确定性检查、Human 保留授权与取舍。建议后续仅在 Human 同意时建立一个小规模 WorkCase，用 3 个代表性行动模板做 A/B 试点，并以规则冲突、误触发、任务正确性、上下文成本和验证证据为验收指标。
 object_id: study-0016
+object_uid: 019ffb52-ebb5-70ce-b94e-b15942d1b870
 fact_type_key: study
 created_at: '2026-07-29T00:21:07.200083+08:00'
-updated_at: '2026-07-29T00:21:07.200083+08:00'
+updated_at: '2026-08-13T14:03:52.314628Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:03:52.314628Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 ---
 
 ## 研究问题

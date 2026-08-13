@@ -153,6 +153,12 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:06:57.928610Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: partial
 disposition_summary: 当前 WorkCase 以 partial 结束：已保留 change_log 结构、单次追加和时间绑定不变量，Git footer 与新增事实流水三字段精确比对，以及 Web 两字段读取契约。可信签发与验签根、专用遗留 change_log 迁移及迁移后 Web 端到端验证未实施，统一路由至仍为 open 的 spark-0048。完整 Web API 套件的 commit-label-contract 既存失败未在本 WorkCase 修复或重跑，其影响与未验证边界保留为 Human Gate 2 的接受停止项。
 residual_responsibilities:
@@ -161,10 +167,9 @@ residual_responsibilities:
 relations:
 - relation_key: routed-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0048
+    object_uid: 019ffb52-ebb5-79a1-9fed-fa91fab7f6fc
 object_id: workcase-0049
+object_uid: 019ffb52-ebb5-786a-a106-441120e0234e
 fact_type_key: workcase
 created_at: '2026-08-03T13:00:03.222833+08:00'
-updated_at: '2026-08-10T09:23:43.163295Z'
+updated_at: '2026-08-13T14:06:57.928610Z'

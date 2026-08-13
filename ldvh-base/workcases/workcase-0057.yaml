@@ -151,15 +151,20 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:21.358125Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: completed
 disposition_summary: 本 WorkCase 按 completed 停止：原 scope 内的最小原生 Git 提交流程、旧 alternate-index 链精确清理、真实 Hook 事件验证及一次受控本地 commit 均已完成并回读，六项成功标准全部 satisfied。当前 WorkCase 不再承担额外实现、追加提交或远端动作，原 scope 内无剩余责任；提交后依法形成的 WorkCase 生命周期事实写回保留为当前未提交本案残留，不要求 amend 或新增 commit。范围外既有 Ruff 错误、原生 Windows 未运行项及其它无关 dirty 仍明确处于本案范围外。
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0056
+    object_uid: 019ffb52-ebb5-70be-98b0-0ba048ac1ff6
 object_id: workcase-0057
+object_uid: 019ffb52-ebb5-7c89-bace-4eade3cbf0f4
 fact_type_key: workcase
 created_at: '2026-08-05T01:27:07.440484+08:00'
-updated_at: '2026-08-10T09:23:52.727339Z'
+updated_at: '2026-08-13T14:07:21.358125Z'

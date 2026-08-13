@@ -5,9 +5,7 @@ status: implemented
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0055
+    object_uid: 019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c
 disposition_summary: 以 Skill 路由纪律作为处置，不做 Code 机械拦截。在 SKILL.md 新增「WorkCase 创建路由纪律」章节，要求 AI 创建 WorkCase 前经 Helper 读取规范 21 §4.3 与 §4.4 及当次适用行动模板的 Stop Conditions，照其逐项审核 work items 与 success_criterion_definitions 是否吸收生命周期关口或 Human Gate。不做 Code 机械拦截的理由：关键词闭集无法覆盖任意自然语言换说法，且存在假阳性（如合法的「实现受控提交系统」item），投入产出比低。规范层（21 §4.3/§4.4）与行动模板层（31/34 Stop Conditions）已完善，Skill 路由纪律补最后一公里触发提醒。无剩余待处置内容，无事实承接对象。
 evolution:
 - at: '2026-08-09T05:50:00Z'
@@ -37,7 +35,14 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:02:24.866336Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0064
+object_uid: 019ffb52-ebb5-7e14-bf80-55bbe4e0d563
 fact_type_key: spark
 created_at: '2026-08-07T02:34:34.529232+08:00'
-updated_at: '2026-08-10T08:47:27.295901Z'
+updated_at: '2026-08-13T14:02:24.866336Z'

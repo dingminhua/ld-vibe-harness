@@ -36,8 +36,15 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:58:53.242999Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 disposition_summary: Human 于 2026-08-04 明确撤回 adr-0006 作为当前决定。原 ADR 不再以 ADR 身份约束后续设计；其中哪些要求继续适用，以后续经 Human 批准并生效的 Specs 为准。Human 已明确仍须保留的薄 Skill、过程机械检查与 Git Hook/Git Gate 最终闸门，应由相应 Specs 直接定义。在相应 Specs 修改生效前，本退役不表示新的下载、接入、配置、部署或覆盖范围已经成立。
 object_id: adr-0006
+object_uid: 019ffb52-ebb5-78b1-b9fe-b03917f96024
 fact_type_key: adr
 created_at: '2026-07-30T14:24:13.172669+08:00'
-updated_at: '2026-08-10T09:22:28.816167Z'
+updated_at: '2026-08-13T13:58:53.242999Z'

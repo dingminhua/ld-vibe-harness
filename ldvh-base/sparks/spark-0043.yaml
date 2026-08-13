@@ -6,9 +6,7 @@ disposition_summary: workcase-0042 已以明确目标、范围、成功标准、
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0042
+    object_uid: 019ffb52-ebb5-71b8-a543-1cb569543bb5
 change_log:
 - at: '2026-08-11T13:58:03.002463Z'
   summary: 经逐条 Human 授权，历史 routed Spark 迁移为 implemented；旧 routed-to 已转为 related-to。
@@ -16,7 +14,14 @@ change_log:
     agent_workbench: Cindy
     model_id: glm-5.2
   session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:24.287229Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0043
+object_uid: 019ffb52-ebb5-7d64-bb4e-acb3e92f30e6
 fact_type_key: spark
 created_at: '2026-08-02T01:34:05.207410+08:00'
-updated_at: '2026-08-11T13:58:03.002463Z'
+updated_at: '2026-08-13T14:01:24.287229Z'

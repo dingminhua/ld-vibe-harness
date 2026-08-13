@@ -16,14 +16,10 @@ success_criterion_definitions:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0067
+    object_uid: 019ffb52-ebb5-7f8e-b1d7-5da96f3f18a1
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0068
+    object_uid: 019ffb52-ebb5-715d-bbad-25e9382c3936
 change_log:
 - signature:
     agent_id: gpt-5
@@ -115,41 +111,42 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
-
 - at: '2026-08-10T08:52:52.986544Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex-desktop -> Codex; 13: codex-desktop -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-workcase-signature-migration-20260810
-
 - at: '2026-08-10T09:05:13.668551Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 7: wb -> Codex; 8: wb -> Codex; 9: wb -> Codex; 10: wb -> Codex; 11: wb -> Codex; 12: wb -> Codex。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-codex-alias-migration-20260810
-
 - at: '2026-08-10T09:13:00.991969Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 1: workbuddy -> hy3; 2: workbuddy -> hy3; 3: workbuddy -> hy3; 4: workbuddy -> hy3; 5: workbuddy -> hy3; 6: workbuddy -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-model-id-migration-20260810
-
 - at: '2026-08-10T09:25:14.299105Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 13: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
-
 - at: '2026-08-10T09:30:24.206032Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 7: wb -> glm-5.2; 8: wb -> glm-5.2; 9: wb -> glm-5.2; 10: wb -> glm-5.2; 11: wb -> glm-5.2; 12: wb -> glm-5.2。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:50.266204Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 success_criterion_results:
 - criterion_id: criterion-01
   outcome: satisfied
@@ -178,6 +175,7 @@ residual_responsibilities:
 - residual_id: residual-03
   summary: 采集 response_bytes
 object_id: workcase-0068
+object_uid: 019ffb52-ebb5-70a2-afcd-e6891690e6ab
 fact_type_key: workcase
 created_at: '2026-08-07T19:31:25.415722+08:00'
-updated_at: '2026-08-10T09:30:24.206032Z'
+updated_at: '2026-08-13T14:07:50.266204Z'

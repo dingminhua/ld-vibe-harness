@@ -9,6 +9,14 @@ resolution: 处理时将说明拆为已观察记录、当前有界判断和未�
 avoidance: 复用前先核对日志、追踪和错误码实际覆盖的范围。缺少可见记录时只写“未观察到可见执行记录”，并保留调用阶段未知；处理后检查根因和症状没有越过观察范围。需要形成强制表达规则时进入正式规范，而不把本经验当作授权。
 disposition_summary: 该观察已由 Pitfall 类型规范的根因边界和最小处理闭环直接承接；不再需要作为 active 的独立经验。仍有效的表达边界由 specs/23-Pitfall-踩坑经验.md 承接；没有未处置的后续责任。
 object_id: pitfall-0002
+object_uid: 019ffb52-ebb5-7547-b9d1-dbb5a820f746
 fact_type_key: pitfall
 created_at: '2026-07-24T22:38:00+08:00'
-updated_at: '2026-07-28T18:17:09.475928+08:00'
+updated_at: '2026-08-13T13:59:04.857002Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:59:04.857002Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

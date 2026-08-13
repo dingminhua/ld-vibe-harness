@@ -5,29 +5,19 @@ summary: "## 分析框架：六问模型\n\n本 Spark 采用六问模型作为�
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: adr
-    object_id: adr-0001
+    object_uid: 019ffb52-ebb5-724c-881f-4f0f7d97038f
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0019
+    object_uid: 019ffb52-ebb5-71da-8f50-223f834fad25
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0029
+    object_uid: 019ffb52-ebb5-7afc-8623-c117575e3111
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0055
+    object_uid: 019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0053
+    object_uid: 019ffb52-ebb5-7f52-9f61-22b6c11bb58f
 change_log:
 - signature:
     agent_id: hy3
@@ -119,6 +109,12 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T09:14:36.039592Z'
   summary: 依据 Human 决定将 spark-0067 标记为 implemented；历史优化范围已收敛，后续价值审计由独立的 spark-0079 承载。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:02:33.500352Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 evolution:
 - at: '2026-08-07T15:30:00+08:00'
   summary: 最小可行验证。
@@ -148,6 +144,7 @@ evolution:
   summary: Human 决定将长期关注点拆为独立的 P2 价值审计，并关闭本历史优化议题；spark-0079 独立承载后续审计，本对象保留既有探索与交付记录。
 disposition_summary: 该优化探索已完成可直接交付项，并对其余候选作出撤销、暂缓或重新判断的收敛；后续长期价值判断已由独立的 P2 议题 spark-0079 承载。历史分析与实测结果继续保留在本对象中，但不再作为开放路线图，也不建立 successor 或 routed-to 关系。
 object_id: spark-0067
+object_uid: 019ffb52-ebb5-7f8e-b1d7-5da96f3f18a1
 fact_type_key: spark
 created_at: '2026-08-07T15:14:23.475769+08:00'
-updated_at: '2026-08-13T09:14:36.039592Z'
+updated_at: '2026-08-13T14:02:33.500352Z'

@@ -32,19 +32,13 @@ input_refs:
 relations:
 - relation_key: inspired-by
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0055
+    object_uid: 019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c
 - relation_key: informs
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0055
+    object_uid: 019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c
 - relation_key: informs
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0019
+    object_uid: 019ffb52-ebb5-71da-8f50-223f834fad25
 change_log:
 - signature:
     agent_id: kimi
@@ -58,17 +52,23 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-explicit-signature-migration-20260810
-
 - at: '2026-08-10T09:27:46.487482Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: Kimi Work -> kimi。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-kimi-model-id-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:04:09.528609Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: study-0022
+object_uid: 019ffb52-ebb5-74a2-b262-b27705d1eb71
 fact_type_key: study
 created_at: '2026-08-05T15:49:52.936666+08:00'
-updated_at: '2026-08-10T09:27:46.487482Z'
+updated_at: '2026-08-13T14:04:09.528609Z'
 ---
 
 ## 研究问题

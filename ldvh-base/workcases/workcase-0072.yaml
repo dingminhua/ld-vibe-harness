@@ -110,22 +110,26 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-workcase-signature-migration-20260810
-
 - at: '2026-08-10T09:25:21.829416Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: codex -> gpt-5; 1: codex -> gpt-5; 2: codex -> gpt-5; 3: codex -> gpt-5; 4: codex -> gpt-5; 5: codex -> gpt-5; 6: codex -> gpt-5; 7: codex -> gpt-5; 8: codex -> gpt-5; 9: codex -> gpt-5; 10: codex -> gpt-5; 11: codex -> gpt-5。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: session-20260810-codex-model-migration
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:08:01.903959Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 closure_outcome: cancelled
 disposition_summary: 停止本 WorkCase 的测试性探索，不选择生产方案或宣称净收益；因当前五项标准均未形成 satisfied 且多项仍 not_verified，不能以现有材料判定稳定成果。把真实当前 Helper fixture 重放、冻结原始输入与完整指标、官方 pytest 运行，以及 per-object manifest 与 changed_since 的中立成本比较，路由至仍开放的 Spark-0068 作为 D 簇后续立项判断。
 relations:
 - relation_key: routed-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0068
+    object_uid: 019ffb52-ebb5-715d-bbad-25e9382c3936
 object_id: workcase-0072
+object_uid: 019ffb52-ebb5-7b30-92f8-6d29cec222cb
 fact_type_key: workcase
 created_at: '2026-08-08T14:02:26.682516+08:00'
-updated_at: '2026-08-10T09:25:21.829416Z'
+updated_at: '2026-08-13T14:08:01.903959Z'

@@ -67,14 +67,10 @@ input_refs:
 relations:
 - relation_key: inspired-by
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0047
+    object_uid: 019ffb52-ebb5-72a0-9268-1a053e010945
 - relation_key: informs
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0048
+    object_uid: 019ffb52-ebb5-79a1-9fed-fa91fab7f6fc
 change_log:
 - signature:
     agent_id: hy3
@@ -94,17 +90,23 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
-
 - at: '2026-08-10T09:15:22.604185Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: workbuddy-ai -> hy3; 1: workbuddy-ai -> hy3。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-identity-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:04:24.042989Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: study-0027
+object_uid: 019ffb52-ebb5-708a-83b5-fa3ba3da425c
 fact_type_key: study
 created_at: '2026-08-09T00:34:04.998975+08:00'
-updated_at: '2026-08-10T09:15:22.604185Z'
+updated_at: '2026-08-13T14:04:24.042989Z'
 ---
 
 ## 研究问题

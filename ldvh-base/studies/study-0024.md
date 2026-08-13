@@ -9,19 +9,13 @@ recommendation_summary: 建议规则落点放在 09 §6，在 09 §6.3 中新增
 relations:
 - relation_key: inspired-by
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0057
+    object_uid: 019ffb52-ebb5-760f-a9f9-3acc6e3f74b9
 - relation_key: informs
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0057
+    object_uid: 019ffb52-ebb5-760f-a9f9-3acc6e3f74b9
 - relation_key: informs
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0004
+    object_uid: 019ffb52-ebb5-74ac-b57f-8adf8ea11892
 input_refs:
 - kind: specification
   locator: specs/01-规范模型基础规范.md
@@ -84,17 +78,23 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-legacy-signature-migration-20260810
-
 - at: '2026-08-10T09:30:29.004009Z'
   summary: '受控更正历史 change_log 中的 agent_workbench 格式；修复项为 0: GLM-5.2 -> glm-5.2。原始错误值已由本次更正覆盖并保留本条修复记录。'
   signature:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: 4591aaa6-256d-45bb-8c3d-fd0d7619df41
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:04:15.385746Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: study-0024
+object_uid: 019ffb52-ebb5-770a-97f4-e7da87043ed4
 fact_type_key: study
 created_at: '2026-08-06T01:29:48.505010+08:00'
-updated_at: '2026-08-10T09:30:29.004009Z'
+updated_at: '2026-08-13T14:04:15.385746Z'
 ---
 
 ## 研究问题

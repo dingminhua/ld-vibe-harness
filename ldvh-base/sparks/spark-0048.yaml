@@ -6,24 +6,16 @@ disposition_summary: 已落实：授权证据不可伪造的行业等价物是�
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0049
+    object_uid: 019ffb52-ebb5-786a-a106-441120e0234e
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: study
-    object_id: study-0027
+    object_uid: 019ffb52-ebb5-708a-83b5-fa3ba3da425c
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0052
+    object_uid: 019ffb52-ebb5-7b75-bbd7-474401cf0b7e
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0044
+    object_uid: 019ffb52-ebb5-7164-9615-e0da0c4c6196
 change_log:
 - signature:
     agent_id: gpt-5
@@ -67,7 +59,14 @@ change_log:
     agent_runtime_name: claude-code
   at: '2026-08-12T20:41:07.840805Z'
   summary: '补充 relations: related-to workcase:workcase-0052, spark:spark-0044'
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:01:38.429830Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0048
+object_uid: 019ffb52-ebb5-79a1-9fed-fa91fab7f6fc
 fact_type_key: spark
 created_at: '2026-08-03T14:06:30.110091+08:00'
-updated_at: '2026-08-12T20:41:07.840805Z'
+updated_at: '2026-08-13T14:01:38.429830Z'

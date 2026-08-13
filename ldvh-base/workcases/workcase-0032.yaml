@@ -33,13 +33,19 @@ validation_summary: 已执行 07 §11.2 目标文本回读和 git diff --check -
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0041
+    object_uid: 019ffb52-ebb5-704a-b65b-218b8424cb8c
 status: closed
 closure_outcome: completed
 disposition_summary: 本案已完成 07 §11.2 的最小 FileAsset 测试证据边界收束；所有成功标准均为 satisfied，原 scope 内无剩余责任。本案不创建 FileAsset 实例、不修改其它规范或实现，且未形成后续 Spark 建议。
 object_id: workcase-0032
+object_uid: 019ffb52-ebb5-780b-86e0-45bfd66a28aa
 fact_type_key: workcase
 created_at: '2026-08-02T01:19:41.141248+08:00'
-updated_at: '2026-08-02T01:27:36.495600+08:00'
+updated_at: '2026-08-13T14:06:08.376643Z'
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:06:08.376643Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。

@@ -41,14 +41,10 @@ spark_suggestions:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0064
+    object_uid: 019ffb52-ebb5-7812-9630-8e7aad44da3d
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: spark
-    object_id: spark-0065
+    object_uid: 019ffb52-ebb5-71cb-be5a-db0dc274de76
 change_log:
 - at: '2026-08-07T01:23:04.585898+08:00'
   session_id: workbuddy-wc0066-create-20260807
@@ -116,7 +112,14 @@ change_log:
     agent_workbench: Cindy
     model_id: gpt-5
   session_id: cindy-model-id-migration-20260810
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T14:07:44.516506Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: workcase-0066
+object_uid: 019ffb52-ebb5-7d4c-8529-157273308585
 fact_type_key: workcase
 created_at: '2026-08-07T01:23:04.585898+08:00'
-updated_at: '2026-08-10T09:12:58.035251Z'
+updated_at: '2026-08-13T14:07:44.516506Z'

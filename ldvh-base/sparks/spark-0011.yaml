@@ -10,14 +10,10 @@ evolution:
 relations:
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: adr
-    object_id: adr-0006
+    object_uid: 019ffb52-ebb5-78b1-b9fe-b03917f96024
 - relation_key: related-to
   target:
-    governed_project_id: ldvh
-    fact_type_key: workcase
-    object_id: workcase-0013
+    object_uid: 019ffb52-ebb5-7209-a05f-0be04a54b149
 disposition_summary: 原 Spark 的内容已由两个同项目稳定事实对象完整承接：`adr-0006` 承接当前能力接入形态、能力边界与准入后的承载选择；`workcase-0013` 承接环境安装、部署、接入与验证的四层责任、逐事件验收、失败/回滚和 Human 受限操作交还。`specs/06`、`specs/32` 与 `specs/33` 是上述承接所依据的规范和行动模板来源，不是可作为 `routed-to` 目标的事实对象。原 Spark 不再保留独立待处置内容；目标事实对象后续的状态、阶段、关闭或完成不由本 Spark 跟踪。
 change_log:
 - at: '2026-08-11T13:53:20.338090Z'
@@ -26,7 +22,14 @@ change_log:
     agent_workbench: Cindy
     model_id: glm-5.2
   session_id: 84578c2d-7b22-47ab-9d36-1d2552699eb2
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-13T13:59:51.623188Z'
+  summary: 为历史事实对象补齐权威 object_uid，并将同项目 legacy 关系目标改写为 object_uid。
 object_id: spark-0011
+object_uid: 019ffb52-ebb5-702e-b437-b79b131a75bd
 fact_type_key: spark
 created_at: '2026-07-19T10:28:38.631195+08:00'
-updated_at: '2026-08-11T13:53:20.338090Z'
+updated_at: '2026-08-13T13:59:51.623188Z'
