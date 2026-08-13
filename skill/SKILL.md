@@ -7,7 +7,7 @@ description: 项目待办/工作项/进展、技术决策/决策记录、踩坑�
 
 # LDVH 接入（薄路由）
 
-> Skill 版本：2026-08-13 00:01
+> Skill 版本：2026-08-14 00:00
 
 LDVH 让长期项目"判断有据、行动可续、结果可验"。本文件不承载规则正文；固定能力边界只作路由提示。
 权威只有一个：LDVH CLI 从当前规则源现取的结果。
@@ -60,7 +60,7 @@ wheel、sdist、editable distribution，也不以 pip 安装 LDVH 本体。源�
 
 事实写入后的精确回读仍是必需步骤；在 merge/pull 后或需要当前完整事实库机械结论时，再按当次 capabilities 与来源契约调用 `check-fact-integrity`。它不是独立 shell 子命令，必须经 `ldvh call check-fact-integrity`，并按当次契约提供实际 worktree locator。`ldvh check`、`check-fact-integrity` 和精确回读的结果只用于各自机械边界，不互相替代。
 
-Human 报告「skill 更新了」或要求检查 skill 与 Git Hook 环境对齐时，使用环境接入面已交付的只读组合检查入口（09 §5.9 `git-hooks-status`）一次性取得并汇总全部检查面状态后交还，不零散分步检查。
+Human 报告「skill 更新了」或要求检查 skill 与 Git Hook 环境对齐时，AI 必须先按当前环境资料确认本环境实际使用的 Skill 部署目标，再经环境接入面当次登记的检查入口显式指定该目标，一次性取得并汇总全部检查面状态；不得猜测厂商路径、改查其它环境副本或扩大已检查范围。发现过期或不一致时，先经当次环境接入行动模板形成方案并取得 Human 对准确目标与副作用的授权，再使用当次已交付能力更新并重新检查；静态对齐不证明 Skill 已真实递达或 Git Hook 已真实触发。
 
 消费检查结果时至少保留外层 `outcome`、领域 `result.status`、`scope.completed`/`scope.not_completed`、`gaps` 和实际规则源/事实源范围；不得从 `ok`、`passed`、文件存在或命令成功退出推导事实语义正确、Human 授权、Git Gate 已验证、Skill 已递达或完整环境接入。
 
