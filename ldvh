@@ -109,7 +109,7 @@ def _usage() -> int:
     sys.stderr.write(
         "usage: ldvh capabilities [operation_key] | ldvh call <operation_key> | "
         "ldvh check | "
-        "ldvh {worktree-bootstrap,work-context,context-recovery,doctor,git-commit-msg,git-hook} ...\n"
+        "ldvh {worktree-bootstrap,work-context,context-recovery,doctor,environment-sync,git-commit-msg,git-hook} ...\n"
     )
     return 2
 
@@ -132,6 +132,10 @@ def main() -> int:
             sys.argv = [sys.argv[0], *sys.argv[1:]]
         return helper_main()
     arguments = sys.argv[2:]
+    if command == "environment-sync":
+        from ldvh.environment_sync_cli import main as environment_sync_main
+
+        return environment_sync_main(arguments)
     if command == "work-context":
         from ldvh.work_context import main as work_context_main
 

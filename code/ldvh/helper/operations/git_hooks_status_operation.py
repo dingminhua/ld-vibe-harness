@@ -12,13 +12,10 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from ldvh.git_hooks.commit_msg import (
-    _LAST_PREPARE_BUNDLE_VERSION,
-    _MANAGED_MARKER_PREFIX,
-    _PREPARE_MANAGED_MARKER_PREFIX,
-    HOOK_BUNDLE_VERSION,
-    _existing_hook_state,
-    _hook_bundle_version,
+from ldvh.environment_sync import (
+    _has_ldvh_frontmatter,
+    _read_skill_version,
+    inspect_hook_surface,
 )
 from ldvh.governance.models import LocatorSource, ScopeDescriptor
 from ldvh.governance.resolver import resolve_governance_scope
@@ -35,7 +32,7 @@ from ldvh.helper.responses import source_reference
 from ldvh.specs.repository import RepositoryInspection
 
 OPERATION_KEY = "git-hooks-status"
-REQUIRED_INPUTS: tuple[str, ...] = ()
+REQUIRED_INPUTS: tuple[str, ...] = ("arguments.platform", "arguments.skill_path")
 OPTIONAL_INPUTS: tuple[str, ...] = ("work_object_locators",)
 _CONTRACT = source_reference(
     "rule",
@@ -54,26 +51,34 @@ _IMPLEMENTATION_EVIDENCE = (
 )
 
 _PROJECT_SKILL_REL = Path("skill") / "SKILL.md"
-_USER_SKILL_REL = Path(".workbuddy") / "skills" / "ldvh" / "SKILL.md"
 
 
 def _validated_locator(
     request: CommonRequest,
     context: OperationExecutionContext,
 ) -> str | None:
-    """Return exactly one worktree locator, or None to fall back to cwd."""
+    """Validate the explicit platform/skill_path and return one worktree locator.
+
+    The operation requires ``arguments.platform`` (non-empty label, reported only)
+    and ``arguments.skill_path`` (the absolute actual target).  No vendor directory
+    is guessed.  ``work_object_locators`` remains an optional single-path override.
+    """
     problems: list[str] = []
     locator: str | None = None
     if request.task is not None:
         problems.append("git-hooks-status 不接受 task")
-    if request.arguments:
-        problems.append("git-hooks-status 不接受 arguments")
     if request.requested_disclosure is not None:
         problems.append("git-hooks-status 不接受 requested_disclosure")
     if request.observed_context:
         problems.append("git-hooks-status 不接受 observed_context")
     if request.authorization_reference:
         problems.append("git-hooks-status 不接受 authorization_reference")
+    platform = request.arguments.get("platform")
+    skill_path = request.arguments.get("skill_path")
+    if not isinstance(platform, str) or not platform.strip():
+        problems.append("arguments.platform 必须是非空字符串标签")
+    if not isinstance(skill_path, str) or not skill_path.strip() or not Path(skill_path).is_absolute():
+        problems.append("arguments.skill_path 必须是非空绝对路径")
     if request.work_object_locators:
         if len(request.work_object_locators) != 1:
             problems.append("work_object_locators 必须恰有一个目标路径 string")
@@ -106,37 +111,27 @@ def _run_git(worktree: Path, *args: str) -> str | None:
     return result.stdout.strip()
 
 
-def _version_line(path: Path) -> str | None:
-    try:
-        text = path.read_text(encoding="utf-8")
-    except (OSError, UnicodeError):
-        return None
-    for line in text.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("> Skill 版本"):
-            return stripped.removeprefix("> ").strip()
-    return None
-
-
-def _skill_check(project_root: Path) -> dict[str, Any]:
-    project_skill = project_root / _PROJECT_SKILL_REL
-    user_skill = Path.home() / _USER_SKILL_REL
+def _skill_check(skill_path: str, platform: str) -> dict[str, Any]:
+    target = Path(skill_path)
+    project_skill = Path(__file__).resolve().parents[3] / _PROJECT_SKILL_REL
+    target_exists = target.is_file()
     project_exists = project_skill.is_file()
-    user_exists = user_skill.is_file()
     aligned = False
-    if project_exists and user_exists:
+    if project_exists and target_exists:
         try:
-            aligned = project_skill.read_bytes() == user_skill.read_bytes()
+            aligned = project_skill.read_bytes() == target.read_bytes()
         except OSError:
             aligned = False
     return {
         "aligned": aligned,
+        "platform": platform,
+        "target_skill_path": str(target),
+        "target_exists": target_exists,
+        "is_ldvh_skill": bool(target_exists and _has_ldvh_frontmatter(target)),
+        "target_version": _read_skill_version(target) if target_exists else None,
         "project_path": str(project_skill),
         "project_exists": project_exists,
-        "project_version": _version_line(project_skill) if project_exists else None,
-        "user_path": str(user_skill),
-        "user_exists": user_exists,
-        "user_version": _version_line(user_skill) if user_exists else None,
+        "project_version": _read_skill_version(project_skill) if project_exists else None,
     }
 
 
@@ -199,34 +194,13 @@ def _worktree_check(worktree: Path) -> dict[str, Any]:
     }
 
 
-def _hook_check(
-    common_hooks: Path,
-    name: str,
-    marker_prefix: str,
-    expected_version: str,
-) -> dict[str, Any]:
-    hook = common_hooks / name
-    state, detail = _existing_hook_state(hook, name=name, marker_prefix=marker_prefix)
-    deployed = _hook_bundle_version(hook) if hook.is_file() else None
-    if name == "prepare-commit-msg":
-        aligned = state in {"absent", "managed"}
-    else:
-        aligned = state == "managed" and deployed == expected_version
-    return {
-        "aligned": aligned,
-        "path": str(hook),
-        "state": state,
-        "detail": detail,
-        "deployed_bundle_version": deployed,
-        "expected_bundle_version": expected_version,
-    }
-
-
 def _execute(
     request: CommonRequest,
     repository: RepositoryInspection,
     context: OperationExecutionContext,
 ) -> OperationExecution:
+    platform = request.arguments.get("platform", "")
+    skill_path = request.arguments.get("skill_path", "")
     try:
         locator = _validated_locator(request, context)
     except OperationRequestError:
@@ -267,15 +241,11 @@ def _execute(
     worktree = root
     common_hooks = common_dir / "hooks"
 
-    skill = _skill_check(root)
+    skill = _skill_check(skill_path=skill_path, platform=platform)
     stop_gate = _stop_gate_check(root)
-    commit_msg = _hook_check(common_hooks, "commit-msg", _MANAGED_MARKER_PREFIX, HOOK_BUNDLE_VERSION)
-    prepare = _hook_check(
-        common_hooks,
-        "prepare-commit-msg",
-        _PREPARE_MANAGED_MARKER_PREFIX,
-        _LAST_PREPARE_BUNDLE_VERSION,
-    )
+    hooks = inspect_hook_surface(common_hooks=common_hooks)
+    commit_msg = hooks["commit-msg"]
+    prepare = hooks["prepare-commit-msg"]
     worktrees = _worktree_check(root)
 
     checks = [

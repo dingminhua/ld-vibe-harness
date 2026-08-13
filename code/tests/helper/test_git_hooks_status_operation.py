@@ -13,6 +13,9 @@ from ldvh.helper.service import handle_request
 
 pytestmark = pytest.mark.usefixtures("use_current_rule_source_snapshot")
 
+PLATFORM = "claude-code"
+SKILL_PATH = str(PROJECT_ROOT / "skill" / "SKILL.md")
+
 
 def _git(project: Path, *arguments: str) -> None:
     subprocess.run(["git", "-C", str(project), *arguments], check=True, capture_output=True)
@@ -47,23 +50,32 @@ def _call_operation(operation: str, payload: str):
     return handle_request("call", operation, payload)
 
 
+def _valid_payload() -> str:
+    return json.dumps(
+        {
+            "arguments": {"platform": PLATFORM, "skill_path": SKILL_PATH},
+            "work_object_locators": [str(PROJECT_ROOT)],
+        }
+    )
+
+
 def test_operation_is_discoverable_with_implementation() -> None:
     discovered = handle_request("capabilities", None, "")
 
     operations = discovered.response["result"]["operations"]
     entry = next(item for item in operations if item["operation_key"] == "git-hooks-status")
     assert entry["implementation"]["present"] is True
-    assert entry["required_inputs"] == []
+    assert entry["required_inputs"] == ["arguments.platform", "arguments.skill_path"]
     assert entry["optional_inputs"] == ["work_object_locators"]
     assert entry["effect"] == "read"
     source_paths = [source["locator"] for source in entry["sources"]]
     assert any("09-环境接入规范" in path for path in source_paths)
 
 
-def test_zero_input_on_real_project_returns_contract_shape() -> None:
+def test_valid_input_returns_contract_shape() -> None:
     """The real governed project has a deployed hook and skill copy; the
     operation must return the documented result closure."""
-    result = _call_operation("git-hooks-status", "")
+    result = _call_operation("git-hooks-status", _valid_payload())
 
     assert result.exit_code == 0
     response = result.response
@@ -95,12 +107,45 @@ def test_zero_input_on_real_project_returns_contract_shape() -> None:
         "conflict",
         "unavailable",
     }
+    skill = next(check for check in domain["checks"] if check["surface"] == "skill")
+    assert skill["detail"]["platform"] == PLATFORM
+    assert skill["detail"]["target_skill_path"] == SKILL_PATH
+    assert set(skill["detail"]) >= {
+        "aligned",
+        "platform",
+        "target_skill_path",
+        "target_version",
+        "project_version",
+    }
     assert response["changes"] == []
 
 
-def test_locator_input_matches_zero_input() -> None:
-    payload = json.dumps({"work_object_locators": [str(PROJECT_ROOT)]})
+def test_missing_platform_is_invalid_request() -> None:
+    payload = json.dumps({"arguments": {"skill_path": SKILL_PATH}})
     result = _call_operation("git-hooks-status", payload)
+
+    assert result.exit_code != 0
+    assert result.response["outcome"] == "invalid_request"
+
+
+def test_missing_skill_path_is_invalid_request() -> None:
+    payload = json.dumps({"arguments": {"platform": PLATFORM}})
+    result = _call_operation("git-hooks-status", payload)
+
+    assert result.exit_code != 0
+    assert result.response["outcome"] == "invalid_request"
+
+
+def test_relative_skill_path_is_invalid_request() -> None:
+    payload = json.dumps({"arguments": {"platform": PLATFORM, "skill_path": "relative/SKILL.md"}})
+    result = _call_operation("git-hooks-status", payload)
+
+    assert result.exit_code != 0
+    assert result.response["outcome"] == "invalid_request"
+
+
+def test_locator_input_matches_explicit_input() -> None:
+    result = _call_operation("git-hooks-status", _valid_payload())
 
     assert result.exit_code == 0
     assert result.response["outcome"] == "ok"
@@ -109,15 +154,7 @@ def test_locator_input_matches_zero_input() -> None:
 
 
 def test_rejects_task_input() -> None:
-    payload = json.dumps({"task": "任意任务"})
-    result = _call_operation("git-hooks-status", payload)
-
-    assert result.exit_code != 0
-    assert result.response["outcome"] in {"invalid_request", "rejected"}
-
-
-def test_rejects_arguments_input() -> None:
-    payload = json.dumps({"arguments": {"workspace_root": str(PROJECT_ROOT)}})
+    payload = json.dumps({"arguments": {"platform": PLATFORM, "skill_path": SKILL_PATH}, "task": "任意任务"})
     result = _call_operation("git-hooks-status", payload)
 
     assert result.exit_code != 0
@@ -129,8 +166,10 @@ def test_ungoverned_locator_is_not_silently_successful(tmp_path: Path) -> None:
     outsider = tmp_path / "outsider"
     outsider.mkdir()
     _git(outsider, "init", "-q")
-    payload = json.dumps({"work_object_locators": [str(outsider)]})
+    payload = json.dumps(
+        {"arguments": {"platform": PLATFORM, "skill_path": SKILL_PATH}, "work_object_locators": [str(outsider)]}
+    )
 
     result = _call_operation("git-hooks-status", payload)
 
-    assert result.response["outcome"] in {"unavailable", "rejected"}
+    assert result.response["outcome"] in {"unavailable", "rejected", "invalid_request"}

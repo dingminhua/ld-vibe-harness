@@ -99,6 +99,27 @@ cd ld-vibe-harness
 - 源码 launcher、运行依赖声明、Git Hook 管理实现或 Git Gate 核心入口变化：验证源码入口，并对全部已管辖项目的每个 Git common-dir 逐一重新检查 `commit-msg` Git Gate；管理器会同时报告 `hook_bundle_version`（当前）与 `expected_hook_bundle_version`（工具期望），只有缺失、过期或版本不一致时才受控升级或回滚。升级会仅删除可精确证明由 LDVH 管理的旧 `prepare-commit-msg` 注入 Hook；未知 Hook 或配置冲突时停止，不覆盖；同一 common-dir 的主 worktree 与 linked worktree 共用一次部署，独立 clone 另行检查；
 - 上述处理后按 specs/09 §6.5 与 specs/attachments/09.Att.02 重验受影响范围，不沿用旧验证结论。
 
+各环境 AI 收到「Skill 更新」后，**先按自己环境的官方或实际权威资料确认该环境 Skill 的实际部署目标**，再显式把平台标签与实际绝对 `skill_path` 交给程序——程序不猜厂商路径、也不默认 WorkBuddy。一条清晰的命令形状示例：
+
+```bash
+# <当前平台> 用接收更新的环境标签如实填写，如 "Claude Code" / "Codex" / "Cindy" / "Trae"；
+# <该平台实际 Skill 绝对路径> 用该环境技能目录下 SKILL.md 的真实绝对路径，
+#   由当前环境资料与实际配置确认；程序不会按平台名猜测或拼接这个路径。
+# 1) 只读复核（无副作用）：
+./ldvh call git-hooks-status <<'JSON'
+{"arguments": {"platform": "<当前平台>", "skill_path": "<该平台实际 Skill 绝对路径>"}}
+JSON
+
+# 或经已交付的 environment-sync 只读复核：
+./ldvh environment-sync inspect --platform "<当前平台>" --skill-path "<该平台实际 Skill 绝对路径>"
+
+# 2) 实际同步需要显式 Human Gate：只覆盖上面传入的 skill_path 与当前目录解析出的
+#    受管辖 Git common-dir；未知资产冲突或不明写路径时零写入、冲突停止，不猜路径。
+./ldvh environment-sync update --platform "<当前平台>" --skill-path "<该平台实际 Skill 绝对路径>" --confirm-human-gate
+```
+
+静态 `aligned` 只说明当次显式目标的机械对齐，不等于 Skill 已在该环境真实递达、已加载或 Git Gate 已真实触发；真实递达与逐事件触发仍须分别验证。`skill_path` 缺省、空或相对路径、`platform` 缺省或空时，程序一律判为 `invalid_request`。
+
 ## 启动 Web（本地开发）
 
 需要 Node.js（含 npm）。在仓库根目录执行：

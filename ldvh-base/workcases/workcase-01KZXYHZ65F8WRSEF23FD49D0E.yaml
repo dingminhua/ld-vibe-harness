@@ -1,0 +1,106 @@
+title: 让各 AI 平台显式检查并更新自身 LDVH Skill 与 Git Hook
+status: closed
+goal: 让当前 AI 环境显式传入自身平台标签与实际 Skill 路径，由 LDVH 程序检查并在授权后更新该 Skill，同时检查和升级当前项目 common-dir 的 Git Hook，并用机械护栏防止版本遗漏。
+scope: 修改环境接入规范、附件、行动模板、README、LDVH launcher/Code、git-hooks-status、兼容检查工具、canonical Skill 与测试；仅同步 Human 明确传入的当前 Claude Skill 路径并检查当前仓库 common-dir。排除用户现有 web/api/services/facts.ts、web/src/pages/ObjectList.tsx、web/tests/api/fact-source-metadata.test.ts；不修改事实 Schema 或历史事实，不 push、不发布，只形成 canonical Skill 独立 commit 与其余实现 commit。
+success_criterion_definitions:
+- criterion_id: criterion-explicit-target
+  statement: 稳定入口支持当前 AI 显式传入 platform 标签和绝对 skill_path，inspect→update→inspect 后目标 Skill 与 canonical 逐字节一致且当前 common-dir Git Hook 与期望版本对齐；缺少显式路径时不猜测厂商目录。
+- criterion_id: criterion-safety
+  statement: 只读检查零写入；无 Human Gate 的更新零写入；未知 Skill 或 Hook 资产冲突停止且不覆盖，Skill 与 Hook 的失败路径保留或恢复原状态。
+- criterion_id: criterion-contract
+  statement: git-hooks-status 机器契约返回当次显式平台和实际 Skill 路径，并以测试证明对齐结论只覆盖该目标。
+- criterion_id: criterion-version-guards
+  statement: 机械测试能够阻断 canonical Skill 正文变化未提升 Skill 版本，以及 Git Hook 渲染产物变化未提升 bundle 版本；两种资产版本保持独立。
+- criterion_id: criterion-verification
+  statement: 参数化、冲突、Human Gate、Hook 状态和端到端测试以及风险匹配回归通过，Ruff 与 ldvh check 结果如实记录。
+- criterion_id: criterion-commit-boundary
+  statement: git show 与 git status 可验证 canonical Skill 单独提交、其余实现另一个本地提交、两个提交均未 push，且用户现有三个 Web 修改未被暂存或提交。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-13T16:16:17.041689Z'
+  summary: 受控创建 plan_version=1：承接当前 AI 显式传入平台与 Skill 路径的检查/更新程序、Git Hook 复用、版本护栏、受保护 Skill 修改和两个本地提交；创建前独立审核初轮 changes_required 已全部处置，复审 pass，等待 Gate1。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-13T16:17:34.533608Z'
+  summary: Human Gate 1 批准 plan_version=1 与完整 execution authorization baseline；进入 executing。canonical Skill 的准确候选文本仍按 00 §10.1(13) 在编辑前单独提请确认。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-13T16:57:14.645459Z'
+  summary: 全部四项技术 item terminal：契约、参数化 runtime、受保护 Skill 与版本护栏完成；进入 controller_checking，result_version=1。全量 Python 1818 passed、15 skipped；任务改动 Ruff 通过，全库 Ruff 失败来自任务外并发 Code 改动。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-13T17:02:15.907000Z'
+  summary: controller_checking 形成并回读完整 result_version=1 投影；明确全库 Ruff 任务外阻断与真实递达/触发未验证。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-13T17:02:47.166181Z'
+  summary: controller_checking → independent_reviewing：完整 result_version=1 投影已形成、校验并回读，进入独立结果复核。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-13T17:08:26.732289Z'
+  summary: independent_reviewing 写入 result_version=1 独立只读复核：结论 pass，投影无需修改；复核确认提交边界和静态验证，真实递达/触发仍未验证。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-13T17:11:35.941881Z'
+  summary: independent_reviewing → closure_preparing：独立结果复核 pass，投影不变且无反馈待处置，开始形成关闭提案。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-13T17:12:12.209847Z'
+  summary: closure_preparing 形成 completed 关闭提案：六项标准 satisfied，无原 scope 剩余责任；真实递达/触发与跨平台本次同步作为验证边界披露。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-13T17:13:07.671292Z'
+  summary: closure_preparing → human_closure_confirming：completed 关闭提案完整形成并冻结，等待 Human Gate 2 关闭决定。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-13T19:25:31.010505Z'
+  summary: Human Gate 2 批准 completed 关闭；六项标准 satisfied，无原 scope 剩余责任。
+result_summary: 已交付平台显式参数化的 Skill/Hook 检查与授权更新程序、同步环境接入契约、canonical Skill 2026-08-14 00:00 和 Skill/Hook 独立版本护栏；当前 Claude Skill 与 canonical 逐字节一致，当前 common-dir Hook 版本对齐，并形成两个未 push 的隔离提交。
+success_criterion_results:
+- criterion_id: criterion-explicit-target
+  outcome: satisfied
+  summary: environment-sync 与 git-hooks-status 都要求非空 platform 和绝对 skill_path；临时仓库及当前 Claude 目标均完成 inspect→update→inspect，Skill 逐字节一致且当前 common-dir Hook 对齐，不存在厂商目录回退。
+- criterion_id: criterion-safety
+  outcome: satisfied
+  summary: 测试覆盖 inspect 零写入、无 Human Gate 零写入、未知文件/目录/符号链接冲突停止、原子替换失败保留原字节；Skill 冲突时不执行 Hook 安装，Hook 写入继续复用既有事务管理器。
+- criterion_id: criterion-contract
+  outcome: satisfied
+  summary: git-hooks-status 契约与实现均必填 platform/skill_path，并回显 target_skill_path；契约测试证明结论只覆盖显式目标，WorkBuddy 默认路径已删除。
+- criterion_id: criterion-version-guards
+  outcome: satisfied
+  summary: 版本注册与测试分别锁定 canonical Skill 全文和完整 Hook 渲染摘要；同版本异文会失败，两条版本线独立，历史 Skill 摘要保留并追加 2026-08-14 00:00。
+- criterion_id: criterion-verification
+  outcome: satisfied
+  summary: 全量 Python 1818 passed、15 skipped，聚焦契约回归 217 passed，任务涉及 Python 文件 Ruff 通过，ldvh check outcome=ok/status=passed；全库 Ruff 被任务外并发 Code 改动阻断并已如实保留，真实 Skill 递达和真实 Git commit 触发未验证。
+- criterion_id: criterion-commit-boundary
+  outcome: satisfied
+  summary: 3ebe21d2 只含 skill/SKILL.md；238cf2d3 只含实现、规范、README、测试和本 WorkCase。两个提交均仅在本地，Web 与其它并发未跟踪文件保持未暂存、未提交。
+validation_summary: 全量 Python：1818 passed、15 skipped；聚焦契约/文档/版本回归：217 passed；本任务修改的 Python 文件 Ruff 全部通过；git diff --check 与 ldvh check（outcome=ok、status=passed）通过，后者保留 2 项既有语义 gaps。全库 Ruff 因任务外并发未提交 Code 文件失败，本案未越界修复。当前 Claude Skill 版本 2026-08-14 00:00 且与 canonical byte-identical；commit-msg 当前/期望 bundle 均为 2026-08-13 00:00，prepare Hook absent，两个 worktree 共用同一 common-dir。未验证新会话真实加载/递达 Skill、真实 Git commit 事件触发 Gate、Linux 与原生 Windows 本次同步。
+closure_outcome: completed
+disposition_summary: 全部 6 项成功标准 satisfied：当前 AI 可显式传入平台和绝对 Skill 目标，程序在 Human Gate 后安全同步 Skill 并复用 common-dir Hook manager；环境契约、canonical Skill 与独立版本护栏均已交付，两个本地提交边界正确且未 push。新会话真实 Skill 递达、真实 Git commit 事件触发以及 Linux/原生 Windows 本次同步属于已披露但不改变本案静态制度与程序交付完成判断的验证边界；无原 scope 内剩余责任需转交。
+object_uid: 019ffbe8-fcc5-7a39-8cb9-e21bda44b40e
+object_id: workcase-01KZXYHZ65F8WRSEF23FD49D0E
+fact_type_key: workcase
+created_at: '2026-08-13T16:16:17.041689Z'
+updated_at: '2026-08-13T19:25:31.010505Z'
