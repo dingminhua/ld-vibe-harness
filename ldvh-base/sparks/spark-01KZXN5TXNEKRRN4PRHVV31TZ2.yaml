@@ -1,6 +1,5 @@
 title: 丰富AI回复展现形式
-status: open
-priority: P3
+status: discarded
 intent: LDVH 管辖的 AI 在回复过程中需要可视化呈现关系、对比或流程时，如何主动使用宿主的内联可视化渲染效果，以及 LDVH 以何种形态承接该能力（规则引导提示、行动模板或仅保留实践建议），是待判断的议题。不保留该议题时，后续会话或其它 AI 环境再次处理同类需求，需重新定位既有研究报告与当次结论才能判断承接形态与使用纪律，增加定位、重新分析、分流与上下文恢复负担。
 summary: "**当前判断**\n\n- AI 回复中的内联可视化渲染效果由宿主（WorkBuddy）提供，LDVH 不实现也不应自建渲染引擎；LDVH 承接的是\"使用纪律与引导\"层面。\n- 能力三层模型：渲染通道（各环境专属、不可移植）、AI 判断（宿主不自动提供）、使用纪律（与通道无关、可跨环境统一承载）。\n- study-0020 已记录该效果的工作方式、宿主约束与跨环境迁移结论（迁移纪律而非通道），本会话多幅图为其实证。\n- 现有规范未对 AI 回复中的可视化呈现作任何要求，也没有回复内联可视化相关的行动模板。\n\n**待判断事项**\n\n- 把\"回复可视化使用纪律\"固化为跨环境规范内容（行动模板 06 体系或独立呈现纪律规范，与 Web 呈现规范 specs/08 无关）：何时使用（关系、对比、流程、结构）、用什么结构、避免什么（图表不承载结论、解释留正文）、主题明暗与无障碍要求。\n- 纪律正文保留在规范源、薄 Skill 只路由、规则引导在每环境交付的具体形态与适用边界。\n- 是否建立\"回复中内联可视化呈现\"行动模板，及其适用条件、呈现约束与 V1–V8 / HV1–HV5 价值判断。\n- 每个 AI 环境接入时如何实测该环境呈现能力并如实记录支持范围（不假设\"提出要求即生效\"）。\n\n**边界**\n\n- 本 Spark 不授权修改规范、薄 Skill 或建立行动模板；不表示内联可视化已在 LDVH 中生效。\n- 该能力依赖宿主环境，跨 AI 环境不自动可用；LDVH 环境无关设计不受本议题影响。\n- 渲染通道不可移植；跨环境只迁移使用纪律。"
 relations:
@@ -62,8 +61,15 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
-object_id: spark-01KZXN5TXNEKRRN4PRHVV31TZ2
+- signature:
+    product_name: Trae
+    model_name: deepseek-v4-flash
+    agent_runtime_name: trae
+  at: '2026-08-14T13:43:09.818309Z'
+  summary: 按 Human 当前指令标记为废弃：输出由各环境 harness 自行控制，LDVH 不再寻求干预。关联 study 也退出。
+disposition_summary: Human 决定：各环境的回复展现形式由各环境 harness 自行控制，LDVH 不再寻求干预制定统一纪律或行动模板。该议题不再继续跟踪。
 object_uid: 019ffb52-ebb5-74f1-8a92-d88ef630ebe2
+object_id: spark-01KZXN5TXNEKRRN4PRHVV31TZ2
 fact_type_key: spark
 created_at: '2026-08-03T15:26:53.713420+08:00'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-14T13:43:09.818309Z'

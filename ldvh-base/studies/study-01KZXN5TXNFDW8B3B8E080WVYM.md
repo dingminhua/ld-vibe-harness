@@ -1,6 +1,6 @@
 ---
 title: AI 回复过程中的内联可视化渲染效果
-status: active
+status: retired
 report_kind: technical_assessment
 research_question: WorkBuddy 的 AI 回复过程中如何直接渲染内联可视化效果（Visualizer Core Design System 所规范的内联 SVG/HTML 小部件）？其触发方式、工作方式与适用约束是什么，以及如何把这套方法迁移到其它 AI agent 环境？
 research_intent: 用户希望在 AI 回复过程中直接使用内联可视化渲染效果（而非放入 LDVH Web 界面），并进一步希望在其他 AI agent（Trae、Cursor、Codex、Claude Code 等）中也用上这套方法。需要记录该效果是什么、如何在回复流中呈现、受哪些宿主约束，以及跨环境复用时哪些部分可移植、哪些不可移植，供后续会话与其它 AI 环境复用。
@@ -65,11 +65,18 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
-object_id: study-01KZXN5TXNFDW8B3B8E080WVYM
+- signature:
+    product_name: Trae
+    model_name: deepseek-v4-flash
+    agent_runtime_name: trae
+  at: '2026-08-14T13:43:34.194506Z'
+  summary: 按 Human 当前指令退出：输出由各环境 harness 自行控制，LDVH 不再寻求干预。关联 spark 已废弃。
+disposition_summary: Human 决定：各环境的回复展现形式由各环境 harness 自行控制，LDVH 不再寻求干预制定统一纪律或行动模板。本研究报告不再作为当前研究入口。
 object_uid: 019ffb52-ebb5-7b78-858d-6870100e6fd4
+object_id: study-01KZXN5TXNFDW8B3B8E080WVYM
 fact_type_key: study
 created_at: '2026-08-03T14:50:25.960589+08:00'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-14T13:43:34.194506Z'
 ---
 
 ## 研究问题
