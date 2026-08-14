@@ -121,6 +121,11 @@ function invokeGovernanceScope(locator: string, workspaceRoot: string): Promise<
         }
       },
     )
+    // A helper that exits before consuming stdin must reject the invocation
+    // rather than surface an uncaught stream EPIPE after its caller finished.
+    child.stdin?.on('error', (error) => {
+      reject(new WebGovernanceError(`Governance resolver unavailable: ${error instanceof Error ? error.message : String(error)}`))
+    })
     child.stdin?.end(request)
   })
 }
@@ -236,9 +241,9 @@ async function currentVerifiedScope(force = false): Promise<VerifiedScopeSnapsho
   return verificationInFlight
 }
 
-/** Start the one-time validation without making app construction await it. */
-export function primeWebGovernanceScope(): void {
-  void currentVerifiedScope().catch(() => undefined)
+/** Start the one-time validation and expose its completion to lifecycle owners. */
+export function primeWebGovernanceScope(): Promise<void> {
+  return currentVerifiedScope().then(() => undefined).catch(() => undefined)
 }
 
 /** Explicit Human-requested validation or controlled configuration write. */

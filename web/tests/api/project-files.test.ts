@@ -62,16 +62,19 @@ let server: Server
 let baseUrl = ''
 
 before(async () => {
-  const { default: app } = await import('../../api/app.ts')
+  const { appReady, default: app } = await import('../../api/app.ts')
+  await appReady
   server = app.listen(0)
   const address = server.address() as AddressInfo
   baseUrl = `http://127.0.0.1:${address.port}`
 })
 
 after(async () => {
+  // 先强制断开 keep-alive 连接，避免 close 回调等待空闲连接自然超时，
+  // 再关闭 server 停止接受新连接。
+  server.closeAllConnections?.()
   await new Promise<void>((resolve, reject) => {
     server.close((error) => error ? reject(error) : resolve())
-    server.closeAllConnections?.()
   })
   fs.rmSync(workspaceRoot, { recursive: true, force: true })
 })

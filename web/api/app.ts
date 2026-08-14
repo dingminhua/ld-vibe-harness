@@ -19,7 +19,9 @@ import cognitionRoutes from './routes/cognition.js'
 import { primeWebGovernanceScope } from './services/governanceScope.js'
 
 dotenv.config()
-primeWebGovernanceScope()
+
+/** Import-time governance work is observable so callers can await app startup. */
+export const appReady = primeWebGovernanceScope()
 
 const app: express.Application = express()
 
