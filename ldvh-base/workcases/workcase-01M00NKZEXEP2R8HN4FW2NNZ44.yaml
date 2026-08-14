@@ -1,3 +1,4 @@
+status: closed
 title: 建立 DeepSeek Harness 平台机制事实卡与 WorkCaseRunController 消费合同
 goal: 为 DeepSeek Harness 建立与 09.Att.03（WorkBuddy）、09.Att.04（Cindy）同型的 LDVH 平台机制事实卡，并形成一份非权威的 DeepSeek Harness WorkCaseRunController 运行时消费合同：登记 DeepSeek Harness 承载 WC 独立复核的协作 Worker/subagent 机制事实（复核载体、模型路由、权限语义、消息排队与异步回送）、把 21 §4.5 的 WorkCase 复核控制点映射为 DeepSeek Harness 动作，并以消费合同冻结 session↔WorkCase 绑定、fresh Helper 投影消费、settlement notice / FIFO / workflow 前台收集语义与幂等恢复边界。全部机制陈述绑定当次可观察证据或如实标记 unverified/unsupported；不复制 LDVH 规则正文，不新增环境 Hook/插件/adapter 接入层，不宣称真实接入、部署或递达已发生。
 scope: "在当前 LDVH worktree 内：\n(1) 新建 specs/attachments/09.Att.05-DeepSeek-Harness平台机制事实.md（attachment_key: deepseek-harness-platform-facts），骨架与 09.Att.03/09.Att.04 同型：平台机制事实表、执行注意事项、WC 控制点承接映射、单一事实保护、观察时间与核验；内容只承载平台机制事实，不复述 21/31/34 规则；\n(2) 修改 specs/09-环境接入规范.md 两处：frontmatter authorized_attachments 增加 deepseek-harness-platform-facts，§8 增加一条参照 09.Att.03 既有授权登记句句式的 deepseek-harness-platform-facts 授权登记句（当前 §8 仅有 09.Att.03 一条授权登记句，09.Att.04 只有 frontmatter 授权）；\n(3) 同步 code/tests/specs/test_repository.py 的规范仓库文档数量断言；\n(4) 新建 code/plans/deepseek-harness-workcase-run-controller.md 非权威消费合同，以 code/plans/cindy-workcase-run-controller.md 为结构参照，平台事件与动作一节替换为 DeepSeek Harness 当次实际机制（continuable subagent settlement notice 异步回送、send_message FIFO 排队、workflow 前台收集、未定位宿主 pre-yield/Stop 事件），逐项标注证据级别；\n(5) 验证：./ldvh check 规范机械检查、code/tests/specs 相关聚焦测试、两份交付文件写后回读与 SHA-256、本 WC 事实写后 check-fact-integrity、pre-existing dirty paths 逐文件基线比较。\n机制事实来源闭集：本部署 node_modules/@deepseek-ai 各包 README 与类型定义、~/.dsh/settings.yaml 当次内容、本会话可观察工具面与运行时上下文、一次已实际完成的只读 workflow 分派探针（deepseek-official/deepseek-v4-flash 返回 PROBE_OK）。\n排除：Git commit/push/PR/release/deploy；修改 DeepSeek Harness 源码、~/.dsh 或 settings.yaml 等任何宿主配置；部署或同步 skill、Git Hook、Stop gate 等真实接入动作；真实生产事件或端到端验证；创建或修改其它事实对象；修改任何既有 dirty 文件；逆向私有 API、外部轮询 daemon、新 adapter 或第二状态机。"
@@ -12,122 +13,29 @@ success_criterion_definitions:
   statement: code/tests/specs/test_repository.py 文档数量断言与新增附件一致且 code/tests/specs 相关测试通过；两份交付文件的写后回读 SHA-256 已记录；执行期验证材料（测试输出、./ldvh check 结果、哈希、基线比较）已汇总，可供结果链消费。
 - criterion_id: criterion-user-assets-preserved
   statement: 执行开始前保存 pre-existing dirty paths 集合与逐文件 SHA-256 基线，结束时逐路径比较一致；允许差异仅限本 WC 的四个交付文件与本 WorkCase 自身受控载体；不要求 git status clean。
-priority: P1
-status: open
-phase: controller_checking
-plan_version: 1
-work_items:
-- item_id: item-mechanism-evidence
-  goal: 固化 DeepSeek Harness 机制证据基线：对既有调研结论（continuable subagent 持久/排队/异步回送、workflow per-call provider/model 与前台收集、权限预设与委派策略、skill 根目录、宿主 pre-yield/Stop 事件检索、模型目录与路由探针）逐项补齐来源定位、观察时间与证据级别，形成结构化机制证据清单
-  expected_result: 结构化机制证据清单（执行期临时材料，不入事实源）：每条含机制陈述、来源定位、观察时间、证据级别（verified / unverified+范围 / unsupported+依据），供平台卡与消费合同逐项绑定
-  status: completed
-  result_summary: 机制证据清单已固化于 /tmp/dsh-mechanism-evidence.md：17 条（E1–E17），每条含机制陈述、来源定位与证据级别；15 条 verified（含探针实测 E4/E5 与本会话实测 E12），E13（宿主 Stop 事件）与 E16 部署状态半句为 unverified 并带范围
-- item_id: item-platform-card
-  goal: 撰写 09.Att.05 DeepSeek Harness 平台机制事实卡，并完成 specs/09 的 frontmatter 与 §8 两处授权登记
-  expected_result: 附件与 specs/09 修改已写盘并回读一致；卡内容逐条绑定证据清单或标记 unverified/unsupported；附件 frontmatter 契约（ldvh_attachment 块六字段）与 09.Att.03/09.Att.04 同型
-  status: completed
-  depends_on:
-  - item-mechanism-evidence
-  result_summary: 09.Att.05 已创建（SHA-256 2579b1d4…bdc2）并回读一致；specs/09 frontmatter 与 §8 两处授权登记已写盘（§8 第 377 行，句式参照 09.Att.03）；卡内每条机制陈述绑定证据或标记 unverified 范围
-- item_id: item-consumer-contract
-  goal: 撰写 code/plans/deepseek-harness-workcase-run-controller.md 非权威消费合同
-  expected_result: 合同文件写盘并回读一致；结构参照 Cindy 合同（权威来源表、RunBinding、输入事件合同、单步处理协议、幂等与乱序、合同级 trace、已验证/未验证分栏）；平台相关节以 DeepSeek Harness 机制表达；记录合同最终 SHA-256
-  status: completed
-  depends_on:
-  - item-mechanism-evidence
-  result_summary: code/plans/deepseek-harness-workcase-run-controller.md 已创建并回读一致（SHA-256 见验证材料）；结构参照 Cindy 合同（权威来源表、RunBinding、输入事件合同、单步协议、幂等、trace T1–T8、已验证/未验证分栏、handoff 前置表）；平台节全部替换为 DeepSeek Harness 机制并逐项标注证据级别
-- item_id: item-tests-and-check
-  goal: 同步 test_repository.py 文档数量断言并执行验证汇总：相关聚焦测试、./ldvh check、交付文件 SHA-256、用户资产基线比较
-  expected_result: test_repository.py 断言更新且 code/tests/specs 相关测试通过；./ldvh check 规范机械检查 ok；验证材料（测试输出、check 结果、逐文件哈希、基线比较结论）汇总为可供结果链消费的结构化记录
-  status: completed
-  depends_on:
-  - item-platform-card
-  - item-consumer-contract
-  result_summary: test_repository.py 断言已同步为 36 文档/20 规范/16 附件/108 投影；code/tests/specs 全量 158 passed；./ldvh check 外层 outcome=ok、status=passed（规则源+完整事实库两 scope completed）；交付文件 SHA-256：09.Att.05=2579b1d4f5705085813d4e690729d410f595bd700034fe169c5ef50de4e2bdc2，消费合同=fe0d0a38c7e9c7369ee675ca3b91a48f4b24f7acdbce65c20e056f45004a838a；dirty 基线比较：本 WC 写入集合外有 4 条并发差异（详见 criterion-user-assets-preserved 结果）
-execution_authorization:
-  action_ceiling: 仅限 scope 列出的四个交付文件、本 WorkCase 自身事实写入与只读复核委派；项内重试不超过 3 次，超限停止并按真实状态报告
-  allowed_adjustments: scope 内文件内容、附件编号细节与测试断言数值调整；不改变 goal/scope/criteria、动作上限、风险接受或禁止项
-  authorized_actions:
-  - action_id: authorization-spec-write
-    summary: 新建 09.Att.05 附件，并在 specs/09-环境接入规范.md 做 frontmatter 与 §8 两处授权登记
-    target_scope: specs/attachments/09.Att.05-DeepSeek-Harness平台机制事实.md（新建）、specs/09-环境接入规范.md（frontmatter authorized_attachments 一处、§8 一处）
-    effect_scope: 仅限上述两文件的上述位置；不改动其它规范、附件或既有平台卡内容
-    risk_summary: 附件契约或授权登记不合规会被 ./ldvh check 与结构测试机械发现；不回改既有附件，无连锁语义风险
-    rollback_summary: 新建附件为未跟踪文件可直接删除；specs/09 两处修改可经 git diff 精确回退
-    rule_refs:
-    - environment-integration::8. 环境机制核验与能力判定
-  - action_id: authorization-contract-write
-    summary: 新建 DeepSeek Harness WorkCaseRunController 非权威消费合同
-    target_scope: code/plans/deepseek-harness-workcase-run-controller.md（新建）
-    effect_scope: 仅此一个新建文件；不修改 Cindy 合同或 code/plans 下其它文件
-    risk_summary: 合同被误读为权威来源——文件首部明示非权威并逐项回指权威来源，且明确未验证范围
-    rollback_summary: 新建文件可删除，无既有内容改动
-    rule_refs:
-    - workcase-fact-type::4.5 审核方法与保证边界
-  - action_id: authorization-test-sync
-    summary: 同步 code/tests/specs/test_repository.py 的规范仓库文档数量断言
-    target_scope: code/tests/specs/test_repository.py（仅文档数量/附件计数断言）
-    effect_scope: 仅限断言数值；不改动测试逻辑或其它测试文件
-    risk_summary: 断言数值错误会被测试运行直接发现
-    rollback_summary: git diff 可精确回退
-    rule_refs:
-    - environment-integration::8. 环境机制核验与能力判定
-  - action_id: authorization-fact-write
-    summary: 本 WorkCase 自身事实对象的活动期写入（item 推进、结果与关闭阶段更新）；不含创建本身——创建由受控创建行动在 Gate 1 前完成，不归本授权包管辖
-    target_scope: 仅本 WorkCase 自身的事实对象文件（ldvh-base/workcases/ 下本对象）
-    effect_scope: 仅写入本对象；不创建或修改其它 Spark/Study/ADR/Pitfall/WorkCase
-    risk_summary: 事实写入按 CAS 原子操作，写后精确回读 + check-fact-integrity 验证；不涉及其它对象则无跨对象污染风险
-    rollback_summary: 更新操作使用 CAS 原子替换，写入失败保留 before；整库完整性检查可发现残留
-    rule_refs:
-    - workcase-fact-type::7. AI 写回与受控操作
-    - fact-model-foundation::11.7 事实对象单对象 CAS 更新输入与结果
-  - action_id: authorization-delegate-review
-    summary: 委派执行期独立结果复核给 DeepSeek Harness 只读复核执行体（第 1 档 workflow agent() 协作 Worker，经 deepseek-official/deepseek-v4-flash 路由；不可用时按冻结降级顺序降第 2 档一次性 subagent）
-    target_scope: 本 WorkCase 执行期 independent_reviewing 阶段的结果复核委派
-    effect_scope: 委派只读复核执行体，不授权其写入任何文件或事实对象
-    risk_summary: 复核为只读第二视角；DeepSeek Harness 模型侧无 per-call 机械强制只读工具裁剪，只读边界由分派指令与委派策略（沙箱继承、approval 钉死 never）承载，该保证差距如实登记在复核记录中
-    rollback_summary: 复核结论不修改被审内容；Controller 处置 feedback 后再更新投影
-    rule_refs:
-    - workcase-fact-type::4.5 审核方法与保证边界
-    - workcase-fact-type::6.6 canonical result projection 与结果版本
-  - action_id: authorization-perform-review
-    summary: 执行实际结果复核（只读 subagent/workflow 或 Gate1 冻结的 fallback 方法）
-    target_scope: 本 WorkCase 的 canonical result projection 的实际只读复核
-    effect_scope: 只读审查，不修改任何文件、不创建或更新事实对象、不改变任何状态
-    risk_summary: 复核为只读，无写入风险；实际方法据实记录在 result_reviews 字段中
-    rollback_summary: 复核结论不修改被审内容；Controller 可处置 feedback
-    rule_refs:
-    - workcase-fact-type::4.5.1 核心语义
-    - workcase-fact-type::4.5.2 可接受的执行方式（闭集）
-  quality_gates:
-  - gate_id: independent-result-review
-    reviewer_mode: independent-read-only
-    delegation_action_id: authorization-delegate-review
-    result_review_action_id: authorization-perform-review
-  reviewer_policy:
-    model: deepseek-v4-flash
-    collaboration_agent: workflow-agent
-    effort: default（deepseek-official 适配器默认 high；DeepSeek Harness 模型侧复核分派不支持 per-call effort 设置）
-    fast: false
-    preferred_method: collaboration-worker-read-only
-    fallback_order:
-    - collaboration-worker-read-only
-    - subagent-read-only
-    max_perspectives: 1
-    activation: Human 于本会话明确允许本 WC 在独立复核时按需启用只读协作 Worker 或 subagent（一次授权覆盖第 1、2 档），并以自由文本指定复核模型 "deepseek flash"；已映射为 DeepSeek Harness 的 deepseek-official/deepseek-v4-flash（适配器默认目录成员，无需新增配置），并经创建前一次只读 workflow 分派探针实际验证路由可用（2026-08-15 本会话 workflow 运行 reviewer-route-probe 返回 PROBE_OK）
-    same_ai_limit: 本 WC 不预授权 same-ai-switched-role-read-only fallback（subagent 能力当前可用，无法如实登记 availability=unavailable 的 capability limitation）；执行期若协作 Worker 与 subagent 两档均不可用，按 21/34 停止并如实交还，不在执行期请求扩权。第 2 档降级时 DeepSeek Harness 一次性 subagent 无法 per-call 携带冻结模型（继承主控模型），据实记录 actual_model 与保证差距
-  human_prerequisites:
-  - 无待办 Human 前置：只读复核启用授权与复核模型选择已在创建前由 Human 当前会话明确作出；deepseek-official/deepseek-v4-flash 路由已经只读探针实际验证
-  prohibited_actions:
-  - Git commit、push、PR、release、deploy
-  - 修改 DeepSeek Harness 源码、~/.dsh、settings.yaml 或任何宿主配置
-  - 部署、同步或验证 skill、Git Hook、Stop gate 等真实接入动作
-  - 创建或修改其它事实对象（Spark/Study/ADR/Pitfall/WorkCase）
-  - 修改任何既有 dirty 文件
-  - 真实生产事件、真实端到端验证或外部账号/服务写入
-  - 逆向私有 API、外部轮询 daemon、新 adapter 或第二状态机
-  out_of_bounds_handling: 发现未授权写入、新风险或基线改变时，不执行该动作、取消受影响 item，全部 item terminal 后进入结果链；不请求执行期新授权
-  verification_and_rollback: code/tests/specs 相关聚焦测试 + ./ldvh check 规范机械检查 + 两交付文件写后回读 SHA-256 + pre-existing dirty paths 逐文件基线比较；新建文件可删除、修改文件可 git 回退；未验证范围如实报告不虚构
+success_criterion_results:
+- criterion_id: criterion-platform-card
+  outcome: satisfied
+  summary: 09.Att.05 已创建并回读一致：12 行机制事实表逐条绑定来源定位或标注 unverified/unsupported 及范围；含执行注意事项 7 条、WC 控制点承接映射 7 行与单一事实保护 3 条、观察时间与核验节；不复述规则正文；全文使用全称 DeepSeek Harness，DSH 仅在首部标注一次为简称
+- criterion_id: criterion-spec-authorization
+  outcome: satisfied
+  summary: specs/09 frontmatter authorized_attachments 已含 deepseek-harness-platform-facts（第 25 行），§8 第 377 行已增加参照 09.Att.03 句式的授权登记句；写后 ./ldvh check 外层 outcome=ok、result.status=passed，current_rule_source scope completed
+- criterion_id: criterion-consumer-contract
+  outcome: satisfied
+  summary: code/plans/deepseek-harness-workcase-run-controller.md 已创建：首部明示非权威；权威来源表逐项回指 21/34/Helper/09.Att.05；含 RunBinding、五类输入事件合同（区分 continuable/workflow 双渠道受理与报告语义）、单步处理协议、幂等乱序表、trace T1–T8（标注 synthetic/LDVH-observed/unverified）、已验证与未验证分栏、后续实现 handoff 前置表；未新增状态枚举或永久 receipt
+- criterion_id: criterion-tests-and-evidence
+  outcome: satisfied
+  summary: test_repository.py 断言与实算一致（36/20/16/108）；code/tests/specs 158 项全部通过；两份交付文件写后 SHA-256 已记录；验证材料（测试输出、./ldvh check 结果、哈希、基线比较）已汇总于 item 结果与本投影
+- criterion_id: criterion-user-assets-preserved
+  outcome: not_satisfied
+  summary: 执行前已建立 19 条 pre-existing dirty paths 逐文件 SHA-256 基线；结束比较发现 4 条非授权差异：code/tests/helper/test_cli_process.py 被修改、.ldvh-wc-finalize.py/.ldvh-wc-item.py/.ldvh-wc-review.py 三个 untracked 文件消失、workcase-01M00MNGVFFXW8AZG29T1JPRYN.yaml 哈希变化。本 WC 写入集合可完整枚举（09.Att.05 新建、specs/09 两处、test_repository.py 断言、消费合同新建、本对象受控载体经 Helper CAS），不含上述 4 路径——判断为执行期间并发会话（另一执行中 WorkCase 的工件与事实文件）动作，本 WC 未写入、覆盖或清理任何既有路径；但 criterion 字面条件『逐路径比较一致』不成立，据实记 not_satisfied，留待 Gate 2 由 Human 作 residual 决定
+result_summary: 已交付 DeepSeek Harness 平台机制事实卡（specs/attachments/09.Att.05）与非权威 WorkCaseRunController 消费合同（code/plans/deepseek-harness-workcase-run-controller.md），完成 specs/09 两处授权登记与结构测试断言同步；12 条平台机制陈述逐条绑定当次证据或标注 unverified 范围；创建前与结果复核均经冻结的 workflow-agent/deepseek-v4-flash 通道实际执行。
+validation_summary: code/tests/specs 158 passed；./ldvh check outcome=ok、status=passed（current_rule_source 与 complete_governed_fact_library 均 completed；既有 qualification_unproven 集合级 gap 为基线既有行为）；09.Att.05 SHA-256=2579b1d4f5705085813d4e690729d410f595bd700034fe169c5ef50de4e2bdc2；合同 SHA-256=fe0d0a38c7e9c7369ee675ca3b91a48f4b24f7acdbce65c20e056f45004a838a；workflow 探针 reviewer-route-probe 与创建复核 wc-creation-review 实际运行记录在本会话。未验证：settlement notice 端到端（合同 T8）、宿主 Stop 事件存在性、Git Hook 当次部署状态。
+closure_outcome: partial
+disposition_summary: 本 WorkCase 在原 scope 内完成：DeepSeek Harness 平台机制事实卡 09.Att.05（12 行机制事实逐条绑定证据或标注 unverified 范围）、specs/09 两处授权登记、test_repository.py 断言同步（36/20/16/108，code/tests/specs 158 项通过）、非权威消费合同 code/plans/deepseek-harness-workcase-run-controller.md（双渠道事件合同、trace T1–T8、已验证/未验证分栏）。两项独立复核（创建方案、结果两轮）均经冻结的 workflow-agent/deepseek-v4-flash 通道实际执行。唯一未满足项：criterion-user-assets-preserved 的字面逐路径一致——执行期间并发会话改动 4 条 pre-existing 路径，本 WC 写入集合审计已排除自身损害，按 accept_stop 处置。未验证范围（settlement notice 端到端、宿主 Stop 事件、Git Hook 当次部署状态）已在交付物内如实标注并附检索范围，随平台核验周期处理，不构成新的执行责任。无 route_existing 转交目标、无 Spark 建议。
+residual_responsibilities:
+- residual_id: residual-assets-baseline
+  summary: criterion-user-assets-preserved 字面条件『逐路径比较一致』不成立：执行期间并发会话修改 code/tests/helper/test_cli_process.py、删除三个 .ldvh-wc-*.py 临时脚本、变更 workcase-01M00MNGVFFXW8AZG29T1JPRYN.yaml。本 WC 写入集合可完整枚举（09.Att.05 新建、specs/09 两处、test_repository.py 断言、消费合同新建、本对象受控载体），不含上述路径，本 WC 未写入/覆盖/清理任何既有路径；剩余风险仅为并发差异的归因依赖会话写入审计，接受当前停止边界，不另行转交；Human 如要求可对并发改动另行核查。
 relations:
 - relation_key: related-to
   target:
@@ -138,28 +46,6 @@ relations:
 - relation_key: related-to
   target:
     object_uid: 019ffb52-ebb5-71cb-be5a-db0dc274de76
-creation_reviews:
-- reviewer: workflow-agent-reviewer
-  reviewed_at: '2026-08-14T17:33:00Z'
-  subject_version: 1
-  scope: 对草案 plan_version=1 逐项审核：work items / success criteria 是否吸收 21 §4.3 生命周期关口或 Human Gate；execution_authorization 是否覆盖全部需授权行动且无计划外预授权；reviewer_policy 与 31 §5.2.1 一致性；初态合法性；goal/scope/criteria 语义充分性
-  conclusion: changes_required
-  feedback:
-  - F1（实质）reviewer_policy 档位映射自相矛盾：collaboration_agent 命名 workflow-agent 为可设模型载体但 preferred_method=subagent-read-only、降级链缺第 1 档；建议 preferred_method=collaboration-worker-read-only、降级链补齐并按序降级
-  - F2（实质）fallback_order 预授权 same-ai-switched-role-read-only 但无冻结 capability limitation 支撑，Gate 1 后不可合法触发；建议移除第三档，same_ai_limit 仅作边界说明
-  - F3（事实性主张）relations 第二条 UID 与注释指向不同 Spark——经 Controller 以 Helper read-fact-objects 精确回读证伪：019ffb52-ebb5-74ae-91cd-b1a9001dc76e 确为「无宿主 Hook 时的 WorkCase 行动编排」(open)，注释正确
-  - F4（次要）scope 称 specs/09 §8『与既有两卡同型』不实：当前 §8 仅有 09.Att.03 一条授权登记句，09.Att.04 只有 frontmatter 授权；建议改为参照 09.Att.03 句式
-  - F5（次要）authorization-fact-write 的『创建初态』表述易被误读为 WC 授权自身创建；建议改为活动期写入并明示不含创建
-  - F6（次要）activation/scope 中探针 PROBE_OK 为创建前事实主张而证据固化在 item 1，存在自指张力；建议确认探针时点或降级表述
-  controller_resolution: F1 采纳：preferred_method 改为 collaboration-worker-read-only，fallback_order 改为 [collaboration-worker-read-only, subagent-read-only]，collaboration_agent 与 delegate-review 表述对齐，并登记第 2 档无法携带冻结模型的保证差距。F2 采纳：fallback_order 移除 same-AI 档，same_ai_limit 改为不预授权、两档均不可用时停止交还。F3 驳回：Helper 精确回读证实草案注释正确（复核者把两个 Spark 的 UID 说反）；同时采纳其增补建议，新增第二条 related-to 指向「跨环境能力路由」Spark（019ffb52-ebb5-71cb-be5a-db0dc274de76）。F4 采纳：scope 按实际基线修正。F5 采纳：fact-write 表述修正为活动期写入、不含创建。F6 澄清：探针为草案定稿前已完成的实际观察（本会话 workflow 运行 reviewer-route-probe 返回 PROBE_OK），activation 已补精确时点与运行引用，表述保留。修正均直接落实复核者建议且经 Controller 逐项复核，不再追加第二轮（创建复核轮次上限 2，本次用 1）
-  covered_quality_gate_ids:
-  - independent-result-review
-  actual_method: collaboration-worker-read-only
-  actual_agent: workflow-agent
-  actual_model: deepseek-v4-flash
-  evidence:
-  - 本会话 workflow 运行 reviewer-route-probe（2026-08-14，agent 经 provider=deepseek-official, model=deepseek-v4-flash 路由）实际返回 PROBE_OK，证明该协作 Worker 路由当次可用
-  - 本次创建复核由本会话 workflow 运行 wc-creation-review 的 creation-review-r1 子代理（同一 deepseek-official/deepseek-v4-flash 路由）实际执行，返回完整只读复核报告；Reviewer 自述全程只读、未做任何写操作
 change_log:
 - at: '2026-08-14T17:37:48.962423Z'
   summary: 受控创建 WorkCase：建立 DeepSeek Harness 平台机制事实卡（09.Att.05）与 WorkCaseRunController 消费合同；创建前只读协作 Worker 方案复核（workflow-agent/deepseek-v4-flash）结论 changes_required，6 条反馈已全部处置（F1/F2/F4/F5 采纳修正、F3 经 Helper 精确回读驳回并增补一条关系、F6 澄清探针时点），等待 Human Gate 1
@@ -227,35 +113,38 @@ change_log:
     product_name: DeepSeek Harness
     model_name: kimi-k3
     agent_runtime_name: dsh
-execution_approval:
-  approved_at: '2026-08-14T17:42:30Z'
-  baseline_fingerprint: bc3c442588d1219e12f56f54f8875b56c4643d695c5d2df0455b07d53f7d4661
-  source_refs:
-  - 'user said: 同意执行'
-  subject_version: 1
-  summary: Human 批准 plan_version=1 的计划及完整 execution authorization baseline（baseline_fingerprint=bc3c4425…），允许开始执行 4 个 work items
-result_version: 2
-success_criterion_results:
-- criterion_id: criterion-platform-card
-  outcome: satisfied
-  summary: 09.Att.05 已创建并回读一致：12 行机制事实表逐条绑定来源定位或标注 unverified/unsupported 及范围；含执行注意事项 7 条、WC 控制点承接映射 7 行与单一事实保护 3 条、观察时间与核验节；不复述规则正文；全文使用全称 DeepSeek Harness，DSH 仅在首部标注一次为简称
-- criterion_id: criterion-spec-authorization
-  outcome: satisfied
-  summary: specs/09 frontmatter authorized_attachments 已含 deepseek-harness-platform-facts（第 25 行），§8 第 377 行已增加参照 09.Att.03 句式的授权登记句；写后 ./ldvh check 外层 outcome=ok、result.status=passed，current_rule_source scope completed
-- criterion_id: criterion-consumer-contract
-  outcome: satisfied
-  summary: code/plans/deepseek-harness-workcase-run-controller.md 已创建：首部明示非权威；权威来源表逐项回指 21/34/Helper/09.Att.05；含 RunBinding、五类输入事件合同（区分 continuable/workflow 双渠道受理与报告语义）、单步处理协议、幂等乱序表、trace T1–T8（标注 synthetic/LDVH-observed/unverified）、已验证与未验证分栏、后续实现 handoff 前置表；未新增状态枚举或永久 receipt
-- criterion_id: criterion-tests-and-evidence
-  outcome: satisfied
-  summary: test_repository.py 断言与实算一致（36/20/16/108）；code/tests/specs 158 项全部通过；两份交付文件写后 SHA-256 已记录；验证材料（测试输出、./ldvh check 结果、哈希、基线比较）已汇总于 item 结果与本投影
-- criterion_id: criterion-user-assets-preserved
-  outcome: not_satisfied
-  summary: 执行前已建立 19 条 pre-existing dirty paths 逐文件 SHA-256 基线；结束比较发现 4 条非授权差异：code/tests/helper/test_cli_process.py 被修改、.ldvh-wc-finalize.py/.ldvh-wc-item.py/.ldvh-wc-review.py 三个 untracked 文件消失、workcase-01M00MNGVFFXW8AZG29T1JPRYN.yaml 哈希变化。本 WC 写入集合可完整枚举（09.Att.05 新建、specs/09 两处、test_repository.py 断言、消费合同新建、本对象受控载体经 Helper CAS），不含上述 4 路径——判断为执行期间并发会话（另一执行中 WorkCase 的工件与事实文件）动作，本 WC 未写入、覆盖或清理任何既有路径；但 criterion 字面条件『逐路径比较一致』不成立，据实记 not_satisfied，留待 Gate 2 由 Human 作 residual 决定
-result_summary: 已交付 DeepSeek Harness 平台机制事实卡（specs/attachments/09.Att.05）与非权威 WorkCaseRunController 消费合同（code/plans/deepseek-harness-workcase-run-controller.md），完成 specs/09 两处授权登记与结构测试断言同步；12 条平台机制陈述逐条绑定当次证据或标注 unverified 范围；创建前与结果复核均经冻结的 workflow-agent/deepseek-v4-flash 通道实际执行。
-controller_check_summary: 自检覆盖：(1) 两交付文件写后回读与哈希一致；(2) 机制陈述逐条对照证据清单 E1–E17，无证据的行均已标注 unverified/范围；(3) specs/09 仅两处授权登记、未触其它规范；(4) item 与 criterion 未吸收生命周期关口（创建复核已审，执行期无 PlanΔ）；(5) 本 WC 写入集合审计——会话内全部写操作仅落在四个交付文件与本对象受控载体；(6) 用户资产基线比较发现并发会话差异 4 条，据实记入 criterion-user-assets-preserved=not_satisfied 而非掩饰。
-validation_summary: code/tests/specs 158 passed；./ldvh check outcome=ok、status=passed（current_rule_source 与 complete_governed_fact_library 均 completed；既有 qualification_unproven 集合级 gap 为基线既有行为）；09.Att.05 SHA-256=2579b1d4f5705085813d4e690729d410f595bd700034fe169c5ef50de4e2bdc2；合同 SHA-256=fe0d0a38c7e9c7369ee675ca3b91a48f4b24f7acdbce65c20e056f45004a838a；workflow 探针 reviewer-route-probe 与创建复核 wc-creation-review 实际运行记录在本会话。未验证：settlement notice 端到端（合同 T8）、宿主 Stop 事件存在性、Git Hook 当次部署状态。
+- at: '2026-08-14T18:01:27.794003Z'
+  summary: result_version=2 完整投影已校验回读；进入 independent_reviewing 等待复审
+  signature:
+    product_name: DeepSeek Harness
+    model_name: kimi-k3
+    agent_runtime_name: dsh
+- at: '2026-08-14T18:04:06.944740Z'
+  summary: 记录 result_version=2 复审：pass（无待处置反馈，两条中性观察已读）；投影冻结，准备进入 closure_preparing
+  signature:
+    product_name: DeepSeek Harness
+    model_name: kimi-k3
+    agent_runtime_name: dsh
+- at: '2026-08-14T18:04:54.172700Z'
+  summary: 全部复核反馈已处置、result_version=2 投影冻结；形成完整关闭提案（partial + 1 项 accept_stop residual），进入 closure_preparing
+  signature:
+    product_name: DeepSeek Harness
+    model_name: kimi-k3
+    agent_runtime_name: dsh
+- at: '2026-08-14T18:05:28.695316Z'
+  summary: 终态保留审查完成：item 级过程内容的有效部分已聚合进 criterion results/result_summary/validation_summary，/tmp 证据清单内容已逐条吸收进 09.Att.05 证据列，无独立消费价值的过程内容不复制；§6.8 核对：未形成 draft Pitfall、无 route target、无 Spark 建议、无 outgoing depends-on。进入 human_closure_confirming，写 Gate 2 waiting
+  signature:
+    product_name: DeepSeek Harness
+    model_name: kimi-k3
+    agent_runtime_name: dsh
+- at: '2026-08-14T18:13:11.674416Z'
+  summary: 'Human Gate 2 接受关闭提案（user said: 接受/关闭）：closure_outcome=partial，1 项 accept_stop residual（residual-assets-baseline）保留为终态剩余责任'
+  signature:
+    product_name: DeepSeek Harness
+    model_name: kimi-k3
+    agent_runtime_name: dsh
 object_uid: 01a00159-fddd-7585-8446-a47f055afc84
 object_id: workcase-01M00NKZEXEP2R8HN4FW2NNZ44
 fact_type_key: workcase
 created_at: '2026-08-14T17:37:48.962423Z'
-updated_at: '2026-08-14T18:01:02.095299Z'
+updated_at: '2026-08-14T18:13:11.674416Z'
