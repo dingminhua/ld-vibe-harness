@@ -226,7 +226,10 @@ def _execute(
     }
     return OperationExecution(
         outcome="ok",
-        summary="已从当前 Gate 2 source 快照形成只读 closed fact_object 候选",
+        summary=(
+            "已从当前 Gate 2 source 快照形成只读 closed fact_object 候选；"
+            "mapping_basis 保留每个 route target 的权威 UID/legacy 形状与 content_fingerprint"
+        ),
         result=result,
         requested_scope=requested,
         completed_scope=requested,
@@ -234,7 +237,10 @@ def _execute(
         sources=sources,
         verification=(
             {
-                "check": "候选已绑定 source bytes 并按 21 的唯一确定性映射形成；未读取 proposal targets",
+                "check": (
+                    "候选已绑定 source bytes，并原样保留 proposal route targets 的权威身份形状与"
+                    " content_fingerprint；未读取 proposal targets"
+                ),
                 "status": "passed",
                 "scope": list(requested),
                 "evidence": [_CONTRACT, working_tree_source],

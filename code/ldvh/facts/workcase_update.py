@@ -504,14 +504,24 @@ def proposal_route_target_basis(
         }
         for snapshot in sorted(
             snapshots,
-            key=lambda value: (
-                value.target.governed_project_id,
-                value.target.fact_type_key,
-                value.target.object_id,
-            ),
+            key=lambda value: value.identity,
         )
     ]
     return basis, issues
+
+
+def _projected_target_identity(target: object) -> tuple[object, ...]:
+    """Return the stable identity of one already-validated projected target."""
+
+    target_mapping = target if isinstance(target, Mapping) else {}
+    if "object_uid" in target_mapping:
+        return ("uid", target_mapping.get("object_uid"))
+    return (
+        "legacy",
+        target_mapping.get("governed_project_id"),
+        target_mapping.get("fact_type_key"),
+        target_mapping.get("object_id"),
+    )
 
 
 def project_closed_workcase_candidate(before: Mapping[str, Any]) -> dict[str, Any]:
@@ -550,26 +560,14 @@ def project_closed_workcase_candidate(before: Mapping[str, Any]) -> dict[str, An
     if isinstance(suggestions, list) and suggestions:
         candidate["spark_suggestions"] = deepcopy(suggestions)
 
-    route_target_identities = {
-        (
-            item["target"]["governed_project_id"],
-            item["target"]["fact_type_key"],
-            item["target"]["object_id"],
-        )
-        for item in route_target_basis
-    }
+    route_target_identities = {_projected_target_identity(item["target"]) for item in route_target_basis}
     relations: list[dict[str, Any]] = []
     before_relations = before.get("relations")
     for relation in before_relations if isinstance(before_relations, list) else []:
         if not isinstance(relation, Mapping) or relation.get("relation_key") not in _CLOSED_PRESERVED_RELATION_KEYS:
             continue
         target = relation.get("target")
-        target_mapping = target if isinstance(target, Mapping) else {}
-        target_identity = (
-            target_mapping.get("governed_project_id"),
-            target_mapping.get("fact_type_key"),
-            target_mapping.get("object_id"),
-        )
+        target_identity = _projected_target_identity(target)
         if relation.get("relation_key") == "related-to" and target_identity in route_target_identities:
             continue
         relations.append(deepcopy(dict(relation)))

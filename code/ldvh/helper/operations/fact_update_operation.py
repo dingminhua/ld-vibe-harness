@@ -46,6 +46,7 @@ _CONTRACT = source_reference(
     "rule",
     "fact-model-foundation::11.7 事实对象单对象 CAS 更新输入与结果",
 )
+_READ_RESULT_CONTRACT = source_reference("rule", "fact-model-foundation::11.2 事实对象读取结果字段")
 _SHARED_WRITE_CONTRACT = source_reference("rule", "fact-model-foundation::11.8 共享单对象受控写事务")
 _INTEGRITY_CONTRACT = source_reference("rule", "fact-model-foundation::11.9-11.10 事实写后独立完整性审计")
 _IMPLEMENTATION_SOURCE = source_reference(
@@ -53,6 +54,48 @@ _IMPLEMENTATION_SOURCE = source_reference(
     "code/ldvh/helper/operations/fact_update_operation.py",
 )
 _MANAGED_FIELDS = frozenset({"object_uid", "object_id", "fact_type_key", "created_at", "updated_at"})
+_READ_TO_UPDATE_INPUT_EXAMPLE = {
+    "summary": "把 read-fact-objects 返回的 Spark 转为 update-fact-object 完整 after",
+    "arguments_fragment": {
+        "fact_ref": {"object_uid": "0198f1c7-8a2b-7c3d-9e4f-123456789abc"},
+        "expected_content_fingerprint": "a" * 64,
+        "fact_object": {
+            "title": "完整保留并按本次意图更新的标题",
+            "status": "open",
+            "priority": "P2",
+            "intent": "完整保留并按本次意图更新的意图",
+            "summary": "完整保留并按本次意图更新的摘要",
+            "relations": [],
+            "change_log": [
+                {
+                    "signature": {
+                        "product_name": "existing-product",
+                        "model_name": "existing-model",
+                        "agent_runtime_name": "existing-runtime",
+                    },
+                    "at": "2026-01-01T00:00:00Z",
+                    "summary": "既有流水必须按原顺序和原值保留。",
+                },
+                {
+                    "signature": {
+                        "product_name": None,
+                        "model_name": None,
+                        "agent_runtime_name": None,
+                    },
+                    "at": "2026-01-02T00:00:00Z",
+                    "summary": "描述本次真实更新。",
+                },
+            ],
+        },
+    },
+    "source_refs": (_READ_RESULT_CONTRACT, _CONTRACT),
+    "composition_note": (
+        "这是 Spark 的可组合完整 after 形状示例，不是可直接提交的实例。调用者须使用刚读取对象的真实 UID、"
+        "content_fingerprint 和全部非托管字段，只移除 object_uid/object_id/fact_type_key/created_at/updated_at，"
+        "保持既有 change_log 前缀并恰追加一条本次流水；共同 observed_context.signature 必须按当前会话另行提供，"
+        "写入口会以该快照替换最新流水的 signature。其它事实类型仍须按各自类型来源形成完整 after。"
+    ),
+}
 
 
 def _validated_request(request: CommonRequest, context: OperationExecutionContext) -> FactUpdateRequest:
@@ -904,6 +947,7 @@ FACT_UPDATE_IMPLEMENTATION = OperationImplementation(
     evidence=(_IMPLEMENTATION_SOURCE, _CONTRACT),
     check_availability=_check_availability,
     call=_execute,
+    input_examples=(_READ_TO_UPDATE_INPUT_EXAMPLE,),
 )
 
 

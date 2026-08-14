@@ -34,6 +34,7 @@ def _request() -> CommonRequest:
 
 
 def _fields(*, phase: str = "human_closure_confirming", status: str = "open") -> dict[str, object]:
+    route_target_uid = "019ffd48-d7b1-7bd4-abf2-3759fa544ba2"
     return {
         "status": status,
         "phase": phase,
@@ -56,9 +57,7 @@ def _fields(*, phase: str = "human_closure_confirming", status: str = "open") ->
                     "summary": "后续责任。",
                     "proposed_disposition": "route_existing",
                     "route_target": {
-                        "governed_project_id": "sample",
-                        "fact_type_key": "workcase",
-                        "object_id": "workcase-0008",
+                        "object_uid": route_target_uid,
                         "content_fingerprint": "b" * 64,
                     },
                 }
@@ -67,11 +66,7 @@ def _fields(*, phase: str = "human_closure_confirming", status: str = "open") ->
         "relations": [
             {
                 "relation_key": "related-to",
-                "target": {
-                    "governed_project_id": "sample",
-                    "fact_type_key": "spark",
-                    "object_id": "spark-0001",
-                },
+                "target": {"object_uid": "019ffd48-d7b1-7c82-8825-93eafde2fef7"},
             }
         ],
     }
@@ -155,25 +150,18 @@ def test_candidate_operation_returns_complete_nonmanaged_projection_without_read
         _fields()["relations"][0],  # type: ignore[index]
         {
             "relation_key": "routed-to",
-            "target": {
-                "governed_project_id": "sample",
-                "fact_type_key": "workcase",
-                "object_id": "workcase-0008",
-            },
+            "target": {"object_uid": "019ffd48-d7b1-7bd4-abf2-3759fa544ba2"},
         },
     ]
     assert execution.result["mapping_basis"] == {
         "proposal_route_targets": [
             {
-                "target": {
-                    "governed_project_id": "sample",
-                    "fact_type_key": "workcase",
-                    "object_id": "workcase-0008",
-                },
+                "target": {"object_uid": "019ffd48-d7b1-7bd4-abf2-3759fa544ba2"},
                 "content_fingerprint": "b" * 64,
             }
         ]
     }
+    assert "权威 UID/legacy 形状与 content_fingerprint" in execution.summary
 
 
 def test_candidate_operation_prefers_route_over_related_to_for_the_same_target(monkeypatch) -> None:
@@ -181,11 +169,7 @@ def test_candidate_operation_prefers_route_over_related_to_for_the_same_target(m
     fields["relations"] = [
         {
             "relation_key": "related-to",
-            "target": {
-                "governed_project_id": "sample",
-                "fact_type_key": "workcase",
-                "object_id": "workcase-0008",
-            },
+            "target": {"object_uid": "019ffd48-d7b1-7bd4-abf2-3759fa544ba2"},
         }
     ]
     _install_read(monkeypatch, fields)
@@ -197,11 +181,7 @@ def test_candidate_operation_prefers_route_over_related_to_for_the_same_target(m
     assert execution.result["fact_object"]["relations"] == [
         {
             "relation_key": "routed-to",
-            "target": {
-                "governed_project_id": "sample",
-                "fact_type_key": "workcase",
-                "object_id": "workcase-0008",
-            },
+            "target": {"object_uid": "019ffd48-d7b1-7bd4-abf2-3759fa544ba2"},
         }
     ]
 

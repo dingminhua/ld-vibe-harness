@@ -126,7 +126,7 @@ def test_candidate_discovery_publishes_only_the_source_bound_text_match_input_fr
     assert all(
         operation["input_examples"] == []
         for operation in operations
-        if operation["operation_key"] != "find-fact-object-candidates"
+        if operation["operation_key"] not in {"find-fact-object-candidates", "update-fact-object"}
     )
     assert len(candidate_operation["input_examples"]) == 2
     assert candidate_operation["input_examples"][0] == {
@@ -145,6 +145,32 @@ def test_candidate_discovery_publishes_only_the_source_bound_text_match_input_fr
     source = candidate_operation["input_examples"][0]["source_refs"][0]
     assert source["kind"] == "rule"
     assert source["locator"] == "fact-model-foundation::11.5 事实对象候选发现输入字段"
+
+
+def test_fact_update_publishes_a_source_bound_read_to_update_after_example() -> None:
+    response = handle_request("capabilities", None, "").response
+    operation = next(
+        item for item in response["result"]["operations"] if item["operation_key"] == "update-fact-object"
+    )
+
+    assert len(operation["input_examples"]) == 1
+    example = operation["input_examples"][0]
+    fragment = example["arguments_fragment"]
+    fact_object = fragment["fact_object"]
+    assert set(fact_object).isdisjoint({"object_uid", "object_id", "fact_type_key", "created_at", "updated_at"})
+    assert set(fragment) == {"fact_ref", "expected_content_fingerprint", "fact_object"}
+    assert len(fact_object["change_log"]) == 2
+    assert fact_object["change_log"][-1]["signature"] == {
+        "product_name": None,
+        "model_name": None,
+        "agent_runtime_name": None,
+    }
+    assert [source["locator"] for source in example["source_refs"]] == [
+        "fact-model-foundation::11.2 事实对象读取结果字段",
+        "fact-model-foundation::11.7 事实对象单对象 CAS 更新输入与结果",
+    ]
+    assert "全部非托管字段" in example["composition_note"]
+    assert "observed_context.signature" in example["composition_note"]
 
 
 def test_repository_problem_is_not_rewritten_as_empty_discovery(monkeypatch, tmp_path: Path) -> None:

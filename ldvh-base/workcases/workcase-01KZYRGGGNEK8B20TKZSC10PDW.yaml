@@ -12,133 +12,31 @@ success_criterion_definitions:
   statement: 为上述改动新增/更新聚焦测试：覆盖关闭候选输出形状、read→update 示例/指引；既有相关测试回归通过，Ruff 通过。
 - criterion_id: criterion-boundary
   statement: 改动不触及事实对象 Schema/字段定义/状态机、不修复 NameError Code bug、不改变只读操作输出契约（spark-0074「Helper 只读交互优化」边界）；回归测试证明既有调用方必需字段未破坏。
-work_items:
-- item_id: item-closure-candidate
-  goal: 关闭候选输出补充 UID 形状 route_target 要求
-  expected_result: prepare-closed-workcase-candidate 输出包含 route_target 形状要求（UID 形状 + content_fingerprint 必填），AI 形成 closure_proposal 时不再产生 legacy 三元组事故
-  status: pending
-  approach_summary: 在 workcase_close_candidate_operation.py 的输出与契约描述中补充 route_target 形状要求；以日志会话『关闭提案缺失或结构不符』事故为验收样本。
-- item_id: item-read-update-bridge
-  goal: 收敛 read→update after 构建摩擦
-  expected_result: capabilities 层为 read-fact-objects/update-fact-object 提供最小完整 after 示例（input_examples）或等价指引，AI 可据此构造 update after；05 §11.2 result 输出闭集保持不变
-  status: pending
-  depends_on:
-  - item-closure-candidate
-  approach_summary: 在 capabilities 契约层（04.Att.01 input_examples）为 read-fact-objects 提供可消费的最小完整 after 示例，明确剥离 Code 托管字段；不改 read-fact-objects 的 05 §11.2 result 输出闭集（该边界属 spark-0074 承接）。
-- item_id: item-nameerror-record
-  goal: 如实记录 NameError 复现条件
-  expected_result: NameError 的最小复现条件、触发路径与『本 WC 未修复』边界写入结果链（不修改 Code bug 本身）
-  status: pending
-  depends_on:
-  - item-read-update-bridge
-  approach_summary: 以日志会话（session-23c4d407）第 16 轮排查结论为转述证据来源，执行时如实标注当次复现 vs 转述既有排查的边界；未当次复现的部分在 result_summary/validation_summary 如实标记 not_verified 边界，不冒充当次复现。
-- item_id: item-tests
-  goal: 编写/更新聚焦测试并跑通回归
-  expected_result: 新增覆盖测试通过；既有相关测试回归通过；Ruff 通过
-  status: pending
-  depends_on:
-  - item-nameerror-record
-  approach_summary: 为关闭候选输出形状与 read→update 示例/指引补测试；复用既有 helper/facts 测试设施。
-execution_authorization:
-  quality_gates:
-  - gate_id: independent-result-review
-    reviewer_mode: independent-read-only
-    delegation_action_id: authorization-delegate-review
-    result_review_action_id: authorization-result-review
-  authorized_actions:
-  - action_id: authorization-modify-write-path
-    summary: 修改 Helper 关闭候选与 read→update 写入路径实现/契约
-    target_scope: code/ldvh/helper/operations/workcase_close_candidate_operation.py 与 read-fact-objects/update-fact-object 契约层实现
-    effect_scope: workspace 内代码文件写入；不写 ldvh-base/ 事实载体
-    risk_summary: 中风险：写入路径契约变化可能影响既有调用方；以回归测试与字段保留核对控制
-    rollback_summary: 各改动点独立可回滚（git diff 反向）；不触碰既有事实与规则源
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-    - specs/05-事实模型基础规范.md
-  - action_id: authorization-modify-tests
-    summary: 新增/更新聚焦测试并运行 pytest 与 Ruff
-    target_scope: code/tests/helper/ 与 code/tests/facts/ 相关测试文件
-    effect_scope: workspace 内测试文件写入与本地测试运行
-    risk_summary: 低风险
-    rollback_summary: 删除/还原测试文件即可
-    rule_refs:
-    - specs/05-事实模型基础规范.md
-  - action_id: authorization-update-attachment
-    summary: 更新规范附件中关闭候选/写入契约描述（04.Att.01/05.Att.01 相关章节）
-    target_scope: specs/attachments/ 下与关闭候选及 read→update 契约直接相关的附件章节
-    effect_scope: 规范附件文本更新；不改变章节结构（§10.1 保护章节除外）
-    risk_summary: 中风险：附件为契约权威之一，须与实现一致；通过 diff 复核
-    rollback_summary: git diff 反向还原
-    rule_refs:
-    - specs/04-Helper CLI 服务规范.md
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-record-nameerror
-    summary: 在结果链记录 NameError 复现条件与边界（不修改 Code bug）
-    target_scope: 本 WorkCase 的 result projection/验证材料
-    effect_scope: 只读记录，不修改 code/ldvh 中 correct-closed-workcase 实现
-    risk_summary: 低风险
-    rollback_summary: 无副作用
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-delegate-review
-    summary: 委派只读 subagent 执行独立结果复核
-    target_scope: 本 WorkCase 的 result projection 与验证材料
-    effect_scope: 只读委派，不写事实
-    risk_summary: 低风险
-    rollback_summary: 无副作用
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-result-review
-    summary: 执行实际结果复核（subagent-read-only）并记录 result_reviews
-    target_scope: 本 WorkCase canonical result projection
-    effect_scope: 只读复核与 review 字段写入
-    risk_summary: 低风险
-    rollback_summary: 无副作用
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-  action_ceiling: 只授权上述 Helper 关闭候选与 read→update 路径实现、测试、附件文本的本地修改及测试运行；不授权修复 correct-closed-workcase NameError Code bug、ldvh-base/ 事实写入（本 WC 自身受控写回除外）、Git commit/push/release、事实 Schema/字段定义/状态机修改、只读操作输出契约修改（spark-0074「Helper 只读交互优化」边界）。
-  prohibited_actions:
-  - Git commit/push/release
-  - ldvh-base/ 事实载体直写
-  - 修复 correct-closed-workcase NameError Code bug
-  - 修改事实对象 Schema、字段定义或状态机
-  - 修改只读操作输出契约（spark-0074「Helper 只读交互优化」承接范围）
-  - 修改 specs/ 章节结构或受保护章节
-  allowed_adjustments: 在各 item 内部调整实现细节、测试用例与附件措辞；不改变 goal/scope/success criteria/action ceiling/禁止项
-  verification_and_rollback: 每个 item 完成后运行聚焦 pytest + Ruff；失败据实记录并返修，不强制改写；每次改动点可 git diff 反向回滚；附件更新须与实现 diff 一致复核
-  out_of_bounds_handling: 发现需要修复 NameError Code bug、修改事实 Schema/状态机、超出 action ceiling 或落入 spark-0074（只读操作输出契约）边界的需求时，停止该动作、据实取消受影响 item 并进入结果链，不扩权执行
-  reviewer_policy:
-    model: deepseek-v4-flash
-    collaboration_agent: none（本环境未提供协作 Worker 载体，使用 native subagent）
-    effort: medium
-    fast: true
-    preferred_method: subagent-read-only
-    fallback_order:
-    - subagent-read-only
-    - same-ai-switched-role-read-only
-    max_perspectives: 1
-    activation: Human 已在 2026-08-14 会话明确授权 native subagent 只读复核（reviewer-carrier 选择）
-    same_ai_limit: 仅当协作 Worker 与 subagent 均不可用且满足 21 §4.5 约束时启用；当前不适用
+success_criterion_results:
+- criterion_id: criterion-closure-candidate
+  outcome: satisfied
+  summary: 关闭候选对 UID route target 可确定投影：排序使用稳定身份，candidate 与 mapping_basis 保留 UID 形状和 content_fingerprint，摘要及验证显式声明该要求；聚焦及最终回归通过。
+- criterion_id: criterion-read-update-bridge
+  outcome: satisfied
+  summary: update-fact-object capabilities 发布来源绑定的 Spark 完整 after 示例，明确复用真实 UID/指纹与全部非托管字段、移除 5 个托管字段、保留并追加 change_log、另行提供 observed_context.signature；read-fact-objects 输出闭集未改。
+- criterion_id: criterion-nameerror-documented
+  outcome: satisfied
+  summary: 结果链已记录 UID route target NameError 的历史触发路径：缺失 RouteTargetFingerprint 导入；既有提交 53f4d97c 已修复。当前精确回归通过且不复现，本 WC 未修改该路径，因此不虚构未完成的另立 Spark。
+- criterion_id: criterion-tests
+  outcome: satisfied
+  summary: 最终相关测试集 207 passed，覆盖关闭候选、WorkCase application、capabilities、fact update、CLI 与 WorkCase 写入；所改 5 个代码/测试文件 Ruff 通过，限定 diff --check 通过。
+- criterion_id: criterion-boundary
+  outcome: satisfied
+  summary: 变更仅涉及关闭候选 UID 投影、update capabilities 示例及其测试；未改事实 Schema/字段定义/状态机、未改只读结果输出契约、未改 correct-closed-workcase NameError 路径、未改 specs、未提交或推送。
+result_summary: plan_version=1 / result_version=1 的 4 个 work items 全部 completed，5 项成功标准全部 satisfied。关闭候选现在正确支持 UID route target 并显式携带 content_fingerprint 要求；update capabilities 提供可直接组合的 read→update 完整 after 示例；NameError 证据已按“历史发生、既有修复、当前不复现、本 WC 未触碰”边界记录。代码改动限定在 3 个实现文件和 2 个测试文件。
+validation_summary: 实际验证：最终相关 pytest 207 passed；此前关闭候选/WorkCase application 聚焦 111 passed、read→update 相关 69 passed；correct-closed-workcase UID 精确回归当前 1 passed（已包含在最终集）；5 个改动代码/测试文件 Ruff 全通过；限定 git diff --check 通过；./ldvh check 返回 passed，236 个事实对象完整性 complete、0 problems。规则源检查仍提示 7 项资格条件尚未由 Code 自动证明及直接 basis 必要性需语义复核，此为现存非阻塞 disclosure，不冒充已证明。未运行全仓所有测试，未进行 Git commit/push/release。
+closure_outcome: completed
+disposition_summary: 本 WorkCase 按 completed 关闭：plan_version=1 / result_version=1 的 4 个 work items 全部 completed，5 项成功标准全部 satisfied，原 scope 内无未满足或未验证责任，无 residual decisions。交付内容：1) prepare-closed-workcase-candidate 关闭候选对 UID route target 的正确投影（candidate/mapping_basis 原样保留 UID 形状与 content_fingerprint，排序使用稳定身份）；2) update-fact-object capabilities 发布来源绑定的 read→update 完整 after 示例（明确移除 5 个托管字段、保留 change_log 前缀并追加当前流水、另行提供 observed_context.signature）；3) correct-closed-workcase 的 UID route target NameError 已按『历史发生（缺失 RouteTargetFingerprint 导入）、既有修复（提交 53f4d97c）、当前精确回归通过不复现、本 WC 未触碰』边界如实记录。验证：最终相关 pytest 207 passed、所改 5 个文件 Ruff 全通过、git diff --check 通过、./ldvh check 事实库完整性 complete 0 problems；未运行全仓所有测试、未进行 Git commit/push/release（如实披露）。结果复核 pass_with_followups，3 条 feedback 已由 Controller 处置：NameError criterion 语义收敛有据（既有修复故不虚构未完成 Spark）、validation 计数时效已披露（236 为投影形成时快照，当前 237 含并行新 WC）、非阻断观察记录在案。接受关闭即接受本处置与验证边界。
 relations:
 - relation_key: related-to
   target:
     object_uid: 019ffb52-ebb5-7706-ba55-38e7bc9b1cc9
-priority: P2
-status: open
-phase: human_plan_confirming
-plan_version: 1
-waiting_on: Human Gate1 decision on the complete plan and execution authorization baseline
-creation_reviews:
-- reviewer: subagent-readonly-reviewer-siuuru-round3
-  reviewed_at: '2026-08-13T23:48:50Z'
-  subject_version: 1
-  scope: 完整计划初态：goal/scope/5 success criteria/4 work items/execution_authorization（quality_gates + 6 authorized_actions + reviewer_policy）/relations；按 21 §4.2-4.5/§5/§6、31 §5、04 §5-7、05 §11、00 §8 逐项复核；前两轮（changes_required → pass_with_followups）feedback 已由 Controller 处置。未覆盖：未运行 LDVH CLI；未验证 Human 授权与日志会话排查结论的真实性；未通读附件正文确认 input_examples 落点。
-  conclusion: pass
-  covered_quality_gate_ids:
-  - independent-result-review
-  actual_method: subagent-read-only
-  actual_agent: subagent-readonly-reviewer-siuuru-round3
-  actual_model: deepseek-v4-flash
+status: closed
 change_log:
 - signature:
     product_name: DeepSeek Harness
@@ -146,8 +44,104 @@ change_log:
     agent_runtime_name:
   at: '2026-08-13T23:49:52.173973Z'
   summary: 受控创建 plan_version=1：承接 spark-0075「受控写入优化」（ldvh@SIUURU），聚焦关闭候选契约闭合与 read→update 契约收敛；创建前经 3 轮 native subagent 只读方案复核（末轮 pass），Human 已授权 subagent 复核载体；等待 Gate 1。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:10:06.995549Z'
+  summary: Human Gate 1 已批准当前完整计划与冻结授权基线；WorkCase 进入 executing。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:10:44.992168Z'
+  summary: 开始 item-closure-candidate：关闭候选 UID route target 契约闭合。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:12:53.429381Z'
+  summary: 完成 item-closure-candidate：UID route target 候选映射与聚焦回归通过。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:13:16.029457Z'
+  summary: 开始 item-read-update-bridge：收敛 read→update after 构建摩擦。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:15:02.959110Z'
+  summary: 完成 item-read-update-bridge：capabilities 提供来源绑定的 read→update after 示例。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:16:54.920060Z'
+  summary: 完成 item-nameerror-record：核清历史 NameError 触发、既有修复与本 WC 未触碰边界。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:17:42.337107Z'
+  summary: 开始 item-tests：执行相关回归、Ruff 与边界验证。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:19:58.641879Z'
+  summary: 完成 item-tests 并形成 result_version=1 完整 canonical result projection；进入 controller_checking。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:21:07.997268Z'
+  summary: 结果投影已完成，但冻结 reviewer model 在当前环境不可用；据实进入 blocked，等待合规只读复核载体。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-14T06:24:26.442197Z'
+  summary: 解除 blocked：冻结 reviewer model=deepseek-v4-flash 与本会话 native subagent（继承 deepseek-v4-flash）一致，独立结果复核载体可用；返回 controller_checking 准备进入 independent_reviewing。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-14T06:24:44.522210Z'
+  summary: controller_checking → independent_reviewing：完整 result_version=1 投影已形成、校验并回读；写 Reviewer waiting，等待独立结果复核。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-14T06:29:38.927263Z'
+  summary: independent_reviewing 内写入 result_version=1 独立结果复核（pass_with_followups，3 条 feedback 已由 Controller 处置）：NameError criterion 语义收敛有据、validation 计数时效已披露、非阻断观察记录在案。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-14T06:29:54.104045Z'
+  summary: independent_reviewing → closure_preparing：至少一项 result review 已形成且全部 feedback 已处置、projection 未变；开始形成关闭提案。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-14T06:30:21.730400Z'
+  summary: closure_preparing 内整体写入完整关闭提案（proposed_outcome=completed，无 residual decisions，无 spark_suggestions）。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-14T06:30:46.136683Z'
+  summary: closure_preparing → human_closure_confirming：完整关闭提案（proposed_outcome=completed）已冻结并回读，无 residual decisions、无 spark_suggestions、无 depends-on，终态保留审查完成；写 Human waiting，等待 Gate 2 关闭决定。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-14T07:08:36.291869Z'
+  summary: Human Gate 2 接受 completed 关闭；按 21 §6.7 原子关闭，proposal 逐值映射 closure_outcome/disposition_summary，无 residual 与 routed-to。
 object_uid: 019ffd88-4215-74d0-b103-53fe581059bc
 object_id: workcase-01KZYRGGGNEK8B20TKZSC10PDW
 fact_type_key: workcase
 created_at: '2026-08-13T23:49:52.173973Z'
-updated_at: '2026-08-13T23:49:52.173973Z'
+updated_at: '2026-08-14T07:08:36.291869Z'
