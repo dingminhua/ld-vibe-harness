@@ -202,6 +202,12 @@ test('recent hotspots keep a compact relationship overview and a focused one-hop
   assert.match(graph, /aria-label=\{`\$\{roleLabel\}: \$\{title\}[\s\S]*cognition\.commitHotspots\.commitRefs/);
   assert.doesNotMatch(graph, /title=\{labels\.join\(' · '\)\}/);
   assert.match(graph, /data-hotspot-node-header[\s\S]*node\.activityRefs\.length[\s\S]*status/);
+  const cognition = read('src/pages/CognitionCenter.tsx');
+  const cognitionApi = read('api/routes/cognition.ts');
+  assert.match(cognitionApi, /discardedWorkCase[\s\S]*closure_outcome === 'cancelled'/);
+  assert.match(cognitionApi, /item\.status !== undefined \? \{ status: item\.status \}/);
+  assert.match(cognition, /workcase: new Set\(\['closed', 'discarded'\]\)/);
+  assert.match(graph, /const status = node\.status \?\? \(node\.type === 'workcase' \? node\.progress_group : undefined\)/);
   assert.match(graph, /const titleFontSize = primary \? \(expanded \? 18 : 16\) : 14/);
   assert.match(graph, /const titleIconSize = titleFontSize/);
   assert.match(graph, /size=\{titleIconSize\}/);

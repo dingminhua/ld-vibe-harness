@@ -66,7 +66,7 @@ type RecentHotspotStatusFilter = 'all' | 'progressing' | 'decision' | 'settled';
 
 const RECENT_HOTSPOT_STATUS_FILTERS: RecentHotspotStatusFilter[] = ['all', 'progressing', 'decision', 'settled'];
 const RECENT_HOTSPOT_TERMINAL_STATUSES: Record<string, Set<string>> = {
-  workcase: new Set(['closed']),
+  workcase: new Set(['closed', 'discarded']),
   adr: new Set(['retired']),
   pitfall: new Set(['discarded']),
   spark: new Set(['implemented', 'discarded']),
@@ -74,13 +74,13 @@ const RECENT_HOTSPOT_TERMINAL_STATUSES: Record<string, Set<string>> = {
 };
 
 function getRecentHotspotStatusGroup(node: CognitionRecentHotspotNode): Exclude<RecentHotspotStatusFilter, 'all'> {
+  if (node.status && RECENT_HOTSPOT_TERMINAL_STATUSES[node.type]?.has(node.status)) return 'settled';
   if (node.type === 'workcase') {
     if (node.progress_group === 'plan_confirmation' || node.progress_group === 'closure_confirmation') return 'decision';
     if (node.progress_group === 'closed') return 'settled';
     return 'progressing';
   }
   if (node.type === 'pitfall' && node.status === 'draft') return 'decision';
-  if (node.status && RECENT_HOTSPOT_TERMINAL_STATUSES[node.type]?.has(node.status)) return 'settled';
   return 'progressing';
 }
 

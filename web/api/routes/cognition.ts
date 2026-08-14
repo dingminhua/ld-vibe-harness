@@ -555,6 +555,9 @@ export function projectRecentHotspotFact(item: LocalFactItem, type: ObjectType):
   const progressGroup = currentProjection?.resolution === 'resolved'
     ? currentProjection.progress_group
     : undefined
+  const discardedWorkCase = type === 'workcase'
+    && progressGroup === 'closed'
+    && raw.closure_outcome === 'cancelled'
   const priority = priorityRank(raw.priority) < 4 && typeof raw.priority === 'string' ? raw.priority : undefined
   return {
     type,
@@ -563,7 +566,7 @@ export function projectRecentHotspotFact(item: LocalFactItem, type: ObjectType):
     title,
     ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
     ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
-    ...(status ? { status } : {}),
+    ...(discardedWorkCase ? { status: 'discarded' } : status ? { status } : {}),
     ...(currentProjection?.resolution === 'resolved'
       ? { lifecycle_position: currentProjection.lifecycle_position }
       : {}),
@@ -707,7 +710,7 @@ export function buildRecentHotspots(
       title: item.title,
       ...(item.title_en !== undefined ? { title_en: item.title_en } : {}),
       ...(item.title_zh !== undefined ? { title_zh: item.title_zh } : {}),
-      ...(item.type !== 'workcase' && item.status !== undefined ? { status: item.status } : {}),
+      ...(item.status !== undefined ? { status: item.status } : {}),
       ...(item.progress_group !== undefined ? { progress_group: item.progress_group } : {}),
       ...(item.priority !== undefined ? { priority: item.priority } : {}),
       read_status: item.read_status,
