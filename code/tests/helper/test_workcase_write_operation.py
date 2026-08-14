@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
 from ldvh.facts.creation import CreationBoundary
-from ldvh.facts.models import FactIssue, FactReference
+from ldvh.facts.models import FactIssue, FactReference, UIDFactReference
 from ldvh.facts.repository import FactReadResult
 from ldvh.facts.schema import FactSchema
 from ldvh.facts.workcase_update import WorkCaseWriteResult
@@ -254,6 +255,65 @@ def test_helper_adapter_passes_complete_correct_request_to_core_without_reconstr
     assert command.route_target_fingerprints[0].target == target
     assert command.route_target_fingerprints[0].content_fingerprint == "b" * 64
     assert command.route_target_fingerprints[0].origin_path == "route_target_fingerprints[0].target"
+
+
+def test_correct_closed_accepts_uid_route_target_without_name_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    source = FactReference("sample", "workcase", "workcase-0006")
+    target = UIDFactReference("019ffd48-d7b1-7bd4-abf2-3759fa544ba2")
+    resolved_target = FactReference("sample", "workcase", "workcase-0042")
+    domain = CorrectClosedWorkCaseRequest(
+        workspace_root=Path("/workspace"),
+        governance_scope=(ScopeDescriptor(0, "/project", LocatorSource.EXPLICIT_LOCATOR),),
+        fact_ref=source,
+        expected_content_fingerprint="a" * 64,
+        fact_object={"title": "Corrected", "status": "closed"},
+        authorization_reference=(),
+        base=Path("/project"),
+        route_target_fingerprints=(RouteTargetFingerprint(target, "b" * 64),),
+        independent_review_reference={"kind": "review", "locator": "review:closed-correction"},
+    )
+    boundary = _boundary()
+    schema = FactSchema("workcase", ())
+    application = WorkCaseWriteResult("candidate_rejected", "2026-07-26T16:00:00+08:00")
+    monkeypatch.setattr(workcase_update_operation, "_validated_request", lambda *_args: domain)
+    monkeypatch.setattr(workcase_update_operation, "_governance", lambda *_args: _run())
+    monkeypatch.setattr(workcase_update_operation, "_boundary", lambda *_args: boundary)
+    monkeypatch.setattr(
+        workcase_update_operation,
+        "project_fact_schemas",
+        lambda *_args: {"workcase": schema},
+    )
+    monkeypatch.setattr(workcase_update_operation, "native_atomic_fact_writes_supported", lambda: True)
+    monkeypatch.setattr(
+        workcase_update_operation,
+        "resolve_stable_fact_reference",
+        lambda *_args: (SimpleNamespace(reference=resolved_target, boundary=boundary), "resolved"),
+    )
+    captured = {}
+
+    def fake_apply(*args):
+        captured["domain"] = args[1]
+        return application
+
+    monkeypatch.setattr(workcase_update_operation, "_apply_core_workcase_write", fake_apply)
+
+    execution = workcase_update_operation._execute(
+        "correct",
+        CommonRequest(
+            None,
+            (),
+            {},
+            None,
+            {"signature": {"product_name": "pytest", "model_name": "test-model", "agent_runtime_name": "pytest"}},
+            (),
+            response_profile="diagnostic",
+        ),
+        object(),
+        OperationExecutionContext(Path("/project"), "2026-07-26T16:00:00+08:00"),
+    )
+
+    assert execution.outcome == "rejected"
+    assert captured["domain"].route_target_fingerprints[0].target == target
 
 
 def test_workcase_helper_chinese_describes_the_mechanical_boundary_without_overclaiming() -> None:

@@ -48,6 +48,7 @@ from ldvh.helper.operations.workcase_update_request import (
     UPDATE_OPTIONAL_INPUTS,
     UPDATE_REQUIRED_INPUTS,
     CorrectClosedWorkCaseRequest,
+    RouteTargetFingerprint,
     WorkCaseWriteRequest,
     parse_begin_workcase_termination_request,
     parse_close_workcase_request,
