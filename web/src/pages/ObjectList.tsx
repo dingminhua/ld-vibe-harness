@@ -1292,7 +1292,7 @@ export function ObjectCardFrame({
       {children}
       <FactAssociationsCardContent associations={obj.factAssociations} />
       {/* Keep the identity → title → update rhythm stable; grid stretch leaves any spare space below. */}
-      <div className="-mt-1 flex min-w-0 items-center justify-end pt-0.5 text-right opacity-70">
+      <div className="mt-1 flex min-w-0 items-center justify-end pt-0.5 text-right opacity-70">
         <ObjectUpdatedMeta source={obj} updatedAt={obj.updated} />
       </div>
     </div>
