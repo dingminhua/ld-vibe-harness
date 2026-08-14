@@ -1,0 +1,116 @@
+title: 最小执行证据协议定义与验证
+goal: 定义并验证 LDVH 最小执行证据协议：冻结 task/contract/payload/runner 四类身份定义、事件来源分级规则与评分前可比性门槛，形成可机器消费的结构化协议模块与会话级证据回放验证，为第 3–5 项优化（读写契约统一、read→update 契约闭合、签名拼装减负、只读去重）提供「是否真有效」的评估前置机制；协议以会话事件日志（harness-delivered 层级）为证据来源，不提升为 host-received。
+scope: 在 code/ldvh/testing 下新增 evidence_protocol.py 协议定义模块（只读，纯数据/常量，不写事实源）与对应聚焦测试；协议冻结 task/contract/payload/runner 身份形状、事件来源分级规则（LDVH prepared / harness-delivered / host-received / behavior-consistent / causal-effect 五级）、评分前可比性门槛（复用 session_comparability 的 comparable 判定与事件图配对完整性）。在 code/ldvh/testing/equivalence_retrial.py 的评分管线中集成协议身份记录：每个 trial 记录 task/contract/payload/runner 四类身份指纹，协议身份不匹配的 trial 在评分前标 not_comparable 或 out_of_protocol。新增 code/tests/testing/test_evidence_protocol.py 聚焦测试与 code/tests/testing/test_equivalence_retrial.py 的协议集成测试。以当前环境真实 DSH 会话日志为样本做协议级会话回放验证：每个会话按协议输出身份指纹、事件来源分级标记与可比性判定，验证结果汇总记录在 WorkCase 的结果/验证记录中（不保存原始会话内容）。在 code/plans/ 下形成一份最小执行证据协议的规范草案（markdown，只读文档，不修改正式 specs/）。排除：修改正式规则语义、行动模板、Helper 公共契约；建立健康分、遥测、Dashboard 或告警；Git commit、push、release；其他执行中 WorkCase 的事实文件和作用范围；上游 Spark 的任何写入；不保存原始会话/试次内容（只进受限临时根）。
+success_criterion_definitions:
+- criterion_id: criterion-identity
+  statement: 协议冻结 task/contract/payload/runner 四类身份定义与来源分级规则：evidence_protocol.py 以只读常量/纯数据形式交付四类身份形状、五级事件来源分级与评分前可比性门槛规则，且不读取消息正文/工具结果内容。
+- criterion_id: criterion-integration
+  statement: 协议集成到评分管线：equivalence_retrial.py 每个 trial 记录四类身份指纹，协议身份不匹配的 trial 在评分前标 not_comparable/out_of_protocol 且不进入比较；聚焦测试覆盖。
+- criterion_id: criterion-protocol-doc
+  statement: 在 code/plans/ 下形成最小执行证据协议规范草案（markdown），涵盖身份定义、来源分级、可比性门槛与消费规则；文档不修改正式 specs，回读与实际内容一致。
+- criterion_id: criterion-samples
+  statement: 以当前环境至少 5 个真实 DSH 会话日志为样本做协议级回放，每个会话输出身份指纹、来源分级标记与可比性判定；回放结果可由人工逐项核对（执行期人工检查材料，不构成独立结果复核），汇总记录在 WorkCase 验证记录中，不含原始内容。
+- criterion_id: criterion-boundary
+  statement: 协议明确区分 harness-delivered 可观察与 host-received unavailable，不把协议通过写成因果结论或总体服务改善证据；与 Study/上游 Spark 边界一致。
+status: closed
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a0004d-dc0c-71cd-806f-b5acb36d7057
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
+- relation_key: related-to
+  target:
+    object_uid: 019ffd18-bafe-714f-be81-257c1502b922
+change_log:
+- at: '2026-08-14T15:07:44.968812Z'
+  summary: 受控创建 WorkCase：从三个关联 Spark 细分第 1 项与服务质量评估 Spark 下一验证顺序第 1 步下沉最小执行证据协议定义与验证；创建前已获 Human 对只读 subagent 复核的明确授权，等待独立方案复核与 Gate 1
+  signature:
+    product_name: DeepSeek Harness
+    model_name: glm-5.2
+    agent_runtime_name: dsh
+- at: '2026-08-14T15:44:03.051429Z'
+  summary: begin-workcase-termination：按 Human 确认进入终止善后，原因：重复创建（与 workcase-01M00D4C9BFT4S0QTHVTYEB018 内容一致，保留后者）
+  signature:
+    product_name: DeepSeek Harness
+    model_name: glm-5.2
+    agent_runtime_name: dsh
+- at: '2026-08-14T15:44:53.753410Z'
+  summary: update-workcase（termination_preparing 善后收口）：quality_steps 据实标记 skipped，cleanup_status=completed，cleanup_summary 记录保留对象验证结果
+  signature:
+    product_name: DeepSeek Harness
+    model_name: glm-5.2
+    agent_runtime_name: dsh
+- at: '2026-08-14T15:45:36.473263Z'
+  summary: update-workcase（termination_preparing 善后收口补充）：显式记录 retained_scope 与 unverified_scope
+  signature:
+    product_name: DeepSeek Harness
+    model_name: glm-5.2
+    agent_runtime_name: dsh
+- at: '2026-08-14T15:46:13.736305Z'
+  summary: complete-workcase-termination：closed（cancelled），termination 原样保留，受限 Spark 建议记录承接与恢复条件
+  signature:
+    product_name: DeepSeek Harness
+    model_name: glm-5.2
+    agent_runtime_name: dsh
+termination:
+  initiated_at: '2026-08-14T15:44:00.947738Z'
+  source_status: open
+  source_phase: human_plan_confirming
+  source_content_fingerprint: ea339c859c8c8ecf567103392e3b340cc63729dfd2e8491a42cf222a8ef68bee
+  reason: 重复创建：本 WorkCase 与同一时间创建的 workcase-01M00D4C9BFT4S0QTHVTYEB018 内容完全一致，保留后者，终止本对象
+  source_refs:
+  - Human 在当前会话中确认重复创建并同意按建议终止关闭
+  item_snapshots:
+  - item-doc::pending::no-runtime-summary
+  - item-integration::pending::no-runtime-summary
+  - item-protocol::pending::no-runtime-summary
+  - item-samples::pending::no-runtime-summary
+  discarded_scope:
+  - 本 WorkCase 的完整事实对象文件（ldvh-base/workcases/workcase-01M00D16HREZXTQM2RYV6Z0B01.yaml）
+  relationship_impacts:
+  - 本对象无入向 depends-on，无出向 routed-to，无 contributed-to；related-to 指向三个来源对象，保留后由保留的重复对象继续覆盖
+  quality_steps:
+  - independent_result_review:skipped
+  - closure_proposal:skipped
+  - gate_2:skipped
+  cleanup_status: completed
+  cleanup_summary: 已完成：保留对象 workcase-01M00D4C9BFT4S0QTHVTYEB018 经 read-fact-objects 验证 mechanically_valid，ldvh check 全库 passed；本对象按重复创建终止关闭，无物理文件需清理（事实对象保留为 closed 记录）
+  retained_scope:
+  - 本对象作为 closed 事实记录保留（LDVH 事实模型要求终止链保留 termination 现场与处置）
+  unverified_scope:
+  - 无：本对象未进入执行，无未验证执行范围；保留对象的验证已由 read-fact-objects + ldvh check 完成
+success_criterion_results:
+- criterion_id: criterion-identity
+  outcome: not_verified
+  summary: 本对象因重复创建终止，未进入执行；原计划与保留对象 workcase-01M00D4C9BFT4S0QTHVTYEB018 完全一致
+- criterion_id: criterion-integration
+  outcome: not_verified
+  summary: 本对象因重复创建终止，未进入执行；原计划与保留对象 workcase-01M00D4C9BFT4S0QTHVTYEB018 完全一致
+- criterion_id: criterion-protocol-doc
+  outcome: not_verified
+  summary: 本对象因重复创建终止，未进入执行；原计划与保留对象 workcase-01M00D4C9BFT4S0QTHVTYEB018 完全一致
+- criterion_id: criterion-samples
+  outcome: not_verified
+  summary: 本对象因重复创建终止，未进入执行；原计划与保留对象 workcase-01M00D4C9BFT4S0QTHVTYEB018 完全一致
+- criterion_id: criterion-boundary
+  outcome: not_verified
+  summary: 本对象因重复创建终止，未进入执行；原计划与保留对象 workcase-01M00D4C9BFT4S0QTHVTYEB018 完全一致
+result_summary: 本 WorkCase 因重复创建终止：内容与保留对象 workcase-01M00D4C9BFT4S0QTHVTYEB018 完全一致（仅身份/时间戳不同），未执行任何 work item，按终止善后链关闭。
+validation_summary: 保留对象经 read-fact-objects 验证 mechanically_valid；ldvh check 全库通过；终止链按 begin/update/complete-workcase-termination 契约完成。
+closure_outcome: cancelled
+disposition_summary: 重复创建终止：原计划由内容完全一致的保留对象 workcase-01M00D4C9BFT4S0QTHVTYEB018 承接，本对象无独立剩余责任；受限 Spark 建议记录承接与恢复条件。
+spark_suggestions:
+- suggestion_id: suggestion-duplicate-retention
+  suggestion_kind: constrained_responsibility
+  summary: 本 WorkCase 因重复创建终止；原计划（最小执行证据协议定义与验证）已由内容完全一致的保留对象 workcase-01M00D4C9BFT4S0QTHVTYEB018 承接
+  restriction_reason: 同一时间误创建两份内容完全一致的对象，LDVH 事实模型不允许重复对象并存，故保留其一终止其一
+  impact_summary: 本对象未进入执行，无执行影响；保留对象处于 human_plan_confirming 等待 Human Gate 1
+  resume_condition: 若保留对象被终止或关闭且本事项仍待推进，需由新 WorkCase/Gate1 重新承接
+  follow_up_summary: 保留对象承接全部原计划责任，本对象无独立后续
+object_uid: 01a000d0-9a38-77fb-abd0-58f6cdf02c01
+object_id: workcase-01M00D16HREZXTQM2RYV6Z0B01
+fact_type_key: workcase
+created_at: '2026-08-14T15:07:44.968812Z'
+updated_at: '2026-08-14T15:46:13.736305Z'

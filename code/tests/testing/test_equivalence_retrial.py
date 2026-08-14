@@ -18,6 +18,9 @@ from ldvh.testing.equivalence_retrial import (
     summarize_batch,
     validate_executor_result,
 )
+from ldvh.testing.evidence_protocol import (
+    extract_trial_identity,
+)
 from ldvh.testing.trial_measurement import SafeTrialTempRoot
 
 
@@ -240,3 +243,116 @@ def test_summarize_batch_rejects_empty() -> None:
 def test_schema_version_is_stable() -> None:
     assert EQUIVALENCE_RETRIAL_VERSION == "ldvh-equivalence-retrial/1"
     assert VARIANTS == ("full_contract", "required_removed", "irrelevant_added")
+
+
+# ---------------------------------------------------------------------------
+# Protocol identity integration tests
+# ---------------------------------------------------------------------------
+
+
+def test_run_trial_with_reference_identity_records_protocol_identity() -> None:
+    """Protocol identity is recorded when reference_identity is provided."""
+    envelope = _envelope()
+    reference = extract_trial_identity(
+        task_id=envelope.task_id,
+        task_package_hash=envelope.task_package_hash,
+        contract_sha256=envelope.contract_sha256,
+        payload=envelope.payload,
+        carrier_fingerprint=envelope.carrier.fingerprint(),
+    )
+    record = run_trial(
+        envelope=envelope,
+        executor=_success_executor(),
+        reference_identity=reference,
+    )
+    assert record.protocol_identity is not None
+    assert record.protocol_verdict is not None
+    assert record.out_of_protocol is False
+    assert record.protocol_identity.fully_matches(reference) is True
+
+
+def test_run_trial_without_reference_identity_omits_protocol() -> None:
+    """Protocol fields are None when no reference_identity is given."""
+    record = run_trial(envelope=_envelope(), executor=_success_executor())
+    assert record.protocol_identity is not None  # always computed
+    assert record.protocol_verdict is None
+    assert record.out_of_protocol is False
+
+
+def test_run_trial_identity_mismatch_marks_out_of_protocol() -> None:
+    """A trial with a different task identity is marked out_of_protocol."""
+    envelope = _envelope()
+    # Use a different task_id so the reference differs.
+    reference = extract_trial_identity(
+        task_id="task-other",
+        task_package_hash=envelope.task_package_hash,
+        contract_sha256=envelope.contract_sha256,
+        payload=envelope.payload,
+        carrier_fingerprint=envelope.carrier.fingerprint(),
+    )
+    record = run_trial(
+        envelope=envelope,
+        executor=_success_executor(),
+        reference_identity=reference,
+    )
+    assert record.out_of_protocol is True
+    assert record.protocol_verdict is not None
+    assert record.protocol_verdict.protocol_verdict == "not_comparable"
+
+
+def test_summarize_batch_counts_out_of_protocol() -> None:
+    """Batch summary counts out_of_protocol trials."""
+    envelope = _envelope()
+    matching_ref = extract_trial_identity(
+        task_id=envelope.task_id,
+        task_package_hash=envelope.task_package_hash,
+        contract_sha256=envelope.contract_sha256,
+        payload=envelope.payload,
+        carrier_fingerprint=envelope.carrier.fingerprint(),
+    )
+    mismatching_ref = extract_trial_identity(
+        task_id="task-other",
+        task_package_hash=envelope.task_package_hash,
+        contract_sha256=envelope.contract_sha256,
+        payload=envelope.payload,
+        carrier_fingerprint=envelope.carrier.fingerprint(),
+    )
+    record_matching = run_trial(
+        envelope=envelope,
+        executor=_success_executor(),
+        reference_identity=matching_ref,
+    )
+    record_mismatching = run_trial(
+        envelope=_envelope(sample_index=1),
+        executor=_success_executor(),
+        reference_identity=mismatching_ref,
+    )
+    records = [record_matching, record_mismatching]
+    assessments = [assess_trial(r, {"c": lambda r: True}) for r in records]
+    summary = summarize_batch(records, assessments)
+    assert summary.out_of_protocol_count == 1
+    assert summary.payload()["out_of_protocol_count"] == 1
+
+
+def test_persist_batch_artifacts_includes_out_of_protocol(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """Persisted records include out_of_protocol field."""
+    root = SafeTrialTempRoot.create(prefix="ldvh-retrial-protocol-", repository_root=tmp_path)
+    envelope = _envelope()
+    reference = extract_trial_identity(
+        task_id="task-other",
+        task_package_hash=envelope.task_package_hash,
+        contract_sha256=envelope.contract_sha256,
+        payload=envelope.payload,
+        carrier_fingerprint=envelope.carrier.fingerprint(),
+    )
+    record = run_trial(
+        envelope=envelope,
+        executor=_success_executor(),
+        reference_identity=reference,
+    )
+    assessment = assess_trial(record, {"c": lambda r: True})
+    summary = summarize_batch([record], [assessment])
+    paths = persist_batch_artifacts(root, records=[record], assessments=[assessment], summary=summary)
+    payload = root.read_json("records/trials.json")
+    assert payload["records"][0]["out_of_protocol"] is True
+    assert summary.out_of_protocol_count == 1

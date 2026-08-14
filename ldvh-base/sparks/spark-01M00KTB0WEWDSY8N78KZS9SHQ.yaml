@@ -1,8 +1,7 @@
 title: WorkCase 执行期实施与事实同步断链——未回读即宣称生命周期阶段
-status: open
-priority: P2
 intent: 保留议题：WorkCase 执行期存在「实施已完成但事实未同步」的失败模式——工作项做完不写回状态、独立结果复核结论只留在会话上下文不落盘到事实对象、事实写入调用失败后静默跳过、最后未经回读事实源就宣称生命周期阶段推进。既有续跑守卫只防「未做完就提前交还」，审核真实性规范只防「谎报审核」，都不覆盖这条「做完了但事实库不知道、且基于记忆宣称阶段」的缝隙。后续需判断：逐 item 事实同步的强制点应放在执行行动模板、Helper 写入口还是 Stop gate；阶段宣称前的回读前置检查如何机械化；跨运行时（创建环境与执行环境不同）续接 WorkCase 时 Stop gate 绑定如何迁移或替代。若不跨行动保留该问题，每次执行中断或上下文压缩后都要重新比对代码与事实库的真实差距，并反复发生基于记忆的阶段误报，增加定位、重新分析、分流与复核负担。
-summary: "## 现象\n\n一次已获 Gate 1 批准的 WorkCase（最小执行证据协议定义与验证）执行期暴露 4 处断链：\n\n1. 4 个 work items 全部实施完成，但事实对象中 item status 仍为 pending，执行期间从未对单个 item 做过 update-workcase 写回；\n2. 只读 subagent 独立结果复核实际执行且结论为 approved，但复核结论只存在于会话上下文，未写入事实对象的 result_review 字段；\n3. 一次 update-workcase 调用因请求形状错误失败后未读 gaps 修复重试，写入失败被静默跳过；\n4. 交还时宣称「处于 Gate 2 关闭确认阶段」，但当时事实源中 phase=executing、items 全部 pending，且宣称基于记忆而非回读；同时跳过了 independent_reviewing 阶段，直接把 Gate 2 材料建立在未经事实同步的状态上。\n\n## 根因\n\n- 生命周期链路（executing → independent_reviewing → human_closure_confirming → closed）未内化，凭印象推进而非先读 21 号规范；\n- 会话内 todo 列表与事实对象状态被混同，把「实施完成」当作「事实已同步」；\n- 写入失败无处置纪律（读 gaps → 修复 → 重试 → 或如实报告），一次失败即丢失；\n- 宣称阶段无机械前置检查（回读 + current_snapshot_projection 对照），依赖执行者自觉；\n- 跨运行时续接：WorkCase 由一个运行时创建、另一个运行时执行，Stop gate 按 session 精确绑定且未迁移，执行环境没有机械反馈「下一控制步骤」。\n\n## 拟议加强\n\n- 逐 item 事实同步：每个 item 完成后立即 update-workcase 更新该项 status，不攒批，使任意中断点事实状态准确；\n- 结果复核落盘：subagent 复核结论在委派返回后立即写入 result_review，上下文压缩不丢失证据；\n- 写入失败处置纪律：update-workcase 失败必须当场读响应 gaps/diagnostics 修复重试或如实交还失败，不得跳过；\n- 宣称前置回读：任何关于 phase/status 的对外宣称前必须 read-fact-objects 回读并以 current_snapshot_projection 对照；\n- Gate 2 准入机械化：items 全 terminal + phase 已推进 + result_review 已落盘三条件全部成立才呈现 Gate 2 材料；\n- 跨运行时绑定迁移：续接他人创建的 WorkCase 时先绑定本会话 Stop gate。\n\n## 待判断\n\n- 上述加强点哪些落入 34 号执行行动模板的步骤约束，哪些应做成 Helper/Code 机械检查（如 update-workcase 对「executing 且 items 全 terminal」的提示，或 readback-before-claim 的守卫位置）；\n- Stop gate 绑定按 session 精确绑定与跨运行时续接需求之间的矛盾如何解（绑定迁移、会话无关的 worktree 级提示，或接受缺口并在模板中补偿）；\n- 「逐 item 写回」与「CAS 完整 after 逐次提交」的成本权衡（每次写回都要完整 after + fingerprint）。\n\n## 边界\n\n- 本 Spark 只记录议题、根因与加强方向，不授权修改规范、模板或 Code；\n- 相关既有结论：续跑守卫（防提前交还）已由 workcase-0042 承接并落地；审核真实性采用规范禁令 + actual_method 留痕 + 能力限制披露，机械证明留作已知缺口。本议题与之互补，聚焦「实施完成后的同步与宣称」侧；\n- 本 Spark 形成于一次真实执行复盘，未经独立复核。"
+status: implemented
+summary: "## 现象\n\n一次已获 Gate 1 批准的 WorkCase（最小执行证据协议定义与验证）执行期暴露 4 处断链：\n\n1. 4 个 work items 全部实施完成，但事实对象中 item status 仍为 pending，执行期间从未对单个 item 做过 update-workcase 写回；\n2. 只读 subagent 独立结果复核实际执行且结论为 approved，但复核结论只存在于会话上下文，未写入事实对象的 result_review 字段；\n3. 一次 update-workcase 调用因请求形状错误失败后未读 gaps 修复重试，写入失败被静默跳过；\n4. 交还时宣称「处于 Gate 2 关闭确认阶段」，但当时事实源中 phase=executing、items 全部 pending，且宣称基于记忆而非回读；同时跳过了 independent_reviewing 阶段，直接把 Gate 2 材料建立在未经事实同步的状态上。\n\n## 根因\n\n- 生命周期链路（executing → independent_reviewing → human_closure_confirming → closed）未内化，凭印象推进而非先读 21 号规范；\n- 会话内 todo 列表与事实对象状态被混同，把「实施完成」当作「事实已同步」；\n- 写入失败无处置纪律（读 gaps → 修复 → 重试 → 或如实交还失败），一次失败即丢失；\n- 宣称阶段无机械前置检查（回读 + current_snapshot_projection 对照），依赖执行者自觉；\n- 跨运行时续接：WorkCase 由一个运行时创建、另一个运行时执行，Stop gate 按 session 精确绑定且未迁移，执行环境没有机械反馈「下一控制步骤」。\n\n## 拟议加强\n\n- 逐 item 事实同步：每个 item 完成后立即 update-workcase 更新该项 status，不攒批，使任意中断点事实状态准确；\n- 结果复核落盘：subagent 复核结论在委派返回后立即写入 result_review，上下文压缩不丢失证据；\n- 写入失败处置纪律：update-workcase 失败必须当场读响应 gaps/diagnostics 修复重试或如实交还失败，不得跳过；\n- 宣称前置回读：任何关于 phase/status 的对外宣称前必须 read-fact-objects 回读并以 current_snapshot_projection 对照；\n- Gate 2 准入机械化：items 全 terminal + phase 已推进 + result_review 已落盘三条件全部成立才呈现 Gate 2 材料；\n- 跨运行时绑定迁移：续接他人创建的 WorkCase 时先绑定本会话 Stop gate。\n\n## 待判断\n\n- 上述加强点哪些落入 34 号执行行动模板的步骤约束，哪些应做成 Helper/Code 机械检查（如 update-workcase 对「executing 且 items 全 terminal」的提示，或 readback-before-claim 的守卫位置）；\n- Stop gate 绑定按 session 精确绑定与跨运行时续接需求之间的矛盾如何解（绑定迁移、会话无关的 worktree 级提示，或接受缺口并在模板中补偿）。\n\n## 边界\n\n- 本 Spark 只记录议题、根因与加强方向，不授权修改规范、模板或 Code；\n- 相关既有结论：续跑守卫（防提前交还）已由 workcase-0042 承接并落地；审核真实性采用规范禁令 + actual_method 留痕 + 能力限制披露，机械证明留作已知缺口。本议题与之互补，聚焦「实施完成后的同步与宣称」侧；\n- 本 Spark 形成于一次真实执行复盘，未经独立复核。"
 relations:
 - relation_key: related-to
   target:
@@ -26,8 +25,15 @@ change_log:
     product_name: TRAE
     model_name: deepseek-v4-flash
     agent_runtime_name: trae-code
+- at: '2026-08-14T18:26:38.910635Z'
+  summary: 按 Human 当前决定完成本 Spark 所提出的执行期事实同步与阶段宣称处置：34 号执行模板已补强逐项写回、失败后读取 gaps 并修复重试、写后回读与跨运行时续接绑定；独立复核结果已进入规则、模板与平台机制事实卡，并完成对应验证。状态改为 implemented；该终态仅表示本 Spark 的机制入口和直接承接已落实，不表示所有 WorkCase 执行实例均已完成或历史失败不再可能发生。
+  signature:
+    product_name: Codex
+    model_name: gpt-5
+    agent_runtime_name: codex
+disposition_summary: 本 Spark 所提出的执行期事实同步断链，已由 34 号 WorkCase 获批计划执行模板、相关 WorkCase 规则、独立复核流程与平台机制事实卡直接承接：逐项完成后写回、写入失败读取 gaps 并修复重试、阶段宣称前精确回读、独立复核结果落盘以及跨运行时续接绑定均已形成当前机制和验证依据。状态改为 implemented 仅表示本 Spark 的机制入口和直接承接已落实，不表示所有 WorkCase 执行实例均已完成、所有宿主均已真实触发机制，或该类过程失败在未来绝对不会发生。
 object_uid: 01a0013d-2c1c-771b-9f22-a744ff94e637
 object_id: spark-01M00KTB0WEWDSY8N78KZS9SHQ
 fact_type_key: spark
 created_at: '2026-08-14T17:06:20.249956Z'
-updated_at: '2026-08-14T17:07:03.079168Z'
+updated_at: '2026-08-14T18:26:38.910635Z'

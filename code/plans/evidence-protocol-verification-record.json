@@ -1,0 +1,452 @@
+{
+  "summary": {
+    "protocol_version": "ldvh-evidence-protocol/1",
+    "total_sessions": 7,
+    "successful_sessions": 7,
+    "failed_sessions": 0,
+    "verdict_counts": {
+      "comparable": 7
+    },
+    "claim_boundary": "structured replay only; does not prove causal effect, host receipt, or overall service improvement.  No raw content or message bodies were read or retained."
+  },
+  "sessions": [
+    {
+      "session_id": "1d71a60f-655a-47ff-90af-e15ede5fe93d",
+      "carrier_entries": [
+        [
+          "deepseek-official",
+          "deepseek-v4-pro"
+        ]
+      ],
+      "tool_names": [
+        "bash",
+        "read"
+      ],
+      "event_graph": {
+        "turn_start": 1,
+        "turn_end": 1,
+        "step_start": 9,
+        "step_end": 9,
+        "tool_call": 18,
+        "tool_result": 18,
+        "pairing_ok": true
+      },
+      "flag_events": [
+        {
+          "type": "approval/policy",
+          "count": 1
+        },
+        {
+          "type": "sandbox/mode",
+          "count": 1
+        },
+        {
+          "type": "subagent/descriptor",
+          "count": 1
+        }
+      ],
+      "source_grading": {
+        "ldvh-prepared": 3,
+        "harness-delivered": 56,
+        "host-received": 0,
+        "behavior-consistent": 0,
+        "causal-effect": 0
+      },
+      "identity_fingerprints": {
+        "task": "452717b1644f3963...",
+        "contract": "452717b1644f3963...",
+        "payload": "452717b1644f3963...",
+        "runner": "a1259c10a327bcf7...",
+        "full_fingerprint": "3f74c268ac4b61fa..."
+      },
+      "comparability": {
+        "session_verdict": "comparable",
+        "session_reasons": [],
+        "protocol_verdict": "comparable",
+        "protocol_reasons": [],
+        "effective_verdict": "comparable",
+        "identity_mismatch_types": []
+      }
+    },
+    {
+      "session_id": "7e8893c3-b986-4ac6-a093-7c23502f5ee4",
+      "carrier_entries": [
+        [
+          "deepseek-official",
+          "deepseek-v4-flash"
+        ]
+      ],
+      "tool_names": [
+        "bash",
+        "grep",
+        "read",
+        "todo_write"
+      ],
+      "event_graph": {
+        "turn_start": 1,
+        "turn_end": 1,
+        "step_start": 26,
+        "step_end": 26,
+        "tool_call": 39,
+        "tool_result": 39,
+        "pairing_ok": true
+      },
+      "flag_events": [
+        {
+          "type": "approval/policy",
+          "count": 1
+        },
+        {
+          "type": "sandbox/mode",
+          "count": 1
+        },
+        {
+          "type": "subagent/descriptor",
+          "count": 1
+        },
+        {
+          "type": "todo/write",
+          "count": 3
+        }
+      ],
+      "source_grading": {
+        "ldvh-prepared": 6,
+        "harness-delivered": 132,
+        "host-received": 0,
+        "behavior-consistent": 0,
+        "causal-effect": 0
+      },
+      "identity_fingerprints": {
+        "task": "452717b1644f3963...",
+        "contract": "452717b1644f3963...",
+        "payload": "452717b1644f3963...",
+        "runner": "dc6d75c95e27e789...",
+        "full_fingerprint": "590820fe36c104c2..."
+      },
+      "comparability": {
+        "session_verdict": "comparable",
+        "session_reasons": [],
+        "protocol_verdict": "comparable",
+        "protocol_reasons": [],
+        "effective_verdict": "comparable",
+        "identity_mismatch_types": []
+      }
+    },
+    {
+      "session_id": "49ccc7be-e906-4396-b908-3d70ab64d013",
+      "carrier_entries": [
+        [
+          "openai",
+          "gpt-5.6-terra"
+        ]
+      ],
+      "tool_names": [
+        "ask_user_question",
+        "bash",
+        "glob",
+        "grep",
+        "read",
+        "report",
+        "skill",
+        "todo_write",
+        "web_search"
+      ],
+      "event_graph": {
+        "turn_start": 4,
+        "turn_end": 4,
+        "step_start": 51,
+        "step_end": 51,
+        "tool_call": 67,
+        "tool_result": 67,
+        "pairing_ok": true
+      },
+      "flag_events": [
+        {
+          "type": "approval/policy",
+          "count": 2
+        },
+        {
+          "type": "event/web/deepseek-search-llm-request",
+          "count": 3
+        },
+        {
+          "type": "permission/preset",
+          "count": 1
+        },
+        {
+          "type": "sandbox/mode",
+          "count": 2
+        },
+        {
+          "type": "session/end-seed",
+          "count": 2
+        },
+        {
+          "type": "subagent/descriptor",
+          "count": 1
+        },
+        {
+          "type": "todo/write",
+          "count": 2
+        }
+      ],
+      "source_grading": {
+        "ldvh-prepared": 10,
+        "harness-delivered": 244,
+        "host-received": 0,
+        "behavior-consistent": 0,
+        "causal-effect": 0
+      },
+      "identity_fingerprints": {
+        "task": "452717b1644f3963...",
+        "contract": "452717b1644f3963...",
+        "payload": "452717b1644f3963...",
+        "runner": "41827b9eb8186370...",
+        "full_fingerprint": "ba260fce3bb01e3b..."
+      },
+      "comparability": {
+        "session_verdict": "comparable",
+        "session_reasons": [],
+        "protocol_verdict": "comparable",
+        "protocol_reasons": [],
+        "effective_verdict": "comparable",
+        "identity_mismatch_types": []
+      }
+    },
+    {
+      "session_id": "6d361846-2a50-412c-9364-ee1081d0163c",
+      "carrier_entries": [
+        [
+          "aixforge",
+          "glm-5.2"
+        ]
+      ],
+      "tool_names": [
+        "bash",
+        "glob",
+        "grep",
+        "read"
+      ],
+      "event_graph": {
+        "turn_start": 1,
+        "turn_end": 1,
+        "step_start": 21,
+        "step_end": 21,
+        "tool_call": 31,
+        "tool_result": 31,
+        "pairing_ok": true
+      },
+      "flag_events": [
+        {
+          "type": "approval/policy",
+          "count": 1
+        },
+        {
+          "type": "sandbox/mode",
+          "count": 1
+        },
+        {
+          "type": "subagent/descriptor",
+          "count": 1
+        }
+      ],
+      "source_grading": {
+        "ldvh-prepared": 3,
+        "harness-delivered": 106,
+        "host-received": 0,
+        "behavior-consistent": 0,
+        "causal-effect": 0
+      },
+      "identity_fingerprints": {
+        "task": "452717b1644f3963...",
+        "contract": "452717b1644f3963...",
+        "payload": "452717b1644f3963...",
+        "runner": "413d9660b4d82d2a...",
+        "full_fingerprint": "dc2a35e4230191d2..."
+      },
+      "comparability": {
+        "session_verdict": "comparable",
+        "session_reasons": [],
+        "protocol_verdict": "comparable",
+        "protocol_reasons": [],
+        "effective_verdict": "comparable",
+        "identity_mismatch_types": []
+      }
+    },
+    {
+      "session_id": "17c8e759-81c4-4b70-8b41-8dd15bbc36ec",
+      "carrier_entries": [
+        [
+          "aixforge",
+          "glm-5.2"
+        ]
+      ],
+      "tool_names": [
+        "bash",
+        "grep",
+        "read",
+        "skill",
+        "todo_write"
+      ],
+      "event_graph": {
+        "turn_start": 1,
+        "turn_end": 1,
+        "step_start": 15,
+        "step_end": 15,
+        "tool_call": 17,
+        "tool_result": 17,
+        "pairing_ok": true
+      },
+      "flag_events": [
+        {
+          "type": "approval/policy",
+          "count": 1
+        },
+        {
+          "type": "sandbox/mode",
+          "count": 1
+        },
+        {
+          "type": "subagent/descriptor",
+          "count": 1
+        },
+        {
+          "type": "todo/write",
+          "count": 4
+        }
+      ],
+      "source_grading": {
+        "ldvh-prepared": 7,
+        "harness-delivered": 66,
+        "host-received": 0,
+        "behavior-consistent": 0,
+        "causal-effect": 0
+      },
+      "identity_fingerprints": {
+        "task": "452717b1644f3963...",
+        "contract": "452717b1644f3963...",
+        "payload": "452717b1644f3963...",
+        "runner": "0b55e30354a340ed...",
+        "full_fingerprint": "02d937841cea1f5d..."
+      },
+      "comparability": {
+        "session_verdict": "comparable",
+        "session_reasons": [],
+        "protocol_verdict": "comparable",
+        "protocol_reasons": [],
+        "effective_verdict": "comparable",
+        "identity_mismatch_types": []
+      }
+    },
+    {
+      "session_id": "1ebd4598-94ab-446b-a93a-615071705c83",
+      "carrier_entries": [
+        [
+          "deepseek-official",
+          "deepseek-flash"
+        ]
+      ],
+      "tool_names": [],
+      "event_graph": {
+        "turn_start": 1,
+        "turn_end": 1,
+        "step_start": 1,
+        "step_end": 1,
+        "tool_call": 0,
+        "tool_result": 0,
+        "pairing_ok": true
+      },
+      "flag_events": [
+        {
+          "type": "approval/policy",
+          "count": 1
+        },
+        {
+          "type": "sandbox/mode",
+          "count": 1
+        },
+        {
+          "type": "subagent/descriptor",
+          "count": 1
+        }
+      ],
+      "source_grading": {
+        "ldvh-prepared": 3,
+        "harness-delivered": 4,
+        "host-received": 0,
+        "behavior-consistent": 0,
+        "causal-effect": 0
+      },
+      "identity_fingerprints": {
+        "task": "452717b1644f3963...",
+        "contract": "452717b1644f3963...",
+        "payload": "452717b1644f3963...",
+        "runner": "09788f807a73356e...",
+        "full_fingerprint": "592a17d24c3bd3ef..."
+      },
+      "comparability": {
+        "session_verdict": "comparable",
+        "session_reasons": [],
+        "protocol_verdict": "comparable",
+        "protocol_reasons": [],
+        "effective_verdict": "comparable",
+        "identity_mismatch_types": []
+      }
+    },
+    {
+      "session_id": "650897ee-a1e8-4fae-86fb-40f9d2a8fe65",
+      "carrier_entries": [
+        [
+          "openai",
+          "gpt-5.6-luna"
+        ]
+      ],
+      "tool_names": [],
+      "event_graph": {
+        "turn_start": 1,
+        "turn_end": 1,
+        "step_start": 1,
+        "step_end": 1,
+        "tool_call": 0,
+        "tool_result": 0,
+        "pairing_ok": true
+      },
+      "flag_events": [
+        {
+          "type": "approval/policy",
+          "count": 1
+        },
+        {
+          "type": "sandbox/mode",
+          "count": 1
+        },
+        {
+          "type": "subagent/descriptor",
+          "count": 1
+        }
+      ],
+      "source_grading": {
+        "ldvh-prepared": 3,
+        "harness-delivered": 4,
+        "host-received": 0,
+        "behavior-consistent": 0,
+        "causal-effect": 0
+      },
+      "identity_fingerprints": {
+        "task": "452717b1644f3963...",
+        "contract": "452717b1644f3963...",
+        "payload": "452717b1644f3963...",
+        "runner": "fa9db369a06a944a...",
+        "full_fingerprint": "2493ba648c66859d..."
+      },
+      "comparability": {
+        "session_verdict": "comparable",
+        "session_reasons": [],
+        "protocol_verdict": "comparable",
+        "protocol_reasons": [],
+        "effective_verdict": "comparable",
+        "identity_mismatch_types": []
+      }
+    }
+  ]
+}

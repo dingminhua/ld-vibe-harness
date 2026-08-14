@@ -19,6 +19,14 @@ from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from typing import Any
 
+from ldvh.testing.evidence_protocol import (
+    IdentityFingerprintSet,
+    ProtocolComparability,
+    check_pre_scoring_threshold,
+    extract_trial_identity,
+    is_out_of_protocol,
+    judge_protocol_comparability,
+)
 from ldvh.testing.session_comparability import (
     ComparabilityVerdict,
     audit_events,
@@ -128,6 +136,9 @@ class TrialRecord:
     output_sha256: str
     duration_seconds: float
     failure: str | None = None
+    protocol_identity: IdentityFingerprintSet | None = None
+    protocol_verdict: ProtocolComparability | None = None
+    out_of_protocol: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -218,6 +229,7 @@ def run_trial(
     *,
     envelope: TrialEnvelope,
     executor: Callable[[TrialEnvelope], ExecutorResult],
+    reference_identity: IdentityFingerprintSet | None = None,
 ) -> TrialRecord:
     """Execute one frozen trial and fold the comparability gate into the record.
 
@@ -225,11 +237,36 @@ def run_trial(
     ``session_comparability``: the machine record carries the verdict and
     pairing status, so scoring can exclude ``not_comparable`` trials without
     reading any content.
+
+    When *reference_identity* is provided, the trial records its protocol
+    identity fingerprints and a ``ProtocolComparability`` verdict.  Trials
+    whose identity fingerprints do not match the reference are marked
+    ``out_of_protocol`` and can be excluded from scoring.
     """
     result = executor(envelope)
     validate_executor_result(result)
     fingerprint = audit_events(_parse_event_lines(result.event_lines))
     verdict = judge_comparability(fingerprint)
+
+    # Protocol identity recording.
+    trial_identity = extract_trial_identity(
+        task_id=envelope.task_id,
+        task_package_hash=envelope.task_package_hash,
+        contract_sha256=envelope.contract_sha256,
+        payload=envelope.payload,
+        carrier_fingerprint=envelope.carrier.fingerprint(),
+    )
+    protocol_verdict = None
+    out_of_protocol = False
+    if reference_identity is not None:
+        pc = judge_protocol_comparability(
+            fingerprint,
+            trial_identity=trial_identity,
+            reference_identity=reference_identity,
+        )
+        protocol_verdict = pc
+        out_of_protocol = is_out_of_protocol(pc)
+
     record = TrialRecord(
         schema_version=EQUIVALENCE_RETRIAL_VERSION,
         trial_id=envelope.trial_id,
@@ -249,6 +286,9 @@ def run_trial(
         output_sha256=result.output_sha256,
         duration_seconds=result.duration_seconds,
         failure=result.failure,
+        protocol_identity=trial_identity,
+        protocol_verdict=protocol_verdict,
+        out_of_protocol=out_of_protocol,
     )
     return record
 
@@ -309,6 +349,7 @@ class BatchSummary:
     satisfied_count: int
     not_satisfied_count: int
     verdict_counts: Mapping[str, int] = field(default_factory=dict)
+    out_of_protocol_count: int = 0
 
     def payload(self) -> Mapping[str, Any]:
         return {
@@ -322,6 +363,7 @@ class BatchSummary:
             "satisfied_count": self.satisfied_count,
             "not_satisfied_count": self.not_satisfied_count,
             "verdict_counts": dict(self.verdict_counts),
+            "out_of_protocol_count": self.out_of_protocol_count,
             "claim_boundary": (
                 "aggregate only; does not prove causal effect, host receipt, "
                 "or overall service improvement"
@@ -340,7 +382,7 @@ def summarize_batch(records: Sequence[TrialRecord], assessments: Sequence[TrialA
         raise TrialMeasurementError("batch records must share one frozen carrier")
     carrier_fingerprint, carrier_entry = next(iter(carriers))
     verdict_counts: dict[str, int] = {}
-    comparable = not_comparable = inconclusive = satisfied = not_satisfied = 0
+    comparable = not_comparable = inconclusive = satisfied = not_satisfied = out_of_protocol = 0
     for record, assessment in zip(records, assessments, strict=True):
         verdict_counts[record.comparability.verdict] = verdict_counts.get(record.comparability.verdict, 0) + 1
         if record.comparability.verdict == "comparable":
@@ -353,6 +395,8 @@ def summarize_batch(records: Sequence[TrialRecord], assessments: Sequence[TrialA
             satisfied += 1
         else:
             not_satisfied += 1
+        if record.out_of_protocol:
+            out_of_protocol += 1
     return BatchSummary(
         schema_version=EQUIVALENCE_RETRIAL_VERSION,
         carrier_fingerprint=carrier_fingerprint,
@@ -364,6 +408,7 @@ def summarize_batch(records: Sequence[TrialRecord], assessments: Sequence[TrialA
         satisfied_count=satisfied,
         not_satisfied_count=not_satisfied,
         verdict_counts=verdict_counts,
+        out_of_protocol_count=out_of_protocol,
     )
 
 
@@ -391,6 +436,7 @@ def persist_batch_artifacts(
             "output_sha256": record.output_sha256,
             "event_lines_sha256": record.event_lines_sha256,
             "duration_seconds": record.duration_seconds,
+            "out_of_protocol": record.out_of_protocol,
         }
         for record in records
     ]
