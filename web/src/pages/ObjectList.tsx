@@ -1,7 +1,8 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { Activity, ArrowRight, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, History, Lightbulb, ListChecks, Search, ShieldCheck, Target } from 'lucide-react';
+import { Activity, ArrowRight, CalendarClock, Circle, CircleAlert, CircleCheck, CircleMinus, CirclePlay, ClipboardList, Clock3, History, Lightbulb, ListChecks, Search, ShieldCheck, Target } from 'lucide-react';
 import ObjectIdentityActions from '@/components/ObjectIdentityActions';
+import SegmentedControl from '@/components/SegmentedControl';
 import StatusBadge from '@/components/StatusBadge';
 import WorkCaseCapabilityStatusBadge from '@/components/WorkCaseCapabilityStatusBadge';
 import ObjectStatusFilter from '@/components/ObjectStatusFilter';
@@ -33,6 +34,7 @@ import {
 
 type Translate = ReturnType<typeof useI18n>['t'];
 type StatusReason = { label: string; text: string; missing?: boolean };
+type ObjectListSort = 'updated_desc' | 'created_desc';
 
 const WORKCASE_SECTION_ICON_SIZE = 14;
 /** Shared vertical rhythm between a semantic card title and its first body block. */
@@ -1186,10 +1188,12 @@ function contributionTargetTitle(detail: ObjectDetail | null, readMeta: ReturnTy
   return getLocalizedObjectTitle(detail.data as { title?: string; title_en?: string; title_zh?: string }, locale);
 }
 
-function sortObjectsForList(items: ObjectItem[]): ObjectItem[] {
+function sortObjectsForList(items: ObjectItem[], sort: ObjectListSort): ObjectItem[] {
   return [...items].sort((a, b) => {
-    const updatedDelta = compareRfc3339Timestamps(b.updated, a.updated);
-    if (updatedDelta !== 0) return updatedDelta;
+    const timestampDelta = sort === 'created_desc'
+      ? compareRfc3339Timestamps(b.created, a.created)
+      : compareRfc3339Timestamps(b.updated, a.updated);
+    if (timestampDelta !== 0) return timestampDelta;
     return b.id.localeCompare(a.id);
   });
 }
@@ -1604,6 +1608,8 @@ export default function ObjectList() {
     ? progressParam as WorkCaseListGroup
     : null;
   const priorityParam = searchParams.get('priority');
+  const sortParam = searchParams.get('sort');
+  const activeSort: ObjectListSort = sortParam === 'created_desc' ? sortParam : 'updated_desc';
   const supportsPriorityNavigation = currentType === 'spark' || currentType === 'workcase';
   const activePriority = supportsPriorityNavigation && ['P0', 'P1', 'P2', 'P3'].includes(priorityParam ?? '')
     ? priorityParam
@@ -1653,7 +1659,7 @@ export default function ObjectList() {
       .finally(() => setLoading(false));
   }, [currentType, activeStatus, activePriority, activeProgressGroup, statusParam]);
 
-  const sortedItems = sortObjectsForList(items);
+  const sortedItems = sortObjectsForList(items, activeSort);
   const normalizedObjectSearch = objectSearch.trim().toLowerCase();
   const filteredItems = normalizedObjectSearch
     ? sortedItems.filter((item) => {
@@ -1692,6 +1698,13 @@ export default function ObjectList() {
     setSearchParams(nextParams);
   };
 
+  const handleSortChange = (sort: ObjectListSort) => {
+    const nextParams = new URLSearchParams(searchParams);
+    if (sort === 'updated_desc') nextParams.delete('sort');
+    else nextParams.set('sort', sort);
+    setSearchParams(nextParams);
+  };
+
   const detailSearch = searchParams.toString();
   const returnToListPath = `${location.pathname}${location.search}`;
   const openObject = (objId: string) => {
@@ -1701,7 +1714,7 @@ export default function ObjectList() {
   };
 
   const renderObjectSearch = () => (
-    <div className="absolute right-0 top-0 z-30">
+    <div className="shrink-0">
       {isObjectSearchOpen ? (
         <label className="relative flex w-60 items-center">
           <Search size={14} className="pointer-events-none absolute left-2.5 text-ldvh-text-secondary" aria-hidden="true" />
@@ -1727,7 +1740,7 @@ export default function ObjectList() {
           onClick={() => setIsObjectSearchOpen(true)}
           aria-label={t('objectList.searchLabel')}
           aria-expanded={false}
-          className={`ldvh-tab-button h-[26px] w-[26px] justify-center !px-0 !py-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50 ${normalizedObjectSearch ? 'ldvh-tab-button-active' : 'ldvh-tab-button-idle'}`}
+          className={`ldvh-tab-button h-7 w-8 justify-center !px-0 !py-0 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ldvh-accent/50 ${normalizedObjectSearch ? 'ldvh-tab-button-active' : 'ldvh-tab-button-idle'}`}
         >
           <Search size={15} aria-hidden="true" />
         </button>
@@ -1891,7 +1904,6 @@ export default function ObjectList() {
               loading={loading}
               coverageStatus={coverageStatus}
             />
-            {renderObjectSearch()}
           </div>
         )}
         <div className="relative flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-1.5">
@@ -1922,7 +1934,18 @@ export default function ObjectList() {
               </>
             )}
           </div>
-          {!(supportsPriorityNavigation && isPriorityApplicable) && renderObjectSearch()}
+          <div className="flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-2">
+            {renderObjectSearch()}
+            <SegmentedControl
+              ariaLabel={t('objectList.sort')}
+              value={activeSort}
+              onValueChange={handleSortChange}
+              items={[
+                { value: 'updated_desc', label: t('objectList.sortUpdatedDesc'), icon: <Clock3 size={14} aria-hidden="true" /> },
+                { value: 'created_desc', label: t('objectList.sortCreatedDesc'), icon: <CalendarClock size={14} aria-hidden="true" /> },
+              ]}
+            />
+          </div>
         </div>
       </div>
 

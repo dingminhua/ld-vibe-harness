@@ -485,7 +485,7 @@ test('progressing cards show only goal and current situation facts', () => {
   assert.doesNotMatch(content, /progressHistory|roundLabel|workcaseRound/);
 });
 
-test('list ordering uses updated time and keeps a deterministic locator tiebreaker', () => {
+test('list ordering supports updated and created time descending with a deterministic locator tiebreaker', () => {
   const list = source('src/pages/ObjectList.tsx');
   const start = list.indexOf('function sortObjectsForList');
   const end = list.indexOf('function sparkViewItem', start);
@@ -493,8 +493,10 @@ test('list ordering uses updated time and keeps a deterministic locator tiebreak
 
   assert.ok(start >= 0 && end > start);
   assert.match(sorting, /compareRfc3339Timestamps\(b\.updated, a\.updated\)/);
+  assert.match(sorting, /compareRfc3339Timestamps\(b\.created, a\.created\)/);
+  assert.match(sorting, /sort === 'created_desc'/);
   assert.match(sorting, /b\.id\.localeCompare\(a\.id\)/);
-  assert.doesNotMatch(sorting, /id_desc|id_asc|updated_asc/);
+  assert.doesNotMatch(sorting, /id_desc|id_asc|updated_asc|created_asc/);
   assert.doesNotMatch(sorting, /isTerminalListCard|terminalDelta/);
   assert.doesNotMatch(sorting, /progress_group|progress_step|PROGRESS_GROUP_INDEX|PROGRESS_STEP_INDEX/);
 });

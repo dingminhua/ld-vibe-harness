@@ -73,7 +73,9 @@ test('object list cards use the compact metadata shared by reading surfaces', ()
   assert.match(objectList, /const \[objectSearch, setObjectSearch\] = useState\(''\)/);
   assert.match(objectList, /getLocalizedObjectTitle\(item, locale\)\.toLowerCase\(\)[\s\S]{0,280}shortRef\.includes\(normalizedObjectSearch\)/);
   assert.match(objectList, /const \[isObjectSearchOpen, setIsObjectSearchOpen\] = useState\(false\)/);
-  assert.match(objectList, /absolute right-0 top-0 z-30[\s\S]*type="search"[\s\S]*objectList\.searchPlaceholder/);
+  assert.match(objectList, /<SegmentedControl[\s\S]*objectList\.sortCreatedDesc/);
+  assert.match(objectList, /renderObjectSearch\(\)[\s\S]*<SegmentedControl/);
+  assert.match(objectList, /type="search"[\s\S]*objectList\.searchPlaceholder/);
   assert.match(objectList, /onClick=\{\(\) => setIsObjectSearchOpen\(true\)\}[\s\S]{0,240}aria-expanded=\{false\}/);
   assert.match(objectList, /filteredItems\.map\(\(obj\) => renderObjectCard\(obj\)\)/);
   assert.match(identityActions, /compact\?: boolean/);
