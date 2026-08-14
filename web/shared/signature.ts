@@ -10,6 +10,10 @@ export interface NormalizedSignature {
   agentRuntimeName: string
 }
 
+function signatureIdentityKey(name: string): string {
+  return name.replace(/[\s_-]/g, '').toLocaleLowerCase()
+}
+
 function normalizeModelName(value: unknown): string {
   if (typeof value !== 'string') return ''
   const trimmed = value.trim()
@@ -23,6 +27,8 @@ function normalizeProductName(value: unknown): string {
   if (typeof value !== 'string') return ''
   const trimmed = value.trim()
   if (!trimmed) return ''
+  if (signatureIdentityKey(trimmed) === 'deepseekharness') return 'DeepSeek Harness'
+  if (signatureIdentityKey(trimmed).includes('trae')) return 'Trae'
   return `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)}`
 }
 
@@ -43,16 +49,17 @@ export function normalizeSignature(value: SignatureInput): NormalizedSignature {
     ? value.agentRuntimeName.trim()
     : '';
   const agentRuntimeName = normalizeAgentRuntimeName(rawAgentRuntimeName);
-  const identityKey = (name: string) => name.replace(/[\s_-]/g, '').toLocaleLowerCase();
   const sameIdentity = Boolean(
     productName
       && rawAgentRuntimeName
-      && identityKey(productName) === identityKey(rawAgentRuntimeName),
+      && signatureIdentityKey(productName) === signatureIdentityKey(rawAgentRuntimeName),
   );
+  const isDeepSeekHarness = signatureIdentityKey(productName) === 'deepseekharness';
+  const isTrae = signatureIdentityKey(productName) === 'trae';
 
   return {
     productName,
     modelName: normalizeModelName(value.modelName),
-    agentRuntimeName: sameIdentity ? '' : agentRuntimeName,
+    agentRuntimeName: sameIdentity || isDeepSeekHarness || isTrae ? '' : agentRuntimeName,
   };
 }

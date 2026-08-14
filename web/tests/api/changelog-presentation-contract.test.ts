@@ -17,6 +17,18 @@ test('compact signature metadata shows model and product(runtime), with field fa
   assert.match(complete, /gpt-5\.6-luna/);
   assert.match(complete, /Cindy\(Codex\)/);
 
+  const deepSeekHarness = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
+    productName: 'deepseek harness', modelName: 'deepseek-v4-flash', agentRuntimeName: 'Dsh',
+  } }));
+  assert.match(deepSeekHarness, /DeepSeek Harness/);
+  assert.doesNotMatch(deepSeekHarness, /DeepSeek Harness\(Dsh\)/);
+
+  const trae = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
+    productName: 'Trae Code', agentRuntimeName: 'Dsh',
+  } }));
+  assert.match(trae, /Trae/);
+  assert.doesNotMatch(trae, /Trae Code|Trae\(Dsh\)/);
+
   const hostedModel = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
     modelName: 'chatgpt/gpt-5.6-terra',
     productName: 'cindy',

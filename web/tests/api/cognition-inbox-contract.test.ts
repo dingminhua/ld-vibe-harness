@@ -493,6 +493,19 @@ test('recent activity aggregation retains the newest fact event and counts compl
   assert.deepEqual(view.environmentUsage, [{ value: 'Cindy(Claude)', count: 2 }, { value: 'Ci', count: 1 }])
 })
 
+test('recent activity environment usage applies platform signature normalization', async () => {
+  const { buildRecentActivityView } = await import('../../api/routes/cognition.ts')
+  const base = {
+    type: 'spark' as const, title: 'Normalized platform', activity: 'updated' as const,
+    status: 'open', read_status: 'readable', field_issues: [], unparsed_structures: [],
+  }
+  const view = buildRecentActivityView([
+    { ...base, object_id: 'spark-deepseek', occurred_at: '2026-08-01T00:00:00Z', signature: { productName: 'DeepSeek Harness', agentRuntimeName: 'Dsh' } },
+    { ...base, object_id: 'spark-trae', occurred_at: '2026-08-01T01:00:00Z', signature: { productName: 'Trae Code', agentRuntimeName: 'Dsh' } },
+  ])
+  assert.deepEqual(view.environmentUsage, [{ value: 'DeepSeek Harness', count: 1 }, { value: 'Trae', count: 1 }])
+})
+
 test('duplicate object UIDs never merge distinct activity objects', async () => {
   const { buildRecentActivityView } = await import('../../api/routes/cognition.ts')
   const duplicateUid = '0198f1c7-8a2b-7c3d-9e4f-123456789abc'
