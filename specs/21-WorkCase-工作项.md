@@ -125,7 +125,7 @@ Code 不判断自然语言是否属于生命周期关口；Controller 与 Review
 
 WorkCase review 是 Reviewer 对计划版本或结果版本提供的只读第二视角。标准方法是独立 subagent；Reviewer 与 Controller 处于不同执行环境。当前环境提供协作 Worker 能力时，可委派只读协作 Worker 作为介于独立 subagent 与同一 AI fallback 之间的中间保证方法。只有当前环境明确缺少独立 subagent 和协作 Worker 能力、并满足本节低保证 fallback 约束时，才允许同一 AI 切换 Reviewer 视角。三档路由顺序为：collaboration Worker → native subagent → same-AI。后者仍是实际 review，但不是 subagent 审核、不是执行环境独立审核，也不与标准方法等价。
 
-瞬时入口 preflight（permission_required / not_authorized / unknown）与持久 reviewer policy / review event 是两组不同概念：preflight 回答当前入口是否具备调用协作 Worker 或 subagent 的权限，不决定执行期应使用的方法；persistent reviewer policy 由 Gate1 冻结 Human 选择，控制执行期全部 review 的实际方法选择与降级边界。`unavailable` 是能力缺失的持久判断，`permission_required` / `not_authorized` / `unknown` 是瞬时权限状态，不得用作能力 unavailable 的等价表述。能力解锁和模型询问均不成为第三个 Human Gate；方案侧（creation review / PlanΔ review）与结果侧（result review）两个固定位置允许不限轮次的 fresh review。
+瞬时入口 preflight（permission_required / not_authorized / unknown）与持久 reviewer policy / review event 是两组不同概念：preflight 回答当前入口是否具备调用协作 Worker 或 subagent 的权限，不决定执行期应使用的方法；persistent reviewer policy 由 Gate1 冻结 Human 选择，控制执行期全部 review 的实际方法选择与降级边界。`unavailable` 是能力缺失的持久判断，`permission_required` / `not_authorized` / `unknown` 是瞬时权限状态，不得用作能力 unavailable 的等价表述。能力解锁和模型询问均不成为第三个 Human Gate；方案侧（creation review / PlanΔ review）与结果侧（result review）两个固定位置允许 fresh review，但有轮次上限：创建方案复核最多 2 轮、结果复核最多 3 轮、PlanΔ 复核随基线内调整最多 2 轮。达到轮次上限后仍存在分歧时，以 Controller（主控）意见为主收敛，如实记录分歧与处置，不再追加轮次。
 
 #### 4.5.1 核心语义
 
@@ -164,6 +164,7 @@ checklist 与 Helper 只读检查只提供机械或标准化验证，不能单�
 - 受控创建前的方案复核（creation review）
 - 执行完成后的结果复核（result review）
 - 授权基线内 PlanΔ 的 fresh 方案复核
+- item 执行阶段的关键 item 局部独立审核（仅对关键 item 执行，每关键 item 审 1 次、主控吸收 1 次后继续推进，不循环）
 
 方案复核与结果复核各自遵循 §5 中 `workcase-review` 的字段定义和 §6 的版本绑定规则，不因实际方法而改变阶段归属或字段所有权。
 
@@ -359,7 +360,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-reviewer-policy-fast` | `fast` | boolean | Human 是否选择 fast 模式 | 不表示实际已启用 fast 或 Code 已验证 | 必填；Gate1 后冻结 |
 | `workcase-reviewer-policy-preferred-method` | `preferred_method` | string | Human 选择的优先实际 review 方法 | 不表示当次实际已使用该方法或保证等价 | 必填；Gate1 后冻结；闭集 `collaboration-worker-read-only`、`subagent-read-only`、`same-ai-switched-role-read-only` |
 | `workcase-reviewer-policy-fallback-order` | `fallback_order` | array | 实际方法按序降级边界 | 不表示任意降级已获准或能力限制已消失 | 非空唯一 string 数组；成员闭集与 `preferred_method` 相同；按序排列，成员不得重复 |
-| `workcase-reviewer-policy-max-perspectives` | `max_perspectives` | integer | 每轮 review 允许并行的最大视角数 | 不表示实际每轮都达上限或可无限制扩展 | 正整数且不大于 3；Gate1 后冻结 |
+| `workcase-reviewer-policy-max-perspectives` | `max_perspectives` | integer | 每轮 review 允许并行的最大视角数 | 不表示实际每轮都达上限或可无限制扩展 | 正整数且不大于 2；Gate1 后冻结 |
 | `workcase-reviewer-policy-activation` | `activation` | string | 协作 Worker 能力被显式解锁并使用的前置条件与当前边界 | 不表示能力恒可用、已解锁或 unknown/preflight 即等价 unavailable | 必填非空；必须以当前可判断条件说明解锁与恢复边界 |
 | `workcase-reviewer-policy-same-ai-limit` | `same_ai_limit` | string | 同一 AI fallback 只在协作 Worker 与 subagent 均不可用且满足 §4.5 约束时使用的边界 | 不表示同一 AI 与其它方法等价或可默认使用 | 必填非空；必须与 §4.5.1 第 4 点及冻结 capability limitation 一致 |
 | `workcase-criterion-id` | `criterion_id` | string | 成功标准在本对象内稳定唯一的身份 | 不表示数组位置、优先级或 work item | 匹配 `criterion-[a-z0-9][a-z0-9-]*`；创建后稳定 |

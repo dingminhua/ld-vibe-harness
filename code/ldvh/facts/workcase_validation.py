@@ -707,8 +707,8 @@ def _validate_execution_authorization(fields: Mapping[str, object], issues: list
             max_perspectives = reviewer_policy.get("max_perspectives")
             if not _positive_integer(max_perspectives):
                 _issue(issues, "reviewer policy max_perspectives 必须是正整数", f"{path}.max_perspectives")
-            elif int(max_perspectives) > 3:
-                _issue(issues, "reviewer policy max_perspectives 不大于 3", f"{path}.max_perspectives")
+            elif int(max_perspectives) > 2:
+                _issue(issues, "reviewer policy max_perspectives 不大于 2", f"{path}.max_perspectives")
             unknown = sorted(set(reviewer_policy) - required)
             if unknown:
                 _issue(issues, "reviewer policy 包含未知成员", path)

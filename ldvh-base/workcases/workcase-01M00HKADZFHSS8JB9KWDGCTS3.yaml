@@ -1,0 +1,74 @@
+status: closed
+title: 验证 WorkBuddy 平台卡对专家团组建的指导充分性
+goal: 验证补全后的 WorkBuddy 平台卡(09.Att.03)能否指导执行者在 WC 独立复核环节正确组建专家团并严格执行复核。
+scope: 本 WC 走一遍完整 WC 流程;item 只核对平台卡(09.Att.03)静态内容是否清晰,实际组建专家团执行复核由本 WC 自身 result review 环节承接,由 review 结构据实记录 actual_method/actual_agent/evidence。排除:平台卡内容实质改动、push/PR/发布/外部消息。
+success_criterion_definitions:
+- criterion_id: criterion-role
+  statement: 09.Att.03 §1 含明确角色定位——专家团=承载 WC 独立复核的协作 Worker,复核位置回指 21 §4.5
+- criterion_id: criterion-format
+  statement: 09.Att.03 §2 专家团协作格式已列举 TeamCreate/Agent ID/成员独立产出/5 红线/SOP
+success_criterion_results:
+- criterion_id: criterion-role
+  outcome: satisfied
+  summary: 09.Att.03 §1 含'专家团=承载 WC 独立复核的协作 Worker 载体,复核位置见 21 §4.5',角色定位明确
+- criterion_id: criterion-format
+  outcome: satisfied
+  summary: 09.Att.03 §2 已列举 TeamCreate/Agent ID/成员独立产出/5 红线/SOP 五类格式
+result_summary: 平台卡(09.Att.03)角色定位明确、专家团协作格式五类齐备,足以指导执行者组建专家团;实际组建专家团执行复核由本 WC 自身 result review 环节验证。
+validation_summary: 读 specs/attachments/09.Att.03 精确回读确认 §1/§2 内容;./ldvh check 规范机械检查 ok。
+closure_outcome: completed
+disposition_summary: 2 条成功标准全满足,2 项 work item 完成,无剩余责任、无 route target、无 Spark 建议。平台卡(09.Att.03)角色定位明确、专家团协作格式五类齐备,且本 WC 自身的 result review 环节实际以协作 Worker 完成只读第二视角,构成'足以指导执行者组建专家团'的实际走通证据。
+change_log:
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T16:27:33.084387Z'
+  summary: 创建测试 WorkCase,验证平台卡对专家团组建的指导充分性
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T16:30:43.513247Z'
+  summary: Human Gate 1 批准,进入 executing
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T16:31:24.691985Z'
+  summary: 2 项 work item 完成,进入 controller_checking 形成 result_version=1 结果投影
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T16:31:53.714739Z'
+  summary: 进入 independent_reviewing,等待独立结果复核
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T16:33:31.451175Z'
+  summary: 写回 result_version=1 独立结果复核(pass)
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T16:34:05.404329Z'
+  summary: 进入 closure_preparing,形成 completed 关闭提案
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T16:34:33.336298Z'
+  summary: 进入 human_closure_confirming,等待 Human Gate 2 关闭确认
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T16:39:51.823081Z'
+  summary: Human Gate 2 确认 completed,关闭本测试 WC
+object_uid: 01a00119-a9bf-7c73-9449-699f1b066b23
+object_id: workcase-01M00HKADZFHSS8JB9KWDGCTS3
+fact_type_key: workcase
+created_at: '2026-08-14T16:27:33.084387Z'
+updated_at: '2026-08-14T16:39:51.823081Z'

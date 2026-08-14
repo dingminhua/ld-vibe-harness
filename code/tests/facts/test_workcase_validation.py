@@ -819,7 +819,7 @@ def _reviewer_policy(**overrides: object) -> dict[str, object]:
             "subagent-read-only",
             "same-ai-switched-role-read-only",
         ],
-        "max_perspectives": 3,
+        "max_perspectives": 2,
         "activation": "Luna Orca collaboration worker is explicitly unlocked by Human.",
         "same_ai_limit": "Same-AI fallback only when both collaboration worker and subagent are unavailable.",
     }
@@ -886,7 +886,7 @@ def test_reviewer_policy_rejects_unknown_or_out_of_range_values() -> None:
     assert any("preferred_method" in issue.field_path and "闭集" in issue.summary for issue in issues)
 
     fields = _base("executing")
-    fields["execution_authorization"]["reviewer_policy"] = _reviewer_policy(max_perspectives=4)
+    fields["execution_authorization"]["reviewer_policy"] = _reviewer_policy(max_perspectives=3)
     issues = validate_workcase_snapshot(fields)
     assert any("max_perspectives" in issue.field_path and "不大于" in issue.summary for issue in issues)
 

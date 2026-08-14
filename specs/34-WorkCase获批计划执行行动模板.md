@@ -61,7 +61,7 @@ ldvh_spec:
 2. **能力预检：** 分别观察当前环境是否具有协作 Worker、一次性 subagent 与 same-AI 三类复核载体，以及各自的模型目录、限制和证据。不能把一种载体的模型清单冒充另一种，也不能把未知能力直接写成缺失。该预检是一次只读路由控制动作，不形成 review 结论，不计入复审次数或每轮视角数量，不新增 lifecycle phase 或 Human Gate。
 3. **复核前有效性确认：** 真正开始任一方案侧或结果侧复核前，确认能力预检快照仍然有效。执行中发现能力变化时立即按冻结 reviewer policy 的 `fallback_order` 重新选路。
 4. **运行时 1→2→3 降级：** 每轮复核都按冻结 reviewer policy 的 `preferred_method` 和 `fallback_order` 判断。不能因为历史上使用过低档方式就跳过当前已恢复的高档能力，不能从第一档直接跳到第三档，也不能把某次缺失永久化。第三档 same-AI 必须在冻结 `capability_limitations` 已覆盖当次审核类别、当次能力不可用证据仍然成立、保证差距已披露且停止条件评估为 `clear` 时才可使用。
-5. **重复复审循环：** 发现问题、修正后对新版本重新复核，不因已复核过一次就跳过。PlanΔ 使旧 creation review 失效，结果版本变化使旧 result review 失效；每次失效后必须 fresh review。每轮复核按冻结 `max_perspectives` 选择 1–3 个审查视角。
+5. **重复复审循环：** 发现问题、修正后对新版本重新复核，不因已复核过一次就跳过。PlanΔ 使旧 creation review 失效，结果版本变化使旧 result review 失效；每次失效后必须 fresh review。每轮复核按冻结 `max_perspectives` 选择 1–2 个审查视角。
 
 能力预检与复核路由的完整规则权威回指 21 §4.5；冻结 reviewer policy 的字段定义回指 21 §5 的 `workcase-reviewer-policy`。
 
@@ -95,11 +95,11 @@ Gate 1 后出现新的 Human 决策需求，不构成 blocked 或 unresolved，�
 
 终止善后中的每个稳定检查点同样先写完整 after、CAS、回读与完整性审计。检查点必须区分 retained、discarded、unverified 与 relationship impacts，并据实更新 cleanup summary/status；未执行的删除、回滚、验证或复核不得写成已完成。complete 前还要再次核对入向 `depends-on`，并以 criterion results 决定实际 closure outcome，而不是以 Human 要求中止推定结果分类。
 
-全部 item terminal 后，Controller 按 21/32 连续形成 Controller 检查、完整结果投影、实际结果复核、feedback 处置、关闭提案与 Human 关闭确认。结果复核默认委派只读 subagent；只有冻结限制、当前证据、审核类别和停止条件共同允许时才可使用并如实记录低保证 fallback。Reviewer pass 只是一项实际 review 输入，不等于 Gate 2：Controller 不得跳过其反馈处置责任；需要修正或返工时按 21 返回 `controller_checking`，投影不变且 feedback 已处置时按 21 的合法边进入 `closure_preparing`。无论采用哪条 21 允许的边，都必须继续形成完整 after、CAS、精确回读与完整性审计，直至真实快照进入 Human 关闭确认；不能只输出聊天总结。
+全部 item terminal 后，Controller 按 21/32 连续形成 Controller 检查、完整结果投影、实际结果复核、feedback 处置、关闭提案与 Human 关闭确认。结果复核按 Gate1 冻结的 reviewer policy 委派（默认顺序：协作 Worker → subagent → same-AI）；只有冻结限制、当前证据、审核类别和停止条件共同允许时才可使用并如实记录低保证 same-AI fallback。Reviewer pass 只是一项实际 review 输入，不等于 Gate 2：Controller 不得跳过其反馈处置责任，review 分歧在达到轮次上限后以 Controller（主控）意见为主收敛（轮次上限与复审规则见 21 §4.5）；需要修正或返工时按 21 返回 `controller_checking`，投影不变且 feedback 已处置时按 21 的合法边进入 `closure_preparing`。无论采用哪条 21 允许的边，都必须继续形成完整 after、CAS、精确回读与完整性审计，直至真实快照进入 Human 关闭确认；不能只输出聊天总结。
 
 ### 5.4 合法退出
 
-本模板只允许在刚回读当前快照支持下退出当前执行循环：对象已经 closed；`status=blocked` 且已写入真实外部/能力阻塞与恢复条件；连续精确读取后投影仍 unresolved 而只能交还读取缺口；或普通链的 `status=open`、`phase=human_closure_confirming` resolved 投影明确给出 `handoff_narrative_key=gate2_waiting` 与 `next_required_control_step=human_gate_2`。这四类合法退出与 §9.3.1 的派生 `handoff_allowed=true` 精确一致：closed / 真实 blocked / unresolved / gate2_waiting。Gate 1 后其它 phase 不构成 Human 交还点；`termination_preparing` 不是等待第二 Human 决定的出口，除真实 blocked/unresolved 外必须继续善后至 closed。命中授权上限、禁止动作或能力只能超授权完成时，不询问扩权：普通链按 §5.2 与 21 据实取消受影响 item 或记录 residual 后继续到 Gate2；Human 主动中止链只按明确范围完成善后，无法安全完成时写 blocked 与恢复条件。项目 Stop gate（09 §5.8）对精确绑定 WorkCase 机械执行该退出集：`handoff_allowed=false`（controller_owned）时阻止非法 Stop 并反馈下一控制步骤，安全出口、无绑定或异常一律放行，且不得按唯一 open 候选猜测绑定。
+本模板只允许在刚回读当前快照支持下退出当前执行循环：对象已经 closed；`status=blocked` 且已写入真实外部/能力阻塞与恢复条件；连续精确读取后投影仍 unresolved 而只能交还读取缺口；或普通链的 `status=open`、`phase=human_closure_confirming` resolved 投影明确给出 `handoff_narrative_key=gate2_waiting` 与 `next_required_control_step=human_gate_2`。这四类合法退出与 §9.3.1 的派生 `handoff_allowed=true` 精确一致：closed / 真实 blocked / unresolved / gate2_waiting。Gate 1 后其它 phase 不构成 Human 交还点；`termination_preparing` 不是等待第二 Human 决定的出口，除真实 blocked/unresolved 外必须继续善后至 closed。命中授权上限、禁止动作或能力只能超授权完成时，不询问扩权：普通链按 §5.2 与 21 据实取消受影响 item 或记录 residual 后继续到 Gate2；Human 主动中止链只按明确范围完成善后，无法安全完成时写 blocked 与恢复条件。项目 Stop gate（09 §5.8）对精确绑定 WorkCase 机械执行该退出集：`handoff_allowed=false`（controller_owned）时阻止非法 Stop 并反馈下一控制步骤，安全出口、无绑定或异常一律放行，且不得按唯一 open 候选猜测绑定。执行期 `controller_owned` 阶段不得以「确认是否继续」「里程碑汇报」「节奏确认」等为由交还 Human 或停下待命；出现交还冲动时，先经 `check-workcase-handoff` 取得当次 `handoff_allowed` 投影，`false`（controller_owned）即继续处理当前控制步骤，不得转问 Human。
 
 普通 `in_progress` 检查点、单个 terminal item、pending item、全部 item terminal、完整结果投影、局部测试通过、一次本地 commit、Reviewer 返回或 feedback 处置、进入 `closure_preparing`、完整 closure proposal 或恢复入口存在，都不是完成出口。新 Human 决策需求同样不是 blocked/unresolved 出口。`status=blocked` 时投影保留生命周期位置只用于定位，Controller 不消费其中结构提示自动续跑；解除阻塞必须先按 21 写回并重新读取。
 

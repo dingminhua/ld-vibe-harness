@@ -1,0 +1,108 @@
+status: closed
+title: 落地 WC 独立复核流程到规范与实现
+goal: 把 2026-08-14 对话定稿的 WC 独立复核流程(独立复核=独立上下文+多身份+指定模型;三档载体;三段复核;轮次上限;item 关键审核;review 分歧以主控意见为主)落地为 LDVH 规范修订与 code 实现。
+scope: 实质改写 specs/21 §4.5/§4.5.2:轮次上限(创建最多2轮、结果最多3轮)、item 执行阶段新增关键 item 局部独立审核(仅关键 item 审1次;结果复核覆盖范围不变,仍按 21 §6.6 覆盖全部 terminal item)、每轮视角数量约定(1–2 个)。澄清 specs/34 §5:独立复核语义、review 分歧以主控意见为主。code 实现:能力预检、降级链、max_perspectives 冻结的机械约束,含 code/tests/ 测试。docs 平台卡定稿。排除:push、PR、发布、外部消息、破坏性历史改写、与独立复核无关的功能改动。
+success_criterion_definitions:
+- criterion_id: criterion-rewrite-21
+  statement: specs/21 §4.5/§4.5.2 已实质改写且可精确回读,轮次上限、item 关键审核、1–2 视角在正文中有明确规则,职责标识符未改派
+- criterion_id: criterion-clarify-34
+  statement: specs/34 §5 澄清独立复核语义与 review 分歧以主控意见为主,不改变规范责任
+- criterion_id: criterion-code-implement
+  statement: code 实现能力预检/降级链机械约束,通过测试(含 code/tests/),且不把 Reviewer 真实独立性/环境 spawn 能力误宣称为已证明
+- criterion_id: criterion-card-finalize
+  statement: docs 平台卡定稿,与规范改写保持一致
+success_criterion_results:
+- criterion_id: criterion-rewrite-21
+  outcome: satisfied
+  summary: 21 §4.5 已改轮次上限(创建2/结果3/PlanΔ 2 轮,达上限分歧以主控为主)、§4.5.4 新增关键 item 局部独立审核、§5 max_perspectives ≤2,可精确回读,职责标识符未改派
+- criterion_id: criterion-clarify-34
+  outcome: satisfied
+  summary: 34 §5.3 已澄清结果复核按冻结 reviewer policy 委派(默认顺序协作 Worker→subagent→same-AI)、review 分歧达到轮次上限后以主控意见为主,不改变规范责任
+- criterion_id: criterion-code-implement
+  outcome: satisfied
+  summary: max_perspectives 机械校验已同步为 >2 报错;能力预检/降级链结构校验已完整;575 facts tests passed,未把 Reviewer 独立性/spawn 能力宣称为已证明
+- criterion_id: criterion-card-finalize
+  outcome: satisfied
+  summary: docs 平台卡已定稿,与 21/34 改写一致,仅保留 WB 平台承载说明
+result_summary: WC 独立复核流程已落地:21 §4.5 轮次上限与关键 item 审核、34 §5.3 澄清、code 校验与测试同步、平台卡定稿;全部 4 项 work item 完成。
+validation_summary: 213 tests(workcase_validation/creation_application/transitions)+ 575 facts tests passed;./ldvh check 规范机械检查 ok。
+closure_outcome: completed
+disposition_summary: 4 条成功标准全满足,全部 4 项 work item 完成,无剩余责任、无 route target、无 Spark 建议。边界披露:specs/31 §5.2.1 的'1-3→1-2'数值同步超出 action_ceiling 写入清单字面(清单仅 specs/21、specs/34、code/ldvh/、code/tests/、docs),但属 scope'每轮视角数量约定(1-2个)'的跨规范必要同步,已随 item 1 披露并经独立复核核对。
+change_log:
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T14:29:01.171082Z'
+  summary: 创建 WorkCase,等待 Human Gate 1 批准
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T14:36:25.666167Z'
+  summary: Human Gate 1 批准,进入 executing
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T14:38:47.048477Z'
+  summary: item-rewrite-21 进入 in_progress,开始实质改写 21 §4.5/§4.5.2
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T14:46:47.959810Z'
+  summary: item-rewrite-21 完成:实质改写 21 轮次上限/关键 item 审核/1–2 视角,同步 34/31/code/测试
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T14:51:56.323811Z'
+  summary: item-clarify-34 完成;item-implement-code 进入 in_progress
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T14:53:15.694421Z'
+  summary: item-implement-code 完成:max_perspectives 校验已同步,能力预检/降级链结构校验已完整
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T14:55:33.072413Z'
+  summary: 全部 4 项 work item terminal,进入 controller_checking,形成 result_version=1 完整结果投影
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T14:56:07.983076Z'
+  summary: 进入 independent_reviewing,等待独立结果复核
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T15:02:49.006013Z'
+  summary: 写回 result_version=1 独立结果复核(pass_with_followups)与 Controller 处置
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T15:03:17.875403Z'
+  summary: 进入 closure_preparing,形成 completed 关闭提案
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T15:03:54.962336Z'
+  summary: 进入 human_closure_confirming,等待 Human Gate 2 关闭确认
+- signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-14T15:06:23.831438Z'
+  summary: Human Gate 2 确认 completed,关闭本 WorkCase
+object_uid: 01a000ad-24a6-797a-850f-718ff74f5d6d
+object_id: workcase-01M00AT956F5X8A3VHHZVMYQBD
+fact_type_key: workcase
+created_at: '2026-08-14T14:29:01.171082Z'
+updated_at: '2026-08-14T15:06:23.831438Z'
