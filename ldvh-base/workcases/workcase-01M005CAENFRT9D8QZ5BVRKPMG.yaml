@@ -1,0 +1,115 @@
+status: closed
+title: 规范修订：独立审核能力判断来源（协作 Worker vs subagent）
+goal: 修订 21 §4.5 与 31 §5.2.1，把 WorkCase 独立审核第 1 档（协作 Worker，可设模型）的可用性判断从 AI 推断改为显式来源（Human 明确确认或当次可观察/登记证据），并明确确认高档可用后不再单独询问低档，消除 AI 对观察不到对象的判断与冗余询问；不改变三档路由顺序、保证边界或 same-AI fallback 约束。
+scope: 仅修改 specs/21-WorkCase-工作项.md 的 §4.5 与 specs/31-事实对象判定与受控创建行动模板.md 的 §5.2.1；34、05.Att.01、Code、tests、Web 均不改动；不新建独立 spec、不新增或修改字段闭集与结构。修改完成以精确回读 + 对照方案核验为准。
+success_criterion_definitions:
+- criterion_id: criterion-01
+  statement: 21 §4.5 新增第 1 档可用性判据来源规则——AI 不得推断，来源闭集为 Human 明确确认或当次可观察/登记证据，二者不可得时为 unknown（不得记 unavailable 或可用），且措辞不与现行 21 §4.5 第 128 行、§4.5.1 已有规则重复。
+- criterion_id: criterion-02
+  statement: 31 §5.2.1 对齐第 1 档来源（R2a）并补优先级消解（R2b：能力解锁询问为一次覆盖两档的启用授权，确认第 1 档可用后第 2 档仅作 fallback、不再单独询问），且不新增冗余规则。
+- criterion_id: criterion-03
+  statement: 修改后的 21/31 两份文件经精确回读，实际改动与方案 R1/R2 一致，未越出 scope 声明范围。
+success_criterion_results:
+- criterion_id: criterion-01
+  outcome: satisfied
+  summary: 21 §4.5.1 已新增第 6 条「第 1 档判据来源」，判据来源闭集为 Human 明确确认或当次可观察/登记证据，措辞不与 §4.5 第 128 行及 §4.5.1 已有规则重复。
+- criterion_id: criterion-02
+  outcome: satisfied
+  summary: 31 §5.2.1 B.1 对齐第 1 档来源（R2a），B.2 澄清逐档判断不等于逐档询问（R2b），与 D.1/B.3 语义一致、不新增冗余规则。
+- criterion_id: criterion-03
+  outcome: satisfied
+  summary: git diff 精确回读确认 21 §4.5.1 第 6 条与 31 §5.2.1 B.1/B.2 两处改动，与方案 R1/R2 一致、未越出 scope。
+result_summary: 已在 21 §4.5.1 新增第 6 条「第 1 档判据来源」（R1），并在 31 §5.2.1 B.1/B.2 对齐 R2a（第 1 档来源）与 R2b（逐档判断不等于逐档询问）。改动经 git diff 精确核验，未越出 scope（仅 21/31 两份规范相关章节）。
+validation_summary: 验证：git diff 精确核对 21 §4.5.1 第 6 条与 31 §5.2.1 B.1/B.2 两处改动，与方案一致、未越出 scope。未运行 Code/tests（本 WorkCase scope 明确排除 Code/tests 改动）。
+closure_outcome: completed
+disposition_summary: 本 WorkCase 3 项成功标准全部 satisfied：21 §4.5.1 新增第 6 条「第 1 档判据来源」（R1），31 §5.2.1 B.1/B.2 对齐 R2a/R2b，改动经 git diff 精确核验未越出 scope。无剩余责任、无 accepted-stop。工作树中不属于本 WorkCase 的其它未提交改动（code/、specs/06、21 §7 附近）已据实披露，不属于本 WorkCase 责任范围。
+change_log:
+- at: '2026-08-14T12:54:00.899374Z'
+  summary: 受控创建 WorkCase：修订独立审核能力判断来源（协作 Worker vs subagent），creation review 以协作 Worker（reasoning 档）完成，等待 Human Gate 1
+  signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+- at: '2026-08-14T13:02:30.828556Z'
+  summary: Human Gate 1 批准执行 plan_version=1；写入 execution_approval，进入 executing
+  signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+- at: '2026-08-14T13:04:20.871441Z'
+  summary: item-1 开始：进入 in_progress，准备修改 21 §4.5
+  signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+- at: '2026-08-14T13:04:44.072489Z'
+  summary: item-1 完成：21 §4.5 已新增 R1 规则
+  signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+- at: '2026-08-14T13:05:30.534328Z'
+  summary: item-2 开始：进入 in_progress
+  signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+- at: '2026-08-14T13:05:53.790258Z'
+  summary: item-2 完成
+  signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+- at: '2026-08-14T13:09:26.458162Z'
+  summary: item-3 完成，全部 item terminal，进入 controller_checking
+  signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+- at: '2026-08-14T13:10:04.511762Z'
+  summary: 形成 result_version=1 完整 canonical result projection
+  signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+- at: '2026-08-14T13:10:34.639769Z'
+  summary: projection 完整，进入 independent_reviewing，准备委派结果复核
+  signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+- at: '2026-08-14T13:16:20.317912Z'
+  summary: result review pass、无 feedback，进入 closure_preparing
+  signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+- at: '2026-08-14T13:16:39.781846Z'
+  summary: result review pass、无 feedback，进入 closure_preparing
+  signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+- at: '2026-08-14T13:17:08.444826Z'
+  summary: 形成 closure proposal（completed，无剩余责任）
+  signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+- at: '2026-08-14T13:17:29.217035Z'
+  summary: 进入 human_closure_confirming，等待 Human Gate 2 关闭决定
+  signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+- at: '2026-08-14T13:20:51.980216Z'
+  summary: Human Gate 2 批准关闭，WorkCase 以 completed 分类关闭
+  signature:
+    product_name: WorkBuddy
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+object_uid: 01a00056-29d5-7e34-96a2-ff2af789da90
+object_id: workcase-01M005CAENFRT9D8QZ5BVRKPMG
+fact_type_key: workcase
+created_at: '2026-08-14T12:54:00.899374Z'
+updated_at: '2026-08-14T13:20:51.980216Z'

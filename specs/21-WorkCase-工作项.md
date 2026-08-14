@@ -134,6 +134,7 @@ WorkCase review 是 Reviewer 对计划版本或结果版本提供的只读第二
 3. **只读原则**：所有 review 均为只读，Reviewer 不修改任何文件、不创建或更新事实对象、不改变任何状态。Reviewer 的输出仅限于 review 结构中的 Reviewer 自有字段，不写入被审内容。
 4. **能力限制先记录**：只有 `availability=unavailable` 且有当前证据时才能启用同一 AI fallback；能力未知、证据缺失、限制未覆盖当前审核类别或任一停止条件不清晰时必须停止，不得降级。
 5. **Gate1 分界**：创建 bootstrap 仅为形成 Gate1 可审材料；Gate1 不追认其为独立审核。Gate1 后的 PlanΔ 和 result review 只能使用 Human 已批准且已进入冻结 fingerprint 的 capability limitation/fallback policy，并必须记录当次当前证据与停止条件评估。
+6. **第 1 档判据来源**：collaboration Worker（可设模型）的可用性，AI 不得推断。判据来源闭集为 Human 明确确认或当次可观察/登记证据；二者都不可得时，该档状态只能是 `unknown`，不得记为 `unavailable`，也不得记为「可用」。
 
 #### 4.5.2 可接受的执行方式（闭集）
 
