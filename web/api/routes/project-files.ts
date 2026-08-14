@@ -73,7 +73,7 @@ router.get('/entries', async (req: Request, res: Response): Promise<void> => {
     const showHidden = String(req.query.showHidden || '') === 'true'
     const project = await requestProject(req)
 
-    const target = resolveProjectTarget(project, dir)
+    const target = await resolveProjectTarget(project, dir)
     if (!target) {
       res.status(403).json({ ok: false, error: 'Invalid directory path' })
       return
@@ -134,7 +134,7 @@ router.get('/content', async (req: Request, res: Response): Promise<void> => {
     const showHidden = String(req.query.showHidden || '') === 'true'
     const project = await requestProject(req)
 
-    const target = resolveProjectTarget(project, filePath)
+    const target = await resolveProjectTarget(project, filePath)
     if (!target) {
       res.status(403).json({ ok: false, error: 'Invalid file path' })
       return
@@ -215,7 +215,7 @@ router.get('/git/diff', async (req: Request, res: Response): Promise<void> => {
     const statusCode = String(req.query.status || '')
     const project = await requestProject(req)
 
-    const target = resolveProjectTarget(project, filePath)
+    const target = await resolveProjectTarget(project, filePath)
     if (!target) {
       res.status(403).json({ ok: false, error: 'Invalid file path' })
       return
@@ -382,7 +382,7 @@ router.get('/git/commit/:hash/diff', async (req: Request, res: Response): Promis
       return
     }
 
-    const target = resolveProjectTarget(project, filePath)
+    const target = await resolveProjectTarget(project, filePath)
     if (!target) {
       res.status(403).json({ ok: false, error: 'Invalid file path' })
       return

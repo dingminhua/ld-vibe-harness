@@ -6,7 +6,7 @@
  */
 import { existsSync } from 'node:fs'
 import { createHash } from 'node:crypto'
-import { readdir, readFile, stat } from 'node:fs/promises'
+import { lstat, readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import yaml from 'js-yaml'
 import { FACT_FIELD_CONTRACT, type FactType, type FieldExpectation } from './factFieldContract.js'
@@ -323,15 +323,20 @@ export async function listLocalFacts(type: LocalFactType, scope: LocalFactScope)
   return { status: 'complete', items: await Promise.all(fileNames.map((fileName) => readItemFile(scope, type, fileName))), issues }
 }
 
+const FACT_OBJECT_ID_PATTERN = /^(workcase|adr|pitfall|spark|study)-(?:\d+|[0-7][0-9A-HJKMNP-TV-Z]{25})$/
+
 export async function readLocalFact(type: LocalFactType, objectId: string, scope: LocalFactScope): Promise<{ status: 'ok'; item: LocalFactItem } | { status: 'not_found' | 'type_not_integrated'; metadata: LocalFactMetadata; issues: LocalFactIssue[] }> {
   const metadata = metadataFor(scope, type, objectId)
   const missing = directoryStatus(scope, type)
   if (missing) return { status: 'type_not_integrated', metadata, issues: missing.issues }
+  if (!FACT_OBJECT_ID_PATTERN.test(objectId)) {
+    return { status: 'not_found', metadata, issues: [{ code: 'read_failed', message: `未找到预期事实对象 ${objectId}`, path: metadata.canonical_path }] }
+  }
   const expectedName = expectedFileName(type, objectId)
   const filePath = path.join(baseDirOf(scope, type), expectedName)
   try {
-    const statResult = await stat(filePath)
-    if (!statResult.isFile()) {
+    const lstatResult = await lstat(filePath)
+    if (!lstatResult.isFile() || lstatResult.isSymbolicLink()) {
       return { status: 'not_found', metadata, issues: [{ code: 'read_failed', message: `未找到预期事实对象 ${expectedName}`, path: metadata.canonical_path }] }
     }
   } catch {

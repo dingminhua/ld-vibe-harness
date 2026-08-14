@@ -1,4 +1,5 @@
 import { execFile } from 'child_process'
+import { realpath } from 'fs/promises'
 import path from 'path'
 import { LDVH_ROOT } from './pytools.js'
 import { resolveWebGovernedProjects } from './governanceScope.js'
@@ -79,11 +80,14 @@ export async function getProject(projectId: string): Promise<GovernedProject | n
   return projects.find((project) => project.id === projectId) ?? null
 }
 
-export function resolveProjectTarget(project: ProjectFileScope, relativePath: string): string | null {
+export async function resolveProjectTarget(project: ProjectFileScope, relativePath: string): Promise<string | null> {
   if (relativePath.includes('\0')) return null
   const projectRoot = path.resolve(project.path)
   const target = path.resolve(projectRoot, relativePath || '.')
-  return isInside(projectRoot, target) ? target : null
+  if (!isInside(projectRoot, target)) return null
+  // 阻止 symlink 逃逸：词法 containment 通过后，再通过 realpath 检查实际路径
+  const resolved = await realpath(target)
+  return isInside(projectRoot, resolved) ? resolved : null
 }
 
 export function toProjectRelative(project: ProjectFileScope, absolutePath: string): string {
