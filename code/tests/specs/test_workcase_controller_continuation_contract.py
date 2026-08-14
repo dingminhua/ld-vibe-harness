@@ -86,6 +86,18 @@ def test_reviewer_pass_requires_controlled_writeback_before_gate2_handoff() -> N
     assert gate2["next_required_control_step"] == "human_gate_2"
 
 
+def test_controlled_write_failure_must_be_repaired_not_silently_skipped() -> None:
+    source = _source(EXECUTION_TEMPLATE)
+
+    assert "受控写入调用的失败处置" in source
+    assert "任一 21 专属 Helper 写入操作返回 `invalid_request`、`rejected`、`unavailable` 或其它非成功外层结果时" in source
+    assert "Controller 必须当场读取该响应的 `gaps` 与 `diagnostics`" in source
+    assert "修正请求形状、指纹或内容后重试" in source
+    assert "停在最后合法状态，按 §5.4 只经真实 blocked 或读取缺口交还" in source
+    assert "不得静默跳过失败的写入并继续后续控制步骤、形成成功声明或任何 phase/status 宣称" in source
+    assert "修复与重试受 Gate1 冻结的 `allowed_adjustments` 约束，不构成扩权" in source
+
+
 def test_gate1_post_approval_pre_yield_invariant_covers_the_full_controller_chain() -> None:
     source = _source(EXECUTION_TEMPLATE)
 
@@ -245,6 +257,20 @@ def test_gate2_language_is_bound_to_the_just_read_resolved_projection() -> None:
         "handoff_allowed": True,
         "handoff_reason": "unresolved",
     }
+
+
+def test_continuation_requires_proactive_stop_gate_binding() -> None:
+    source = _source(EXECUTION_TEMPLATE)
+
+    assert "续接绑定要求" in source
+    assert "跨执行环境、新会话或上下文恢复后继续消费当前 WorkCase 时" in source
+    assert (
+        "按 09 §5.8 绑定形状为当前会话主动建立 Stop gate 精确绑定"
+        "（`LDVH_WORKCASE_STOP_BINDING` 或 `.ldvh-stop-bindings/<session_id>.json`）" in source
+    )
+    assert "绑定不可建立、形状不满足或宿主不支持时如实记录该缺口" in source
+    assert "不伪造绑定、不按候选特征猜测，也不为此新增 Human 确认" in source
+    assert "本要求不改变 09 §5.8 的 fail-open 与禁止猜测设计" in source
 
 
 def test_derived_continuation_flags_are_not_persisted_or_reintroduced() -> None:

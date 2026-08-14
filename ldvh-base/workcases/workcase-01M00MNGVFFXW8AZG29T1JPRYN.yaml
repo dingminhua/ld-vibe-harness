@@ -1,0 +1,144 @@
+title: 执行期事实同步纪律修订——受控写入失败处置与续接绑定
+status: closed
+goal: 承接 spark-01M00KTB0WEWDSY8N78KZS9SHQ（WorkCase 执行期实施与事实同步断链）的缺口审计结论：Spark 记录的四个失败点中，item 状态写回、result_review 落盘与阶段宣称话术已由 specs/34 现行条文覆盖（开始控制点 §5.2、统一 pre-yield 控制点 §5.2、恢复交还 §5.5——属执行违反而非规则缺失）；真实缺口为（A）34 缺「受控写入调用失败」的显式处置纪律，（B）跨执行环境续接时项目 Stop gate 因无会话绑定而 fail-open（09 §5.8），机械纠正不可达。本 WorkCase 把两项缺口以 Gate 1 材料逐字呈现的精确修订文本落地到 specs/34，形成 specs/09 不修改的书面依据，同步 source-contract 测试并以机械检查完成验证闭环。
+scope: 覆盖：1) 新建 code/plans/fact-sync-discipline-revision.md：Spark 四失败点 × specs/34/21/09 现行条文覆盖对照表、两处修订的批准文本逐字快照、specs/09 不修改的依据记录；2) 按 Gate 1 材料呈现并获批准的修订文本修改 specs/34-WorkCase获批计划执行行动模板.md 两处：§5.3 末新增「受控写入调用的失败处置」条文，§5.5 首段后新增「续接绑定要求」条文，不改 34 其它章节结构与既有条文；3) code/tests/specs/test_workcase_controller_continuation_contract.py 必要时最小同步，并为两处新条文新增 source-contract 断言固定新边界；4) 本 WorkCase 自身事实对象生命周期写入。排除：修改 specs/00/04/05/06/09/21/30/31/32/33 与 specs/attachments/*；修改 Helper 公共契约与 code/ldvh production Code；修改 09 §5.8 的 fail-open 与禁止猜测绑定设计；Git commit、push、release；创建或修改其它事实对象；为绑定/失败处置新增 Code 或 Helper 机制。
+success_criterion_definitions:
+- criterion_id: criterion-failure-discipline-clause
+  statement: specs/34 §5.3 存在受控写入失败处置条文：非成功写入必须当场读 gaps/diagnostics 修复重试，无法修复时停在最后合法状态并按 §5.4 真实 blocked/读取缺口交还，明文禁止静默跳过后继续控制步骤、成功声明或 phase/status 宣称；写入后精确回读与批准文本一致。
+- criterion_id: criterion-resume-binding-clause
+  statement: specs/34 §5.5 存在续接绑定要求条文：续接时在条件成立下按 09 §5.8 形状主动建立绑定，条件不成立时如实记录缺口，不伪造、不猜测、不新增 Human 确认，不改变 09 §5.8 设计；写入后精确回读与批准文本一致。
+- criterion_id: criterion-09-untouched-decision
+  statement: specs/09 与 specs/attachments 全程零修改，且「不修改 09」的安全设计依据已书面记录在材料文件中；材料文件含四失败点 × 现行条文覆盖对照表与两处批准文本快照。
+- criterion_id: criterion-mechanical-verification
+  statement: 修订后 ldvh check 外层通过；code/tests/specs 中触及 specs/34 的 source-contract 相关测试与新增断言通过；read-action-template-content 对 34 号模板交付仍正常（修订未破坏模板声明与内容链）。
+- criterion_id: criterion-boundary
+  statement: 全程未修改 specs/00/04/05/06/09/21/30/31/32/33 与 attachments、Helper 公共契约、code/ldvh production Code；未新建或修改其它事实对象；无 Git commit/push；34 除两处新增条文外无其它改动。
+success_criterion_results:
+- criterion_id: criterion-failure-discipline-clause
+  outcome: satisfied
+  summary: specs/34 §5.3 末已存在「受控写入调用的失败处置」条文：非成功写入（invalid_request/rejected/unavailable 或其它非成功外层结果）必须当场读 gaps/diagnostics 修复重试，无法修复/连续失败/不可观察时停在最后合法状态并按 §5.4 只经真实 blocked 或读取缺口交还，明文禁止静默跳过后继续控制步骤、成功声明或 phase/status 宣称，修复重试受 Gate1 冻结 allowed_adjustments 约束；写入后精确回读与 Gate 1 批准文本逐字一致，git diff 确认仅 2 行新增无删改，并由 test_controlled_write_failure_must_be_repaired_not_silently_skipped 七处关键句断言固定
+- criterion_id: criterion-resume-binding-clause
+  outcome: satisfied
+  summary: specs/34 §5.5 首段后已存在「续接绑定要求」条文：跨执行环境/新会话/上下文恢复续接时，在宿主会话标识可观察且 Stop gate 已按 09 §5.8 部署时按 09 §5.8 形状主动建立绑定（LDVH_WORKCASE_STOP_BINDING 或 .ldvh-stop-bindings/<session_id>.json），条件不成立时如实记录缺口，不伪造、不按候选特征猜测、不新增 Human 确认，不改变 09 §5.8 fail-open 与禁止猜测设计；写入后精确回读与批准文本逐字一致，git diff 确认仅 2 行新增无删改，并由 test_continuation_requires_proactive_stop_gate_binding 六处关键句断言固定
+- criterion_id: criterion-09-untouched-decision
+  outcome: satisfied
+  summary: git status/diff 确认 specs/09 与 specs/attachments 全程零修改；「不修改 09」的安全设计依据（三条防误绑安全边界 + 责任归属论证：把绑定责任放在有充分信息的续接方而非无信息的拦截方）已书面记录在 code/plans/fact-sync-discipline-revision.md §4；该材料文件 §1 含 Spark 四失败点 × specs/34/21/09 现行条文覆盖对照表，§2/§3 含修订前原文快照与两处批准文本逐字快照
+- criterion_id: criterion-mechanical-verification
+  outcome: satisfied
+  summary: ldvh check 外层通过（2 项 verification passed）；code/tests/specs/test_workcase_controller_continuation_contract.py 16 passed，含触及 specs/34 的全部既有 source-contract 断言与 2 个新增断言；read-action-template-content 对 workcase-approved-plan-execution 返回 outcome=ok（模板声明、definition_ref 与内容链完整，修订未破坏交付）；全量 pytest 1918 passed/15 skipped，唯一失败 test_cli_process 规范 key 数量断言经 git 考证为 HEAD 提交 08a5f9cb 引入 09.Att.03/04 导致的既有失败，不触及 specs/34，与本修订无关
+- criterion_id: criterion-boundary
+  outcome: satisfied
+  summary: 本 WorkCase 全程仅修改 specs/34（精确 4 行新增/0 删除）与 code/tests/specs/test_workcase_controller_continuation_contract.py（新增 2 个测试），新建 code/plans/fact-sync-discipline-revision.md 与两个一次性临时脚本（.ldvh- 前缀）；未修改 specs/00/04/05/06/09/21/30/31/32/33、attachments、Helper 公共契约与 code/ldvh production Code（工作区中 evidence_protocol 等其它改动属其它 WorkCase 既有未提交内容）；未新建或修改其它事实对象（spark-01M00KTB0WEWDSY8N78KZS9SHQ 为本 WC 前置来源，非本 WC 期间新建）；无 Git commit/push；34 除两处新增条文外无其它改动
+result_summary: 承接 spark-01M00KTB0WEWDSY8N78KZS9SHQ 的缺口审计，两项真实缺口已按 Gate 1 批准文本落地：specs/34 §5.3 新增受控写入失败处置条文、§5.5 新增续接绑定要求条文（git diff 精确 4 行新增/0 删除，逐字回读一致，specs/09 零修改）；产出 code/plans/fact-sync-discipline-revision.md（四失败点×现行条文对照表、修订前快照、批准文本逐字快照、09 不改依据）；新增 2 个 source-contract 测试固定新边界（相关文件 16 passed）；机械验证 ldvh check 通过、全量测试 1918 passed（1 个既有失败为 scope 外残留：test_cli_process 期望 33 规范 key，HEAD 提交 08a5f9cb 已增至 35，与本次修订无关）
+validation_summary: 实际验证：ldvh check（working tree 规则源全量读取+受管辖事实库完整性，2 项 verification passed）；pytest code/tests 全量 1918 passed/15 skipped/1 failed（失败为 HEAD 既有 test_cli_process 规范 key 数量断言，git 考证与本次修订无关）；pytest code/tests/specs/test_workcase_controller_continuation_contract.py 16 passed（含 2 个新 source-contract 测试）；read-action-template-content 对 workcase-approved-plan-execution 返回 outcome=ok（模板声明与内容链完整）；git diff specs/34 4 insertions/0 deletions；specs/34 两处条文写入后精确回读与 Gate 1 批准文本逐字一致；未验证范围：无（五项 success criteria 均已机械与逐字验证）
+closure_outcome: completed
+disposition_summary: 全部 4 项 work items 已完成，5 项 success criteria 全部 satisfied 并经只读 subagent 独立结果复核 pass（result_version=1）：specs/34 两处修订（§5.3 受控写入失败处置、§5.5 续接绑定要求）已按 Gate 1 批准文本逐字落地并经机械验证固定边界；specs/09 与 attachments 零修改且不改依据已书面记录。没有剩余执行责任，没有责任转交目标，没有 accepted-stop 项。Scope 外残留提示：全量测试中 test_cli_process.py 规范 key 数量断言（33→35）为 HEAD 提交 08a5f9cb 引入 09.Att.03/04 后未同步的既有失败，与本 WorkCase 无关，值得另行修复。两个 .ldvh- 前缀一次性脚本已用毕可删，材料文件 code/plans/fact-sync-discipline-revision.md 保留作为修订依据记录。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a0013d-2c1c-771b-9f22-a744ff94e637
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-71b8-a543-1cb569543bb5
+change_log:
+- at: '2026-08-14T17:21:10.967998Z'
+  summary: 受控创建 WorkCase：承接 spark-01M00KTB0WEWDSY8N78KZS9SHQ 的两个真实规范缺口（34 受控写入失败处置、跨环境续接 Stop gate 绑定），创建前已完成只读 subagent 方案复核（changes_required 已全部处置），等待 Human Gate 1
+  signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash
+    agent_runtime_name: trae-code
+- at: '2026-08-14T17:24:58.119517Z'
+  summary: Human Gate 1 批准：批准 plan_version=1 计划、两处 specs/34 修订全文及 execution authorization baseline，phase 推进到 executing
+  signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash
+    agent_runtime_name: trae-code
+- at: '2026-08-14T17:25:46.624223Z'
+  summary: item item-material → in_progress（编写 code/plans/fact-sync-discipline-revision.md：Spark 四失败点 × ）
+  signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash
+    agent_runtime_name: trae-code
+- at: '2026-08-14T17:26:40.050299Z'
+  summary: item item-material → completed（code/plans/fact-sync-discipline-revision.md 已创建并回读一致：含 Spark）
+  signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash
+    agent_runtime_name: trae-code
+- at: '2026-08-14T17:26:49.092518Z'
+  summary: item item-revision-34 → in_progress（按 Gate 1 批准文本对 specs/34 执行两处修订：§5.3 末新增受控写入失败处置、§5.5 首段后新增续接）
+  signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash
+    agent_runtime_name: trae-code
+- at: '2026-08-14T17:27:25.465269Z'
+  summary: item item-revision-34 → completed（specs/34 两处修订已写入并精确回读逐字一致：§5.3 末（L100）受控写入失败处置条文、§5.5 首段后（L1）
+  signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash
+    agent_runtime_name: trae-code
+- at: '2026-08-14T17:27:34.866507Z'
+  summary: item item-test-sync → in_progress（检查 test_workcase_controller_continuation_contract.py 既有断言是否受）
+  signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash
+    agent_runtime_name: trae-code
+- at: '2026-08-14T17:30:10.797800Z'
+  summary: item item-test-sync → completed（检查确认既有断言不受修订影响（### 5.x 标题结构未变、无违禁词引入、既有存在性断言全部保持）；新增 2 个 sou）
+  signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash
+    agent_runtime_name: trae-code
+- at: '2026-08-14T17:30:27.218318Z'
+  summary: item item-verify → in_progress（执行机械验证：ldvh check、全部测试、模板交付检查）
+  signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash
+    agent_runtime_name: trae-code
+- at: '2026-08-14T17:35:53.703670Z'
+  summary: item item-verify → completed，phase → controller_checking，全部 item terminal，形成首次完整结果投影（result_version=1）
+  signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash
+    agent_runtime_name: trae-code
+- at: '2026-08-14T17:37:15.582120Z'
+  summary: phase → independent_reviewing，完整结果投影（result_version=1）已形成并回读，等待只读 subagent 独立结果复核
+  signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash
+    agent_runtime_name: trae-code
+- at: '2026-08-14T17:41:55.579324Z'
+  summary: 写入 result review（reviewer 审核结论 pass，actual_method=subagent-read-only）
+  signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash
+    agent_runtime_name: trae-code
+- at: '2026-08-14T17:42:00.551586Z'
+  summary: review feedback 已处置（pass 无 feedback），phase → closure_preparing，开始形成关闭提案
+  signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash
+    agent_runtime_name: trae-code
+- at: '2026-08-14T17:43:08.027844Z'
+  summary: closure_preparing 内形成完整 closure proposal（proposed_outcome=completed）
+  signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash
+    agent_runtime_name: trae-code
+- at: '2026-08-14T17:43:12.713434Z'
+  summary: phase → human_closure_confirming，交还 Human Gate 2
+  signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash
+    agent_runtime_name: trae-code
+- at: '2026-08-14T17:45:14.043969Z'
+  summary: Gate 2 Human 批准关闭，closure_outcome=completed，按 §6.7 终态映射原子关闭
+  signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash
+    agent_runtime_name: trae-code
+object_uid: 01a0014a-c36f-7f78-857e-024e832b63d5
+object_id: workcase-01M00MNGVFFXW8AZG29T1JPRYN
+fact_type_key: workcase
+created_at: '2026-08-14T17:21:10.967998Z'
+updated_at: '2026-08-14T17:45:14.043969Z'

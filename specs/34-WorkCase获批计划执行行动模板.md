@@ -97,6 +97,8 @@ Gate 1 后出现新的 Human 决策需求，不构成 blocked 或 unresolved，�
 
 全部 item terminal 后，Controller 按 21/32 连续形成 Controller 检查、完整结果投影、实际结果复核、feedback 处置、关闭提案与 Human 关闭确认。结果复核按 Gate1 冻结的 reviewer policy 委派（默认顺序：协作 Worker → subagent → same-AI）；只有冻结限制、当前证据、审核类别和停止条件共同允许时才可使用并如实记录低保证 same-AI fallback。Reviewer pass 只是一项实际 review 输入，不等于 Gate 2：Controller 不得跳过其反馈处置责任，review 分歧在达到轮次上限后以 Controller（主控）意见为主收敛（轮次上限与复审规则见 21 §4.5）；需要修正或返工时按 21 返回 `controller_checking`，投影不变且 feedback 已处置时按 21 的合法边进入 `closure_preparing`。无论采用哪条 21 允许的边，都必须继续形成完整 after、CAS、精确回读与完整性审计，直至真实快照进入 Human 关闭确认；不能只输出聊天总结。
 
+受控写入调用的失败处置：任一 21 专属 Helper 写入操作返回 `invalid_request`、`rejected`、`unavailable` 或其它非成功外层结果时，Controller 必须当场读取该响应的 `gaps` 与 `diagnostics`，修正请求形状、指纹或内容后重试；无法修复、连续失败或写入结果不可观察时，停在最后合法状态，按 §5.4 只经真实 blocked 或读取缺口交还。不得静默跳过失败的写入并继续后续控制步骤、形成成功声明或任何 phase/status 宣称。修复与重试受 Gate1 冻结的 `allowed_adjustments` 约束，不构成扩权。
+
 ### 5.4 合法退出
 
 本模板只允许在刚回读当前快照支持下退出当前执行循环：对象已经 closed；`status=blocked` 且已写入真实外部/能力阻塞与恢复条件；连续精确读取后投影仍 unresolved 而只能交还读取缺口；或普通链的 `status=open`、`phase=human_closure_confirming` resolved 投影明确给出 `handoff_narrative_key=gate2_waiting` 与 `next_required_control_step=human_gate_2`。这四类合法退出与 §9.3.1 的派生 `handoff_allowed=true` 精确一致：closed / 真实 blocked / unresolved / gate2_waiting。Gate 1 后其它 phase 不构成 Human 交还点；`termination_preparing` 不是等待第二 Human 决定的出口，除真实 blocked/unresolved 外必须继续善后至 closed。命中授权上限、禁止动作或能力只能超授权完成时，不询问扩权：普通链按 §5.2 与 21 据实取消受影响 item 或记录 residual 后继续到 Gate2；Human 主动中止链只按明确范围完成善后，无法安全完成时写 blocked 与恢复条件。项目 Stop gate（09 §5.8）对精确绑定 WorkCase 机械执行该退出集：`handoff_allowed=false`（controller_owned）时阻止非法 Stop 并反馈下一控制步骤，安全出口、无绑定或异常一律放行，且不得按唯一 open 候选猜测绑定。执行期 `controller_owned` 阶段不得以「确认是否继续」「里程碑汇报」「节奏确认」等为由交还 Human 或停下待命；出现交还冲动时，先经 `check-workcase-handoff` 取得当次 `handoff_allowed` 投影，`false`（controller_owned）即继续处理当前控制步骤，不得转问 Human。
@@ -106,6 +108,8 @@ Gate 1 后出现新的 Human 决策需求，不构成 blocked 或 unresolved，�
 ### 5.5 恢复交还
 
 恢复与交还只能描述刚精确回读且指纹匹配的 `status + phase + current_snapshot_projection`，并区分实际完成、取消、阻塞、未执行、已验证、未验证和超界收敛范围。只有 resolved 投影的 `handoff_narrative_key=gate2_waiting` 才能表达“等待 Gate 2”“仅剩 Gate 2”或“关闭待确认”；`independent_reviewing`、`closure_preparing`、任何 blocked、stale 或 unresolved 快照均禁止这些结论。页面进展分组和结构上的下一必经动作同样由该投影派生，不以 AI 文案反向定义当前状态。
+
+续接绑定要求：跨执行环境、新会话或上下文恢复后继续消费当前 WorkCase 时，Controller 在首次精确回读后，应在宿主会话标识可观察且项目 Stop gate 已按 09 §5.8 部署时，按 09 §5.8 绑定形状为当前会话主动建立 Stop gate 精确绑定（`LDVH_WORKCASE_STOP_BINDING` 或 `.ldvh-stop-bindings/<session_id>.json`）；绑定不可建立、形状不满足或宿主不支持时如实记录该缺口，不伪造绑定、不按候选特征猜测，也不为此新增 Human 确认。本要求不改变 09 §5.8 的 fail-open 与禁止猜测设计。
 
 恢复到 `termination_preparing` 时只交还 Human 中止来源、冻结起始现场、当前善后事实、阻塞/未验证边界和 `termination_cleanup`；不得把旧 `resume_from`、未完成 item 或普通 phase 步骤重新解释为待执行责任。终止完成后的 closed 只报告实际保留、丢弃、未验证、关系影响、质量降级与结果分类，不声称走过被跳过的普通复核、closure proposal 或 Gate2。
 
