@@ -1,0 +1,166 @@
+status: closed
+title: 定义并验证 Cindy WorkCaseRunController 运行时合同
+goal: 在不制造第二规则源、不让 Code 替 AI 作语义判断的前提下，定义并验证 Cindy WorkCaseRunController 的最小运行时合同：明确 session↔WorkCase 绑定、Helper fresh projection/handoff 消费、Orca dispatch/report 关联、幂等与恢复边界；确认当前 Cindy 正式源码与事件接入的可实现性，并形成后续 Cindy 实现 WorkCase 可直接消费的精确前置与 handoff。
+scope: 在当前 LDVH worktree 内只读盘点 Helper、project-stop、Orca 与实际可观察的 Cindy 源码/事件接入能力；唯一允许新增的长期文件为 code/plans/cindy-workcase-run-controller.md，该文件只承载非权威实现合同并逐项回指 specs/21、specs/34、Helper 当前投影和 09.Att.04 平台事实，不新增状态枚举或流程判断；通过 Helper 实际调用、既有测试及临时非持久 synthetic/LDVH-observed trace 验证合同；形成后续 Cindy 实现 WorkCase 的精确 handoff。执行开始前对 pre-existing dirty path 集合建立逐路径内容哈希或等价只读基线，结束时逐路径比较。排除：修改任何现有 dirty 文件；修改 Cindy 源码；真实 Cindy 事件接线、真实 Orca 应用级 E2E 或生产验证；私有 API 逆向、外部轮询 daemon、新 LDVH adapter 或第二状态机；由 Code 选择语义 item 或判断语义完成；未知 repo/path、依赖安装、宿主配置、外部账号/事件写入；Git commit、push、PR、release、deploy；创建或修改其它事实对象。
+success_criterion_definitions:
+- criterion_id: criterion-single-truth-contract
+  statement: code/plans/cindy-workcase-run-controller.md 已创建并明示自身是非权威实现合同；status、phase、next step 与 handoff 唯一来自 fresh Helper projection 及 specs/21、specs/34，文档逐项标出权威来源且不新增状态枚举、流程判断或永久 dispatch receipt。
+- criterion_id: criterion-feasibility-evidence
+  statement: Cindy/Orca 当前可观察事件链、Cindy 源码可达性和候选集成点按 verified/unverified 分栏，并各自具有可复现证据或精确缺口；未定位源码时交付的是后续 handoff 缺口，不是实现承诺。
+- criterion_id: criterion-contract-traces
+  statement: 合同级 trace 覆盖 binding、fingerprint/version、dispatch/event correlation、idempotency、duplicate/expired/unknown callback、resume、pre-yield/handoff；trace 明确标记 synthetic 或 LDVH-observed，真实 Cindy event delivery、session lifecycle 接线与端到端 dispatch/report 保持 unverified，并逐项形成后续 handoff 缺口。
+- criterion_id: criterion-helper-sufficiency
+  statement: 现有 check-workcase-handoff、当前投影与 project-stop 能力通过实际 Helper 调用、静态观察和既有聚焦测试验证；发现的缺口被精确记录，但不越权修改现有 dirty tree，也不把 project-stop 的 fail-open/block 机制重写为 Controller 生命周期规则。
+- criterion_id: criterion-implementation-handoff
+  statement: 后续 Cindy 实现 WorkCase 的 handoff 明确 repo locator、具体可写路径、正式事件、授权、非生产测试环境、回滚与测试矩阵；当前 WorkCase 不宣称已实现 Cindy Controller、真实宿主事件链或真实端到端闭环。
+- criterion_id: criterion-user-assets-preserved
+  statement: 在执行开始保存 pre-existing path 集合及各文件内容哈希或等价只读基线，结束时逐路径比较，证明本 WorkCase 未写入、覆盖、清理、重置或纳入这些既有路径；允许差异仅限 code/plans/cindy-workcase-run-controller.md 与本 WorkCase 自身受控生命周期载体，git status 仍可 dirty且不要求 clean，比较证据不把用户资产纳入本 WorkCase 结果。
+success_criterion_results:
+- criterion_id: criterion-single-truth-contract
+  outcome: satisfied
+  summary: 合同文件明示非权威，回指 21/34/Helper/09.Att.04，未定义 WC 状态枚举或永久 receipt。
+- criterion_id: criterion-feasibility-evidence
+  outcome: satisfied
+  summary: 已按 verified/unverified 分类 LDVH、Orca、公开 Cindy client 与缺失的正式事件/backend/本地源码范围。
+- criterion_id: criterion-contract-traces
+  outcome: satisfied
+  summary: T1/T6 有 LDVH observed 依据，T2–T5/T7 的 7 个临时 synthetic 断言通过；真实 Cindy delivery/lifecycle/E2E 明确保留 unverified。
+- criterion_id: criterion-helper-sufficiency
+  outcome: satisfied
+  summary: Helper/Stop 聚焦测试 22 项通过，fresh handoff 调用通过；未修改相关既有实现或规则文件。
+- criterion_id: criterion-implementation-handoff
+  outcome: satisfied
+  summary: 后续实现 handoff 已覆盖 repo、路径、事件、授权、环境、回滚与测试矩阵，且未宣称当前已实现。
+- criterion_id: criterion-user-assets-preserved
+  outcome: satisfied
+  summary: 执行前后 12 个受保护 dirty paths 的集合、状态和逐文件 SHA-256 完全一致；允许差异仅为合同文件和本 WorkCase 受控载体。
+result_summary: 已交付一份非权威 Cindy WorkCaseRunController 运行时消费合同，验证现有 LDVH Helper/Stop 能力与 synthetic/LDVH-observed trace，并形成后续 Cindy 源码实现所需的精确 handoff。未修改 Cindy 源码，未执行真实 Cindy 事件接线或真实 Orca E2E。
+validation_summary: 22 项 check-workcase-handoff/project-stop 聚焦测试通过；当前 Helper handoff 返回 fresh controller_owned 投影；7 个临时 synthetic trace 通过；合同最终 SHA-256=58ff7f375b7994c5530f9229b41ed5d3a46ed1c480bba91bb40e5c9aa0899fa5；12 个 pre-existing dirty paths 的状态与逐文件 SHA-256 与执行前完全一致。真实 Cindy 事件与 E2E 未运行。
+closure_outcome: completed
+disposition_summary: 本 WorkCase 在原 scope 内完成非权威 Cindy WorkCaseRunController 合同、LDVH/Stop 与合同级 trace 验证、用户资产保护及后续实现 handoff，无未满足、未验证或未处置的本 WorkCase 剩余责任。真实 Cindy 源码实现、正式事件接线和真实端到端验证从创建时即明确排除，不构成本 WorkCase 的未完成责任；如需实施，应由后续独立 WorkCase 在取得源码 locator、写授权和非生产环境后承担。
+change_log:
+- at: '2026-08-14T16:15:11.423306Z'
+  summary: 受控创建收窄后的 Cindy WorkCaseRunController 运行时合同与可实现性验证 WorkCase；两轮只读 Orca Reviewer 反馈已处置，等待 Human Gate 1。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:20:53.899273Z'
+  summary: 记录 Human Gate 1 对 plan_version=1 的明确批准并进入 executing。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:21:14.633189Z'
+  summary: 按开始控制点将 item-capability-baseline 写为 in_progress。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:22:36.977162Z'
+  summary: 完成能力与用户资产只读基线，并启动 Controller 合同文件工作项。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:22:52.723031Z'
+  summary: 按开始控制点将 item-controller-contract 写为 in_progress。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:24:12.768796Z'
+  summary: 完成唯一非权威 Controller 合同文件。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:24:17.884250Z'
+  summary: 按开始控制点将 item-contract-validation 写为 in_progress。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:24:59.868013Z'
+  summary: 完成 Helper/Stop 聚焦测试与合同级 synthetic trace。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:25:05.139233Z'
+  summary: 按开始控制点将 item-cindy-implementation-handoff 写为 in_progress。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:27:18.190015Z'
+  summary: 完成全部 work items，形成 canonical result projection 并进入 controller_checking。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:27:57.966659Z'
+  summary: Controller 自检完成，进入 independent_reviewing 等待只读 Orca 结果复核。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:32:39.769852Z'
+  summary: 记录 Orca Reviewer 对 result_version=1 的只读结果复核：changes_required，仅需修正合同最终哈希证据一致性。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:33:20.060678Z'
+  summary: Controller 接受并处置 result_version=1 的 Reviewer feedback，返回 controller_checking 准备形成 ResultΔ。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:33:35.841470Z'
+  summary: 形成 ResultΔ/result_version=2：修正 item-controller-contract 的最终哈希摘要并使旧版本 review 失效。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:34:07.117534Z'
+  summary: result_version=2 自检完成并进入 independent_reviewing，等待 fresh Orca result review。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:35:51.196857Z'
+  summary: 记录 Orca Reviewer 对 result_version=2 的 fresh 只读结果复核：pass。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:36:02.011293Z'
+  summary: 独立结果复核 pass 且无 feedback，进入 closure_preparing。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:36:22.190278Z'
+  summary: 形成 completed 关闭提案：原 scope 内无剩余责任，范围外 Cindy 实现不冒充本 WC 残留。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:36:33.823771Z'
+  summary: 完成 Gate2 前终态保留审查与现场核对，进入 human_closure_confirming 等待 Human 关闭决定。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+- at: '2026-08-14T16:42:05.952813Z'
+  summary: 消费 Human Gate 2 明确同意，按已复核通过的 completed 关闭提案受控关闭本 WorkCase。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+object_uid: 01a0010e-587e-7f66-8d29-5e9d868d9f71
+object_id: workcase-01M00GWP3YFXK8TAAYKP38V7VH
+fact_type_key: workcase
+created_at: '2026-08-14T16:15:11.423306Z'
+updated_at: '2026-08-14T16:42:05.952813Z'

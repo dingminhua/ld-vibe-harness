@@ -23,11 +23,11 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert inspection.issues == ()
     assert inspection.implemented_checks_complete is True
     checked_documents = inspection.active_documents_passing_implemented_checks
-    assert len(checked_documents) == 33
+    assert len(checked_documents) == 35
     assert sum(document.kind != "attachment" for document in checked_documents) == 20
 
-    assert sum(document.kind == "attachment" for document in checked_documents) == 13
-    assert len(inspection.projections) == 99
+    assert sum(document.kind == "attachment" for document in checked_documents) == 15
+    assert len(inspection.projections) == 105
     assert {projection.layer for projection in inspection.projections} == {"L0", "L1", "L2"}
     field_registry = inspection.document_passing_implemented_checks_by_key("fact-object-field-registry")
     assert field_registry is not None
