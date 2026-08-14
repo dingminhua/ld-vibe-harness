@@ -1714,9 +1714,9 @@ export default function ObjectList() {
   };
 
   const renderObjectSearch = () => (
-    <div className="shrink-0">
+    <div className="relative h-7 w-8 shrink-0">
       {isObjectSearchOpen ? (
-        <label className="relative flex w-60 items-center">
+        <label className="absolute right-0 top-0 z-30 flex w-60 items-center">
           <Search size={14} className="pointer-events-none absolute left-2.5 text-ldvh-text-secondary" aria-hidden="true" />
           <input
             autoFocus
