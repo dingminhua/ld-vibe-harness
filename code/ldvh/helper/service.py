@@ -32,6 +32,29 @@ CONTRACT_SOURCES = [
 RULE_SOURCE_QUALIFICATION_SOURCE = source_reference("rule", "specs/01-规范模型基础规范.md")
 OPERATION_IMPLEMENTATIONS: dict[str, OperationImplementation] = dict(IMPLEMENTATIONS)
 
+# 只读公开操作（effect=read）的稳定 key 集合。只读操作失败路径（invalid_request
+# 类）会获得结构化修正提示；写操作及其它失败路径输出保持不变。
+READ_ONLY_OPERATION_KEYS: frozenset[str] = frozenset(
+    {
+        "check-current-governed-sources",
+        "check-fact-integrity",
+        "check-workcase-handoff",
+        "find-fact-object-candidates",
+        "git-hooks-status",
+        "precheck-git-commit",
+        "prepare-closed-workcase-candidate",
+        "prepare-fact-object-draft",
+        "prepare-local-edit-candidates",
+        "read-action-template-candidates",
+        "read-action-template-content",
+        "read-fact-objects",
+        "read-specification-candidates",
+        "read-specification-content",
+        "read-specification-context",
+        "resolve-governance-scope",
+    }
+)
+
 
 def _issue_source(issue: Issue) -> dict[str, Any]:
     locator = issue.location.path if issue.location.line is None else f"{issue.location.path}:{issue.location.line}"
@@ -64,6 +87,47 @@ def _issue_diagnostic(issue: Issue) -> dict[str, Any]:
     return result
 
 
+def _read_operation_fix_hints(operation_key: str | None) -> list[dict[str, Any]] | None:
+    """Return structured fix hints for a read-only operation failure path.
+
+    Only read-only operations receive hints; write operations and unknown keys
+    keep their existing invalid_request output.  Hints reuse the implementation
+    metadata (required/optional inputs and input examples) instead of parsing
+    the natural-language problem strings.
+    """
+    if operation_key is None or operation_key not in READ_ONLY_OPERATION_KEYS:
+        return None
+    implementation = OPERATION_IMPLEMENTATIONS.get(operation_key)
+    if implementation is None:
+        return None
+    hints: list[dict[str, Any]] = []
+    if implementation.required_inputs:
+        hints.append(
+            {
+                "kind": "missing_required_inputs",
+                "summary": "该只读操作缺少或无效的必填输入",
+                "fields": list(implementation.required_inputs),
+            }
+        )
+    if implementation.optional_inputs:
+        hints.append(
+            {
+                "kind": "allowed_inputs",
+                "summary": "该只读操作接受的输入字段",
+                "fields": [*implementation.required_inputs, *implementation.optional_inputs],
+            }
+        )
+    if implementation.input_examples:
+        hints.append(
+            {
+                "kind": "minimal_examples",
+                "summary": "该只读操作的最小请求示例",
+                "examples": [example["arguments_fragment"] for example in implementation.input_examples],
+            }
+        )
+    return hints or None
+
+
 def invalid_request_result(
     request_kind: RequestKind,
     operation_key: str | None,
@@ -71,8 +135,12 @@ def invalid_request_result(
     *,
     sources: list[dict[str, Any]] | None = None,
     response_profile: str = "compact",
+    hints: list[dict[str, Any]] | None = None,
 ) -> ServiceResult:
     response_sources = CONTRACT_SOURCES if sources is None else [*CONTRACT_SOURCES, *sources]
+    details: dict[str, Any] = {"problems": list(problems)}
+    if hints:
+        details["hints"] = hints
     return common_response(
         request_kind=request_kind,
         operation_key=operation_key,
@@ -83,7 +151,7 @@ def invalid_request_result(
         not_completed_scope=[] if operation_key is None else [operation_key],
         sources=response_sources,
         gaps=[gap(problem, sources=response_sources) for problem in problems],
-        diagnostics=[diagnostic("请求解析或校验未通过", problems=list(problems))],
+        diagnostics=[diagnostic("请求解析或校验未通过", **details)],
     )
 
 
@@ -237,6 +305,17 @@ def _execution_response(
     *,
     response_profile: str,
 ) -> ServiceResult:
+    diagnostics = list(execution.diagnostics)
+    if execution.outcome == "invalid_request":
+        hints = _read_operation_fix_hints(operation_key)
+        if hints and not any("hints" in item.get("details", {}) for item in diagnostics):
+            diagnostics.append(
+                diagnostic(
+                    "请求解析或校验未通过",
+                    problems=[item["summary"] for item in execution.gaps],
+                    hints=hints,
+                )
+            )
     return common_response(
         request_kind=request_kind,
         operation_key=operation_key,
@@ -253,7 +332,7 @@ def _execution_response(
         gaps=list(execution.gaps),
         changes=list(execution.changes),
         verification=list(execution.verification),
-        diagnostics=list(execution.diagnostics),
+        diagnostics=diagnostics,
         follow_up=execution.follow_up,
     )
 
@@ -270,7 +349,12 @@ def _handle_request(request_kind: RequestKind, operation_key: str | None, raw_in
     general_discovery = request_kind == "capabilities" and operation_key is None
     parsed = parse_common_request(raw_input, general_discovery=general_discovery)
     if parsed.request is None:
-        return invalid_request_result(request_kind, operation_key, parsed.problems)
+        return invalid_request_result(
+            request_kind,
+            operation_key,
+            parsed.problems,
+            hints=_read_operation_fix_hints(operation_key),
+        )
     response_profile = parsed.request.response_profile
     if operation_key is not None and not valid_operation_key(operation_key):
         return invalid_request_result(
@@ -407,6 +491,7 @@ def _handle_request(request_kind: RequestKind, operation_key: str | None, raw_in
                     error.problems,
                     sources=list(error.sources),
                     response_profile=response_profile,
+                    hints=_read_operation_fix_hints(operation_key),
                 )
             except Exception as error:  # noqa: BLE001 - service boundary converts implementation failures
                 execution = implementation_error_execution(bound_operation, error)
@@ -436,6 +521,7 @@ def _handle_request(request_kind: RequestKind, operation_key: str | None, raw_in
                     error.problems,
                     sources=list(error.sources),
                     response_profile=response_profile,
+                    hints=_read_operation_fix_hints(operation_key),
                 )
             except Exception as error:  # noqa: BLE001 - service boundary converts implementation failures
                 execution = implementation_error_execution(bound_operation, error)
