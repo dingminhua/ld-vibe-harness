@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import os
+import stat
 import subprocess
 from pathlib import Path
 
+from ldvh.git_hooks.commit_msg import render_commit_msg_hook
 from tools import check_skill_sync as tool_module
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -134,8 +136,33 @@ class TestWorktreeCoverage:
 
 
 class TestMainExitCodes:
-    def test_aligned_run_exits_zero(self) -> None:
-        completed = _run_main("--platform", PLATFORM, "--skill-path", SKILL_PATH, "--json")
+    def test_aligned_run_exits_zero(self, tmp_path: Path) -> None:
+        worktree = tmp_path / "repository"
+        worktree.mkdir()
+        subprocess.run(("git", "-C", str(worktree), "init", "-q"), check=True)
+        subprocess.run(("git", "-C", str(worktree), "config", "user.name", "LDVH Test"), check=True)
+        subprocess.run(("git", "-C", str(worktree), "config", "user.email", "ldvh@example.invalid"), check=True)
+        (worktree / "initial.txt").write_text("initial\n", encoding="utf-8")
+        subprocess.run(("git", "-C", str(worktree), "add", "initial.txt"), check=True)
+        subprocess.run(("git", "-C", str(worktree), "commit", "-qm", "initial"), check=True)
+
+        hooks = worktree / ".git" / "hooks"
+        hook = hooks / "commit-msg"
+        hook.write_text(
+            render_commit_msg_hook(commit_msg_runner=Path("/unbound"), workspace_root=tmp_path),
+            encoding="utf-8",
+        )
+        hook.chmod(hook.stat().st_mode | stat.S_IXUSR)
+
+        completed = _run_main(
+            "--platform",
+            PLATFORM,
+            "--skill-path",
+            SKILL_PATH,
+            "--worktree",
+            str(worktree),
+            "--json",
+        )
         assert completed.returncode == 0
 
     def test_misaligned_run_exits_one_with_unknown_target(self, tmp_path: Path) -> None:
