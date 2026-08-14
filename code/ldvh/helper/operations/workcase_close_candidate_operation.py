@@ -42,6 +42,16 @@ _IMPLEMENTATION_EVIDENCE = (
     source_reference("implementation", "code/ldvh/facts/workcase_update.py"),
 )
 
+_CLOSE_WORKCASE_CHANGE_LOG_APPEND = {
+    "required": True,
+    "action": "append",
+    "count": 1,
+    "target": "fact_object.change_log",
+    "signature_policy": "caller_close_request_observed_signature",
+    "signature_fields": ["product_name", "model_name", "agent_runtime_name"],
+    "signature_forbidden": ["signer_type"],
+}
+
 
 def _validated_request(
     request: CommonRequest,
@@ -223,12 +233,25 @@ def _execute(
         "source_content_fingerprint": read.content_fingerprint,
         "fact_object": candidate,
         "mapping_basis": {"proposal_route_targets": route_target_basis},
+        "change_log_append": {
+            "required": _CLOSE_WORKCASE_CHANGE_LOG_APPEND["required"],
+            "target": _CLOSE_WORKCASE_CHANGE_LOG_APPEND["target"],
+            "count": _CLOSE_WORKCASE_CHANGE_LOG_APPEND["count"],
+            "signature": {
+                "fields": _CLOSE_WORKCASE_CHANGE_LOG_APPEND["signature_fields"],
+                "source": "close-workcase 调用请求中的 observed_context.signature",
+                "provider": "caller",
+                "forbidden_fields": _CLOSE_WORKCASE_CHANGE_LOG_APPEND["signature_forbidden"],
+            },
+        },
     }
     return OperationExecution(
         outcome="ok",
         summary=(
             "已从当前 Gate 2 source 快照形成只读 closed fact_object 候选；"
-            "mapping_basis 保留每个 route target 的权威 UID/legacy 形状与 content_fingerprint"
+            "mapping_basis 保留每个 route target 的权威 UID/legacy 形状与 content_fingerprint；"
+            "返回结果仅用于只读 close 前补写准备：调用 close-workcase 前须基于当前 before 的"
+            " change_log 追加恰好 1 条流水，不代表已获得关闭授权或 readiness。"
         ),
         result=result,
         requested_scope=requested,
@@ -238,8 +261,9 @@ def _execute(
         verification=(
             {
                 "check": (
-                    "候选已绑定 source bytes，并原样保留 proposal route targets 的权威身份形状与"
-                    " content_fingerprint；未读取 proposal targets"
+                    "候选已绑定 source bytes；保持 proposal route targets 的权威身份形状与"
+                    " content_fingerprint；未读取 proposal targets；"
+                    "返回不含历史 change_log，close-workcase 调用方须补齐恰好 1 条新增流水"
                 ),
                 "status": "passed",
                 "scope": list(requested),

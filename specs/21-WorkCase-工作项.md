@@ -785,6 +785,16 @@ WorkCase 的普通活动期写入必须使用 `update-workcase`；Human 主动�
 - 共同请求中 `arguments.fact_ref` 必填，成员闭集为 `governed_project_id`、固定值 `fact_type_key=workcase` 与 `object_id`；`arguments.workspace_root` 和顶层 `work_object_locators` 可选并复用 05 §11.1 的当前 Working Tree 管辖定位语义。其它领域参数禁止，`observed_context`、`authorization_reference` 必须为空，`requested_disclosure` 必须为 `null` 或省略；
 - source 必须是当前 Working Tree 中完整、mechanically valid、`status=open` 且 `phase=human_closure_confirming` 的 WorkCase，并有完整当前 `closure_proposal`。invalid、unavailable、not-found、blocked、closed 或其它 phase 不产生候选；
 - `mapping_basis` 字段闭集只有 `proposal_route_targets`。其数组按 05 §11.0 target 排序去重，每项字段闭集为 `target` 和 `content_fingerprint`，只原样复制当前 proposal 的 `route_existing` 决策已经保存的目标观察；没有 route target 时为空数组。它不表示 target 当前仍存在、有效、处于允许状态或指纹未变；本操作不得读取任何 target、入向依赖或关系图来补强该结论；
+- `fact_object` 为完整 closed projection，但刻意不返回历史变更 `change_log`，以便调用方只用当前 source 的原始 `change_log` 计算新增一条 close 追加流水；本操作不生成、补全或透传签名字段。
+- `change_log_append` 字段闭集为：
+  - `required=true`（必须执行）
+  - `target="fact_object.change_log"`（以当前 before 历史为基准）
+  - `count=1`（恰好追加 1 条）
+  - `signature.fields` = `product_name`、`model_name`、`agent_runtime_name`
+  - `signature.source` = `close-workcase 请求中的 observed_context.signature`
+  - `signature.provider` = `caller`
+  - `signature.forbidden_fields` 必须不含 `signer_type`
+  该对象是对 `close-workcase` 前最后一步机械补齐要求的机器可读描述；支持路径按该字段要求只允许“对既有 `change_log` 的一次追加”。
 - `source_content_fingerprint` 精确绑定形成候选的 source bytes。source 后续变化即使自然语言相似，旧候选也不得作为真实关闭的 `expected_content_fingerprint`；必须重新读取并重新投影。操作不接收 expected fingerprint、Human 决定、route target 第二清单或授权回指；
 - 成功只说明对当次完整 source 完成确定性只读投影。响应和 Code 均不得据此声称 Human 已批准、Gate2 已完成、关闭前提齐备、目标可用、“已准备好关闭”或工作完成；真正关闭仍必须调用 `close-workcase`，在事务内重新读取 source 与全部 target、执行 CAS、指纹、状态、入向依赖和关系图检查并成功回读；
 - source 资格不成立返回 `rejected`，管辖、Schema 或读取技术边界无法完成返回 `unavailable`，均为零写入；操作不生成或改写任何 WorkCase 自然语言事实。

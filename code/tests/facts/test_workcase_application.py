@@ -357,6 +357,8 @@ def test_closed_candidate_projection_is_complete_nonmanaged_and_matches_close_af
     expected["urls"] = before["urls"]
     expected["relations"] = before["relations"]
 
+    expected.pop("change_log")
+    assert "change_log" not in candidate
     assert candidate == expected
     closed_after = _closed_from(before) | {"urls": before["urls"], "relations": before["relations"]}
     assert workcase_update._close_mapping_issues(before, closed_after) == ()
@@ -426,6 +428,14 @@ def test_close_replaces_same_target_related_to_with_routed_to(
     _write(project, before)
 
     after = workcase_update.project_closed_workcase_candidate(before)
+    after["change_log"] = deepcopy(before["change_log"])
+    after["change_log"].append(
+        {
+            "signature": {"product_name": "gpt-5-caller", "model_name": "gpt-test", "agent_runtime_name": "caller"},
+            "at": "2026-07-26T13:10:00+08:00",
+            "summary": "由调用方补齐关闭候选流水。",
+        }
+    )
     result = apply_workcase_write(
         _command(
             project,

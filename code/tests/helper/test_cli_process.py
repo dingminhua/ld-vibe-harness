@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 from pathlib import Path
@@ -355,12 +356,46 @@ def test_action_template_operations_discover_and_read_five_current_sources(tmp_p
         "environment-integration-installation-verification",
         "workcase-approved-plan-execution",
     ]
-    assert all("## 8. Stop Conditions" in item["source_content"] for item in content_response["result"]["items"])
+    assert all("## 8. Stop Conditions" in item["content"] for item in content_response["result"]["items"])
+    assert all("source_content" not in item for item in content_response["result"]["items"])
     assert all(
         len(item["content_sha256"]) == len(item["source_content_sha256"]) == 64
         for item in content_response["result"]["items"]
     )
     assert content_response["changes"] == []
+
+
+def test_action_template_content_expands_same_source_through_l4(tmp_path: Path) -> None:
+    _, template_response = _run(
+        tmp_path,
+        "call",
+        "read-action-template-content",
+        stdin=json.dumps({"arguments": {"template_keys": ["fact-object-controlled-creation"]}}),
+    )
+    item = template_response["result"]["items"][0]
+    completed, source_response = _run(
+        tmp_path,
+        "call",
+        "read-specification-content",
+        stdin=json.dumps(
+            {
+                "requested_disclosure": "L4",
+                "arguments": {
+                    "selections": [
+                        {"responsibility_key": item["source_key"], "heading_path": None}
+                    ]
+                },
+            }
+        ),
+    )
+
+    assert completed.returncode == 0
+    source_item = source_response["result"]["items"][0]
+    source_content = source_item["parts"][0]["content"]
+    assert "source_content" not in item
+    assert source_item["path"] == item["canonical_path"]
+    assert hashlib.sha256(source_content.encode()).hexdigest() == item["source_content_sha256"]
+    assert item["content"] in source_content
 
 
 @pytest.mark.parametrize("requested", ["L3", "L4"])

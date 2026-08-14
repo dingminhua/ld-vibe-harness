@@ -48,6 +48,14 @@ def _fields(*, phase: str = "human_closure_confirming", status: str = "open") ->
         "result_summary": "已形成局部结果。",
         "validation_summary": "只验证当前 source。",
         "urls": [{"ref": "https://example.com/source", "title": "Source", "summary": "保留。"}],
+        "change_log": [
+            {
+                "signature": {"agent_id": "test-agent", "host_environment": "unit"},
+                "session_id": "unit-session",
+                "at": "2026-07-26T09:00:00+08:00",
+                "summary": "形成候选前已记录。",
+            }
+        ],
         "closure_proposal": {
             "proposed_outcome": "partial",
             "proposed_disposition_summary": "转交剩余责任。",
@@ -144,6 +152,7 @@ def test_candidate_operation_returns_complete_nonmanaged_projection_without_read
     assert execution.result["source_content_fingerprint"] == "a" * 64
     candidate = execution.result["fact_object"]
     assert set(candidate).isdisjoint({"object_id", "fact_type_key", "created_at", "updated_at", "phase"})
+    assert "change_log" not in candidate
     assert candidate["status"] == "closed"
     assert candidate["urls"] == _fields()["urls"]
     assert candidate["relations"] == [
@@ -153,6 +162,17 @@ def test_candidate_operation_returns_complete_nonmanaged_projection_without_read
             "target": {"object_uid": "019ffd48-d7b1-7bd4-abf2-3759fa544ba2"},
         },
     ]
+    assert execution.result["change_log_append"] == {
+        "required": True,
+        "target": "fact_object.change_log",
+        "count": 1,
+        "signature": {
+            "fields": ["product_name", "model_name", "agent_runtime_name"],
+            "source": "close-workcase 调用请求中的 observed_context.signature",
+            "provider": "caller",
+            "forbidden_fields": ["signer_type"],
+        },
+    }
     assert execution.result["mapping_basis"] == {
         "proposal_route_targets": [
             {
@@ -161,7 +181,7 @@ def test_candidate_operation_returns_complete_nonmanaged_projection_without_read
             }
         ]
     }
-    assert "权威 UID/legacy 形状与 content_fingerprint" in execution.summary
+    assert "close-workcase 前" in execution.summary
 
 
 def test_candidate_operation_prefers_route_over_related_to_for_the_same_target(monkeypatch) -> None:

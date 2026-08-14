@@ -80,7 +80,7 @@ def test_candidate_exact_selection_keeps_order_and_reports_partial(
     assert any("未从当前有效行动模板声明" in gap["summary"] for gap in execution.gaps)
 
 
-def test_content_operation_returns_exact_definition_and_complete_source_from_same_snapshot(
+def test_content_operation_returns_executable_package_without_duplicate_source_body(
     current_specs_repository: Path,
 ) -> None:
     repository = inspect_repository(current_specs_repository)
@@ -95,11 +95,13 @@ def test_content_operation_returns_exact_definition_and_complete_source_from_sam
     assert execution.result is not None
     item = execution.result["items"][0]
     assert item["content"].startswith("## 5. 事实对象生命周期变更与承接处置行动模板定义\n")
-    assert "## 6. 验证要求" not in item["content"]
-    assert "## 6. 验证要求" in item["source_content"]
-    assert "## 8. Stop Conditions" in item["source_content"]
+    assert "## 6. 验证要求" in item["content"]
+    assert "## 7. Human Gate" in item["content"]
+    assert "## 8. Stop Conditions" in item["content"]
+    assert "source_content" not in item
     assert hashlib.sha256(item["content"].encode()).hexdigest() == item["content_sha256"]
-    assert hashlib.sha256(item["source_content"].encode()).hexdigest() == item["source_content_sha256"]
+    source = (current_specs_repository / item["canonical_path"]).read_text(encoding="utf-8")
+    assert hashlib.sha256(source.encode()).hexdigest() == item["source_content_sha256"]
 
 
 def test_workcase_execution_template_keeps_result_review_out_of_work_items(
@@ -125,18 +127,18 @@ def test_workcase_execution_template_keeps_result_review_out_of_work_items(
     assert execution.result is not None
     assert creation.outcome == "ok"
     assert creation.result is not None
-    delivered_template_source = execution.result["items"][0]["source_content"]
-    delivered_creation_source = creation.result["items"][0]["source_content"]
+    delivered_template_package = execution.result["items"][0]["content"]
+    delivered_creation_package = creation.result["items"][0]["content"]
     assert invalid_item_goal in workcase_source
-    assert invalid_item_goal in delivered_template_source
+    assert invalid_item_goal in delivered_template_package
     assert invalid_criterion_statement in workcase_source
-    assert invalid_criterion_statement in delivered_template_source
-    assert invalid_criterion_statement in delivered_creation_source
+    assert invalid_criterion_statement in delivered_template_package
+    assert invalid_criterion_statement in delivered_creation_package
     assert "不得被写成 item" in workcase_source
-    assert "保留当前批准的授权包并自动返回执行，不再次请求 Human" in delivered_template_source
-    assert "将受影响 item 据实取消并转入结果链" in delivered_template_source
+    assert "保留当前批准的授权包并自动返回执行，不再次请求 Human" in delivered_template_package
+    assert "将受影响 item 据实取消并转入结果链" in delivered_template_package
     assert "Code 不判断自然语言是否属于生命周期关口" in workcase_source
-    assert "Code 不从关键词或字段形状替 AI 作出结论" in delivered_template_source
+    assert "Code 不从关键词或字段形状替 AI 作出结论" in delivered_template_package
 
 
 def test_fact_write_templates_deliver_process_checks_and_direct_write_rejection(

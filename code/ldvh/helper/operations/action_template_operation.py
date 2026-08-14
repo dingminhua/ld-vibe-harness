@@ -80,9 +80,15 @@ def _candidate_item(declaration: ActionTemplateDeclaration) -> dict[str, object]
 
 
 def _content(declaration: ActionTemplateDeclaration) -> str:
-    lines = declaration.document.markdown.raw_lines[
-        declaration.definition_start_line - 1 : declaration.definition_end_line
-    ]
+    """Deliver the executable template package, without duplicating the source body.
+
+    A template's definition starts at its declared H2.  Its following sections contain
+    verification, Human Gate, and Stop Conditions, so the normal path must include the
+    remainder of this same source document.  Full source identity is still exposed by
+    the candidate fields and source digest and can be expanded through the existing
+    specification reader.
+    """
+    lines = declaration.document.markdown.raw_lines[declaration.definition_start_line - 1 :]
     return "\n".join(lines) + "\n"
 
 
@@ -120,7 +126,6 @@ def _read(
             source_content = declaration.document.markdown.raw_text
             item["content"] = content
             item["content_sha256"] = hashlib.sha256(content.encode("utf-8")).hexdigest()
-            item["source_content"] = source_content
             item["source_content_sha256"] = hashlib.sha256(source_content.encode("utf-8")).hexdigest()
         items.append(item)
         completed.append(key)

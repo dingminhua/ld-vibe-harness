@@ -538,8 +538,6 @@ def project_closed_workcase_candidate(before: Mapping[str, Any]) -> dict[str, An
     for field_name in _CLOSED_PRESERVED_FIELDS:
         if field_name in before:
             candidate[field_name] = deepcopy(before[field_name])
-    if "change_log" in before:
-        candidate["change_log"] = deepcopy(before["change_log"])
     candidate["closure_outcome"] = deepcopy(proposal.get("proposed_outcome"))
     candidate["disposition_summary"] = deepcopy(proposal.get("proposed_disposition_summary"))
 
