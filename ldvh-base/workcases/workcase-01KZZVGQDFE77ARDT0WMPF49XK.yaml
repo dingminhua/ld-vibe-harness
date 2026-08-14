@@ -1,0 +1,124 @@
+status: closed
+title: 显式闭合 WorkCase 关闭候选的写入要求
+goal: 使 prepare-closed-workcase-candidate 对 WorkCase 关闭所需的最终 change_log 补充要求形成可消费、无歧义的类型专属契约，避免调用方首次 close-workcase 才发现隐藏写入要求；不生成或推断会话 signature。
+scope: 仅承接受控写入优化 Spark 的类型专属例外：关闭候选操作的结果契约、直接投影、Helper 实现与直接测试。排除通用 read-fact-objects 输出、其它只读操作、模板触发、signature resolver、Git、其它事实和 ldvh-base。
+success_criterion_definitions:
+- criterion_id: criterion-contract
+  statement: 当前规则与候选响应以机器可消费方式明确说明关闭前必须追加的最终 change_log 补充要求及边界。
+- criterion_id: criterion-supported-close-input
+  statement: 在受支持的关闭验证路径中，调用方按候选要求追加恰好一条且携带直接提供 signature 数据的新流水后，输入被接受。
+- criterion_id: criterion-signature-boundary
+  statement: 候选操作不生成也不推断 signature 字段，相关实现与测试保留该边界。
+- criterion_id: criterion-validation-evidence
+  statement: 候选契约、补充流水、source stale 与 route target 映射的直接测试和适用全量验证均产生可回读通过证据。
+success_criterion_results:
+- criterion_id: criterion-contract
+  outcome: satisfied
+  summary: Rule and response specify the one-entry final change_log supplementation.
+- criterion_id: criterion-supported-close-input
+  outcome: satisfied
+  summary: Focused close validation tests cover the caller-added change_log path and pass.
+- criterion_id: criterion-signature-boundary
+  outcome: satisfied
+  summary: Candidate directs caller-provided observed signature and tests cover non-inference.
+- criterion_id: criterion-validation-evidence
+  outcome: satisfied
+  summary: Focused tests, Ruff, full pytest, source check, and fact integrity passed in stated scopes.
+result_summary: Delivered bounded close-candidate supplementation contract; technical criteria are satisfied, with retained sequencing and attribution limitations.
+validation_summary: Focused 10 plus 2 passed; Ruff passed; pytest 1889 passed and 15 skipped; ldvh check passed; fact integrity 240 complete with no problems.
+closure_outcome: completed
+disposition_summary: 原 scope 内四项标准均 satisfied，无 residual decision。验证数字是 Controller 报告的实际运行结果及其已记录范围，不证明 signature 有效、Human 授权、委派时序一致性或未覆盖运行时行为；signature 只能由直接可观察来源提供，不生成或推断；前检查点委派时序差异仍为已知未验证边界。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7706-ba55-38e7bc9b1cc9
+change_log:
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:01:39.343055Z'
+  summary: 按 Human 当前指令受控创建：承接受控写入优化 Spark 的类型专属关闭候选契约闭合责任，并等待 Gate 1。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:05:50.127758Z'
+  summary: Human Gate 1 approved plan version 1; execution authorization is now active.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:06:27.531155Z'
+  summary: 'Started item-contract: preparing the bounded close-candidate contract work and Spark delegation.'
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:15:32.081260Z'
+  summary: Completed item-contract based on the independently observed bounded rule and response contract changes; the item-implementation sequencing discrepancy remains recorded for result validation.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:16:03.019892Z'
+  summary: Started item-implementation checkpoint for independent validation of the existing bounded implementation; no additional code changes are authorized in this step.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:18:32.916823Z'
+  summary: Completed item-implementation after independent diff review, focused tests, Ruff, and full pytest evidence; retained the prior sequencing discrepancy for final validation.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:19:08.770467Z'
+  summary: 'Started item-validation: running current-source mechanical checks and consolidating bounded validation evidence.'
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:30:01.018773Z'
+  summary: Completed item-validation and formed result version 1 for controller checking; retained sequencing and working-tree attribution limitations.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T12:06:25.783614Z'
+  summary: 冻结已完整的 result_version=1 projection 并进入 independent_reviewing，等待授权的独立只读结果复核。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T12:11:04.977332Z'
+  summary: 记录 result_version=1 独立复核为 pass_with_followups；无关闭前阻断，三项证据/签名/时序边界 follow-up 已由 Controller 接受并保留。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T12:11:24.640889Z'
+  summary: 冻结 v1 review 与完整结果投影，进入 closure_preparing；关闭提案将保留 Controller 报告测试范围、signature 不推断和前检查点时序差异边界。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T12:11:47.330664Z'
+  summary: 在 closure_preparing 中保存 completed proposal：无 residual decision，并显式保留 Controller 报告测试范围、signature 不推断与前检查点时序差异边界。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T12:12:06.675248Z'
+  summary: 关闭提案已冻结并经回读/完整性审计；进入 human_closure_confirming，等待 Human Gate 2 决定。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T12:25:24.069414Z'
+  summary: Human Gate 2 approved the saved completed closure proposal; close-workcase atomically closed this WorkCase.
+object_uid: 019fffb8-5daf-71ce-ac37-40e52cf227b3
+object_id: workcase-01KZZVGQDFE77ARDT0WMPF49XK
+fact_type_key: workcase
+created_at: '2026-08-14T10:01:39.343055Z'
+updated_at: '2026-08-14T12:25:24.069414Z'

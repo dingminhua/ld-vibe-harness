@@ -1,0 +1,142 @@
+status: closed
+title: 行动模板成功响应渐进披露契约去重
+goal: 在不新增公开操作、写能力、缓存或第二权威的前提下，修订并实现 read-action-template-content 的成功响应渐进披露契约：消除 content 与完整 source_content 的重复传输，正常路径仍可消费行动步骤、Human Gate 与 Stop Conditions，并能使用既有 read-specification-content 对同一模板来源进行可验证的按需全文展开。
+scope: 仅覆盖当前行动模板内容读取契约（以 specs/06-行动模板基础规范.md §9.6 为起点）、审计确定的关联请求/响应字段表、code/ldvh/helper/operations/action_template_operation.py 与相应测试。最小执行包须呈现行动步骤、Human Gate 的触发/所需决定或限制以及 Stop Conditions 的阻止/升级语义；其来源身份、定位与摘要只能辅助辨识和展开，不成为第二来源正文。完整来源只复用既有 read-specification-content 的精确 L4 能力；若该能力不能形成可验证、精确且同源的展开则停止并交还。排除新公开操作、写能力、缓存、持久副本、事实 Schema/事实载体、Git/Hook、提交/push、以及其它只读操作成功契约或失败诊断体系的改造。
+success_criterion_definitions:
+- criterion_id: criterion-contract-bundle
+  statement: 当前规则契约明确正常成功路径的最小可执行内容：行动步骤、Human Gate 的触发/所需决定或限制、以及具有阻止或升级语义的 Stop Conditions；该呈现不表示任何 Human Gate 已获批准或受限行动已获准。
+- criterion_id: criterion-deduplicated-output
+  statement: 实现与契约一致：成功响应不再同时传输 content 与包含其正文的完整来源；保留足以通过既有 read-specification-content 精确定位同一不可混淆模板来源及其完整范围的来源身份/定位/校验关联，且不新增 operation、写副作用、缓存或第二权威。
+- criterion_id: criterion-source-expansion
+  statement: 测试和实际调用将正常响应的来源身份、定位与校验关联，同既有 L4 展开的完整文本范围及审计确认的模板来源进行比对；覆盖至少一个同一来源中存在相邻或多个模板的情形（如当前来源存在），证明不会模糊展开或误混入相邻模板。
+- criterion_id: criterion-risk-matched-validation
+  statement: 风险匹配测试覆盖成功包的关键语义、按需展开、重复正文移除和本次实现未回归既有 invalid_request 失败信封/诊断；结果明确压缩收益、实际验证范围与未验证边界，不把字节缩减表述为规则自动适用或工作完成。
+success_criterion_results:
+- criterion_id: criterion-contract-bundle
+  outcome: satisfied
+  summary: 06 §9.6 规定最小执行包包含定义、验证、Human Gate 和 Stop Conditions，并明确 Gate 呈现不等于批准、Stop Conditions 保留阻止/升级语义。
+- criterion_id: criterion-deduplicated-output
+  outcome: satisfied
+  summary: 实现不再返回 source_content；content 覆盖定义后到来源末尾，source_key/canonical_path/source_content_sha256 支持既有 L4 同源全文展开，未新增 operation、写能力、缓存或第二权威。
+- criterion_id: criterion-source-expansion
+  outcome: satisfied
+  summary: 新增真实 CLI 回归：item source_key 请求 L4 后，L4 path 精确等于 item canonical_path、全文 SHA-256 精确等于 source_content_sha256、content 是全文子串且 item 不含 source_content；聚焦测试 35 passed。
+- criterion_id: criterion-risk-matched-validation
+  outcome: satisfied
+  summary: 修订后聚焦 35 passed 且 Ruff 通过；此前 Helper 533 passed/5 skipped、规范 156 passed、全仓 1888 passed/15 skipped仍为变更前证据，需重新运行风险匹配回归后再形成最终结论。
+result_summary: 结果投影 v2 已吸收 Reviewer 的 path 契约与端到端 L4 回归反馈：最小包去重、同源 L4 展开和公开路径身份均由自动化测试绑定。
+validation_summary: v2 聚焦 CLI/契约测试 35 passed；修订后 Helper+规范回归 690 passed/5 skipped、Ruff 通过；此前全仓 1888 passed/15 skipped在核心去重变更后通过，v2 仅修订契约路径文字及新增回归测试。真实 AI 理解和真实 Human Gate 触发未验证。
+closure_outcome: completed
+disposition_summary: 本 WorkCase 原 scope 内的四项成功标准均已满足；不保留 residual decision。范围外的规格文案跟进未纳入本次关闭责任。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-75f4-888d-2d7c6df0e8e2
+change_log:
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T09:56:16.412584Z'
+  summary: 按 Human 当前明确工作意图受控创建：承接 Spark 的行动模板成功响应重复传输问题；已完成创建前独立只读方案复核并将反馈纳入 Gate 1 候选。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:00:26.468653Z'
+  summary: Human Gate 1 approved current plan v1 and authorization; WorkCase entered executing.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:01:46.969857Z'
+  summary: 开始执行获批 item-contract-design，并登记当前检查点与恢复位置。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:07:57.718996Z'
+  summary: 完成 item-contract-design，并开始 item-contract-implementation：最小执行包、去重输出与既有 L4 同源展开已同步实现和聚焦验证。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:08:48.001622Z'
+  summary: 完成 item-contract-implementation，并开始 item-evidence-validation：聚焦、Helper 全量、规范回归与 Ruff 均已通过；全仓库回归待收集。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:10:39.971801Z'
+  summary: 完成 item-evidence-validation，形成 result_version=1 的完整结果投影并进入 controller_checking，等待独立只读结果复核。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:13:15.829489Z'
+  summary: 冻结完整 result_version=1 投影并进入 independent_reviewing，等待实际独立只读复核。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:14:42.112319Z'
+  summary: 记录实际独立结果复核为 changes_required；Controller 接受反馈并完成受限契约/测试修订，准备升版结果投影。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:15:32.083698Z'
+  summary: 独立复核 v1 已完成并反馈 changes_required；原样冻结被审结果投影，回到 controller_checking 准备受控 ResultΔ。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:16:04.315505Z'
+  summary: 吸收 changes_required feedback，结果投影升版为 v2 并清除失效旧 review：L4 使用实际 path 契约且加入端到端同源回归。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:18:35.775294Z'
+  summary: 在 controller_checking 中完成 v2 validation_summary 冻结，为重新独立复核准备当前完整投影。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:19:04.192740Z'
+  summary: 冻结 result_version=2 并进入第二轮 independent_reviewing。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:21:10.067110Z'
+  summary: 记录 v2 独立结果复核为 pass_with_followups：v1 两项阻断已修复；两个 follow-up 不阻断且未扩展当前授权范围。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:25:59.169538Z'
+  summary: v2 独立复核已通过且 feedback 已处置；冻结被审结果，进入 closure_preparing 形成关闭提案。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:30:15.745510Z'
+  summary: 在 closure_preparing 中冻结 v2 绑定的 completed closure proposal；无 residual decision，待回读后进入 Gate 2 等待。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T10:30:34.648921Z'
+  summary: 关闭提案已冻结并经回读/完整性审计；进入 human_closure_confirming，等待 Human Gate 2 决定。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T11:45:19.727557Z'
+  summary: Human Gate 2 approved the saved completed closure proposal; close-workcase atomically closed this WorkCase.
+object_uid: 019fffb3-763a-70fc-b73c-457833f94f60
+object_id: workcase-01KZZV6XHTE3YBEF25F0SZJKV0
+fact_type_key: workcase
+created_at: '2026-08-14T09:56:16.412584Z'
+updated_at: '2026-08-14T11:45:19.727557Z'

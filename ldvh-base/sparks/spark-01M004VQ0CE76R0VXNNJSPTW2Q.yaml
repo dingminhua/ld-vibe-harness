@@ -1,0 +1,44 @@
+title: 三个关联 Spark 细分出的五件优先事项
+status: open
+priority: P1
+intent: 三个互相关联的 open Spark——Helper 只读交互优化（spark-01KZXN5TXNEQT8H39DFHPZ1T72）、LDVH 面向 AI 的服务质量评估与持续改进（spark-01KZXN5TXNEKNA5YCZ62F8BM0K）、受控写入优化（spark-01KZXN5TXNEW3BMN9RWYY9P769）——需要作为一个整体细分出当前更优先要做的具体事情：只读与写入是 Helper 响应契约的两侧，服务质量评估是验证这些优化是否有效的上位机制，单看任一 Spark 都无法发现跨议题的牵引与返工风险。后续要判断：细分出的各事项的承接顺序与承接形态（WorkCase、Study 或规范修订）、事项清单何时随承接进展更新、本入口何时处置。若不跨行动保留这层综合，每次接续都要重新精读三个长摘要、重新发现读写契约两侧的牵引关系和评估前置关系，增加定位、重新分析、分流与上下文恢复负担。
+summary: "## 三个 Spark 的关联结构\n\n- **A 只读交互优化**（…QT8H，P2）：剩余部分是 read-action-template-content 成功路径 `source_content` 与 `content` 去重、成功路径窄输出契约收缩（06 §9.6 契约变更）；失败诊断结构化提示已完成。\n- **B 服务质量评估**（…KNA5，P1）：下一验证顺序第 1 步是定义并验证最小执行证据协议；它还吸收着诊断修正议题（adr-0008 的分层策略已决定、实现未完成）。\n- **C 受控写入优化**（…W3BM，P2）：公共契约层三项——read→update 契约闭合、签名拼装减负、模板启用判断；类型专属层从 WorkCase 关闭候选起步。\n- **关联**：A 与 C 是 Helper 响应契约的读/写两侧，B 是评估 A、C 每项优化是否真改善 AI 执行的上位机制；B 的诊断分支与 A 的失败诊断、C 的签名减负直接相关。\n\n## 关联产生的关键牵引（单看任一 Spark 发现不了）\n\nA 要 read 响应「少给」（窄输出、去重），C 要 read 响应「多给」（附 update after 基座）。两者作用于同一响应契约，方向看似相反，实则可以统一为「正常路径最窄定义 + 完整来源/基座按需展开」的同一设计；若不先做这层统一判断，会对同一响应做两轮方向相反的返工。\n\n## 当前五件优先事项（按先做后做排列）\n\n1. **定义并验证最小执行证据协议**（B 的下一验证顺序第 1 步）。冻结 task/contract/payload/runner 身份、事件来源分级与评分前可比性门槛；session_comparability 已交付，DSH 轨迹日志观察面已实测。它是第 3–5 项优化「是否真有效」的评估前置。形态待定：直接 WorkCase 或先 Study 冻结事件闭集与阈值。\n2. **Helper 读写响应契约的统一设计判断**（A∩C 交汇）。在动任一单侧契约前，先判断「最窄正常路径 + 按需展开」的统一形状如何同时承载 A 的窄输出/去重与 C 的 after 基座、签名模板、trigger_conditions，形成一次规范修订的范围判断而非两轮返工。\n3. **read→update 契约闭合**（C 公共契约层第 1 项）。read 响应附带可消费的 after 基座或以最小完整示例消除手工 strip 托管字段的摩擦；跨 5 类事实全受益，依赖第 2 项的契约形状结论。\n4. **签名拼装减负与模板启用判断**（C 公共契约层第 2、3 项）。capabilities 直接给出当前环境签名模板或新增只读解析入口；read-action-template-candidates 增加 trigger_conditions 提示。同属响应契约面，与第 2 项一并设计、可独立实施。\n5. **只读成功路径 source_content 去重与窄输出收缩**（A 剩余部分）。06 §9.6 契约变更，需独立规范修订流程后由新 WorkCase 承接；形状依赖第 2 项结论，效果由第 1 项的评估机制复验。\n\n## 本入口边界\n\n- 本 Spark 只承载「三件事如何关联、先做哪几件」的细分判断及其维护，不复制三个来源 Spark 的正文；各事项完整语义以 A、B、C 各自对象为权威。\n- 细分不是行动授权：每项承接仍需各自 Human 决定与相应行动模板。\n- B 的诊断修正分支（adr-0008 实现）不单列，由第 1 项的评估框架统一判断是否形成 WorkCase。\n- 事项全部获得承接位置或细分判断被新基线取代时，本入口按 20 处置。"
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-75f4-888d-2d7c6df0e8e2
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7706-ba55-38e7bc9b1cc9
+change_log:
+- signature:
+    product_name: DeepSeek Harness
+    model_name: kimi-k3
+    agent_runtime_name:
+  at: '2026-08-14T12:44:56.611252Z'
+  summary: 受控创建本 Spark：固化当前最重要的五件事排序判断、依据与落选边界，关联 5 个入选 Spark 与价值审计 Spark。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: kimi-k3
+    agent_runtime_name:
+  at: '2026-08-14T12:46:33.542377Z'
+  summary: content_update：按 20 §6 补入首条 evolution，说明创建起点（三 Spark 综合语境下的固化要求）及其对后续排序更新的基线影响；创建时因创建时点由 Code 生成、evolution.at 无法预先满足时间边界而分两步完成。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: kimi-k3
+    agent_runtime_name:
+  at: '2026-08-14T12:54:17.986354Z'
+  summary: fact_correction：按 Human 当次澄清更正对象边界——从三个关联 Spark（只读优化、服务质量评估、受控写入）内部细分五件优先事项，重写 title/intent/summary，relations 收敛为三个来源 Spark，并追加 evolution 记录范围更正。
+evolution:
+- at: '2026-08-14T12:46:02Z'
+  summary: 起点：Human 在综合查看三个 open Spark（Helper 只读交互优化、LDVH 面向 AI 的服务质量评估、受控写入优化）并询问下一步后，要求把「当前最重要的 5 件事」固化为独立议题。影响：本 Spark 的五件清单与落选边界以创建时的 8 个 open Spark 全景与零 open WorkCase 空窗为基线，后续排序更新应对照该基线表达变化。
+- at: '2026-08-14T12:53:09Z'
+  summary: Human 指出创建时的范围理解错误：议题边界是给定的三个关联 Spark，不是全部 open Spark。本 Spark 由「全池排序」更正为「三关联 Spark 内部细分」，五件事项、关联牵引分析与关系全部重写；原排序中对无关联 Spark 的取舍判断作废。
+object_uid: 01a0004d-dc0c-71cd-806f-b5acb36d7057
+object_id: spark-01M004VQ0CE76R0VXNNJSPTW2Q
+fact_type_key: spark
+created_at: '2026-08-14T12:44:56.611252Z'
+updated_at: '2026-08-14T12:54:17.986354Z'
