@@ -12,24 +12,24 @@ export default function ObjectIdentityActions({
   status,
   statusLabel,
   objectType,
+  projectId,
   target,
   statusLeadingBadges,
   actionBadges,
   copyLabel,
   copiedLabel,
-  shortRef,
   showCopyAction = true,
   compact = false,
 }: {
   status?: string;
   statusLabel?: string;
   objectType?: string;
+  projectId?: string;
   target?: string;
   statusLeadingBadges?: ReactNode;
   actionBadges?: ReactNode;
   copyLabel?: string;
   copiedLabel?: string;
-  shortRef?: string;
   showCopyAction?: boolean;
   compact?: boolean;
 }) {
@@ -49,7 +49,7 @@ export default function ObjectIdentityActions({
       )}
       {actionBadges}
       {showCopyAction && (objectType === 'workcase' || objectType === 'adr' || objectType === 'pitfall' || objectType === 'spark' || objectType === 'study') && (
-        <ObjectReferenceCopyButton objectId={target} objectType={objectType} shortRef={shortRef} label={copyLabel} copiedLabel={copiedLabel} />
+        <ObjectReferenceCopyButton projectId={projectId} objectId={target} label={copyLabel} copiedLabel={copiedLabel} />
       )}
       {showCopyAction && objectType !== 'workcase' && objectType !== 'adr' && objectType !== 'pitfall' && objectType !== 'spark' && objectType !== 'study' && (
         <CopyPathButton path={target} label={copyLabel} copiedLabel={copiedLabel} />

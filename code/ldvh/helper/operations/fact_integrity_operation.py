@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-from collections import Counter
 from typing import Any
 
 from ldvh.facts.candidate_discovery import discover_fact_candidates
 from ldvh.facts.configuration_index import ConfigurationFactIndex
 from ldvh.facts.contracts import LAYOUTS
-from ldvh.facts.identity import canonical_object_uid, short_reference
+from ldvh.facts.identity import canonical_object_uid
 from ldvh.facts.schema import project_fact_schemas
 from ldvh.governance.models import LocatorSource, ScopeDescriptor
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
@@ -175,7 +174,6 @@ def execute_fact_integrity(
         )
 
     uid_entries: dict[str, list[tuple[str, str, str]]] = {}
-    short_counts: Counter[str] = Counter()
     uid_index_object_count = 0
     for candidate_id, candidate in snapshots.items():
         uid_index_object_count += len(candidate.keys)
@@ -187,7 +185,6 @@ def execute_fact_integrity(
             if object_uid is None:
                 continue
             uid_entries.setdefault(object_uid, []).append((candidate_id, fact_type_key, read.canonical_path))
-            short_counts[short_reference(fact_type_key, object_uid)] += 1
     duplicate_problems: list[dict[str, object]] = []
     for _object_uid, entries in uid_entries.items():
         if len(entries) < 2:
@@ -224,7 +221,6 @@ def execute_fact_integrity(
         "status": status,
         "object_count": len(snapshot.keys),
         "uid_index_object_count": uid_index_object_count,
-        "short_ref_collision_group_count": sum(count > 1 for count in short_counts.values()),
         "problems": [dict(problem) for problem in problems],
     }
     return OperationExecution(

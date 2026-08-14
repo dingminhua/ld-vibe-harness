@@ -22,6 +22,7 @@ import { getFactReadMeta, isReadableFact } from '@/utils/factReadMeta';
 import { getSparkImplementedPresentationStatus } from '@/utils/sparkImplementationStatus';
 import { ALL_STATUS_PARAM, getEffectiveListStatus, writeListStatusParam } from '@/utils/listStatus';
 import { usePanel } from '@/utils/panelContext';
+import { useProjectScope } from '@/utils/projectContext';
 import { compareRfc3339Timestamps } from '@/shared/timestamp';
 import {
   WORKCASE_PROGRESS_STEP_ORDER,
@@ -1228,6 +1229,7 @@ export function ObjectCardFrame({
   displayStatus?: string;
 }) {
   const { t } = useI18n();
+  const { selectedProjectId } = useProjectScope();
   const presentedStatus = displayStatus
     ?? (obj.type === 'spark' && obj.status === 'implemented'
       ? getSparkImplementedPresentationStatus(obj.factAssociations)
@@ -1261,8 +1263,8 @@ export function ObjectCardFrame({
           status={presentedStatus}
           statusLabel={getObjectStatusLocale(obj.type, presentedStatus, locale)}
           objectType={obj.type}
+          projectId={selectedProjectId}
           target={obj.id}
-          shortRef={obj.short_ref}
           statusLeadingBadges={<WorkCaseCapabilityStatusBadge source={obj} />}
           copyLabel={t('common.copyObjectId')}
           copiedLabel={t('common.copiedObjectId')}
@@ -1664,8 +1666,8 @@ export default function ObjectList() {
   const filteredItems = normalizedObjectSearch
     ? sortedItems.filter((item) => {
       const title = getLocalizedObjectTitle(item, locale).toLowerCase();
-      const shortRef = typeof item.short_ref === 'string' ? item.short_ref.toLowerCase() : '';
-      return title.includes(normalizedObjectSearch) || shortRef.includes(normalizedObjectSearch);
+      const objectId = item.id.toLowerCase();
+      return title.includes(normalizedObjectSearch) || objectId.includes(normalizedObjectSearch);
     })
     : sortedItems;
 

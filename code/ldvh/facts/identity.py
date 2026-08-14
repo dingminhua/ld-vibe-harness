@@ -1,24 +1,14 @@
-"""Authoritative UUIDv7 identities and derived six-letter references."""
+"""Authoritative UUIDv7 identities and reversible object locators."""
 
 from __future__ import annotations
 
-import hashlib
 import re
 import secrets
 import time
 import uuid
 
-TYPE_CODES = {
-    "adr": "A",
-    "workcase": "C",
-    "pitfall": "P",
-    "spark": "S",
-    "study": "T",
-}
-
 _MAX_TIMESTAMP_MS = 1 << 48
 _MAX_RANDOM_BITS = 1 << 74
-_SHORT_MODULUS = 26**5
 CROCKFORD_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 _CROCKFORD_DECODE = {character: index for index, character in enumerate(CROCKFORD_ALPHABET)}
 _CROCKFORD_WIDTH = 26
@@ -57,25 +47,6 @@ def generate_object_uid(*, timestamp_ms: int | None = None, random_bits: int | N
     value |= 0b10 << 62
     value |= rand_b
     return str(uuid.UUID(int=value))
-
-
-def short_reference(fact_type_key: str, object_uid: str) -> str:
-    """Derive the six-character display/candidate reference for one UID object."""
-
-    type_code = TYPE_CODES.get(fact_type_key)
-    if type_code is None:
-        raise ValueError(f"unknown fact type: {fact_type_key}")
-    canonical = canonical_object_uid(object_uid)
-    if canonical is None:
-        raise ValueError("object_uid must be a canonical lowercase UUIDv7")
-
-    digest = hashlib.sha256(f"{fact_type_key}:{canonical}".encode()).digest()
-    number = int.from_bytes(digest, "big") % _SHORT_MODULUS
-    encoded = ["A"] * 5
-    for index in range(4, -1, -1):
-        number, digit = divmod(number, 26)
-        encoded[index] = chr(ord("A") + digit)
-    return type_code + "".join(encoded)
 
 
 def locator_from_object_uid(fact_type_key: str, object_uid: str) -> str:
@@ -119,11 +90,9 @@ def is_uid_locator_shape(fact_type_key: str, value: object) -> bool:
 
 __all__ = [
     "CROCKFORD_ALPHABET",
-    "TYPE_CODES",
     "canonical_object_uid",
     "generate_object_uid",
     "is_uid_locator_shape",
     "locator_from_object_uid",
     "object_uid_from_locator",
-    "short_reference",
 ]

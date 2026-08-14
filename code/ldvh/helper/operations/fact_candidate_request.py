@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -21,7 +20,6 @@ OPTIONAL_INPUTS = (
     "arguments.fact_type_keys",
     "arguments.statuses",
     "arguments.exact_refs",
-    "arguments.short_refs",
     "arguments.relation_targets",
     "arguments.relation_source_refs",
     "arguments.relation_keys",
@@ -41,7 +39,6 @@ _ARGUMENT_FIELDS = frozenset(
         "fact_type_keys",
         "statuses",
         "exact_refs",
-        "short_refs",
         "relation_targets",
         "relation_source_refs",
         "relation_keys",
@@ -100,7 +97,6 @@ _F2_ONLY_FIELDS = frozenset(
         "fact_type_keys",
         "statuses",
         "exact_refs",
-        "short_refs",
         "relation_targets",
         "relation_source_refs",
         "relation_keys",
@@ -125,7 +121,6 @@ class FactCandidateRequest:
     fact_type_keys: tuple[str, ...]
     statuses: tuple[str, ...] | None
     exact_refs: tuple[StableFactReference, ...]
-    short_refs: tuple[str, ...]
     relation_targets: tuple[StableFactReference, ...]
     relation_source_refs: tuple[StableFactReference, ...]
     relation_keys: tuple[str, ...]
@@ -260,19 +255,6 @@ def parse_fact_candidate_request(
             request.arguments["exact_refs"], "arguments.exact_refs", project_id, fact_type_keys
         )
         problems.extend(reference_problems)
-    short_refs: tuple[str, ...] = ()
-    if layer == "F2" and "short_refs" in request.arguments:
-        short_refs, short_ref_problems = _unique_strings(
-            request.arguments["short_refs"], "arguments.short_refs", minimum=1, maximum=128
-        )
-        problems.extend(short_ref_problems)
-        invalid_short_refs = [item for item in short_refs if re.fullmatch(r"[ACPST][A-Z]{5}", item) is None]
-        if invalid_short_refs:
-            problems.append("arguments.short_refs 每项必须精确匹配 [ACPST][A-Z]{5}")
-        type_by_code = {"A": "adr", "C": "workcase", "P": "pitfall", "S": "spark", "T": "study"}
-        incompatible = [item for item in short_refs if item and type_by_code.get(item[0]) not in fact_type_keys]
-        if incompatible:
-            problems.append("arguments.short_refs 的类型码必须包含在 arguments.fact_type_keys")
     relation_targets: tuple[StableFactReference, ...] = ()
     if layer == "F2" and "relation_targets" in request.arguments:
         relation_targets, reference_problems = _references(
@@ -388,7 +370,6 @@ def parse_fact_candidate_request(
             fact_type_keys,
             statuses,
             exact_refs,
-            short_refs,
             relation_targets,
             relation_source_refs,
             relation_keys,

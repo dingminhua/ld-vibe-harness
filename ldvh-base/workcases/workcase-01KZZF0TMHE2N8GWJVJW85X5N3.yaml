@@ -1,0 +1,119 @@
+status: closed
+title: 退役六位短引用并统一复制完整对象定位符
+goal: 彻底移除六位短引用能力，不保留生成、解析、搜索、显示、字段或兼容路径；复制统一输出对象所属项目 ID 与完整 object_id 组成的机器定位符，同时保持 AI 与 Human 的自然语言沟通使用类型《当前 Title》，关系与稳定身份继续使用 object_uid。
+scope: 允许修改 specs/05、specs/08 及直接附件 05.Att.01、05.Att.02、08.Att.01；修改 Core 身份能力、Helper 候选请求/发现/完整性实现及公开契约；修改 Web API、前端类型、搜索、复制控件和全部直接入口；修改对应 Python、TypeScript 与规范测试。复制固定为 <governed_project_id>@<完整 object_id>，调用方必须显式提供对象所属项目 ID，缺失时复制不可用，不得回退裸 object_id。Human 自然语言/摘要用类型《当前 Title》，不替代稳定身份；关系仍用 object_uid。排除 specs/00、UID 与 legacy relation 语义变更、Git、日志、历史事实迁移、活动 WorkCase 直写及覆盖用户改动；受管事实仅允许本 WorkCase 经 Helper 写回。
+success_criterion_definitions:
+- criterion_id: criterion-contract
+  statement: 规范和直接附件不再定义六位短引用算法、候选过滤、匹配原因、碰撞检查或 DTO 字段；复制合同为对象所属项目 ID@完整 object_id，并明确不是关系身份。
+- criterion_id: criterion-core-helper
+  statement: Core 与 Helper 不再导出或生成短引用，不接受或处理 short_refs 输入、过滤、匹配原因、查询指纹或碰撞统计；旧输入被明确拒绝。
+- criterion_id: criterion-web-copy
+  statement: API 与 Web 不再含短引用字段、属性、搜索或显示路径；所有入口只在所属项目 ID 与完整 object_id 均可得时复制 project_id@object_id，缺失时不可复制；Human 可见称谓保持类型《当前 Title》。
+- criterion_id: criterion-removal
+  statement: 受管规范、产品源代码与测试中退役能力残余为零，排除 ldvh-base 历史事实正文、依赖目录和本 WorkCase 载体；旧六码字符串不触发解析或搜索，object_uid 与 legacy relation 语义不变。
+- criterion_id: criterion-verification
+  statement: 身份、候选、完整性、API 列表/详情/认知中心、全部复制入口与可见称谓的定向测试通过，相关 Python/Web/规范回归与 Ruff 通过，用户已有改动未被覆盖。
+success_criterion_results:
+- criterion_id: criterion-contract
+  outcome: satisfied
+  summary: 05、08 及三个直接附件已移除退役能力定义，复制合同固定为所属项目 ID@完整 object_id，并明确不作为关系身份。
+- criterion_id: criterion-core-helper
+  outcome: satisfied
+  summary: Core 与 Helper 的生成、导出、输入、过滤、匹配、查询指纹及碰撞统计路径均已删除，旧输入不在允许字段闭集中。
+- criterion_id: criterion-web-copy
+  outcome: satisfied
+  summary: API/Web 不再投影或消费退役字段；全部直接复制控件显式传入所属项目 ID 与完整 object_id，缺参禁用；五类 AI 摘要均为本地化类型《当前 Title》且不含机器定位符。
+- criterion_id: criterion-removal
+  outcome: satisfied
+  summary: 对 specs、code、web（排除依赖和历史事实载体）的退役术语与字段扫描为零；object_uid 与 legacy relation 语义未修改。
+- criterion_id: criterion-verification
+  outcome: satisfied
+  summary: Python 全量 1880、Web 全量 208、规范 156、定向 Python 63 及认知定向 29 项通过；TypeScript、定向 ESLint、Ruff、规则源和完整事实库检查通过，用户既有文件未被改写。
+result_summary: 六位短引用已从规范、Core、Helper、API、Web 与测试闭包彻底移除且无兼容路径。对象复制只产生所属项目 ID@完整 object_id，缺失任一部分时不可复制；面向 AI/Human 的自然语言摘要使用本地化类型《当前 Title》，稳定关系身份仍为 object_uid。
+validation_summary: Python：全量 1880 passed、15 skipped，定向 63 passed，规范 156 passed，Ruff 通过。Web：全量 208 passed，认知定向 29 passed，TypeScript check 通过，返修文件定向 ESLint 0 errors（一个既有 Hook warning）。LDVH 规则源与完整事实库检查、git diff --check、退役残余扫描通过；未执行 Git、部署或历史迁移。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:23:15.545402Z'
+  summary: 受控创建 plan_version=1：彻底退役六位短引用，复制统一为对象所属项目 ID@完整 object_id；创建前独立复核反馈已处置，等待 Human Gate1。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:26:36.136016Z'
+  summary: Human Gate1 已批准完整退役计划与冻结授权基线；进入执行阶段。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:40:26.529571Z'
+  summary: 完成获批删除闭包和验证，全部 work item terminal，形成 result_version=1 的完整 Controller 结果投影。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:40:43.295906Z'
+  summary: 完整结果投影已校验并回读，进入独立只读结果复核。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:42:30.216571Z'
+  summary: 记录 result_version=1 独立复核：认知摘要仍混入机器定位符，结论 changes_required；已接受反馈。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:42:40.030814Z'
+  summary: 根据独立复核反馈返回 Controller 自检，准备在冻结授权内返修。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:43:08.067895Z'
+  summary: 在冻结授权内重开验证项以处置认知摘要反馈；result_version 升至 2 并清除旧投影与 review。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:45:04.200335Z'
+  summary: 完成认知摘要返修和新增合同测试，形成 result_version=2 的完整 Controller 结果投影。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:45:13.847982Z'
+  summary: result_version=2 完整投影已校验回读，重新进入独立结果复核。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:46:07.077864Z'
+  summary: 记录 result_version=2 独立只读复核结论 pass，无新增反馈。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:46:29.908592Z'
+  summary: 独立复核通过；完成终态保留审查并形成 completed 关闭提案，无剩余责任。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:46:40.417478Z'
+  summary: 关闭提案完整且责任覆盖审查通过，进入 Human Gate2。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-14T06:55:52.562523Z'
+  summary: Human Gate2 已确认 completed 关闭提案；原子关闭且无剩余责任。
+closure_outcome: completed
+disposition_summary: 原 scope 内六位短引用退役、严格机器定位符复制和类型《当前 Title》自然语言表达均已完成并验证；没有未满足、未验证、待转交或接受停止的剩余责任。
+object_uid: 019ffef0-6a91-70aa-8872-5b97105e96a3
+object_id: workcase-01KZZF0TMHE2N8GWJVJW85X5N3
+fact_type_key: workcase
+created_at: '2026-08-14T06:23:15.545402Z'
+updated_at: '2026-08-14T06:55:52.562523Z'

@@ -94,7 +94,6 @@ def test_complete_check_preserves_raw_subreports_and_excludes_business_files(
         "status": "complete",
         "object_count": 1,
         "uid_index_object_count": 1,
-        "short_ref_collision_group_count": 0,
         "problems": [],
     }
     assert response["scope"]["requested"][0]["check_scope"] == "current_rule_source"

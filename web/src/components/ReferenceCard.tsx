@@ -9,6 +9,7 @@ import StatusBadge from '@/components/StatusBadge';
 import ObjectReferenceCopyButton from '@/components/ObjectReferenceCopyButton';
 import { getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel } from '@/i18n/locales';
 import { usePanel } from '@/utils/panelContext';
+import { useProjectScope } from '@/utils/projectContext';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 
 /** 从引用 ID 解析对象类型（如 workcase-0001 → workcase） */
@@ -52,7 +53,8 @@ function ReferenceItem({
   variant: 'card' | 'plain';
 }) {
   const navigate = useNavigate();
-  const { locale, t } = useI18n();
+  const { locale } = useI18n();
+  const { selectedProjectId } = useProjectScope();
   const { isOpen: panelOpen, content: panelContent } = usePanel();
   const [info, setInfo] = useState<{ type: string; title: string; status?: string } | null>(null);
   const [loading, setLoading] = useState(true);
@@ -130,7 +132,7 @@ function ReferenceItem({
           <StatusBadge status={info.status} statusLabel={getObjectStatusLocale(info.type, info.status, locale)} objectType={info.type} size="sm" />
         </span>
       )}
-      <ObjectReferenceCopyButton objectId={refId} />
+      <ObjectReferenceCopyButton projectId={selectedProjectId} objectId={refId} />
       {showPanelIcon && refType && (
         <PanelIcon
           size={16}

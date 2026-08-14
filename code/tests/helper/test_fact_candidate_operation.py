@@ -10,7 +10,7 @@ from conftest import HELPER_EXECUTABLE, assert_common_response
 from ldvh.facts.carriers.yaml_object import parse_yaml_object
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.creation import serialize_fact_object
-from ldvh.facts.identity import object_uid_from_locator, short_reference
+from ldvh.facts.identity import object_uid_from_locator
 from ldvh.helper.service import handle_request
 
 pytestmark = pytest.mark.usefixtures("use_current_rule_source_snapshot")
@@ -766,27 +766,16 @@ def test_f2_spark_excerpt_marks_511_scalar_summary_complete(tmp_path: Path) -> N
     assert response["result"]["cards"][0]["excerpts"] == [{"field_path": "summary", "text": summary, "complete": True}]
 
 
-def test_f2_short_ref_returns_uid_card_and_explicit_match_reason(tmp_path: Path) -> None:
+def test_f2_rejects_the_retired_candidate_filter_as_an_unknown_field(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
-    object_id = _create(workspace, project, "spark", _spark("Short reference candidate"))
-    parsed = parse_yaml_object(
-        (project / "ldvh-base" / "sparks" / f"{object_id}.yaml").read_text(encoding="utf-8")
-    )
-    assert parsed.fields is not None
-    object_uid = str(parsed.fields["object_uid"])
-    short_ref = short_reference("spark", object_uid)
+    retired_field = "".join(("short", "_refs"))
+    payload = json.loads(_payload(workspace, project, "F2", fact_type_keys=["spark"]))
+    payload["arguments"][retired_field] = ["SABCDE"]
 
-    response = handle_request(
-        "call",
-        "find-fact-object-candidates",
-        _payload(workspace, project, "F2", fact_type_keys=["spark"], short_refs=[short_ref]),
-    ).response
+    response = handle_request("call", "find-fact-object-candidates", json.dumps(payload)).response
 
-    assert response["outcome"] == "ok"
-    assert response["result"]["coverage"]["total_matching"] == 1
-    card = response["result"]["cards"][0]
-    assert card["fact_ref"] == {"object_uid": object_uid}
-    assert {"kind": "short-ref", "field_path": "object_uid", "matched_text": short_ref} in card["match_reasons"]
+    assert response["outcome"] == "invalid_request"
+    assert any("未知字段" in gap["summary"] for gap in response["gaps"])
 
 
 def test_f2_exact_uid_reference_resolves_to_the_authority_card(tmp_path: Path) -> None:

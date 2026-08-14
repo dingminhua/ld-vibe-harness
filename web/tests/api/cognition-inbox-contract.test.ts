@@ -88,14 +88,33 @@ test('recent activity rows display localized type labels while preserving full i
   assert.match(recentActivityRow, /const typeColor = CATEGORY_COLORS\[item\.type\] \|\| CATEGORY_COLORS\.other/)
   assert.match(recentActivityRow, /style=\{\{ backgroundColor: `\$\{typeColor\}18`, borderColor: `\$\{typeColor\}55`, color: typeColor \}\}/)
   assert.match(recentActivityRow, /<StatusBadge status=\{status\}[\s\S]*size="xs" variant="compact" \/>/)
-  assert.doesNotMatch(recentActivityRow, /item\.short_ref \?\? item\.id/)
-  assert.match(source, /\(item\.short_ref !== undefined \? \{ short_ref: item\.short_ref \} : \{\}\)/)
   assert.match(source, /\(item\.object_uid !== undefined \? \{ object_uid: item\.object_uid \} : \{\}\)/)
   assert.match(source, /openPanel\(\{ type: 'object', title, objectType: item\.type, objectId: item\.id \}\)/)
-  assert.match(source, /<ObjectReferenceCopyButton objectId=\{item\.id\} objectType=\{item\.type\} shortRef=\{item\.short_ref\} \/>/)
+  assert.match(source, /<ObjectReferenceCopyButton projectId=\{selectedProjectId\} objectId=\{item\.id\} \/>/)
   const detailSource = readFileSync(path.resolve(repositoryRoot, 'src/pages/ObjectDetail.tsx'), 'utf8')
-  assert.doesNotMatch(detailSource, /\{typeof source\.short_ref === 'string' \? source\.short_ref : id\}<\/span>/)
-  assert.match(detailSource, /shortRef=\{typeof source\.short_ref === 'string' \? source\.short_ref : undefined\}/)
+  assert.match(detailSource, /projectId=\{selectedProjectId\}/)
+})
+
+test('all five AI module summaries use human-readable type and title without machine locators', () => {
+  const source = readFileSync(path.resolve(repositoryRoot, 'src/pages/CognitionCenter.tsx'), 'utf8')
+  assert.match(source, /return `\$\{getTypeLabel\(type, locale\)\}《\$\{title\}》`/)
+
+  const summaryNames = [
+    'buildModuleSummary',
+    'buildRecentActivitySummary',
+    'buildActiveWorkCaseSummary',
+    'buildSparkHealthSummary',
+    'buildRecentHotspotSummary',
+  ]
+  for (const [index, name] of summaryNames.entries()) {
+    const start = source.indexOf(`function ${name}`)
+    const nextName = summaryNames[index + 1]
+    const end = nextName ? source.indexOf(`function ${nextName}`, start) : source.indexOf('/** 读取问题', start)
+    const body = source.slice(start, end)
+    assert.ok(start >= 0 && end > start, `${name} must remain independently inspectable`)
+    assert.match(body, /formatHumanObjectReference\(/, `${name} must use 类型《当前 Title》`)
+    assert.doesNotMatch(body, /formatObjectReference|projectId|@\$\{/, `${name} must not expose a machine locator`)
+  }
 })
 
 test('cognition endpoint returns inbox, fact activity, Spark health, and fact hotspot contract shapes with observation time', async () => {
@@ -253,7 +272,7 @@ test('recent hotspots use UID identity, preserve UID activity, and reject mixed 
   const secondUid = '0198f1c7-8a2b-7c3d-9e4f-123456789abd'
   const facts: RecentHotspotBuildItem[] = [
     {
-      type: 'spark', object_id: 'spark-0001', object_uid: firstUid, short_ref: 'SVUATH',
+      type: 'spark', object_id: 'spark-0001', object_uid: firstUid,
       title: 'First UID object', status: 'open', read_status: 'readable',
       relations: [
         { relation_key: 'related-to', target: { object_uid: secondUid } },
@@ -264,7 +283,7 @@ test('recent hotspots use UID identity, preserve UID activity, and reject mixed 
       ],
     },
     {
-      type: 'spark', object_id: 'spark-0001', object_uid: secondUid, short_ref: 'SAAAAA',
+      type: 'spark', object_id: 'spark-0001', object_uid: secondUid,
       title: 'Second UID object', status: 'open', read_status: 'readable', relations: [],
     },
   ]
@@ -276,7 +295,6 @@ test('recent hotspots use UID identity, preserve UID activity, and reject mixed 
   assert.equal(result.hotspotTotal, 1)
   assert.equal(result.relationTotal, 1)
   assert.equal(result.clusters[0].primary.object_uid, firstUid)
-  assert.equal(result.clusters[0].primary.short_ref, 'SVUATH')
   assert.equal(result.clusters[0].primary.activityRefs.length, 1)
   assert.equal(result.clusters[0].relations[0].node.object_uid, secondUid)
 
@@ -316,7 +334,7 @@ test('recent hotspots do not project a legacy Spark routed-to edge as a current 
   assert.equal(result.clusters.length, 0)
 })
 
-test('recent hotspot projection preserves UID identity and short_ref for readable nodes', () => {
+test('recent hotspot projection preserves full UID identity for readable nodes', () => {
   const item = {
     object_ref: { governed_project_id: 'demo', fact_type_key: 'spark', object_id: 'spark-0103' },
     canonical_path: 'ldvh-base/sparks/spark-0103.yaml',
@@ -327,7 +345,6 @@ test('recent hotspot projection preserves UID identity and short_ref for readabl
     fact_object: {
       object_id: 'spark-0103',
       object_uid: '019ffb52-ebb5-7812-9630-8e7aad44da3d',
-      short_ref: 'SABCDE',
       title: '可读热点',
       status: 'open',
       relations: [],
@@ -342,7 +359,6 @@ test('recent hotspot projection preserves UID identity and short_ref for readabl
       type: 'spark',
       object_id: 'spark-0103',
       object_uid: '019ffb52-ebb5-7812-9630-8e7aad44da3d',
-      short_ref: 'SABCDE',
       title: '可读热点',
       status: 'open',
       read_status: 'readable',

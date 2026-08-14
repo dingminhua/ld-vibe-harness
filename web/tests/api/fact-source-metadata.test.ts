@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { listObjects, showObject } from '../../api/services/facts.ts';
-import { shortFactReference, type LocalFactScope } from '../../api/services/localFactReader.ts';
+import { type LocalFactScope } from '../../api/services/localFactReader.ts';
 
 const fixtures = [
   { type: 'adr', id: 'adr-0001', directory: 'adrs', carrier: 'yaml', body: 'object_id: adr-0001\nfact_type_key: adr\ntitle: ADR fixture\nstatus: active\n' },
@@ -52,7 +52,7 @@ test('local exact reads carry source metadata for each local carrier, while list
   }
 });
 
-test('fact list projections preserve short references for UID-native cards across types', async () => {
+test('fact list projections preserve full UID authority without derived identity fields', async () => {
   const root = await mkdtemp(path.join(tmpdir(), 'ldvh-web-facts-'));
   const scope: LocalFactScope = { worktreeLocator: root, governedProjectId: 'fixture' };
   const adrUid = '0198f1c7-8a2b-7c3d-9e4f-123456789abc';
@@ -76,9 +76,10 @@ test('fact list projections preserve short references for UID-native cards acros
     if (!adrList.ok || !workCaseList.ok) throw new Error('fact list unavailable');
     const adr = (adrList.data.items as Array<Record<string, unknown>>)[0];
     const workCase = (workCaseList.data.items as Array<Record<string, unknown>>)[0];
-    assert.equal(adr?.short_ref, shortFactReference('adr', adrUid));
+    const retiredField = ['short', 'ref'].join('_');
+    assert.equal(adr?.[retiredField], undefined);
     assert.equal(adr?.object_uid, adrUid);
-    assert.equal(workCase?.short_ref, shortFactReference('workcase', workCaseUid));
+    assert.equal(workCase?.[retiredField], undefined);
     assert.equal(workCase?.object_uid, workCaseUid);
   } finally {
     await rm(root, { recursive: true, force: true });
@@ -102,7 +103,7 @@ test('UID-native object ids open through the exact-read detail path', async () =
     if (!result.ok) return;
     assert.equal(result.data.object_id, objectId);
     assert.equal(result.data.object_uid, objectUid);
-    assert.equal(result.data.short_ref, shortFactReference('spark', objectUid));
+    assert.equal(result.data[['short', 'ref'].join('_')], undefined);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

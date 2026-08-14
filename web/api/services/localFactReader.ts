@@ -71,24 +71,6 @@ export type LocalFactItem = LocalFactMetadata & {
   issues: LocalFactIssue[]
 }
 
-const FACT_TYPE_CODES: Record<LocalFactType, string> = {
-  adr: 'A', workcase: 'C', pitfall: 'P', spark: 'S', study: 'T',
-}
-
-export function shortFactReference(type: LocalFactType, objectUid: unknown): string | undefined {
-  if (typeof objectUid !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(objectUid)) return undefined
-  const digest = createHash('sha256').update(`${type}:${objectUid}`, 'utf8').digest()
-  let value = 0n
-  for (const byte of digest) value = (value << 8n) | BigInt(byte)
-  value %= 26n ** 5n
-  let suffix = ''
-  for (let index = 0; index < 5; index += 1) {
-    suffix = String.fromCharCode(65 + Number(value % 26n)) + suffix
-    value /= 26n
-  }
-  return `${FACT_TYPE_CODES[type]}${suffix}`
-}
-
 export type LocalFactList = {
   status: 'complete' | 'type_not_integrated'
   items: LocalFactItem[]
@@ -253,9 +235,7 @@ function projectFields(type: LocalFactType, objectId: string, parsed: Record<str
   if (typeof all.fact_type_key === 'string' && all.fact_type_key !== type) {
     fieldIssues.push({ path: 'fact_type_key', reason: 'identity_mismatch', expected: type, raw_value: all.fact_type_key })
   }
-  const shortRef = shortFactReference(type, all.object_uid)
-  if (shortRef !== undefined) factObject.short_ref = shortRef
-  else if (all.object_uid !== undefined) {
+  if (all.object_uid !== undefined && (typeof all.object_uid !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(all.object_uid))) {
     fieldIssues.push({
       path: 'object_uid',
       reason: 'identity_mismatch',
@@ -275,14 +255,13 @@ function unreadable(metadata: LocalFactMetadata, issues: LocalFactIssue[]): Loca
 
 function readable(
   metadata: LocalFactMetadata,
-  type: LocalFactType,
   sourceContentFingerprint: string,
   projected: Pick<LocalFactItem, 'fact_object' | 'field_issues' | 'unparsed_structures'>,
 ): LocalFactItem {
   const objectUid = projected.fact_object?.object_uid
   return {
     ...metadata,
-    ...(typeof objectUid === 'string' && shortFactReference(type, objectUid)
+    ...(typeof objectUid === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(objectUid)
       ? { authority_ref: { object_uid: objectUid } }
       : {}),
     read_status: 'readable',
@@ -309,7 +288,6 @@ async function readItemFile(scope: LocalFactScope, type: LocalFactType, fileName
     if (parsed.metadata === null) return unreadable(metadata, parsed.issues)
     return readable(
       metadata,
-      type,
       sourceContentFingerprint,
       projectFields(type, objectId, parsed.metadata, { report_body: parsed.body }),
     )
@@ -323,7 +301,7 @@ async function readItemFile(scope: LocalFactScope, type: LocalFactType, fileName
   if (!isRecord(parsed)) {
     return unreadable(metadata, [{ code: 'yaml_parse_failed', message: 'YAML 顶层不是键值映射' }])
   }
-  return readable(metadata, type, sourceContentFingerprint, projectFields(type, objectId, parsed, {}))
+  return readable(metadata, sourceContentFingerprint, projectFields(type, objectId, parsed, {}))
 }
 
 function directoryStatus(scope: LocalFactScope, type: LocalFactType): LocalFactList | null {

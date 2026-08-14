@@ -63,7 +63,6 @@ test('object list cards use the compact metadata shared by reading surfaces', ()
   assert.match(cardFrame, /ldvh-chip inline-flex h-\[18px\] shrink-0 items-center justify-center rounded-md border px-1\.5 text-\[10px\] font-medium leading-3/);
   assert.match(cardFrame, /const activityCount = Array\.isArray\(obj\.change_log\) \? obj\.change_log\.length : 0/);
   assert.match(cardFrame, /<History size=\{12\} aria-hidden="true" \/>[\s\S]{0,80}<span>\{activityCount\}<\/span>/);
-  assert.doesNotMatch(cardFrame, /obj\.short_ref \?\? obj\.id/);
   assert.match(cardFrame, /<ObjectIdentityActions[\s\S]{0,460}compact/);
   assert.match(cardFrame, /items-center gap-1\.5[\s\S]{0,220}<ObjectTypeIcon type=\{obj\.type\} size=\{14\} className="shrink-0"/);
   assert.match(cardFrame, /ldvh-object-title-tray ldvh-object-title-tray-compact/);
@@ -71,7 +70,7 @@ test('object list cards use the compact metadata shared by reading surfaces', ()
   assert.match(objectList, /isDiscarded \? 'text-slate-400\/65 dark:text-slate-500\/60' : 'text-ldvh-text-secondary\/95 group-hover:text-ldvh-accent'/);
   assert.match(cardFrame, /-mt-1 flex min-w-0 items-center justify-end(?: pt-0\.5)? text-right opacity-70[\s\S]{0,80}<ObjectUpdatedMeta/);
   assert.match(objectList, /const \[objectSearch, setObjectSearch\] = useState\(''\)/);
-  assert.match(objectList, /getLocalizedObjectTitle\(item, locale\)\.toLowerCase\(\)[\s\S]{0,280}shortRef\.includes\(normalizedObjectSearch\)/);
+  assert.match(objectList, /getLocalizedObjectTitle\(item, locale\)\.toLowerCase\(\)[\s\S]{0,280}objectId\.includes\(normalizedObjectSearch\)/);
   assert.match(objectList, /const \[isObjectSearchOpen, setIsObjectSearchOpen\] = useState\(false\)/);
   assert.match(objectList, /<SegmentedControl[\s\S]*objectList\.sortCreatedDesc/);
   assert.match(objectList, /renderObjectSearch\(\)[\s\S]*<SegmentedControl/);
@@ -94,7 +93,6 @@ test('object detail headers use compact metadata and title-scaled type icons', (
   assert.match(identityHeader, /const titleIconSize = Math\.round\(titleFontSize \* 1\.25\)/);
   assert.match(identityHeader, /const activityCount = Array\.isArray\(source\.change_log\) \? source\.change_log\.length : 0/);
   assert.match(identityHeader, /ldvh-chip inline-flex h-\[18px\] shrink-0 items-center justify-center rounded-md border px-1\.5 text-\[10px\] font-medium leading-3/);
-  assert.doesNotMatch(identityHeader, /typeof source\.short_ref === 'string' \? source\.short_ref : id/);
   assert.match(identityHeader, /<History size=\{12\} aria-hidden="true" \/>[\s\S]{0,80}<span>\{activityCount\}<\/span>/);
   assert.match(identityHeader, /showCopyAction=\{showCopyAction\}[\s\S]{0,80}compact/);
   assert.match(identityHeader, /translate-y-0\.5 items-start gap-2[\s\S]{0,220}<ObjectTypeIcon type=\{objectType\} size=\{titleIconSize\} className="mt-0\.5 shrink-0"/);
@@ -158,7 +156,6 @@ test('recent hotspots keep a compact relationship overview and a focused one-hop
   assert.doesNotMatch(graph, /data-hotspot-node-meta/);
   assert.match(graph, /ldvh-object-title-tray flex min-w-0 w-full items-center justify-center px-3 py-2 text-center[\s\S]*inline-grid min-w-0 max-w-full grid-cols-\[auto_minmax\(0,1fr\)\] items-center gap-2[\s\S]*<ObjectTypeIcon[\s\S]*className="shrink-0"[\s\S]*data-hotspot-node-title/);
   assert.match(graph, /data-hotspot-node-title[\s\S]*text-center/);
-  assert.doesNotMatch(graph, /node\.short_ref/);
   assert.match(graph, /const relatedSize = \{ width: primarySize\.width \* 0\.75, height: 132 \}/);
   assert.match(graph, /position: \{ x: width \/ 2, y: firstRelatedY \+ index \* rowGap \}/);
   assert.doesNotMatch(graph, /supportedColumns|indexInRow|nodesInRow/);
@@ -201,7 +198,6 @@ test('recent hotspots keep a compact relationship overview and a focused one-hop
   assert.match(graph, /aria-expanded=\{expanded\}/);
   assert.match(graph, /aria-controls=\{contentId\}/);
   assert.match(graph, /canExpand &&/);
-  assert.doesNotMatch(graph, /node\.short_ref \?\? node\.id/);
   assert.match(cognitionCenter, /const clusterKey = nodeKey\(cluster\.primary\)/);
   assert.match(cognitionCenter, /expandedHotspotKey === clusterKey/);
   assert.doesNotMatch(graph, /forceSimulation|d3-force|semanticSimilarity|multiHop/);

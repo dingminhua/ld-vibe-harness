@@ -112,7 +112,6 @@ export interface ObjectItem {
   factAssociations?: FactCardAssociation[];
   /** Exact field-level source metadata. */
   object_uid?: string;
-  short_ref?: string;
   object_id?: string;
   fact_type_key?: string;
   canonical_path?: string;
@@ -544,7 +543,6 @@ export interface CognitionInboxCard extends Record<string, unknown> {
 interface CognitionInboxItemBase {
   id: string;
   object_uid?: string;
-  short_ref?: string;
   title: string;
   title_en?: string;
   title_zh?: string;
@@ -596,7 +594,6 @@ export type CognitionRecentActivityKind = 'created' | 'updated';
 export interface CognitionRecentActivityItem {
   id: string;
   object_uid?: string;
-  short_ref?: string;
   type: string;
   title: string;
   title_en?: string;
@@ -629,7 +626,6 @@ export interface CognitionSparkHealthItem {
   type: 'spark';
   id: string;
   object_uid?: string;
-  short_ref?: string;
   title: string;
   title_en?: string;
   title_zh?: string;
@@ -671,7 +667,6 @@ export interface CognitionRecentHotspotNode {
   type: string;
   id: string;
   object_uid?: string;
-  short_ref?: string;
   title: string;
   title_en?: string;
   title_zh?: string;

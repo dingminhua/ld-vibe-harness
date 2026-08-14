@@ -98,7 +98,7 @@ def test_complete_library_reports_complete_with_contract_shape(tmp_path: Path) -
     assert result.response["outcome"] == "ok"
     domain = result.response["result"]
     assert set(domain) == {
-        "status", "object_count", "uid_index_object_count", "short_ref_collision_group_count", "problems"
+        "status", "object_count", "uid_index_object_count", "problems"
     }
     assert domain["status"] == "complete"
     assert domain["object_count"] == 1

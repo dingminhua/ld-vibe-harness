@@ -845,7 +845,7 @@ export const UI_LOCALES = {
 
     'objectList.noObjects': '未找到 {type} 对象',
     'objectList.searchLabel': '搜索对象',
-    'objectList.searchPlaceholder': '搜索标题或 6 位标识',
+    'objectList.searchPlaceholder': '搜索标题或完整对象 ID',
     'objectList.searchNoResults': '未找到匹配的对象',
     'objectList.typeNotIntegrated': '该事实类型尚未接入',
     'objectList.all': '全部',
@@ -1412,7 +1412,7 @@ export const UI_LOCALES = {
 
     'objectList.noObjects': 'No {type} found',
     'objectList.searchLabel': 'Search objects',
-    'objectList.searchPlaceholder': 'Search title or 6-character ID',
+    'objectList.searchPlaceholder': 'Search title or full object ID',
     'objectList.searchNoResults': 'No matching objects found',
     'objectList.typeNotIntegrated': 'This fact type is not integrated',
     'objectList.all': 'All',

@@ -32,6 +32,7 @@ import { CATEGORY_COLORS } from '@/utils/categoryColors';
 import { formatDateTime } from '@/utils/dateFormat';
 import { getSignalClassName, getSignalText, isSignalField } from '@/utils/objectSignals';
 import { usePanel } from '@/utils/panelContext';
+import { useProjectScope } from '@/utils/projectContext';
 import { getFactReadMeta, isReadableFact, reconstructFactYaml, type FactCarrier, type FactReadMeta } from '@/utils/factReadMeta';
 import { isResolvedWorkCasePresentationProjection } from '@/shared/workcaseStatus';
 import { WorkCaseReadingLayout } from '@/pages/object-detail/WorkCaseReadingLayout';
@@ -520,7 +521,7 @@ export function getObjectHeaderStatus(
 
 export function ObjectIdentityHeader({
   title,
-  id,
+  id: _id,
   target,
   objectType,
   typeColor,
@@ -566,6 +567,7 @@ export function ObjectIdentityHeader({
   compact?: boolean;
 }) {
   const { t } = useI18n();
+  const { selectedProjectId } = useProjectScope();
   const TitleTag = compact ? 'h3' : 'h1';
   const titleClassName = compact ? 'ldvh-reading-title' : 'ldvh-page-title';
   const titleFontSize = compact ? 16 : 20;
@@ -607,8 +609,8 @@ export function ObjectIdentityHeader({
                   status={status}
                   statusLabel={statusLabel}
                   objectType={objectType}
+                  projectId={selectedProjectId}
                   target={target}
-                  shortRef={typeof source.short_ref === 'string' ? source.short_ref : undefined}
                   statusLeadingBadges={capabilityStatusBadge}
                   actionBadges={actionBadges}
                   copyLabel={copyLabel}
@@ -760,6 +762,7 @@ function parseRelatedAssociationValue(item: unknown): RelatedAssociationValue | 
 
 function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: string; reference: RelatedAssociationValue; locale: string }) {
   const { t } = useI18n();
+  const { selectedProjectId } = useProjectScope();
   const { isOpen: panelOpen, content: panelContent, openPanel } = usePanel();
   const [objectInfo, setObjectInfo] = useState<{ type: string; title: string } | null>(null);
   const [objectMissing, setObjectMissing] = useState(false);
@@ -874,7 +877,7 @@ function RelatedAssociationRow({ fieldKey, reference, locale }: { fieldKey: stri
       </div>
       <div className="flex h-7 shrink-0 items-center gap-1">
         {objectType
-          ? <ObjectReferenceCopyButton objectId={value} label={copyLabel} copiedLabel={copiedLabel} />
+          ? <ObjectReferenceCopyButton projectId={selectedProjectId} objectId={value} label={copyLabel} copiedLabel={copiedLabel} />
           : <CopyPathButton path={copyValue} label={copyLabel} copiedLabel={copiedLabel} />}
         <button
           type="button"

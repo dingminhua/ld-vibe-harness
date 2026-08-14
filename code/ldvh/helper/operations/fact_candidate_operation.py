@@ -13,7 +13,7 @@ from typing import Any, Literal
 from ldvh.facts.candidate_discovery import discover_fact_candidates
 from ldvh.facts.configuration_index import ConfigurationFactEntry, ConfigurationFactIndex
 from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS
-from ldvh.facts.identity import canonical_object_uid, short_reference
+from ldvh.facts.identity import canonical_object_uid
 from ldvh.facts.models import FactReference, StableFactReference, UIDFactReference
 from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.repository import FactReadResult
@@ -167,7 +167,6 @@ _EDGE_REASON_ORDER = (
     "fact-type-filter",
     "explicit-status-filter",
     "exact-ref-filter",
-    "short-ref-filter",
     "relation-target-filter",
     "locator-filter",
     "field-text-filter",
@@ -446,13 +445,6 @@ def _source_filter_reasons(
             filtered.append("exact-ref-filter")
         else:
             matched.append({"kind": "exact-ref", "field_path": "object_id"})
-    if domain.short_refs:
-        object_uid = fields.get("object_uid")
-        candidate = short_reference(fact_type_key, object_uid) if isinstance(object_uid, str) else None
-        if candidate not in set(domain.short_refs):
-            filtered.append("short-ref-filter")
-        else:
-            matched.append({"kind": "short-ref", "field_path": "object_uid", "matched_text": candidate})
     if domain.relation_targets:
         targets = _references(domain.relation_targets)
         if not (_relations(fields, configuration_index) & targets):
@@ -657,7 +649,7 @@ def _reasons(
         if status not in set(domain.statuses):
             return None
         reasons.append({"kind": "status", "field_path": "status"})
-    elif not domain.exact_refs and not domain.short_refs:
+    elif not domain.exact_refs:
         if status not in _DEFAULT_STATUSES[fact_type_key]:
             return None
         reasons.append({"kind": "default-status", "field_path": "status"})
@@ -665,12 +657,6 @@ def _reasons(
         if identity not in _references(domain.exact_refs):
             return None
         reasons.append({"kind": "exact-ref", "field_path": "object_id"})
-    if domain.short_refs:
-        object_uid = fields.get("object_uid")
-        candidate = short_reference(fact_type_key, object_uid) if isinstance(object_uid, str) else None
-        if candidate not in set(domain.short_refs):
-            return None
-        reasons.append({"kind": "short-ref", "field_path": "object_uid", "matched_text": candidate})
     if domain.relation_targets:
         targets = _references(domain.relation_targets)
         if not (_relations(fields, configuration_index) & targets):
@@ -765,7 +751,6 @@ def _query_fingerprint(domain: FactCandidateRequest, root: Path, common_dir: Pat
             "types": domain.fact_type_keys,
             "statuses": domain.statuses,
             "exact_refs": [item.to_json() for item in domain.exact_refs],
-            "short_refs": sorted(domain.short_refs),
             "relation_targets": [item.to_json() for item in domain.relation_targets],
             "relation_source_refs": [
                 item.to_json()

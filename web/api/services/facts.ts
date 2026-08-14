@@ -2,7 +2,6 @@
 import {
   listLocalFacts,
   readLocalFact,
-  shortFactReference,
   type LocalFactItem,
   type LocalFactMetadata,
   type LocalFactScope,
@@ -76,11 +75,8 @@ function readFailure(id: string, type: ObjectType, metadata: LocalFactMetadata, 
   return response
 }
 
-function projectFactIdentity(type: ObjectType, source: Record<string, unknown>): Record<string, unknown> {
-  const projected = copyPresentFields(source, ['object_uid'])
-  const shortRef = shortFactReference(type, source.object_uid)
-  if (shortRef !== undefined) projected.short_ref = shortRef
-  return projected
+function projectFactIdentity(source: Record<string, unknown>): Record<string, unknown> {
+  return copyPresentFields(source, ['object_uid'])
 }
 
 function projectListItem(type: ObjectType, item: LocalFactItem, uidTargets?: FactUidTargetIndex): Record<string, unknown> {
@@ -90,7 +86,7 @@ function projectListItem(type: ObjectType, item: LocalFactItem, uidTargets?: Fac
     : copyPresentFields(source, FACT_LIST_FIELD_NAMES[type])
   return {
     ...base,
-    ...projectFactIdentity(type, source),
+    ...projectFactIdentity(source),
     // Cards use this only to render the latest update attribution.  Keep the
     // raw carrier so its signature remains traceable to the fact's change log.
     ...copyPresentFields(source, ['change_log']),

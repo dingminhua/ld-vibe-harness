@@ -50,7 +50,6 @@ type CognitionIssue = { section: string; code: string; message: string; object_r
 /** 决定依据投影中属于对象身份的字段，不重复收入 card。 */
 const IDENTITY_PROJECTION_KEYS = new Set([
   'object_uid',
-  'short_ref',
   'object_id',
   'fact_type_key',
   'title',
@@ -74,7 +73,6 @@ interface InboxBuildItem {
   inboxKind: InboxKind
   object_id: string
   object_uid?: string
-  short_ref?: string
   title: string
   title_en?: string
   title_zh?: string
@@ -98,7 +96,6 @@ interface ActiveWorkCaseBuildItem {
   blocking_overlay: boolean
   object_id: string
   object_uid?: string
-  short_ref?: string
   title: string
   title_en?: string
   title_zh?: string
@@ -115,7 +112,6 @@ interface RecentActivityBuildItem {
   type: ObjectType
   object_id: string
   object_uid?: string
-  short_ref?: string
   title: string
   title_en?: string
   title_zh?: string
@@ -144,7 +140,6 @@ interface RecentActivityAttributionUsage {
 interface SparkHealthBuildItem {
   object_id: string
   object_uid?: string
-  short_ref?: string
   title: string
   title_en?: string
   title_zh?: string
@@ -171,7 +166,6 @@ export interface RecentHotspotBuildItem {
   type: ObjectType
   object_id: string
   object_uid?: string
-  short_ref?: string
   title: string
   title_en?: string
   title_zh?: string
@@ -311,7 +305,6 @@ function buildRecentActivityItem(
     type,
     object_id,
     ...(typeof raw.object_uid === 'string' ? { object_uid: raw.object_uid } : {}),
-    ...(typeof raw.short_ref === 'string' ? { short_ref: raw.short_ref } : {}),
     title: String(raw.title ?? object_id),
     ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
     ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
@@ -516,7 +509,6 @@ export function buildSparkHealth(rawItems: Array<Record<string, unknown>>, obser
     const item: SparkHealthBuildItem = {
       object_id: String(raw.object_id ?? ''),
       ...(typeof raw.object_uid === 'string' ? { object_uid: raw.object_uid } : {}),
-      ...(typeof raw.short_ref === 'string' ? { short_ref: raw.short_ref } : {}),
       title: String(raw.title ?? raw.object_id ?? ''),
       ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
       ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
@@ -568,7 +560,6 @@ export function projectRecentHotspotFact(item: LocalFactItem, type: ObjectType):
     type,
     object_id: objectId,
     ...(typeof raw.object_uid === 'string' ? { object_uid: raw.object_uid } : {}),
-    ...(typeof raw.short_ref === 'string' ? { short_ref: raw.short_ref } : {}),
     title,
     ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
     ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
@@ -713,7 +704,6 @@ export function buildRecentHotspots(
       type: item.type,
       id: item.object_id,
       ...(item.object_uid !== undefined ? { object_uid: item.object_uid } : {}),
-      ...(item.short_ref !== undefined ? { short_ref: item.short_ref } : {}),
       title: item.title,
       ...(item.title_en !== undefined ? { title_en: item.title_en } : {}),
       ...(item.title_zh !== undefined ? { title_zh: item.title_zh } : {}),
@@ -811,7 +801,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
             blocking_overlay: progress.blocking_overlay,
             object_id, title: String(raw.title ?? object_id),
             ...(typeof raw.object_uid === 'string' ? { object_uid: raw.object_uid } : {}),
-            ...(typeof raw.short_ref === 'string' ? { short_ref: raw.short_ref } : {}),
             ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
             ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
             priority: typeof raw.priority === 'string' ? raw.priority : undefined,
@@ -831,7 +820,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
           blocking_overlay: progress.blocking_overlay,
           object_id, title: String(raw.title ?? object_id),
           ...(typeof raw.object_uid === 'string' ? { object_uid: raw.object_uid } : {}),
-          ...(typeof raw.short_ref === 'string' ? { short_ref: raw.short_ref } : {}),
           ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
           ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
           priority: typeof raw.priority === 'string' ? raw.priority : undefined,
@@ -856,7 +844,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         builds.push({
           type: 'pitfall', inboxKind: 'pitfall_confirmation', object_id, title: String(raw.title ?? object_id),
           ...(typeof raw.object_uid === 'string' ? { object_uid: raw.object_uid } : {}),
-          ...(typeof raw.short_ref === 'string' ? { short_ref: raw.short_ref } : {}),
           ...(typeof raw.title_en === 'string' ? { title_en: raw.title_en } : {}),
           ...(typeof raw.title_zh === 'string' ? { title_zh: raw.title_zh } : {}),
           updated_at: typeof raw.updated_at === 'string' ? raw.updated_at : undefined,
@@ -942,7 +929,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         type: build.type,
         id: build.object_id,
         ...(build.object_uid ? { object_uid: build.object_uid } : {}),
-        ...(build.short_ref ? { short_ref: build.short_ref } : {}),
         title: build.title,
         ...(build.title_en !== undefined ? { title_en: build.title_en } : {}),
         ...(build.title_zh !== undefined ? { title_zh: build.title_zh } : {}),
@@ -978,7 +964,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         type: 'workcase',
         id: build.object_id,
         ...(build.object_uid ? { object_uid: build.object_uid } : {}),
-        ...(build.short_ref ? { short_ref: build.short_ref } : {}),
         title: build.title,
         ...(build.title_en !== undefined ? { title_en: build.title_en } : {}),
         ...(build.title_zh !== undefined ? { title_zh: build.title_zh } : {}),
@@ -1005,7 +990,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       type: build.type,
       id: build.object_id,
       ...(build.object_uid ? { object_uid: build.object_uid } : {}),
-      ...(build.short_ref ? { short_ref: build.short_ref } : {}),
       title: build.title,
       ...(build.title_en !== undefined ? { title_en: build.title_en } : {}),
       ...(build.title_zh !== undefined ? { title_zh: build.title_zh } : {}),
@@ -1060,7 +1044,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
             type: 'spark',
             id: item.object_id,
             ...(item.object_uid ? { object_uid: item.object_uid } : {}),
-            ...(item.short_ref ? { short_ref: item.short_ref } : {}),
             title: item.title,
             ...(item.title_en !== undefined ? { title_en: item.title_en } : {}),
             ...(item.title_zh !== undefined ? { title_zh: item.title_zh } : {}),
@@ -1078,7 +1061,6 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
             type: 'spark',
             id: item.object_id,
             ...(item.object_uid ? { object_uid: item.object_uid } : {}),
-            ...(item.short_ref ? { short_ref: item.short_ref } : {}),
             title: item.title,
             ...(item.title_en !== undefined ? { title_en: item.title_en } : {}),
             ...(item.title_zh !== undefined ? { title_zh: item.title_zh } : {}),
