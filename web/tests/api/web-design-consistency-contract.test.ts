@@ -55,6 +55,8 @@ test('mobile reading panel identifies the current object and terminal cards reta
 test('object list cards use the compact metadata shared by reading surfaces', () => {
   const objectList = read('src/pages/ObjectList.tsx');
   const priorityIcon = read('src/components/PriorityIcon.tsx');
+  const statusBadge = read('src/components/StatusBadge.tsx');
+  const capabilityBadge = read('src/components/WorkCaseCapabilityStatusBadge.tsx');
   const identityActions = read('src/components/ObjectIdentityActions.tsx');
   const cardFrame = objectList.slice(
     objectList.indexOf('export function ObjectCardFrame'),
@@ -78,8 +80,11 @@ test('object list cards use the compact metadata shared by reading surfaces', ()
   assert.match(objectList, /type="search"[\s\S]*objectList\.searchPlaceholder/);
   assert.match(objectList, /<div className="relative h-7 w-8 shrink-0">[\s\S]*<label className="absolute right-0 top-0 z-30 flex w-60/);
   assert.match(objectList, /onClick=\{\(\) => setIsObjectSearchOpen\(true\)\}[\s\S]{0,240}aria-expanded=\{false\}/);
-  assert.match(priorityIcon, /font-mono font-medium/);
-  assert.doesNotMatch(priorityIcon, /font-mono font-semibold/);
+  assert.match(priorityIcon, /font-sans font-medium/);
+  assert.doesNotMatch(priorityIcon, /font-mono/);
+  assert.match(statusBadge, /font-sans font-medium/);
+  assert.doesNotMatch(statusBadge, /font-mono/);
+  assert.match(capabilityBadge, /h-\[18px\][\s\S]*text-\[10px\] font-sans font-medium leading-3/);
   assert.match(objectList, /filteredItems\.map\(\(obj\) => renderObjectCard\(obj\)\)/);
   assert.match(identityActions, /compact\?: boolean/);
   assert.match(identityActions, /variant=\{compact \? 'compact' : undefined\}/);

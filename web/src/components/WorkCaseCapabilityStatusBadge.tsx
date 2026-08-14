@@ -10,7 +10,7 @@ export default function WorkCaseCapabilityStatusBadge({ source }: { source: unkn
     <span
       aria-label={hint}
       title={hint}
-      className="ldvh-chip inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-amber-400/35 bg-amber-500/[0.07] px-2 py-0.5 font-mono text-amber-800 dark:text-amber-100"
+      className="ldvh-chip inline-flex h-[18px] items-center gap-1 whitespace-nowrap rounded-md border border-amber-400/35 bg-amber-500/[0.07] px-[5px] text-[10px] font-sans font-medium leading-3 text-amber-800 dark:text-amber-100"
     >
       <CircleAlert size={12} strokeWidth={2} aria-hidden="true" />
       {t('objectList.workcaseIndependentSubagentUnavailable')}
