@@ -123,7 +123,6 @@ def _execute(
     reference = resolved.reference
     if reference.fact_type_key != "workcase":
         raise OperationRequestError(("arguments.fact_ref 解析后的类型必须为 workcase",), sources=(_CONTRACT,))
-    project_id = resolved.boundary.governed_project_id
     root = resolved.boundary.worktree_root
     common_dir = resolved.boundary.git_common_dir
     schema = schemas.get("workcase")
@@ -221,7 +220,10 @@ def _execute(
         sources=sources,
         verification=(
             {
-                "check": "交还判定绑定刚读取 source 指纹并按 21 的唯一派生语义形成；未写事实、未推进 phase、未选择 item",
+                "check": (
+                    "交还判定绑定刚读取 source 指纹并按 21 的唯一派生语义形成；"
+                    "未写事实、未推进 phase、未选择 item"
+                ),
                 "status": "passed",
                 "scope": list(requested),
                 "evidence": [_CONTRACT, working_tree_source],

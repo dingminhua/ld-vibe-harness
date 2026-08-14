@@ -52,6 +52,54 @@ test('mobile reading panel identifies the current object and terminal cards reta
   assert.doesNotMatch(objectList, /showStatusBadge/);
 });
 
+test('object list cards use the compact metadata shared by reading surfaces', () => {
+  const objectList = read('src/pages/ObjectList.tsx');
+  const identityActions = read('src/components/ObjectIdentityActions.tsx');
+  const cardFrame = objectList.slice(
+    objectList.indexOf('export function ObjectCardFrame'),
+    objectList.indexOf('function hasSparkResolvedFact'),
+  );
+
+  assert.match(cardFrame, /ldvh-chip inline-flex h-\[18px\] shrink-0 items-center justify-center rounded-md border px-1\.5 text-\[10px\] font-medium leading-3/);
+  assert.match(cardFrame, /const activityCount = Array\.isArray\(obj\.change_log\) \? obj\.change_log\.length : 0/);
+  assert.match(cardFrame, /<History size=\{12\} aria-hidden="true" \/>[\s\S]{0,80}<span>\{activityCount\}<\/span>/);
+  assert.doesNotMatch(cardFrame, /obj\.short_ref \?\? obj\.id/);
+  assert.match(cardFrame, /<ObjectIdentityActions[\s\S]{0,460}compact/);
+  assert.match(cardFrame, /items-center gap-1\.5[\s\S]{0,220}<ObjectTypeIcon type=\{obj\.type\} size=\{14\} className="shrink-0"/);
+  assert.match(cardFrame, /ldvh-object-title-tray ldvh-object-title-tray-compact/);
+  assert.match(cardFrame, /<h2 className="ldvh-card-title min-w-0 flex-1 whitespace-normal break-words">/);
+  assert.match(objectList, /isDiscarded \? 'text-slate-400\/65 dark:text-slate-500\/60' : 'text-ldvh-text-secondary\/95 group-hover:text-ldvh-accent'/);
+  assert.match(cardFrame, /-mt-1 flex min-w-0 items-center justify-end(?: pt-0\.5)? text-right opacity-70[\s\S]{0,80}<ObjectUpdatedMeta/);
+  assert.match(objectList, /const \[objectSearch, setObjectSearch\] = useState\(''\)/);
+  assert.match(objectList, /getLocalizedObjectTitle\(item, locale\)\.toLowerCase\(\)[\s\S]{0,280}shortRef\.includes\(normalizedObjectSearch\)/);
+  assert.match(objectList, /const \[isObjectSearchOpen, setIsObjectSearchOpen\] = useState\(false\)/);
+  assert.match(objectList, /absolute right-0 top-0 z-30[\s\S]*type="search"[\s\S]*objectList\.searchPlaceholder/);
+  assert.match(objectList, /onClick=\{\(\) => setIsObjectSearchOpen\(true\)\}[\s\S]{0,240}aria-expanded=\{false\}/);
+  assert.match(objectList, /filteredItems\.map\(\(obj\) => renderObjectCard\(obj\)\)/);
+  assert.match(identityActions, /compact\?: boolean/);
+  assert.match(identityActions, /variant=\{compact \? 'compact' : undefined\}/);
+});
+
+test('object detail headers use compact metadata and title-scaled type icons', () => {
+  const objectDetail = read('src/pages/ObjectDetail.tsx');
+  const identityHeader = objectDetail.slice(
+    objectDetail.indexOf('export function ObjectIdentityHeader'),
+    objectDetail.indexOf('function HeaderDateMeta'),
+  );
+
+  assert.match(identityHeader, /const titleFontSize = compact \? 16 : 20/);
+  assert.match(identityHeader, /const titleIconSize = Math\.round\(titleFontSize \* 1\.25\)/);
+  assert.match(identityHeader, /const activityCount = Array\.isArray\(source\.change_log\) \? source\.change_log\.length : 0/);
+  assert.match(identityHeader, /ldvh-chip inline-flex h-\[18px\] shrink-0 items-center justify-center rounded-md border px-1\.5 text-\[10px\] font-medium leading-3/);
+  assert.doesNotMatch(identityHeader, /typeof source\.short_ref === 'string' \? source\.short_ref : id/);
+  assert.match(identityHeader, /<History size=\{12\} aria-hidden="true" \/>[\s\S]{0,80}<span>\{activityCount\}<\/span>/);
+  assert.match(identityHeader, /showCopyAction=\{showCopyAction\}[\s\S]{0,80}compact/);
+  assert.match(identityHeader, /translate-y-0\.5 items-start gap-2[\s\S]{0,220}<ObjectTypeIcon type=\{objectType\} size=\{titleIconSize\} className="mt-0\.5 shrink-0"/);
+  assert.match(identityHeader, /mb-1\.5 flex min-w-0 flex-wrap items-center/);
+  assert.match(identityHeader, /mt-1\.5 flex min-w-0 flex-wrap items-center justify-end/);
+  assert.match(identityHeader, /showDefaultDates && <span className="opacity-70"><HeaderDateMeta value=\{updated\} \/><\/span>/);
+});
+
 test('detail identity header keeps status immediately before its copy control', () => {
   const objectDetail = read('src/pages/ObjectDetail.tsx');
   const identityHeader = objectDetail.slice(
@@ -65,7 +113,7 @@ test('detail identity header keeps status immediately before its copy control', 
 
   assert.match(identityRow, /\{extraBadges\}[\s\S]*<PriorityIcon[\s\S]*className="ml-auto shrink-0"[\s\S]*<ObjectIdentityActions/);
   const identityActions = read('src/components/ObjectIdentityActions.tsx');
-  assert.match(identityActions, /\{statusLeadingBadges\}[\s\S]{0,120}\{status && \([\s\S]{0,220}\{actionBadges\}/);
+  assert.match(identityActions, /\{statusLeadingBadges\}[\s\S]{0,120}\{status && \([\s\S]{0,320}\{actionBadges\}/);
   assert.doesNotMatch(identityHeader, /&& compact[\s\S]{0,180}<ObjectIdentityActions/);
 });
 
@@ -95,19 +143,20 @@ test('recent hotspots keep a compact relationship overview and a focused one-hop
   assert.match(graph, /relatedWorkItems\(cluster\.relations\)/);
   assert.match(graph, /const items = new Map<string, RelatedWork>\(\)/);
   assert.match(graph, /const COMPACT_WORK_LIMIT = 5/);
-  assert.match(graph, /const primarySize = \{ width: Math\.max\(96, width - horizontalPadding \* 2\), height: 120 \}/);
-  assert.match(graph, /const relatedSize = \{ width: primarySize\.width \* 0\.75, height: 120 \}/);
-  assert.match(graph, /className={`flex h-full min-w-0 flex-col items-center justify-center px-3 py-2\.5 \$\{expanded \? 'gap-2' : 'gap-1'\}`}/);
-  assert.match(graph, /className="inline-flex h-6 w-6 shrink-0 items-center justify-center"/);
+  assert.match(graph, /const primarySize = \{ width: Math\.max\(96, width - horizontalPadding \* 2\), height: 108 \}/);
+  assert.match(graph, /const relatedSize = \{ width: primarySize\.width \* 0\.75, height: 108 \}/);
+  assert.match(graph, /className="flex h-full min-w-0 flex-col items-center justify-center gap-2 px-3 py-2\.5"/);
   assert.match(graph, /className={`block min-w-0 max-w-full overflow-hidden break-words text-center/);
-  assert.match(graph, /data-hotspot-node-meta className="mt-0\.5 flex min-w-0 flex-wrap items-center justify-center gap-x-1\.5 gap-y-0\.5"/);
-  assert.match(graph, /data-hotspot-node-meta[\s\S]*node\.activityRefs\.length[\s\S]*<StatusBadge status=\{status\} statusLabel=\{getObjectStatusLocale\(node\.type, status, locale\)\} objectType=\{node\.type\} size="sm" \/>/);
-  assert.doesNotMatch(graph, /data-hotspot-node-header className="flex min-w-0 shrink-0 flex-wrap/);
-  assert.match(graph, /data-hotspot-node-header[\s\S]*<ObjectTypeIcon type=\{node\.type\}[\s\S]*node\.short_ref/);
+  assert.match(graph, /data-hotspot-node-header className="flex min-w-0 shrink-0 flex-wrap items-center justify-center gap-x-2 gap-y-1"/);
+  assert.match(graph, /getTypeLabel\(node\.type, locale\)/);
+  assert.match(graph, /<PriorityIcon source=\{node\} type=\{node\.type\} locale=\{locale\} size="xs" \/>/);
+  assert.match(graph, /node\.activityRefs\.length > 0[\s\S]*<History size=\{12\} aria-hidden="true" \/>/);
+  assert.match(graph, /<StatusBadge status=\{status\} statusLabel=\{getObjectStatusLocale\(node\.type, status, locale\)\} objectType=\{node\.type\} size="xs" variant="compact" \/>/);
+  assert.doesNotMatch(graph, /data-hotspot-node-meta/);
+  assert.match(graph, /ldvh-object-title-tray flex min-w-0 w-full items-center justify-center px-3 py-2 text-center[\s\S]*inline-grid min-w-0 max-w-full grid-cols-\[auto_minmax\(0,1fr\)\] items-center gap-2[\s\S]*<ObjectTypeIcon[\s\S]*className="shrink-0"[\s\S]*data-hotspot-node-title/);
   assert.match(graph, /data-hotspot-node-title[\s\S]*text-center/);
-  assert.match(graph, /\{node\.short_ref && <code className="ldvh-meta-muted shrink-0">\{node\.short_ref\}<\/code>\}/);
-  assert.doesNotMatch(graph, /node\.short_ref \?\? node\.id/);
-  assert.match(graph, /const relatedSize = \{ width: primarySize\.width \* 0\.75, height: 152 \}/);
+  assert.doesNotMatch(graph, /node\.short_ref/);
+  assert.match(graph, /const relatedSize = \{ width: primarySize\.width \* 0\.75, height: 132 \}/);
   assert.match(graph, /position: \{ x: width \/ 2, y: firstRelatedY \+ index \* rowGap \}/);
   assert.doesNotMatch(graph, /supportedColumns|indexInRow|nodesInRow/);
   assert.doesNotMatch(graph, /Math\.min\((272|320|420|440|460),/);
@@ -126,6 +175,7 @@ test('recent hotspots keep a compact relationship overview and a focused one-hop
   assert.match(graph, /cognition\.commitHotspots\.workRelation\.related/);
   assert.match(graph, /getFieldLabel\(`relation_\$\{relationKey\.replace/);
   assert.match(graph, /className="ml-auto flex min-w-0 flex-wrap items-center justify-end/);
+  assert.match(graph, /ldvh-chip inline-flex h-\[18px\] items-center justify-center gap-1 rounded-md border border-ldvh-accent\/25 bg-ldvh-accent\/5 px-\[5px\] text-\[10px\] font-medium leading-3 text-ldvh-accent/);
   assert.match(graph, /<History size=\{12\}/);
   assert.match(graph, /mode === 'expanded'/);
   assert.match(graph, /markerStart=\{directions\.incoming/);
@@ -136,9 +186,10 @@ test('recent hotspots keep a compact relationship overview and a focused one-hop
   assert.match(graph, /mode="compact"[\s\S]*dimmed=\{highlightedKey !== null && highlightedKey !== key\}[\s\S]*onHighlight=\{\(active\) => setHighlightedKey/);
   assert.match(graph, /aria-label=\{`\$\{roleLabel\}: \$\{title\}[\s\S]*cognition\.commitHotspots\.commitRefs/);
   assert.doesNotMatch(graph, /title=\{labels\.join\(' · '\)\}/);
-  assert.match(graph, /data-hotspot-node-header[\s\S]*node\.short_ref[\s\S]*PriorityIcon/);
-  assert.match(graph, /data-hotspot-node-meta[\s\S]*node\.activityRefs\.length[\s\S]*status/);
-  assert.match(graph, /primary \? 18 : \(expanded \? 18 : 16\)/);
+  assert.match(graph, /data-hotspot-node-header[\s\S]*node\.activityRefs\.length[\s\S]*status/);
+  assert.match(graph, /const titleFontSize = primary \? \(expanded \? 18 : 16\) : 14/);
+  assert.match(graph, /const titleIconSize = titleFontSize/);
+  assert.match(graph, /size=\{titleIconSize\}/);
   assert.match(graph, /primary \? \(expanded \? 'text-lg font-semibold leading-6' : 'text-base font-semibold leading-\[22px\]'\) : 'text-sm font-medium leading-5'/);
   assert.match(graph, /gridColumn: '1 \/ -1'/);
   assert.match(graph, /data-hotspot-mode=\{expanded \? 'expanded' : 'compact'\}/);
@@ -147,7 +198,6 @@ test('recent hotspots keep a compact relationship overview and a focused one-hop
   assert.match(graph, /aria-expanded=\{expanded\}/);
   assert.match(graph, /aria-controls=\{contentId\}/);
   assert.match(graph, /canExpand &&/);
-  assert.match(graph, /\{node\.short_ref && <code className="ldvh-meta-muted shrink-0">\{node\.short_ref\}<\/code>\}/);
   assert.doesNotMatch(graph, /node\.short_ref \?\? node\.id/);
   assert.match(cognitionCenter, /const clusterKey = nodeKey\(cluster\.primary\)/);
   assert.match(cognitionCenter, /expandedHotspotKey === clusterKey/);

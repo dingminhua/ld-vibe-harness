@@ -490,7 +490,8 @@ function SparkHealthRow({ item }: { item: CognitionSparkHealthItem }) {
         </span>
         <PriorityIcon source={item} type="spark" locale={locale} size="xs" />
         <ActivityCountBadge count={item.activityCount} label={t('cognition.recent.activityCount', { count: String(item.activityCount) })} />
-        <span className="ml-auto shrink-0">
+        <span className="ml-auto flex shrink-0 items-center gap-1.5">
+          <StatusBadge status="open" statusLabel={getObjectStatusLocale('spark', 'open', locale)} objectType="spark" size="xs" variant="compact" />
           <ObjectReferenceCopyButton objectId={item.id} objectType="spark" shortRef={item.short_ref} />
         </span>
       </div>

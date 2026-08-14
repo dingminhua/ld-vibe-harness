@@ -50,7 +50,7 @@ class WorkCaseBinding:
     object_id: str
 
     @classmethod
-    def from_json(cls, value: object) -> "WorkCaseBinding | None":
+    def from_json(cls, value: object) -> WorkCaseBinding | None:
         if not isinstance(value, dict):
             return None
         governed_project_id = value.get("governed_project_id")
@@ -128,7 +128,10 @@ def parse_binding(raw: str | None) -> WorkCaseBinding | None:
 
 def binding_path(repository_root: Path, session_id: str | None) -> Path | None:
     """Return the ignored per-session binding path for an exact session id."""
-    if not isinstance(session_id, str) or not session_id or any(character not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_" for character in session_id):
+    allowed_characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
+    if not isinstance(session_id, str) or not session_id or any(
+        character not in allowed_characters for character in session_id
+    ):
         return None
     return repository_root / _BINDING_DIRECTORY / f"{session_id}.json"
 

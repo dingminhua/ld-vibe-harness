@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from ldvh.facts.configuration_index import ConfigurationFactEntry, ConfigurationFactIndex
+from ldvh.facts.configuration_index import ConfigurationFactIndex
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.models import FactReference, FactReferenceScope, UIDFactReference
 from ldvh.facts.project_validation import stabilize_project_index
@@ -156,7 +156,14 @@ def _unresolved_uid_item(scope: FactReferenceScope, status: str) -> dict[str, An
         "fact_object": None,
         "content_fingerprint": None,
         "current_snapshot_projection": None,
-        "issues": [{"category": "identity" if status == "duplicate" else "reference", "field_path": "requested_ref.object_uid", "summary": summary, "source_refs": []}],
+        "issues": [
+            {
+                "category": "identity" if status == "duplicate" else "reference",
+                "field_path": "requested_ref.object_uid",
+                "summary": summary,
+                "source_refs": [],
+            }
+        ],
         "source_refs": [],
     }
 
@@ -248,7 +255,14 @@ def _execute(
         if isinstance(resolution, str):
             item = _unresolved_uid_item(scope, resolution) if isinstance(reference, UIDFactReference) else {
                 **_unresolved_uid_item(scope, "unavailable"),
-                "issues": [{"category": "location", "field_path": "requested_ref.governed_project_id", "summary": "请求项目未形成当前配置中的实际 Working Tree", "source_refs": []}],
+                "issues": [
+                    {
+                        "category": "location",
+                        "field_path": "requested_ref.governed_project_id",
+                        "summary": "请求项目未形成当前配置中的实际 Working Tree",
+                        "source_refs": [],
+                    }
+                ],
             }
         else:
             item_root, fact_type_key, base_read, index = resolution

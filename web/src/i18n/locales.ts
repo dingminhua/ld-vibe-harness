@@ -844,6 +844,9 @@ export const UI_LOCALES = {
     'cognition.commitHotspots.copiedModuleSummary': '已复制模块摘要',
 
     'objectList.noObjects': '未找到 {type} 对象',
+    'objectList.searchLabel': '搜索对象',
+    'objectList.searchPlaceholder': '搜索标题或 6 位标识',
+    'objectList.searchNoResults': '未找到匹配的对象',
     'objectList.typeNotIntegrated': '该事实类型尚未接入',
     'objectList.all': '全部',
     'objectList.statusFilter': '状态筛选',
@@ -1407,6 +1410,9 @@ export const UI_LOCALES = {
     'cognition.commitHotspots.copiedModuleSummary': 'Module summary copied',
 
     'objectList.noObjects': 'No {type} found',
+    'objectList.searchLabel': 'Search objects',
+    'objectList.searchPlaceholder': 'Search title or 6-character ID',
+    'objectList.searchNoResults': 'No matching objects found',
     'objectList.typeNotIntegrated': 'This fact type is not integrated',
     'objectList.all': 'All',
     'objectList.statusFilter': 'Status filter',

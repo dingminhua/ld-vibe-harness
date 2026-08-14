@@ -19,6 +19,7 @@ export default function ObjectIdentityActions({
   copiedLabel,
   shortRef,
   showCopyAction = true,
+  compact = false,
 }: {
   status?: string;
   statusLabel?: string;
@@ -30,17 +31,20 @@ export default function ObjectIdentityActions({
   copiedLabel?: string;
   shortRef?: string;
   showCopyAction?: boolean;
+  compact?: boolean;
 }) {
   if (!statusLeadingBadges && !status && !actionBadges && !showCopyAction) return null;
 
   return (
-    <div className="flex h-7 shrink-0 items-center gap-1">
+    <div className={`flex ${compact ? 'h-[18px]' : 'h-7'} shrink-0 items-center gap-1`}>
       {statusLeadingBadges}
       {status && (
         <StatusBadge
           status={status}
           statusLabel={statusLabel}
           objectType={objectType}
+          size={compact ? 'xs' : undefined}
+          variant={compact ? 'compact' : undefined}
         />
       )}
       {actionBadges}

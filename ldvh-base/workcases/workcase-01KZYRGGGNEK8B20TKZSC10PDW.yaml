@@ -1,0 +1,153 @@
+title: 受控写入优化：关闭候选契约闭合与写路径摩擦收敛（SIUURU 承接）
+goal: 针对受控写入路径中已实证的摩擦与契约缺口，实现最小可验证改进：1) prepare-closed-workcase-candidate 输出补充关闭写入要求的新流水所需信息（route_target 形状要求：目标已有 UID 时必须保存 UID 形状），使 AI 形成 closure_proposal 时不再写错 legacy 三元组；2) 收敛日志会话实证的 read→update 契约映射缺口（read-fact-objects 返回的 fact_object 含 Code 托管字段、不能直接用作 update-fact-object 的 after），在 capabilities 契约层提供可消费的 after 示例或明确指引；3) 如实记录 correct-closed-workcase 在 UID route target 路径的 NameError 复现条件（本 WC 不修复该 Code bug）。
+scope: 仅修改 Helper 关闭候选/受控写入相关实现与契约描述（code/ldvh/helper/operations/workcase_close_candidate_operation.py、read-fact-objects 与 update-fact-object 的 read→update 契约层、04.Att.01/05.Att.01 中对应写入契约描述），以及对应测试。排除：修复 correct-closed-workcase 的 NameError Code bug 本身（另立 Spark 记录，不在本 WC 授权内）；改变事实对象 Schema/字段定义/状态机；改变只读操作输出契约（由 spark-0074「Helper 只读交互优化」承接，即 ldvh@STNORJ）；Git 提交/推送/发布；其它执行中 WorkCase 的事实文件；规则源正文结构修改。
+success_criterion_definitions:
+- criterion_id: criterion-closure-candidate
+  statement: prepare-closed-workcase-candidate 输出能支撑 AI 形成符合规范 21 §6.7/§5 的 closure_proposal：至少包含 route_target 形状要求（目标已有 UID 时必须使用 UID 形状及 content_fingerprint），使 AI 不再写出 legacy 三元组导致 Web 端『关闭提案缺失或结构不符』。
+- criterion_id: criterion-read-update-bridge
+  statement: read→update 的 after 构建摩擦有可验证收敛：capabilities 契约层（04.Att.01 input_examples，不改变 05 §11.2 read-fact-objects result 输出闭集）提供可消费的最小完整 after 示例（input_examples，含 signature/change_log 字段形状），或等价的可验证指引；AI 按该入口即可构造 update-fact-object after，无需手工 strip Code 托管字段。
+- criterion_id: criterion-nameerror-documented
+  statement: correct-closed-workcase 在 UID route target 路径的 NameError 复现条件与触发路径已如实记录到结果链，并明确本 WC 未修复该 bug、后续承接由另立 Spark 承担（承接关系作为记录内容本身，不要求 Spark 已存在）。
+- criterion_id: criterion-tests
+  statement: 为上述改动新增/更新聚焦测试：覆盖关闭候选输出形状、read→update 示例/指引；既有相关测试回归通过，Ruff 通过。
+- criterion_id: criterion-boundary
+  statement: 改动不触及事实对象 Schema/字段定义/状态机、不修复 NameError Code bug、不改变只读操作输出契约（spark-0074「Helper 只读交互优化」边界）；回归测试证明既有调用方必需字段未破坏。
+work_items:
+- item_id: item-closure-candidate
+  goal: 关闭候选输出补充 UID 形状 route_target 要求
+  expected_result: prepare-closed-workcase-candidate 输出包含 route_target 形状要求（UID 形状 + content_fingerprint 必填），AI 形成 closure_proposal 时不再产生 legacy 三元组事故
+  status: pending
+  approach_summary: 在 workcase_close_candidate_operation.py 的输出与契约描述中补充 route_target 形状要求；以日志会话『关闭提案缺失或结构不符』事故为验收样本。
+- item_id: item-read-update-bridge
+  goal: 收敛 read→update after 构建摩擦
+  expected_result: capabilities 层为 read-fact-objects/update-fact-object 提供最小完整 after 示例（input_examples）或等价指引，AI 可据此构造 update after；05 §11.2 result 输出闭集保持不变
+  status: pending
+  depends_on:
+  - item-closure-candidate
+  approach_summary: 在 capabilities 契约层（04.Att.01 input_examples）为 read-fact-objects 提供可消费的最小完整 after 示例，明确剥离 Code 托管字段；不改 read-fact-objects 的 05 §11.2 result 输出闭集（该边界属 spark-0074 承接）。
+- item_id: item-nameerror-record
+  goal: 如实记录 NameError 复现条件
+  expected_result: NameError 的最小复现条件、触发路径与『本 WC 未修复』边界写入结果链（不修改 Code bug 本身）
+  status: pending
+  depends_on:
+  - item-read-update-bridge
+  approach_summary: 以日志会话（session-23c4d407）第 16 轮排查结论为转述证据来源，执行时如实标注当次复现 vs 转述既有排查的边界；未当次复现的部分在 result_summary/validation_summary 如实标记 not_verified 边界，不冒充当次复现。
+- item_id: item-tests
+  goal: 编写/更新聚焦测试并跑通回归
+  expected_result: 新增覆盖测试通过；既有相关测试回归通过；Ruff 通过
+  status: pending
+  depends_on:
+  - item-nameerror-record
+  approach_summary: 为关闭候选输出形状与 read→update 示例/指引补测试；复用既有 helper/facts 测试设施。
+execution_authorization:
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-delegate-review
+    result_review_action_id: authorization-result-review
+  authorized_actions:
+  - action_id: authorization-modify-write-path
+    summary: 修改 Helper 关闭候选与 read→update 写入路径实现/契约
+    target_scope: code/ldvh/helper/operations/workcase_close_candidate_operation.py 与 read-fact-objects/update-fact-object 契约层实现
+    effect_scope: workspace 内代码文件写入；不写 ldvh-base/ 事实载体
+    risk_summary: 中风险：写入路径契约变化可能影响既有调用方；以回归测试与字段保留核对控制
+    rollback_summary: 各改动点独立可回滚（git diff 反向）；不触碰既有事实与规则源
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+    - specs/05-事实模型基础规范.md
+  - action_id: authorization-modify-tests
+    summary: 新增/更新聚焦测试并运行 pytest 与 Ruff
+    target_scope: code/tests/helper/ 与 code/tests/facts/ 相关测试文件
+    effect_scope: workspace 内测试文件写入与本地测试运行
+    risk_summary: 低风险
+    rollback_summary: 删除/还原测试文件即可
+    rule_refs:
+    - specs/05-事实模型基础规范.md
+  - action_id: authorization-update-attachment
+    summary: 更新规范附件中关闭候选/写入契约描述（04.Att.01/05.Att.01 相关章节）
+    target_scope: specs/attachments/ 下与关闭候选及 read→update 契约直接相关的附件章节
+    effect_scope: 规范附件文本更新；不改变章节结构（§10.1 保护章节除外）
+    risk_summary: 中风险：附件为契约权威之一，须与实现一致；通过 diff 复核
+    rollback_summary: git diff 反向还原
+    rule_refs:
+    - specs/04-Helper CLI 服务规范.md
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-record-nameerror
+    summary: 在结果链记录 NameError 复现条件与边界（不修改 Code bug）
+    target_scope: 本 WorkCase 的 result projection/验证材料
+    effect_scope: 只读记录，不修改 code/ldvh 中 correct-closed-workcase 实现
+    risk_summary: 低风险
+    rollback_summary: 无副作用
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-delegate-review
+    summary: 委派只读 subagent 执行独立结果复核
+    target_scope: 本 WorkCase 的 result projection 与验证材料
+    effect_scope: 只读委派，不写事实
+    risk_summary: 低风险
+    rollback_summary: 无副作用
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-result-review
+    summary: 执行实际结果复核（subagent-read-only）并记录 result_reviews
+    target_scope: 本 WorkCase canonical result projection
+    effect_scope: 只读复核与 review 字段写入
+    risk_summary: 低风险
+    rollback_summary: 无副作用
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+  action_ceiling: 只授权上述 Helper 关闭候选与 read→update 路径实现、测试、附件文本的本地修改及测试运行；不授权修复 correct-closed-workcase NameError Code bug、ldvh-base/ 事实写入（本 WC 自身受控写回除外）、Git commit/push/release、事实 Schema/字段定义/状态机修改、只读操作输出契约修改（spark-0074「Helper 只读交互优化」边界）。
+  prohibited_actions:
+  - Git commit/push/release
+  - ldvh-base/ 事实载体直写
+  - 修复 correct-closed-workcase NameError Code bug
+  - 修改事实对象 Schema、字段定义或状态机
+  - 修改只读操作输出契约（spark-0074「Helper 只读交互优化」承接范围）
+  - 修改 specs/ 章节结构或受保护章节
+  allowed_adjustments: 在各 item 内部调整实现细节、测试用例与附件措辞；不改变 goal/scope/success criteria/action ceiling/禁止项
+  verification_and_rollback: 每个 item 完成后运行聚焦 pytest + Ruff；失败据实记录并返修，不强制改写；每次改动点可 git diff 反向回滚；附件更新须与实现 diff 一致复核
+  out_of_bounds_handling: 发现需要修复 NameError Code bug、修改事实 Schema/状态机、超出 action ceiling 或落入 spark-0074（只读操作输出契约）边界的需求时，停止该动作、据实取消受影响 item 并进入结果链，不扩权执行
+  reviewer_policy:
+    model: deepseek-v4-flash
+    collaboration_agent: none（本环境未提供协作 Worker 载体，使用 native subagent）
+    effort: medium
+    fast: true
+    preferred_method: subagent-read-only
+    fallback_order:
+    - subagent-read-only
+    - same-ai-switched-role-read-only
+    max_perspectives: 1
+    activation: Human 已在 2026-08-14 会话明确授权 native subagent 只读复核（reviewer-carrier 选择）
+    same_ai_limit: 仅当协作 Worker 与 subagent 均不可用且满足 21 §4.5 约束时启用；当前不适用
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7706-ba55-38e7bc9b1cc9
+priority: P2
+status: open
+phase: human_plan_confirming
+plan_version: 1
+waiting_on: Human Gate1 decision on the complete plan and execution authorization baseline
+creation_reviews:
+- reviewer: subagent-readonly-reviewer-siuuru-round3
+  reviewed_at: '2026-08-13T23:48:50Z'
+  subject_version: 1
+  scope: 完整计划初态：goal/scope/5 success criteria/4 work items/execution_authorization（quality_gates + 6 authorized_actions + reviewer_policy）/relations；按 21 §4.2-4.5/§5/§6、31 §5、04 §5-7、05 §11、00 §8 逐项复核；前两轮（changes_required → pass_with_followups）feedback 已由 Controller 处置。未覆盖：未运行 LDVH CLI；未验证 Human 授权与日志会话排查结论的真实性；未通读附件正文确认 input_examples 落点。
+  conclusion: pass
+  covered_quality_gate_ids:
+  - independent-result-review
+  actual_method: subagent-read-only
+  actual_agent: subagent-readonly-reviewer-siuuru-round3
+  actual_model: deepseek-v4-flash
+change_log:
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T23:49:52.173973Z'
+  summary: 受控创建 plan_version=1：承接 spark-0075「受控写入优化」（ldvh@SIUURU），聚焦关闭候选契约闭合与 read→update 契约收敛；创建前经 3 轮 native subagent 只读方案复核（末轮 pass），Human 已授权 subagent 复核载体；等待 Gate 1。
+object_uid: 019ffd88-4215-74d0-b103-53fe581059bc
+object_id: workcase-01KZYRGGGNEK8B20TKZSC10PDW
+fact_type_key: workcase
+created_at: '2026-08-13T23:49:52.173973Z'
+updated_at: '2026-08-13T23:49:52.173973Z'

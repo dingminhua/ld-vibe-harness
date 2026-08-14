@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from typing import Any
 from collections import Counter
+from typing import Any
 
 from ldvh.facts.candidate_discovery import discover_fact_candidates
-from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.configuration_index import ConfigurationFactIndex
+from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.identity import canonical_object_uid, short_reference
 from ldvh.facts.schema import project_fact_schemas
 from ldvh.governance.models import LocatorSource, ScopeDescriptor
@@ -189,7 +189,7 @@ def execute_fact_integrity(
             uid_entries.setdefault(object_uid, []).append((candidate_id, fact_type_key, read.canonical_path))
             short_counts[short_reference(fact_type_key, object_uid)] += 1
     duplicate_problems: list[dict[str, object]] = []
-    for object_uid, entries in uid_entries.items():
+    for _object_uid, entries in uid_entries.items():
         if len(entries) < 2:
             continue
         paths = sorted({entry[2] for entry in entries})
@@ -200,7 +200,13 @@ def execute_fact_integrity(
                     "canonical_path": canonical_path,
                     "related_paths": [path for path in paths if path != canonical_path],
                     "check_status": "invalid",
-                    "issues": [{"category": "identity", "field_path": "object_uid", "summary": "object_uid 在当前选定管辖配置中重复"}],
+                    "issues": [
+                        {
+                            "category": "identity",
+                            "field_path": "object_uid",
+                            "summary": "object_uid 在当前选定管辖配置中重复",
+                        }
+                    ],
                 }
             )
     problems = [

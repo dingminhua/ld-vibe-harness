@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useParams, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
-import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Code2, ExternalLink, FileText } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Code2, ExternalLink, FileText, History } from 'lucide-react';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -568,7 +568,9 @@ export function ObjectIdentityHeader({
   const { t } = useI18n();
   const TitleTag = compact ? 'h3' : 'h1';
   const titleClassName = compact ? 'ldvh-reading-title' : 'ldvh-page-title';
-  const iconSize = compact ? 16 : 18;
+  const titleFontSize = compact ? 16 : 20;
+  const titleIconSize = Math.round(titleFontSize * 1.25);
+  const activityCount = Array.isArray(source.change_log) ? source.change_log.length : 0;
   const remainingAuxiliaryMetaEntries = auxiliaryMetaEntries.filter(([key]) => key !== 'priority');
   const hasFooterMeta = showDefaultDates
     || remainingAuxiliaryMetaEntries.length > 0
@@ -585,14 +587,20 @@ export function ObjectIdentityHeader({
         <div className="min-w-0">
           <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
             <span
-              className="ldvh-chip shrink-0 rounded px-2 py-0.5"
-              style={{ backgroundColor: `${typeColor}18`, color: typeColor }}
+              className="ldvh-chip inline-flex h-[18px] shrink-0 items-center justify-center rounded-md border px-1.5 text-[10px] font-medium leading-3"
+              style={{ backgroundColor: `${typeColor}18`, borderColor: `${typeColor}55`, color: typeColor }}
             >
               {typeLabel}
             </span>
-            <span className="ldvh-meta-muted min-w-0 truncate">{typeof source.short_ref === 'string' ? source.short_ref : id}</span>
             {extraBadges}
-            <PriorityIcon source={source} type={objectType} locale={locale} size="sm" />
+            <PriorityIcon source={source} type={objectType} locale={locale} size="xs" />
+            <span
+              className="ldvh-chip inline-flex h-[18px] shrink-0 items-center justify-center gap-1 rounded-md border border-ldvh-accent/25 bg-ldvh-accent/5 px-[5px] text-[10px] font-medium leading-3 text-ldvh-accent"
+              title={t('cognition.recent.activityCount', { count: String(activityCount) })}
+            >
+              <History size={12} aria-hidden="true" />
+              <span>{activityCount}</span>
+            </span>
             {(capabilityStatusBadge || status || actionBadges || showCopyAction) && (
               <div className="ml-auto shrink-0">
                 <ObjectIdentityActions
@@ -606,13 +614,14 @@ export function ObjectIdentityHeader({
                   copyLabel={copyLabel}
                   copiedLabel={copiedLabel}
                   showCopyAction={showCopyAction}
+                  compact
                 />
               </div>
             )}
           </div>
           <div className="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
-            <TitleTag className={`${titleClassName} ldvh-object-title-tray flex min-w-0 flex-1 basis-full items-center gap-2 break-words px-2.5 py-2`}>
-              <ObjectTypeIcon type={objectType} size={iconSize} className="shrink-0" style={{ color: typeColor }} />
+            <TitleTag className={`${titleClassName} ldvh-object-title-tray flex min-w-0 flex-1 basis-full translate-y-0.5 items-start gap-2 break-words px-2.5 py-2`}>
+              <ObjectTypeIcon type={objectType} size={titleIconSize} className="mt-0.5 shrink-0" style={{ color: typeColor }} />
               <span className="min-w-0">{title}</span>
             </TitleTag>
             {inlineTitleMeta.length > 0 && (
@@ -633,8 +642,8 @@ export function ObjectIdentityHeader({
         </div>
       </div>
       {hasFooterMeta && (
-        <div className="mt-2 flex min-w-0 flex-wrap items-center justify-end gap-x-4 gap-y-1 text-right">
-          {showDefaultDates && <HeaderDateMeta value={updated} />}
+        <div className="mt-1.5 flex min-w-0 flex-wrap items-center justify-end gap-x-4 gap-y-1 text-right">
+          {showDefaultDates && <span className="opacity-70"><HeaderDateMeta value={updated} /></span>}
           {remainingAuxiliaryMetaEntries.map(([key, value]) => (
             <HeaderDateMeta
               key={key}

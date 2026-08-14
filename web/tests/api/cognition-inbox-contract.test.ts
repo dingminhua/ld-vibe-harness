@@ -94,7 +94,8 @@ test('recent activity rows display localized type labels while preserving full i
   assert.match(source, /openPanel\(\{ type: 'object', title, objectType: item\.type, objectId: item\.id \}\)/)
   assert.match(source, /<ObjectReferenceCopyButton objectId=\{item\.id\} objectType=\{item\.type\} shortRef=\{item\.short_ref\} \/>/)
   const detailSource = readFileSync(path.resolve(repositoryRoot, 'src/pages/ObjectDetail.tsx'), 'utf8')
-  assert.match(detailSource, /\{typeof source\.short_ref === 'string' \? source\.short_ref : id\}/)
+  assert.doesNotMatch(detailSource, /\{typeof source\.short_ref === 'string' \? source\.short_ref : id\}<\/span>/)
+  assert.match(detailSource, /shortRef=\{typeof source\.short_ref === 'string' \? source\.short_ref : undefined\}/)
 })
 
 test('cognition endpoint returns inbox, fact activity, Spark health, and fact hotspot contract shapes with observation time', async () => {

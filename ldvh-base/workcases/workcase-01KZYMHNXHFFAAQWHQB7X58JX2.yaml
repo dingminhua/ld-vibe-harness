@@ -1,3 +1,4 @@
+status: closed
 title: 规则精确读取任务族等价复验（WFPQDZ 延续）
 goal: 以 session_comparability 模块的执行可比性判定为评分前门槛，在等价执行载体（同一模型、同一工具入口、同一 runner）下复验规则精确读取任务族（WFPQDZ 延续）：评分管线直接消费机器记录，每个任务与条件增加重复样本，先过 comparable 判定，再判断 required 缺失与 excluded 增加是否形成可重复且有实际幅度的差异。
 scope: 复用 rule_read_contract.py 已冻结的 contract（SHA-256 1f4fc351…）、任务、rubric 与三变体协议，以及 trial_measurement.py 的 SafeTrialTempRoot 与通用测量设施；在 code/ldvh/testing 下新增等价复验 runner 与机器化评分模块及聚焦测试；集成 session_comparability 的可比性判定作为评分前门槛。排除：修改正式规则语义、行动模板、Helper 公共契约；建立健康分、遥测、Dashboard 或告警；Git commit、push、release；其他执行中 WorkCase 的事实文件和作用范围；上游 Spark 的任何写入；不保存原始会话/试次内容（只进受限临时根）。
@@ -12,115 +13,24 @@ success_criterion_definitions:
   statement: 评分管线直接消费机器记录（调用、响应、事件图、可比性判定），不依赖自然语言转述；评分一致性经独立复核或客观 rubric 检查。
 - criterion_id: criterion-judgement
   statement: 先过执行可比性门槛再判断上下文效果：comparable 样本才进入 required 缺失/excluded 增加差异比较；样本不足或不可比时只报告不确定，不形成'有帮助/过量'结论；结果与 Study 一致区分证据层级，不写因果结论或总体服务改善证据。
-work_items:
-- item_id: item-runner
-  goal: 实现等价复验 runner 与机器化执行记录
-  expected_result: code/ldvh/testing 下新增 runner 模块：同一模型/工具入口/runner 执行冻结任务，输出结构化机器记录（调用、响应、事件图）
-  status: pending
-  approach_summary: 复用 trial_measurement.py 的 RunnerOwnedTrialAdapter 语义与 SafeTrialTempRoot；显式固定 provider/model 入口。
-- item_id: item-gate
-  goal: 集成 session_comparability 可比性门槛
-  expected_result: 评分前对每个试次执行可比性判定，comparable 才进入评分；not_comparable 标出并排除
-  status: pending
-  depends_on:
-  - item-runner
-  approach_summary: 调用 session_comparability.audit_session/judge_comparability 包装为试次门槛。
-- item_id: item-scoring
-  goal: 实现机器化评分管线与聚焦测试
-  expected_result: 评分模块直接消费机器记录输出 rubric 判定；聚焦测试 + 复用边界回归通过 + Ruff 通过
-  status: pending
-  depends_on:
-  - item-gate
-  approach_summary: 按 WFPQDZ rubric 客观判定；构造合成试次 fixture 测试。
-- item_id: item-trials
-  goal: 运行重复样本试跑并汇总
-  expected_result: 3 任务 × 3 变体 × ≥3 样本试跑完成，汇总 comparable/not_comparable 分布与差异观察，结论不越证据层级
-  status: pending
-  depends_on:
-  - item-scoring
-  approach_summary: 固定同一模型/工具入口运行；临时根保存 raw，聚合后清理。
-execution_authorization:
-  quality_gates:
-  - gate_id: independent-result-review
-    reviewer_mode: independent-read-only
-    delegation_action_id: authorization-delegate-independent-result-review
-    result_review_action_id: authorization-perform-independent-result-review
-  authorized_actions:
-  - action_id: authorization-write-runners
-    summary: 在 code/ldvh/testing 与 code/tests/testing 下新增等价复验 runner/评分模块及聚焦测试
-    target_scope: 仅新增代码文件及其直接依赖的既有测试设施
-    effect_scope: workspace 代码文件写入，不涉及 ldvh-base/ 事实载体
-    risk_summary: 低风险；只读分析模块
-    rollback_summary: 删除新增文件即可回滚
-    rule_refs:
-    - specs/05-事实模型基础规范.md
-  - action_id: authorization-run-trials
-    summary: 以冻结的同一模型/工具入口/runner 运行重复样本试跑（受限临时根，raw 数据按隐私边界清理）
-    target_scope: 临时根内试跑，不写事实
-    effect_scope: 运行真实模型试跑，消耗当次配额
-    risk_summary: 中风险：模型调用成本与执行载体一致性依赖固定入口
-    rollback_summary: 停止试跑并清理临时根
-    rule_refs:
-    - specs/05-事实模型基础规范.md
-    - specs/07-运行证据规范.md
-  - action_id: authorization-run-tests
-    summary: 运行 pytest 聚焦测试与复用边界回归、Ruff 检查
-    target_scope: code/tests/testing 与 code/ldvh/testing
-    effect_scope: 只读运行
-    risk_summary: 低风险
-    rollback_summary: 无副作用
-    rule_refs:
-    - specs/05-事实模型基础规范.md
-  - action_id: authorization-delegate-independent-result-review
-    summary: 委派只读独立结果复核（subagent）
-    target_scope: 当次结果快照
-    effect_scope: 只读委派
-    risk_summary: 低风险
-    rollback_summary: 无副作用
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-  - action_id: authorization-perform-independent-result-review
-    summary: 执行只读独立结果复核并形成 review 结论
-    target_scope: 当次结果快照
-    effect_scope: 只读复核
-    risk_summary: 低风险
-    rollback_summary: 无副作用
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-  action_ceiling: 只授权上述新增代码文件、受限临时根试跑与测试运行；不授权 ldvh-base/ 事实写入、Git commit、push、release、Helper/规则/行动模板修改。
-  prohibited_actions:
-  - Git commit/push/release
-  - ldvh-base/ 任何事实载体写入
-  - 修改 specs/ 规则或行动模板
-  - 创建健康分/遥测/Dashboard/告警
-  - 长期保留 raw 试次内容（须按隐私边界清理）
-  allowed_adjustments: item 内部调整实现细节、测试用例与样本数；不改变 scope、success criteria 或授权边界
-  verification_and_rollback: 每 item 完成后运行 pytest + Ruff；失败据实记录不强制改写；新增文件可整体删除回滚；临时根按 SafeTrialTempRoot 清理
-  out_of_bounds_handling: 任何超出授权边界的需求回到 Controller 据实记录，不扩权执行
-  reviewer_policy:
-    model: deepseek-v4-flash
-    collaboration_agent: none（本环境未提供协作 Worker 载体）
-    effort: standard
-    fast: false
-    preferred_method: subagent-read-only
-    fallback_order:
-    - subagent-read-only
-    - same-ai-switched-role-read-only
-    max_perspectives: 2
-    activation: 协作 Worker 不在本环境路由链中（无可用协作 Worker 载体，preflight 不适用）；一次性只读 subagent 可用且 Human 已在创建前明确授权时解锁，用于 creation review 与 result review；subagent 不可用且有当前证据时降级
-    same_ai_limit: 同一 AI fallback 只在协作 Worker 与 subagent 均不可用（本环境协作 Worker 不在路由链中）且满足 §4.5.1 约束、并有当前证据时启用，同时登记 capability_limitations
-relations:
-- relation_key: related-to
-  target:
-    object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
-- relation_key: related-to
-  target:
-    object_uid: 019ffd18-bafe-714f-be81-257c1502b922
-status: open
-phase: human_plan_confirming
-plan_version: 1
-priority: P1
-waiting_on: Human Gate 1：对完整创建材料（目标/scope/success criteria/work items/execution_authorization/creation review 结论）作一次执行决定
+success_criterion_results:
+- criterion_id: criterion-carrier
+  outcome: satisfied
+  summary: 等价执行载体冻结机制与 session_comparability 可比性门槛已交付并验证：每试次机器事件线经 audit_events+judge_comparability 判定，多模型/配对缺失标 not_comparable 且不进入评分。
+- criterion_id: criterion-protocol
+  outcome: satisfied
+  summary: 复验沿用 WFPQDZ 冻结 contract 指纹 1f4fc351…、三变体（full_contract/required_removed/irrelevant_added）与任务包哈希绑定；执行记录为结构化机器事件线，非自然语言转述。
+- criterion_id: criterion-samples
+  outcome: not_verified
+  summary: 真实 LLM 重复样本试跑未执行：当前会话载体不稳定（实测会话存在模型切换），无法保证同一模型/工具入口跨试次；以真实会话事件线做了 3 样本管道验证，但不等价于冻结载体的重复试跑。
+- criterion_id: criterion-scoring
+  outcome: satisfied
+  summary: 评分管线 assess_trial/summarize_batch 直接消费机器记录（rubric 谓词评估 + claim_boundary），14 项聚焦测试 + 复用边界 233 passed + Ruff passed；真实会话汇总输出正确。
+- criterion_id: criterion-judgement
+  outcome: satisfied
+  summary: 先过可比性门槛再评分；真实 LLM 等价试跑条件不成立时如实报告不确定，未形成'有帮助/过量'或因果/总体改善结论；claim_boundary 与证据层级边界保持。
+result_summary: 交付等价复验 runner、session_comparability 可比性门槛集成与机器化评分管线（equivalence_retrial.py + 14 项测试，复用边界 233 passed + Ruff passed），并经真实会话事件线验证管道；真实 LLM 重复样本试跑因执行载体不稳定（模型切换）未执行，按停止边界如实报告，不构成因果或总体改善结论。
+validation_summary: 14 项聚焦测试 passed；复用边界（code/tests/testing）233 passed；Ruff passed；真实会话事件线管道验证通过（1 comparable/2 not_comparable，claim_boundary 正确）；临时根已清理；criterion-samples 因载体不稳定未验证，如实记录不改写。
 change_log:
 - signature:
     product_name: DeepSeek Harness
@@ -128,19 +38,71 @@ change_log:
     agent_runtime_name:
   at: '2026-08-13T22:40:36.193839Z'
   summary: 受控创建 plan_version=1：承接 Spark ldvh@SFPVTZ 下一验证顺序第 3 步，以 session_comparability 可比性判定为门槛对规则精确读取任务族做等价复验；创建前已获 Human 对只读 subagent 复核的明确授权，等待独立方案复核与 Gate 1。
-creation_reviews:
-- reviewer: independent-subagent-reviewer
-  reviewed_at: '2026-08-13T22:40:22Z'
-  subject_version: 1
-  scope: 完整计划初态：goal/scope/5 success criteria/4 work items/execution_authorization（quality_gates + authorized_actions + reviewer_policy）/relations
-  conclusion: pass
-  covered_quality_gate_ids:
-  - independent-result-review
-  actual_method: subagent-read-only
-  actual_agent: subagent
-  actual_model: deepseek-v4-flash
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T22:46:46.006213Z'
+  summary: 按 Human 当次 Gate 1 批准写入 execution_approval（subject_version=1，baseline_fingerprint 绑定冻结基线），phase human_plan_confirming→executing，移除 Human waiting；保留 authorization、plan、items 与 creation reviews。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T22:49:13.852226Z'
+  summary: 4 work item 完成（runner/门槛/评分/管道验证），按 §6.3.3 AllTerminal 进入 controller_checking 写 result_version=1；criterion-samples 因真实 LLM 等价试跑载体不稳定（模型切换）标 not_verified，如实记录不虚构。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T22:49:26.591634Z'
+  summary: 完整 result_version=1 投影已形成并回读，按 §6.3.3 进入 independent_reviewing，写 Reviewer waiting；等待独立结果复核。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T22:52:17.049137Z'
+  summary: 独立结果复核 pass（feedback 空数组），在 independent_reviewing 内写入 result_reviews（绑定 result_version=1）；下一步推进 closure_preparing 形成关闭提案。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T22:52:29.270201Z'
+  summary: result_version=1 复核 pass 且 feedback 空、projection 未变，按 §6.3.3 进入 closure_preparing；开始形成关闭提案。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T22:53:07.230338Z'
+  summary: 在 closure_preparing 内整体写入完整关闭提案（proposed_outcome=partial，residual decision route_existing → Spark 019ffb52…，指纹绑定）；冻结 proposal 后进入 Human 关闭判断。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T22:53:21.018065Z'
+  summary: 完整关闭提案已冻结并回读（partial，residual route_existing → Spark 019ffb52…），按 §6.3.3 进入 human_closure_confirming，写 Human waiting；等待 Human Gate 2 关闭决定。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T23:05:57.359957Z'
+  summary: Human Gate 2 接受 partial 关闭；按 §6.7 原子关闭，proposal 逐值映射 closure_outcome/disposition_summary，residual route_existing → Spark 形成 routed-to；同目标 related-to 由 routed-to 覆盖。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-14T05:37:24.726975Z'
+  summary: 更正原关闭记录中 routed-to 目标的引用形状：将同一 Spark 目标从 legacy 三元组改为权威 UID；不改变责任对象、状态或关闭结果。
+closure_outcome: partial
+disposition_summary: 四项 success criterion（carrier/protocol/scoring/judgement）satisfied，形成稳定价值：等价复验 runner、session_comparability 可比性门槛集成与机器化评分管线已交付并验证；criterion-samples（真实 LLM 重复样本等价试跑）not_verified——当前执行载体不稳定（实测会话存在模型切换），无法保证同一模型/工具入口跨试次，按停止边界如实报告不确定。该项剩余责任 route_existing 至上游 open Spark ldvh@SFPVTZ。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffd18-bafe-714f-be81-257c1502b922
+- relation_key: routed-to
+  target:
+    object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
 object_uid: 019ffd48-d7b1-7bd4-abf2-3759fa544ba2
 object_id: workcase-01KZYMHNXHFFAAQWHQB7X58JX2
 fact_type_key: workcase
 created_at: '2026-08-13T22:40:36.193839Z'
-updated_at: '2026-08-13T22:40:36.193839Z'
+updated_at: '2026-08-14T05:37:24.726975Z'

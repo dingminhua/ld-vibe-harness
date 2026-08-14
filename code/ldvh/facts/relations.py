@@ -3,10 +3,10 @@
 from __future__ import annotations
 
 import re
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable, Literal
+from typing import Literal
 
 from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS, is_ignored_fact_type_root_entry, is_legacy_spark_object
 from ldvh.facts.identity import canonical_object_uid

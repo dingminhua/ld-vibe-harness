@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
-import re
 from typing import Literal
 
 from ldvh.facts.contracts import LAYOUTS
@@ -175,7 +175,11 @@ def _references(
         problems.extend(member_problems)
         if reference is None:
             continue
-        if isinstance(reference, FactReference) and governed_project_id is not None and reference.governed_project_id != governed_project_id:
+        if (
+            isinstance(reference, FactReference)
+            and governed_project_id is not None
+            and reference.governed_project_id != governed_project_id
+        ):
             problems.append(f"{prefix}.governed_project_id 必须等于 arguments.governed_project_id")
         if isinstance(reference, FactReference) and selected_types and reference.fact_type_key not in selected_types:
             problems.append(f"{prefix}.fact_type_key 必须位于 arguments.fact_type_keys")

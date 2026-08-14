@@ -4,9 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from ldvh.facts.models import FactIssue
 from ldvh.facts.creation import CreationBoundary
-from ldvh.facts.models import FactReference
+from ldvh.facts.models import FactIssue, FactReference
 from ldvh.facts.repository import FactReadResult
 from ldvh.facts.schema import FactSchema
 from ldvh.governance.resolver import GovernanceResolutionRun

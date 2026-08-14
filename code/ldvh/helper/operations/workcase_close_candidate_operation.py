@@ -116,7 +116,6 @@ def _execute(
     reference = resolved.reference
     if reference.fact_type_key != "workcase":
         raise OperationRequestError(("arguments.fact_ref 解析后的类型必须为 workcase",), sources=(_CONTRACT,))
-    project_id = resolved.boundary.governed_project_id
     root = resolved.boundary.worktree_root
     common_dir = resolved.boundary.git_common_dir
     schema = schemas.get("workcase")

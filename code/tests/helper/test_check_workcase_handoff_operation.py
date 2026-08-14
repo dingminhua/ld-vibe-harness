@@ -4,9 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from ldvh.facts.models import FactIssue
 from ldvh.facts.creation import CreationBoundary
-from ldvh.facts.models import FactReference
+from ldvh.facts.models import FactIssue, FactReference
 from ldvh.facts.repository import FactReadResult
 from ldvh.facts.schema import FactSchema
 from ldvh.governance.resolver import GovernanceResolutionRun
@@ -141,7 +140,12 @@ def test_operation_resolves_uid_reference_before_reading_workcase(monkeypatch) -
         ({"status": "open", "phase": "human_closure_confirming"}, True, "gate2_waiting", "human_gate_2"),
         ({"status": "closed"}, True, "closed", "none"),
         ({"status": "blocked", "phase": "executing"}, True, "blocked_at_current_position", "advance_current_work_item"),
-        ({"status": "open", "phase": "independent_reviewing"}, False, "controller_owned", "complete_independent_result_review"),
+        (
+            {"status": "open", "phase": "independent_reviewing"},
+            False,
+            "controller_owned",
+            "complete_independent_result_review",
+        ),
     ],
 )
 def test_operation_returns_the_exit_set_verdict(

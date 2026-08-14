@@ -1,0 +1,129 @@
+title: Helper 只读操作失败诊断结构化提示（STNORJ 承接）
+goal: 针对 Helper 只读操作（read-action-template-content、read-action-template-candidates、read-fact-objects、find-fact-object-candidates 等）失败路径（invalid_request 类）缺少自解释修正提示的问题，在现有 gaps/diagnostics 契约闭集内提供结构化、可据以修正的提示（缺失字段名、允许闭集、参数形状、最小示例），使 AI 依据提示即可修正请求，无需反复翻规范试调；不改变任何成功路径输出契约、写操作契约或规范源。
+scope: 仅修改 Helper 只读操作失败路径的诊断内容生成（code/ldvh/helper 下共同请求校验层与只读操作实现中 invalid_request 类响应的 gaps/diagnostics 内容），及对应测试。保证：不改变 gaps/diagnostics 字段闭集（04.Att.01）、不改变任何成功路径输出契约（06 §9.5/9.6、05 §11.2/§11.6）、不改变写操作（create/update/close/correct）契约或校验逻辑、不修改任何规范源（specs/ 与 specs/attachments/）、不修改事实对象 Schema/字段定义。排除：source_content 去重（06 §9.6 契约变更）与成功路径窄输出契约收缩——超出本 WC 授权，作为关闭时 follow_up 建议（需独立规范修订流程）；Git 提交/推送/发布；其它执行中 WorkCase 的事实文件。
+success_criterion_definitions:
+- criterion_id: criterion-structured-failure
+  statement: 只读操作失败路径（invalid_request 类）在现有 gaps/diagnostics 闭集内提供结构化修正提示（缺失字段名、允许闭集、参数形状或最小示例），AI 依据该提示即可修正请求而不必翻规范。
+- criterion_id: criterion-diagnostics-contract
+  statement: 改动不改变 gaps/diagnostics 字段闭集与 04.Att.01 契约语义，只增强诊断内容；既有调用方消费的字段与形状保持不变。
+- criterion_id: criterion-tests
+  statement: 聚焦测试覆盖常见失败类别（缺失字段、闭集外值、形状错误）的结构化提示输出；既有 helper 测试回归通过；Ruff 通过。
+- criterion_id: criterion-boundary
+  statement: 改动不触及成功路径输出契约、写操作契约/校验、事实对象 Schema/字段定义、规范源或 Git 流程；回归测试证明既有调用方必需字段未破坏。
+work_items:
+- item_id: item-structured-failure
+  goal: 只读操作失败路径提供结构化修正提示
+  expected_result: invalid_request 类响应的 gaps/diagnostics 包含缺失字段名、允许闭集、参数形状或最小示例；写操作输出保持不变
+  status: pending
+  approach_summary: 在只读操作失败响应路径（共同请求校验层对只读操作的消费）追加结构化修正提示；若共同校验层同时服务写操作，该层改动须保持写操作 invalid_request 输出不变或将只读分支独立，回归测试覆盖；不改 04.Att.01 字段闭集。
+- item_id: item-tests
+  goal: 编写/更新聚焦测试并跑通回归
+  expected_result: 新增覆盖测试通过；既有 helper 测试回归通过；Ruff 通过
+  status: pending
+  depends_on:
+  - item-structured-failure
+  approach_summary: 为常见失败类别（缺字段/闭集外值/形状错误）分别构造请求并断言结构化提示输出；复用既有 helper 测试设施。
+execution_authorization:
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-delegate-review
+    result_review_action_id: authorization-result-review
+  authorized_actions:
+  - action_id: authorization-modify-helper
+    summary: 修改 Helper 只读操作失败路径诊断内容生成（invalid_request 类 gaps/diagnostics 内容）
+    target_scope: code/ldvh/helper 下共同请求校验层与只读操作实现中失败诊断相关文件
+    effect_scope: workspace 内代码文件写入；不写 ldvh-base/ 事实载体；不改成功路径输出契约与写操作输出
+    risk_summary: 低风险；已检查范围：仅失败响应内容增强，不改变字段闭集与成功路径；以回归测试与字段保留核对控制
+    rollback_summary: 各改动点独立可回滚（git diff 反向）；不触碰既有事实与规则源；无已知不可回滚部分
+    rule_refs:
+    - specs/04-Helper CLI 服务规范.md
+    - specs/06-行动模板基础规范.md
+    - specs/05-事实模型基础规范.md
+  - action_id: authorization-modify-tests
+    summary: 新增/更新聚焦测试并运行 pytest 与 Ruff
+    target_scope: code/tests/helper/ 与 code/tests/specs/ 相关测试文件
+    effect_scope: workspace 内测试文件写入与本地测试运行
+    risk_summary: 低风险；已检查范围：仅改动 helper/specs 测试文件，不影响事实载体与写操作
+    rollback_summary: 删除/还原测试文件即可；无已知不可回滚部分
+    rule_refs:
+    - specs/07-Code 实践与测试规范.md
+    - specs/04-Helper CLI 服务规范.md
+    - specs/06-行动模板基础规范.md
+    - specs/05-事实模型基础规范.md
+  - action_id: authorization-delegate-review
+    summary: 委派只读 subagent 执行独立结果复核
+    target_scope: 本 WorkCase 的 result projection 与验证材料
+    effect_scope: 只读委派，不写事实
+    risk_summary: 低风险
+    rollback_summary: 无副作用
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-result-review
+    summary: 执行实际结果复核（subagent-read-only）并记录 result_reviews
+    target_scope: 本 WorkCase canonical result projection
+    effect_scope: 只读复核与 review 字段写入
+    risk_summary: 低风险
+    rollback_summary: 无副作用
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+  action_ceiling: 只授权上述 Helper 只读失败诊断实现与测试的本地修改及测试运行；不授权规范源（specs/ 与 specs/attachments/）任何修改、成功路径输出契约修改、写操作契约或校验逻辑修改、ldvh-base/ 事实写入（本 WC 自身受控写回除外）、Git commit/push/release。
+  prohibited_actions:
+  - Git commit/push/release
+  - ldvh-base/ 事实载体直写
+  - 修改任何只读操作的成功响应字段闭集（read-action-template-content / read-action-template-candidates / read-fact-objects / find-fact-object-candidates）
+  - 修改写操作（create/update/close/correct）契约或校验
+  - 修改规范源（specs/ 与 specs/attachments/）
+  - 修改事实对象 Schema 或字段定义
+  allowed_adjustments: 在各 item 内部调整实现细节、测试用例与诊断提示措辞；不改变 goal/scope/success criteria/action ceiling/禁止项
+  verification_and_rollback: 每个 item 完成后运行聚焦 pytest + Ruff；失败据实记录并返修，不强制改写；每次改动点可 git diff 反向回滚；无已知不可回滚部分
+  out_of_bounds_handling: 发现需要修改成功路径输出契约、规范源、写操作契约或超出 action ceiling 的需求（含 source_content 去重等 06 §9.6 契约变更）时，停止该动作、据实取消受影响 item 并进入结果链，作为 follow_up 建议保留，不扩权执行
+  reviewer_policy:
+    model: deepseek-v4-flash
+    collaboration_agent: none（本环境未提供协作 Worker 载体，使用 native subagent）
+    effort: medium
+    fast: true
+    preferred_method: subagent-read-only
+    fallback_order:
+    - subagent-read-only
+    - same-ai-switched-role-read-only
+    max_perspectives: 1
+    activation: Human 已在 2026-08-14 会话明确授权 native subagent 只读复核（reviewer-carrier 选择）
+    same_ai_limit: 仅当协作 Worker 与 subagent 均不可用且满足 21 §4.5 约束时启用；当前不适用
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-75f4-888d-2d7c6df0e8e2
+priority: P2
+status: open
+phase: human_plan_confirming
+plan_version: 1
+waiting_on: Human Gate1 decision on the complete plan and execution authorization baseline
+creation_reviews:
+- reviewer: subagent-readonly-reviewer-wc-stnorj-round3
+  reviewed_at: '2026-08-13T23:52:58Z'
+  subject_version: 1
+  scope: 完整计划初态：goal/scope/4 success criteria/2 work items/execution_authorization（quality_gates + 4 authorized_actions + reviewer_policy）/relations；按 21 §4.2-4.5/§5/§6、31 §5、04 §7/§11/§14(6)、05 §11.2/§11.6、06 §9.5-9.6、00 §10.1/§10.2 逐项复核；前两轮（changes_required ×2）feedback 已由 Controller 处置，收敛决策（source_content 去重移出）已确认。未覆盖：未运行 LDVH CLI；未验证 Human 授权真实性；相邻对象查重为标题扫描。
+  conclusion: pass_with_followups
+  feedback:
+  - prohibited_actions 成员『修改成功路径输出契约（06 §9.5/9.6、05 §11.2/§11.6）』内嵌规范章节数字引用，存在创建 Schema 校验拒绝风险。
+  - authorization-modify-tests.rule_refs=[specs/07, specs/04] 未回指被测试操作的具体契约源（06 §9.5/9.6、05 §11.2/§11.6）。
+  - reviewer_policy.collaboration_agent=none 表述是否被创建校验接受需确认（note）。
+  covered_quality_gate_ids:
+  - independent-result-review
+  actual_method: subagent-read-only
+  actual_agent: subagent-readonly-reviewer-wc-stnorj-round3
+  actual_model: deepseek-v4-flash
+  controller_resolution: Controller 已处置第三轮全部 followup：1) prohibited_actions 数字引用改写为无数字表述（『修改任何只读操作的成功响应字段闭集（read-action-template-content / read-action-template-candidates / read-fact-objects / find-fact-object-candidates）』）；2) authorization-modify-tests.rule_refs 已补 06/05；3) collaboration_agent 保留 none 描述并已获 Human 授权 subagent 复核的上下文支持，note 认可无动作。
+change_log:
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T23:53:40.088696Z'
+  summary: 受控创建 plan_version=1：承接 spark-0074「Helper 只读交互优化」（ldvh@STNORJ），聚焦只读操作失败诊断结构化提示；经 3 轮 native subagent 只读方案复核（末轮 pass_with_followups，followup 已处置），Human 已授权 subagent 复核载体并确认署名快照；等待 Gate 1。
+object_uid: 019ffd8b-bc41-7a76-83b9-f29dfea4581f
+object_id: workcase-01KZYRQF21F9V87EFJKQZA8P0Z
+fact_type_key: workcase
+created_at: '2026-08-13T23:53:40.088696Z'
+updated_at: '2026-08-13T23:53:40.088696Z'

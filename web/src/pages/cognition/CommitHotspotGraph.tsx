@@ -4,7 +4,7 @@ import PriorityIcon from '@/components/PriorityIcon';
 import StatusBadge from '@/components/StatusBadge';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import { useI18n } from '@/i18n/context';
-import { getFieldLabel, getLocalizedObjectTitle, getObjectStatusLocale, type LocaleKey } from '@/i18n/locales';
+import { getFieldLabel, getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel, type LocaleKey } from '@/i18n/locales';
 import { usePanel } from '@/utils/panelContext';
 import type {
   CognitionRecentHotspotCluster,
@@ -199,8 +199,8 @@ function useMeasuredWidth(ref: React.RefObject<HTMLDivElement | null>): number |
 function compactLayout(items: RelatedWork[], availableWidth?: number): DiagramLayout {
   const width = Math.max(120, availableWidth ?? 460);
   const horizontalPadding = 8;
-  const primarySize = { width: Math.max(96, width - horizontalPadding * 2), height: 120 };
-  const relatedSize = { width: primarySize.width * 0.75, height: 120 };
+  const primarySize = { width: Math.max(96, width - horizontalPadding * 2), height: 108 };
+  const relatedSize = { width: primarySize.width * 0.75, height: 108 };
   const primaryPosition = { x: width / 2, y: primarySize.height / 2 + 8 };
   const firstRelatedY = primaryPosition.y + primarySize.height / 2 + 26 + relatedSize.height / 2;
   const rowGap = relatedSize.height + 14;
@@ -239,8 +239,8 @@ function expandedLayout(items: RelatedWork[], availableWidth?: number): DiagramL
   const width = Math.max(120, availableWidth ?? 1000);
   if (width < 900) {
     const horizontalPadding = Math.min(20, width * 0.04);
-    const primarySize = { width: Math.max(96, width - horizontalPadding * 2), height: 156 };
-    const relatedSize = { width: primarySize.width * 0.75, height: 152 };
+    const primarySize = { width: Math.max(96, width - horizontalPadding * 2), height: 136 };
+    const relatedSize = { width: primarySize.width * 0.75, height: 132 };
     const primaryPosition = { x: width / 2, y: primarySize.height / 2 + 12 };
     const firstRelatedY = primaryPosition.y + primarySize.height / 2 + 30 + relatedSize.height / 2;
     const rowGap = relatedSize.height + 18;
@@ -260,12 +260,12 @@ function expandedLayout(items: RelatedWork[], availableWidth?: number): DiagramL
       })),
     };
   }
-  const primarySize = { width: Math.max(320, width * 0.36), height: 166 };
-  const relatedSize = { width: primarySize.width * 0.75, height: 152 };
+  const primarySize = { width: Math.max(320, width * 0.36), height: 144 };
+  const relatedSize = { width: primarySize.width * 0.75, height: 132 };
   const { left, right } = splitMindMapSides(items);
   const maxSideCount = Math.max(left.length, right.length, 1);
-  const rowGap = 172;
-  const height = Math.max(420, (maxSideCount - 1) * rowGap + 250);
+  const rowGap = 150;
+  const height = Math.max(370, (maxSideCount - 1) * rowGap + 220);
   const primaryPosition = { x: width / 2, y: height / 2 };
   const sideInset = relatedSize.width / 2 + 22;
   const yPositions = (count: number) => {
@@ -295,7 +295,7 @@ function HotspotRelationLegend({ relationKeys }: { relationKeys: string[] }) {
     <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-x-3 gap-y-1">
         <span className="inline-flex items-center gap-1.5 ldvh-caption text-ldvh-text-secondary">
           <span
-            className="inline-flex items-center justify-center gap-1 rounded-full border border-ldvh-accent/25 bg-ldvh-accent/5 px-1.5 py-0.5 text-[11px] font-medium text-ldvh-accent"
+            className="ldvh-chip inline-flex h-[18px] items-center justify-center gap-1 rounded-md border border-ldvh-accent/25 bg-ldvh-accent/5 px-[5px] text-[10px] font-medium leading-3 text-ldvh-accent"
             aria-hidden="true"
           >
             <History size={12} />
@@ -405,6 +405,8 @@ function HotspotNodeCard({
   const roleLabel = t(`cognition.commitHotspots.nodeRole.${role}` as LocaleKey);
   const primary = role === 'primary';
   const expanded = mode === 'expanded';
+  const titleFontSize = primary ? (expanded ? 18 : 16) : 14;
+  const titleIconSize = titleFontSize;
 
   return (
     <button
@@ -427,35 +429,43 @@ function HotspotNodeCard({
         borderTopWidth: primary ? 3 : 2,
       }}
     >
-      <div className={`flex h-full min-w-0 flex-col items-center justify-center px-3 py-2.5 ${expanded ? 'gap-2' : 'gap-1'}`}>
-        <div data-hotspot-node-header className="flex min-w-0 shrink-0 items-center justify-center gap-1.5">
-          <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center">
-            <ObjectTypeIcon type={node.type} size={primary ? 18 : (expanded ? 18 : 16)} style={{ color: node.typeColor }} />
-          </span>
-          {node.short_ref && <code className="ldvh-meta-muted shrink-0">{node.short_ref}</code>}
-          <PriorityIcon source={node} type={node.type} locale={locale} size="sm" />
-        </div>
-        <div className="flex min-w-0 w-full items-start justify-center text-center">
+      <div className="flex h-full min-w-0 flex-col items-center justify-center gap-2 px-3 py-2.5">
+        <div data-hotspot-node-header className="flex min-w-0 shrink-0 flex-wrap items-center justify-center gap-x-2 gap-y-1">
           <span
-            data-hotspot-node-title
-            title={title}
-            className={`block min-w-0 max-w-full overflow-hidden break-words text-center text-ldvh-text-primary ${primary ? (expanded ? 'text-lg font-semibold leading-6' : 'text-base font-semibold leading-[22px]') : 'text-sm font-medium leading-5'}`}
-            style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: expanded ? 3 : 2 }}
+            className="ldvh-chip inline-flex h-[18px] shrink-0 items-center justify-center rounded-md border px-1.5 text-[10px] font-medium leading-3"
+            style={{ backgroundColor: `${node.typeColor}18`, borderColor: `${node.typeColor}55`, color: node.typeColor }}
           >
-            {title}
+            {getTypeLabel(node.type, locale)}
           </span>
-        </div>
-        <div data-hotspot-node-meta className="mt-0.5 flex min-w-0 flex-wrap items-center justify-center gap-x-1.5 gap-y-0.5">
+          <PriorityIcon source={node} type={node.type} locale={locale} size="xs" />
           {node.activityRefs.length > 0 && (
             <span
-              className="inline-flex shrink-0 items-center justify-center gap-1 rounded-full border border-ldvh-accent/25 bg-ldvh-accent/5 px-1.5 py-0.5 text-[11px] font-medium text-ldvh-accent"
+              className="ldvh-chip inline-flex h-[18px] shrink-0 items-center justify-center gap-1 rounded-md border border-ldvh-accent/25 bg-ldvh-accent/5 px-[5px] text-[10px] font-medium leading-3 text-ldvh-accent"
               title={t('cognition.commitHotspots.commitRefs')}
             >
               <History size={12} aria-hidden="true" />
               {node.activityRefs.length}
             </span>
           )}
-          {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(node.type, status, locale)} objectType={node.type} size="sm" />}
+          {status && <StatusBadge status={status} statusLabel={getObjectStatusLocale(node.type, status, locale)} objectType={node.type} size="xs" variant="compact" />}
+        </div>
+        <div className="ldvh-object-title-tray flex min-w-0 w-full items-center justify-center px-3 py-2 text-center">
+          <div className="inline-grid min-w-0 max-w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-2">
+            <ObjectTypeIcon
+              type={node.type}
+              size={titleIconSize}
+              className="shrink-0"
+              style={{ color: node.typeColor }}
+            />
+            <span
+              data-hotspot-node-title
+              title={title}
+              className={`block min-w-0 max-w-full overflow-hidden break-words text-center text-ldvh-text-primary ${primary ? (expanded ? 'text-lg font-semibold leading-6' : 'text-base font-semibold leading-[22px]') : 'text-sm font-medium leading-5'}`}
+              style={{ display: '-webkit-box', WebkitBoxOrient: 'vertical', WebkitLineClamp: expanded ? 3 : 2 }}
+            >
+              {title}
+            </span>
+          </div>
         </div>
       </div>
     </button>

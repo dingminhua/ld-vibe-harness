@@ -1,0 +1,44 @@
+title: correct-closed-workcase 在真实项目环境触发 NameError
+intent: correct-closed-workcase 公开操作在真实受管辖项目上执行 closed 终态更正时抛出 NameError（诊断 exception_type=NameError），操作零写入且无法形成可信结果。若不跨行动保留此问题，后续对 closed WorkCase 的终态更正（如把 legacy 形状 routed-to 修正为 UID 形状）会反复失败，且难以定位是操作本身缺陷、请求结构问题还是环境差异。
+status: implemented
+summary: "## 当前结论\n\n- `correct-closed-workcase` 在真实受管辖项目中触发 `NameError` 的问题已经定位并修复：执行实现缺少 `RouteTargetFingerprint` 的运行时导入。\n- 修复后的真实 closed WorkCase 更正已成功执行：同一 Spark 目标的 `routed-to` 引用从 legacy 三元组更正为权威 UID；CAS、写后回读和全库机械完整性审计均通过。\n- 该 Spark 的问题入口已完成落实；这不表示相关 WorkCase 的业务结果、项目整体或其它下游工作完成。"
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffd48-d7b1-7bd4-abf2-3759fa544ba2
+change_log:
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T23:16:54.588315Z'
+  summary: 受控创建 Spark：记录 correct-closed-workcase 真实项目环境 NameError Code bug 及排查边界（请求结构/工作区改动/既有测试均已排除），保留待定位修复。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T23:17:08.634088Z'
+  summary: 创建后追加首条 evolution：说明本 Spark 起点（NameError Code bug 的记录与排查边界）。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-13T23:39:43.988778Z'
+  summary: 受控更新：按 spark 事实类型规范修正内容——intent 删除开头操作措辞；summary 将代码文件路径、测试文件名与代码符号改写为自然语言证据描述（§7 不记录 locator）。对象身份与 status 不变。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-14T05:37:59.398486Z'
+  summary: 受控处置：NameError 修复已完成，真实 closed WorkCase UID route-target 更正及写后完整性验证通过；Spark 进入 implemented。
+evolution:
+- at: '2026-08-13T23:17:08Z'
+  summary: 记录 correct-closed-workcase 在真实项目环境抛 NameError 的 Code bug：发生在 closed 终态更正（legacy→UID routed-to）尝试中，零写入；前置机械校验通过、隔离 core 测试通过，推断为真实环境 UID 索引相关 Code 缺陷，待后续定位修复。
+- at: '2026-08-14T05:37:59.184Z'
+  summary: 真实受管辖项目的 closed WorkCase 更正已在修复后成功完成并通过回读与完整性审计，确认该 NameError 问题已落实；该 Spark 由 open 进入 implemented。
+disposition_summary: 已直接落实 correct-closed-workcase 真实项目 NameError 的 Code 修复，并完成一次真实 closed WorkCase UID route-target 更正及写后机械验证；本处置只结束 SKFCPV 的问题入口，不表示 WorkCase、项目或下游工作完成。
+object_uid: 019ffd6a-150c-7205-a3bd-139181d25dbc
+object_id: spark-01KZYPM58CE82T7F8KJ60X4QDW
+fact_type_key: spark
+created_at: '2026-08-13T23:16:54.588315Z'
+updated_at: '2026-08-14T05:37:59.398486Z'

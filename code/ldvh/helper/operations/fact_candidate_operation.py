@@ -14,8 +14,8 @@ from ldvh.facts.candidate_discovery import discover_fact_candidates
 from ldvh.facts.configuration_index import ConfigurationFactEntry, ConfigurationFactIndex
 from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS
 from ldvh.facts.identity import canonical_object_uid, short_reference
-from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.models import FactReference, StableFactReference, UIDFactReference
+from ldvh.facts.project_validation import stabilize_project_index
 from ldvh.facts.repository import FactReadResult
 from ldvh.facts.schema import project_fact_schemas
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
@@ -127,7 +127,16 @@ _WORKCASE_F2_CLOSED_FIELDS = (
 )
 _F2_FIELDS = {
     "spark": ("object_uid", "object_id", "title", "status", "priority", "updated_at"),
-    "adr": ("object_uid", "object_id", "title", "status", "decision_question", "decision", "applicability", "updated_at"),
+    "adr": (
+        "object_uid",
+        "object_id",
+        "title",
+        "status",
+        "decision_question",
+        "decision",
+        "applicability",
+        "updated_at",
+    ),
     "pitfall": (
         "object_uid",
         "object_id",
@@ -421,7 +430,6 @@ def _source_filter_reasons(
     """Evaluate all post-resolution F2 conditions for one source-edge target."""
 
     fact_type_key = fields["fact_type_key"]
-    object_id = fields["object_id"]
     status = fields.get("status")
     filtered: list[str] = []
     matched: list[dict[str, object]] = []
@@ -635,7 +643,6 @@ def _reasons(
     configuration_index: ConfigurationFactIndex | None = None,
 ) -> list[dict[str, object]] | None:
     fact_type_key = fields["fact_type_key"]
-    object_id = fields["object_id"]
     status = fields.get("status")
     if domain.card_layer == "F1":
         if fact_type_key not in _F1_FIELDS:
@@ -697,7 +704,6 @@ def _card(
     reasons: list[dict[str, object]],
 ) -> dict[str, object]:
     assert read.fields is not None
-    object_id = read.fields["object_id"]
     if fact_type_key == "workcase":
         projection = (
             _WORKCASE_F2_CLOSED_FIELDS
@@ -948,7 +954,13 @@ def _execute(
                     "fact_ref": domain.current_workcase_ref.to_json(),
                     "canonical_path": None,
                     "check_status": "invalid" if current_status in {"duplicate", "invalid"} else current_status,
-                    "issues": [{"category": "reference", "field_path": "current_workcase_ref", "summary": f"引用解析状态为 {current_status}"}],
+                    "issues": [
+                        {
+                            "category": "reference",
+                            "field_path": "current_workcase_ref",
+                            "summary": f"引用解析状态为 {current_status}",
+                        }
+                    ],
                 }
             )
     selected_index = next(

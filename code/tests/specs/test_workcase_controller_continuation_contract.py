@@ -179,7 +179,11 @@ def test_template_legal_exits_equal_the_derived_handoff_allowed_set() -> None:
         if derive_workcase_presentation(status, phase, FINGERPRINT)["handoff_allowed"] is True
     }
     # 安全出口：closed、真实 blocked 全部、gate1_waiting、gate2_waiting。
-    assert {("closed", None), ("open", "human_plan_confirming"), ("open", "human_closure_confirming")} <= resolved_allowed
+    assert {
+        ("closed", None),
+        ("open", "human_plan_confirming"),
+        ("open", "human_closure_confirming"),
+    } <= resolved_allowed
     for status in ("open", "blocked"):
         for phase in PHASE_PRESENTATION:
             if status == "blocked":

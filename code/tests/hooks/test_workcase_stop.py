@@ -9,8 +9,8 @@ from ldvh.hooks.workcase_stop import (
     HandoffVerdict,
     HookDecision,
     WorkCaseBinding,
-    decide,
     binding_path,
+    decide,
     evaluate,
     main,
     parse_binding,
@@ -54,8 +54,12 @@ def test_parse_binding_only_accepts_an_exact_workcase_binding() -> None:
     assert parse_binding(None) is None
     assert parse_binding("not-json") is None
     assert parse_binding(json.dumps({"governed_project_id": "sample"})) is None
-    assert parse_binding(json.dumps({"governed_project_id": "sample", "fact_type_key": "spark", "object_id": "spark-1"})) is None
-    assert parse_binding(json.dumps({"governed_project_id": "sample", "fact_type_key": "workcase", "object_id": "workcase-invalid"})) is None
+    assert parse_binding(
+        json.dumps({"governed_project_id": "sample", "fact_type_key": "spark", "object_id": "spark-1"})
+    ) is None
+    assert parse_binding(
+        json.dumps({"governed_project_id": "sample", "fact_type_key": "workcase", "object_id": "workcase-invalid"})
+    ) is None
     assert parse_binding(BINDING_JSON) == BINDING
 
 
@@ -75,7 +79,11 @@ def test_session_binding_path_is_exact_and_malformed_files_fail_open(tmp_path: P
 def test_decide_fails_open_without_binding_or_verdict() -> None:
     assert decide(parse_stop_input(_stop()), None, None) == HookDecision("continue")
     assert decide(parse_stop_input(_stop()), BINDING, None) == HookDecision("continue")
-    assert decide(parse_stop_input(_stop(active=True)), BINDING, HandoffVerdict(False, "controller_owned", "advance_current_work_item")) == HookDecision("continue")
+    assert decide(
+        parse_stop_input(_stop(active=True)),
+        BINDING,
+        HandoffVerdict(False, "controller_owned", "advance_current_work_item"),
+    ) == HookDecision("continue")
 
 
 def test_decide_blocks_only_controller_owned_verdicts() -> None:

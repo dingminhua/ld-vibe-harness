@@ -26,6 +26,11 @@
     @apply min-h-11 rounded-md border border-ldvh-border/45 bg-ldvh-bg/40;
   }
 
+  /* The list-card title remains a 14px line, so its tray uses the matching compact rhythm. */
+  .ldvh-object-title-tray-compact {
+    @apply min-h-9 py-1.5;
+  }
+
   .ldvh-card-title-prominent {
     @apply text-base font-semibold leading-6 text-ldvh-text-primary;
   }
