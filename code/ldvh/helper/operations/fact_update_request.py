@@ -11,7 +11,6 @@ from ldvh.facts.contracts import WRITABLE_FACT_TYPE_KEYS
 from ldvh.facts.models import FactReference, StableFactReference
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
-from ldvh.helper.operations.fact_creation_request import observed_signature_injection_problems
 from ldvh.helper.operations.fact_reference_support import parse_stable_fact_reference
 from ldvh.helper.requests import CommonRequest
 
@@ -86,9 +85,6 @@ def parse_fact_update_request(
     if not isinstance(fact_object, dict):
         problems.append("arguments.fact_object 必须是 object")
         fact_object = {}
-    if isinstance(fact_object, dict):
-        if not isinstance(fact_ref, FactReference) or fact_ref.fact_type_key != "workcase":
-            problems.extend(observed_signature_injection_problems(request.observed_context, fact_object))
     if request.requested_disclosure is not None:
         problems.append("requested_disclosure 对事实对象更新操作必须为 null 或省略")
     if problems:

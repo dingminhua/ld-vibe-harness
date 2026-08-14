@@ -385,7 +385,7 @@ def test_uid_object_update_rejects_caller_supplied_uid_without_writing(tmp_path:
 def test_observed_partial_signature_and_session_survive_real_generic_update_schema_validation(
     tmp_path: Path,
 ) -> None:
-    workspace, project, _ = _fixture(tmp_path)
+    workspace, project, fact = _fixture(tmp_path)
     before = _read(workspace, project)
     target = _mutable(before)
     target["summary"] = "After observed signature update"
@@ -396,7 +396,7 @@ def test_observed_partial_signature_and_session_survive_real_generic_update_sche
     payload["observed_context"] = {
         "signature": {
             "product_name": "test",
-            "model_name": "gpt-5.6-luna",
+            "model_name": None,
             "agent_runtime_name": "pytest",
         }
     }
@@ -409,12 +409,47 @@ def test_observed_partial_signature_and_session_survive_real_generic_update_sche
     newest = response["result"]["fact_object"]["change_log"][-1]
     assert newest["signature"] == {
         "product_name": "test",
-        "model_name": "gpt-5.6-luna",
+        "model_name": None,
         "agent_runtime_name": "pytest",
     }
     assert "session_id" not in newest
     reread = _read(workspace, project)
     assert reread["check_status"] == "mechanically_valid"
+
+    bytes_before_unavailable = fact.read_bytes()
+    unavailable_target = _mutable(reread)
+    unavailable_target["summary"] = "This update must remain unavailable."
+    _append_update_log(unavailable_target)
+    unavailable_signatures = (
+        {
+            "product_name": None,
+            "model_name": None,
+            "agent_runtime_name": None,
+        },
+        {"product_name": "test"},
+        {
+            "product_name": "test",
+            "model_name": None,
+            "agent_runtime_name": "pytest",
+            "unknown": "not-allowed",
+        },
+    )
+    for unavailable_signature in unavailable_signatures:
+        unavailable_payload = json.loads(
+            _update_payload(
+                workspace,
+                project,
+                reread["content_fingerprint"],
+                unavailable_target,
+            )
+        )
+        unavailable_payload["observed_context"] = {"signature": unavailable_signature}
+        unavailable = handle_request(
+            "call", "update-fact-object", json.dumps(unavailable_payload)
+        ).response
+        assert unavailable["outcome"] == "unavailable"
+        assert unavailable["changes"] == []
+        assert fact.read_bytes() == bytes_before_unavailable
 
 
 def test_update_reports_the_independent_post_write_integrity_audit(tmp_path: Path) -> None:

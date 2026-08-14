@@ -601,7 +601,7 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
     create_payload["observed_context"] = {
         "signature": {
             "product_name": "Cindy",
-            "model_name": "gpt-5.6-luna",
+            "model_name": None,
             "agent_runtime_name": "codex-cli",
         }
     }
@@ -614,7 +614,7 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
     created_log = created_object["change_log"][-1]
     assert created_log["signature"] == {
         "product_name": "Cindy",
-        "model_name": "gpt-5.6-luna",
+        "model_name": None,
         "agent_runtime_name": "codex-cli",
     }
     assert "session_id" not in created_log
@@ -665,7 +665,7 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
                 "observed_context": {
                     "signature": {
                         "product_name": "Cindy",
-                        "model_name": "gpt-5.6-luna",
+                        "model_name": None,
                         "agent_runtime_name": "codex-cli",
                     }
                 },
@@ -676,7 +676,7 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
     updated_log = updated["result"]["fact_object"]["change_log"][-1]
     assert updated_log["signature"] == {
         "product_name": "Cindy",
-        "model_name": "gpt-5.6-luna",
+        "model_name": None,
         "agent_runtime_name": "codex-cli",
     }
     assert "session_id" not in updated_log
@@ -694,6 +694,94 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
         ),
     ).response["result"]["items"][0]
     assert reread["check_status"] == "mechanically_valid"
+
+    target_path = project / reread["canonical_path"]
+    bytes_before_unavailable = target_path.read_bytes()
+    unavailable_target = deepcopy(reread["fact_object"])
+    for key in ("object_uid", "object_id", "fact_type_key", "created_at", "updated_at"):
+        unavailable_target.pop(key)
+    unavailable_target["summary"] = "This update must not be written without any observable signer field."
+    unavailable_target["change_log"].append(
+        {
+            "signature": {
+                "product_name": "Placeholder Product",
+                "model_name": "placeholder-model",
+                "agent_runtime_name": "placeholder-runtime",
+            },
+            "at": datetime.now().astimezone().isoformat(),
+            "summary": "Attempt an update with a wholly unavailable signer snapshot.",
+        }
+    )
+    unavailable_signatures = (
+        {
+            "product_name": None,
+            "model_name": None,
+            "agent_runtime_name": None,
+        },
+        {"product_name": "Cindy"},
+        {
+            "product_name": "Cindy",
+            "model_name": None,
+            "agent_runtime_name": "codex-cli",
+            "unknown": "not-allowed",
+        },
+    )
+    for unavailable_signature in unavailable_signatures:
+        unavailable = handle_request(
+            "call",
+            "update-workcase",
+            json.dumps(
+                {
+                    "work_object_locators": [str(project)],
+                    "arguments": {
+                        "workspace_root": str(workspace),
+                        "fact_ref": reference,
+                        "expected_content_fingerprint": reread["content_fingerprint"],
+                        "fact_object": unavailable_target,
+                    },
+                    "observed_context": {"signature": unavailable_signature},
+                }
+            ),
+        ).response
+        assert unavailable["outcome"] == "unavailable", json.dumps(unavailable, ensure_ascii=False, indent=2)
+        assert unavailable["changes"] == []
+        assert target_path.read_bytes() == bytes_before_unavailable
+
+
+@pytest.mark.parametrize(
+    "unavailable_signature",
+    [
+        {
+            "product_name": None,
+            "model_name": None,
+            "agent_runtime_name": None,
+        },
+        {"product_name": "Cindy"},
+        {
+            "product_name": "Cindy",
+            "model_name": None,
+            "agent_runtime_name": "codex-cli",
+            "unknown": "not-allowed",
+        },
+    ],
+)
+def test_create_rejects_unavailable_signature_shapes_without_writing(
+    tmp_path: Path,
+    unavailable_signature: dict[str, object],
+) -> None:
+    workspace, project = _fixture(tmp_path)
+    basis = _prepare(workspace, project, "spark")
+    payload = json.loads(_create_payload(workspace, project, basis, _spark()))
+    payload["observed_context"] = {"signature": unavailable_signature}
+    yaml_paths_before = tuple(project.rglob("*.yaml"))
+
+    response = handle_request(
+        "call", "create-fact-object", json.dumps(payload)
+    ).response
+
+    assert response["outcome"] == "invalid_request"
+    assert response["changes"] == []
+    assert tuple(project.rglob("*.yaml")) == yaml_paths_before
 
 
 def test_prepare_has_no_canonical_side_effect_and_create_injects_managed_fields(tmp_path: Path) -> None:

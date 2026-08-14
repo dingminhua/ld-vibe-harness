@@ -389,7 +389,7 @@ def test_empty_locators_use_actual_cwd_and_requests_are_immutable() -> None:
         parsed.request.base = Path("/changed")  # type: ignore[misc]
 
 
-def test_common_operation_restrictions_are_enforced() -> None:
+def test_common_operation_restrictions_and_signature_availability_routing_are_enforced() -> None:
     observed = _parse(
         parse_update_workcase_request,
         _request(_arguments(), observed_context={"tool": "output"}),
@@ -403,7 +403,8 @@ def test_common_operation_restrictions_are_enforced() -> None:
         _request(_arguments(), locators=({"path": "/workspace"},)),
     )
 
-    assert observed.request is None
+    assert isinstance(observed.request, UpdateWorkCaseRequest)
+    assert observed.problems == ()
     assert disclosure.request is None
     assert object_locator.request is None
 

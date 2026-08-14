@@ -424,6 +424,19 @@ def test_signature_footer_requires_at_least_one_current_signature_field(contract
     assert with_retired_legacy_trailer.outcome == "failed"
     assert "legacy_signature_trailer_retired" in _codes(with_retired_legacy_trailer)
 
+    with_one_observable_field = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "docs: 记录部分可观察署名\n\n"
+                "关键变更:\n- 仅写入当次可观察的署名字段\n\n"
+                "LDVH-Product-Name: Cindy"
+            ),
+        ),
+    )
+    assert with_one_observable_field.outcome == "passed"
+
 
 def test_new_signature_trailers_are_canonical_footer(contract: CommitContractProjection) -> None:
     """当前 LDVH 三字段 footer 直接通过。"""
