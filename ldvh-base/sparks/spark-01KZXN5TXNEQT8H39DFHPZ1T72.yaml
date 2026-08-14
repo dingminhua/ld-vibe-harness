@@ -2,7 +2,7 @@ title: Helper 只读交互优化
 status: open
 priority: P2
 intent: 承接 spark-0019 路由的模板内容重复传输问题（read-action-template-content 同时返回 content 与 source_content），以及更广泛的 Helper 只读操作（read-action-template-candidates、read-fact-objects、find-fact-object-candidates 等）的窄输出、自解释性和 AI 可消费性优化。后续需判断哪些只读操作的输出可以收缩为正常路径最窄定义、完整来源按需展开，以及失败诊断能否给出结构化修正提示。
-summary: "## 来源\n\n- 从 spark-0019 路由：read-action-template-content 正常成功响应同时返回模板定义 content 与包含同一内容的完整 source_content，造成规则重复传输、输出膨胀和上下文占用。\n- 更广泛的只读操作也存在类似问题：成功路径输出过多无关信息，失败路径缺少自解释修正提示。\n\n## 相关 Study\n\n- study-0030 建议一：先建设双源共用的只读编辑辅助（精确局部读取、候选 diff、范围保持证据、stale 反馈），不改变写权限。\n\n## 范围\n\n- 只影响 Helper 只读操作的输出契约与 AI 可消费性，不改变写操作、Git 提交或校验逻辑。\n- 正常成功路径只返回完成行动所需的最窄定义，完整来源保留为按需展开。\n- 不包括规范源或事实源的直接编辑能力（由 study-0030 另行评估）。\n\n## 排除\n\n- 不改变写操作（create、update、close、correct）的契约或校验。\n- 不改变事实对象的 Schema 或字段定义。\n- 不引入新的公开操作、持久缓存或第二权威。\n\n## 当前承接状态\n\n- 失败诊断结构化提示部分已由 WorkCase（workcase-01KZYRQF21F9V87EFJKQZA8P0Z「Helper 只读操作失败诊断结构化提示」，承接自本 Spark）完成：只读操作 invalid_request 类响应在 diagnostics[0].details.hints 提供 missing_required_inputs / allowed_inputs / minimal_examples，写操作与其它失败路径不变；helper 全量回归 533 passed / 5 skipped。\n- source_content 去重与成功路径窄输出契约收缩（06 §9.6 契约变更）仍为本 Spark 待承接部分：read-action-template-content 成功响应仍同时返回 content 与完整 source_content，造成重复传输与输出膨胀；需独立规范修订流程后由新 WorkCase 承接。"
+summary: "## 来源与原始范围\n\n- 本议题承接行动模板内容重复传输，以及更广泛 Helper 只读操作的正常路径输出、自解释性与 AI 可消费性问题。\n- 相关 Study 对局部读取、候选 diff、范围保持证据和 stale 反馈的建议仍只作为相邻输入，不扩大本 Spark 为规则源或事实源编辑能力。\n\n## 已完成承接\n\n- **失败诊断结构化提示**已由 workcase-01KZYRQF21F9V87EFJKQZA8P0Z 完成：只读操作 `invalid_request` 响应能够提供结构化修正提示；该结果不代表其它失败类别或成功路径均已优化。\n- **行动模板成功响应去重**已由 workcase-01KZZV6XHTE3YBEF25F0SZJKV0 完成：`read-action-template-content` 不再返回完整 `source_content`，正常路径保留包含行动步骤、Human Gate 与 Stop Conditions 的最小执行包；需要完整同源规范时复用 `read-specification-content` L4，并以来源路径和摘要核对。该 WorkCase 已 closed/completed，但不表示所有 Helper 只读操作均已收缩。\n\n## 当前剩余范围\n\n- 对 `read-fact-objects`、`find-fact-object-candidates` 等其它只读操作，先以真实任务证据识别具体的过量、重复或不可消费字段；没有实证缺口时不做统一删减。\n- 每个候选改动应分别回答：当前行动必需字段是什么、完整内容如何按需取得、来源身份如何核对、失败时如何继续，以及是否保持当前语义与机械验证边界。\n- 使用已建立的最小执行证据与可比性门槛复验响应体积、工具往返和首次合法行动率；没有受控对照与重复样本时，只报告链路可用性，不宣称因果改善。\n\n## 边界与保持 open 的原因\n\n- 不改变写操作、事实 Schema、Git 流程，不引入缓存、第二权威或仅为缩短响应而删除当前行动必需语义。\n- 行动模板去重这一具体子项已经完成，但更广泛只读操作尚无逐操作的稳定承接位置与证据化候选，因此本 Spark 保持 `open`。"
 relations:
 - relation_key: related-to
   target:
@@ -35,11 +35,19 @@ change_log:
     agent_runtime_name:
   at: '2026-08-14T08:17:46.278955Z'
   summary: content_update：更新 summary 记录当前承接状态（失败诊断部分已由 WorkCase workcase-01KZYRQF21F9V87EFJKQZA8P0Z 完成，source_content 去重与窄输出收缩仍待承接）；追加 evolution 说明焦点收敛变化；本 Spark 保持 open。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T21:55:58.382994Z'
+  summary: content_update：归并已完成的失败诊断与行动模板成功响应去重承接，明确剩余范围为有实证缺口的其它只读操作逐项判断，并保持 Spark open。
 evolution:
 - at: '2026-08-14T08:17:37.600000Z'
   summary: 本 Spark 的失败诊断结构化提示子问题已由 WorkCase workcase-01KZYRQF21F9V87EFJKQZA8P0Z承接并完成（invalid_request 类 hints 已交付），本 Spark 保持 open 的焦点收敛为剩余未承接部分：read-action-template-content 等成功路径 source_content 与 content 去重、窄输出契约收缩（06 §9.6 变更）。
+- at: '2026-08-14T21:55:58.174286Z'
+  summary: 行动模板成功响应去重已由专门 WorkCase 完成，议题焦点由该具体重复传输问题收敛为：仅对有真实任务证据的其它只读操作逐项判断窄输出，不再把全部只读响应视为同一未完成改造。
 object_uid: 019ffb52-ebb5-75f4-888d-2d7c6df0e8e2
 object_id: spark-01KZXN5TXNEQT8H39DFHPZ1T72
 fact_type_key: spark
 created_at: '2026-08-12T20:24:37.099438Z'
-updated_at: '2026-08-14T08:17:46.278955Z'
+updated_at: '2026-08-14T21:55:58.382994Z'
