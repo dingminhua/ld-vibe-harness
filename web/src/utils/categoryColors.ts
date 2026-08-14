@@ -1,15 +1,18 @@
 import { getCategoryLabel } from '../i18n/locales.ts';
 
-/** Conventional commit 分类颜色映射 */
+/**
+ * 类型色与状态色分开：五类事实对象各占一个固定色相，便于跨列表、详情和图表识别。
+ * Conventional commit 分类沿用下方的独立映射，不参与事实对象配色。
+ */
 export const CATEGORY_COLORS: Record<string, string> = {
-  workcase: '#0ea5e9',
-  adr: '#a855f7',
-  pitfall: '#ef4444',
-  spark: '#eab308',
-  study: '#06b6d4',
+  workcase: '#3b82f6', // blue
+  adr: '#a855f7',     // purple
+  pitfall: '#ef4444', // red
+  spark: '#eab308',   // amber
+  study: '#14b8a6',   // teal
   feat: '#3b82f6',      // blue
   fix: '#ef4444',       // red
-  docs: '#6b7280',      // gray
+  docs: '#6366f1',      // indigo
   style: '#a855f7',     // purple
   refactor: '#06b6d4',  // cyan
   test: '#eab308',      // yellow

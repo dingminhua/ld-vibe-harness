@@ -26,12 +26,14 @@ function CommitFilterGroup({
   activeValue,
   onChange,
   getLabel,
+  getOptionColor,
 }: {
   allLabel: string;
   options: string[];
   activeValue: string | null;
   onChange: (value: string | null) => void;
   getLabel: (value: string) => string;
+  getOptionColor?: (value: string) => string | undefined;
 }) {
   return (
     <div className="ldvh-tab-list min-w-0">
@@ -47,6 +49,7 @@ function CommitFilterGroup({
           key={option}
           type="button"
           onClick={() => onChange(option)}
+          style={getOptionColor ? { color: getOptionColor(option) } : undefined}
           className={`ldvh-tab-button ${activeValue === option ? 'ldvh-tab-button-active' : 'ldvh-tab-button-idle'}`}
         >
           {getLabel(option)}
@@ -189,6 +192,7 @@ export default function Changelog() {
             setActiveType(value);
           }}
           getLabel={(value) => getCommitTypeLabel(value, locale)}
+          getOptionColor={(value) => CATEGORY_COLORS[value] || CATEGORY_COLORS.other}
         />
         <CommitFilterGroup
           allLabel={t('changelog.allScopes')}

@@ -2,7 +2,7 @@ import { useEffect, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ObjectTypeIcon } from '@/components/SemanticIcon';
 import StatusBadge from '@/components/StatusBadge';
-import { getFieldLabel, getLocalizedObjectTitle, getObjectStatusLocale, getTypeLabel } from '@/i18n/locales';
+import { getFieldLabel, getLocalizedObjectTitle, getObjectStatusLocale } from '@/i18n/locales';
 import {
   ReadingNodeSection,
   getReadingNodeNextState,
@@ -37,6 +37,7 @@ export function FactAssociationsSection({
   const associations = projectFactReadingAssociations(obj);
   if (associations.relations.length === 0 && associations.unresolved.length === 0) return null;
   const currentProjectId = getCurrentProjectId(obj);
+  const factTypeKey = typeof obj.fact_type_key === 'string' ? obj.fact_type_key : typeof obj.type === 'string' ? obj.type : undefined;
   return (
     <ReadingNodeSection
       title={title ?? getFieldLabel('fact_associations', locale)}
@@ -44,12 +45,13 @@ export function FactAssociationsSection({
       locale={locale}
       onToggle={() => setState((current) => getReadingNodeNextState(current))}
     >
-      <div className="divide-y divide-ldvh-border/60">
+      <div className="flex flex-col gap-3">
         <RelationGroup
           relations={associations.relations}
           currentProjectId={currentProjectId}
           locale={locale}
           showRelationKey={showRelationKey}
+          semanticRelationLabels={factTypeKey === 'study'}
         />
         <UnresolvedGroup items={associations.unresolved} locale={locale} />
       </div>
@@ -57,21 +59,41 @@ export function FactAssociationsSection({
   );
 }
 
-function RelationGroup({ relations, currentProjectId, locale, showRelationKey }: {
+function RelationGroup({ relations, currentProjectId, locale, showRelationKey, semanticRelationLabels }: {
   relations: ReadingRelation[];
   currentProjectId?: string;
   locale: string;
   showRelationKey: boolean;
+  semanticRelationLabels: boolean;
 }) {
   if (relations.length === 0) return null;
+  if (!semanticRelationLabels) {
+    const items = groupRelationsByTargetType(relations).flatMap(({ relations: groupedRelations }) => groupedRelations);
+    return (
+      <div className="flex flex-col gap-1">
+        {items.map((relation) => (
+          <RelationTarget
+            key={relation.originPath}
+            relation={relation}
+            currentProjectId={currentProjectId}
+            locale={locale}
+            showRelationKey={showRelationKey}
+          />
+        ))}
+      </div>
+    );
+  }
+  const groups = groupRelationsByRelationKey(relations);
   return (
     <div className="flex flex-col gap-4">
-      {groupRelationsByTargetType(relations).map(({ factTypeKey, relations: items }) => (
-        <div key={factTypeKey} className="min-w-0">
-          <div className="ldvh-caption-strong mb-1.5 text-ldvh-text-secondary">
-            {getTypeLabel(factTypeKey, locale)}
-          </div>
-          <div className="divide-y divide-ldvh-border/45">
+      {groups.map(({ key, relations: items }) => (
+        <div key={key} className="min-w-0">
+          {semanticRelationLabels && (
+            <div className="ldvh-caption-strong mb-1.5 text-ldvh-text-secondary">
+              {getFieldLabel(`relation_${key.replace(/-/g, '_')}`, locale)}
+            </div>
+          )}
+          <div className="flex flex-col gap-1">
             {items.map((relation) => (
               <RelationTarget
                 key={relation.originPath}
@@ -86,6 +108,14 @@ function RelationGroup({ relations, currentProjectId, locale, showRelationKey }:
       ))}
     </div>
   );
+}
+
+function groupRelationsByRelationKey(relations: ReadingRelation[]): Array<{ key: string; relations: ReadingRelation[] }> {
+  const grouped = new Map<string, ReadingRelation[]>();
+  for (const relation of relations) {
+    grouped.set(relation.relationKey, [...(grouped.get(relation.relationKey) ?? []), relation]);
+  }
+  return [...grouped.entries()].map(([key, items]) => ({ key, relations: items }));
 }
 
 /** A target is resolved on demand; title and status are never duplicated into relations. */

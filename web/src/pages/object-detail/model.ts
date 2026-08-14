@@ -1,5 +1,6 @@
 export const META_KEYS = [
   'id',
+  'object_uid',
   'object_id',
   'type',
   'fact_type_key',
@@ -24,6 +25,7 @@ export const META_KEYS = [
   'observed_at',
   'read_issues',
   'fact_read_failure',
+  'factAssociations',
 ];
 
 export const COMMON_AUXILIARY_META_KEYS = ['priority'];

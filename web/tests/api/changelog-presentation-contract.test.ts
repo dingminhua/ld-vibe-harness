@@ -79,6 +79,8 @@ test('breaking and push-state badges use one presentation in list and detail ide
   assert.doesNotMatch(badge, /className="ml-1\.5/);
   assert.match(badge, /t\('changelog\.breakingChange'\)/);
   assert.match(list, /entry\.isBreaking && \(\s*<CommitBreakingBadge className="ml-1\.5" \/>/);
+  assert.match(list, /getOptionColor=\{\(value\) => CATEGORY_COLORS\[value\] \|\| CATEGORY_COLORS\.other\}/);
+  assert.match(list, /style=\{getOptionColor \? \{ color: getOptionColor\(option\) \} : undefined\}/);
   assert.match(panel, /entry\?\.isBreaking && \(\s*<CommitBreakingBadge \/>/);
   assert.doesNotMatch(list, /entry\.isBreaking[\s\S]{0,200}>\s*!\s*</);
   assert.doesNotMatch(panel, /entry\?\.isBreaking[\s\S]{0,200}>\s*!\s*</);

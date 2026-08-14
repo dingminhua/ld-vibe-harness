@@ -104,6 +104,7 @@ test('groups ordinary relations by target type rather than their relation key', 
 
 test('exact read metadata never becomes an object content field', () => {
   const entries = getObjectDetailContentEntries({
+    object_uid: '019ffc1f-36b6-7175-891f-a3ba657b5ec0',
     object_id: 'study-0001',
     fact_type_key: 'study',
     status: 'active',

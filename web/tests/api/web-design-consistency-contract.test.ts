@@ -136,6 +136,13 @@ test('fact reading labels use the central locale registry', () => {
   assert.match(associations, /getLocalizedObjectTitle\(source, locale\)/);
 });
 
+test('five fact types use distinct stable hue assignments', () => {
+  const colors = read('src/utils/categoryColors.ts');
+  const typeColors = ['#3b82f6', '#a855f7', '#ef4444', '#eab308', '#14b8a6'];
+  assert.equal(new Set(typeColors).size, 5);
+  for (const color of typeColors) assert.match(colors, new RegExp(`'${color}'|\\\"${color}\\\"`));
+});
+
 test('prominent card title follows the documented 16px by 24px hierarchy', () => {
   const styles = read('src/index.css');
   assert.match(styles, /\.ldvh-card-title-prominent[\s\S]*text-base font-semibold leading-6/);

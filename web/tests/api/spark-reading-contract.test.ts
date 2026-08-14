@@ -7,6 +7,9 @@ test('Spark association UI reads only relations', () => {
   const source = fs.readFileSync(path.resolve('src/pages/object-detail/FactAssociationsSection.tsx'), 'utf8');
   assert.match(source, /projectFactReadingAssociations/);
   assert.doesNotMatch(source, /projectMaterials|evidenceMaterials|externalInputs/);
+  assert.doesNotMatch(source, /getTypeLabel\(factTypeKey, locale\)/);
+  assert.match(source, /semanticRelationLabels=\{factTypeKey === 'study'\}/);
+  assert.match(source, /getFieldLabel\(`relation_\$\{key\.replace/);
 });
 
 test('every fact list card shows exact-read formal associations in a minimal secondary-reading row', () => {
