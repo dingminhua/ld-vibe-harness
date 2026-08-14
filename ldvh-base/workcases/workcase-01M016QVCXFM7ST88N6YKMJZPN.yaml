@@ -1,0 +1,127 @@
+title: Helper 交互可测量口径与基线
+status: closed
+goal: 为 LDVH Helper 交互建立可测量口径与 65 会话基线：定义 per-op 往返数、命令 token 占用与 invalid_request 率三项指标的事件源字段、计算规则和边界（含 invalid_request 响应识别口径与 cacheReadTokens 宿主字段的归因切分边界），产出冻结口径下的 65 会话基线与 Phase 1 前后对照方法，为 Phase 1（P1-1/P1-2/P1-3）的因果验证提供前置对照方法，并为 Phase 3（MCP 化）治理议题提供残差显著/收敛的机械判定输入。本 WorkCase 不承担因果验证本身。
+scope: 仅覆盖统计口径定义与基线产出：扩展 docs/logs/analyze_sessions.py 与 analyze_calls.py（输出机器可读基线摘要）、新增 docs/metrics/helper-interaction-metrics.md 与 docs/metrics/phase1-comparison-method.md 两份口径/对照方法文档；契约来源为 study-01M014CFAVEZBBDYQ49G2XQ6NB、specs 21/24/31/34 及现有两份脚本。不修改 specs 正式规范、04 Helper 公开操作契约、05 事实 Schema；不实现 Phase 1 CLI 扩展（--request/--example/--fields 属后续 WorkCase）；不涉及 Phase 3 MCP 化实现；不执行 push、PR 或发布。
+success_criterion_definitions:
+- criterion_id: criterion-metric-definitions
+  statement: per-op 往返数、命令 token 占用、invalid_request 率三项指标在 docs/metrics/helper-interaction-metrics.md 均有书面口径：明确的事件源字段、统计单元（会话/操作/命令）、计算规则、invalid_request 响应识别口径（事件类型/字段/匹配规则）与 cacheReadTokens 归因切分边界（哪些复读量归因到 LDVH 调用链、哪些属宿主上下文重载），口径文档可被第三方按同一输入复算。
+- criterion_id: criterion-baseline-reproducible
+  statement: 统计脚本按冻结口径对 65 会话日志一次运行稳定复现 Study 更正后数字（Helper 直调 757、python heredoc 155、read-fact-objects 224、KeyError 6 会话等），输出机器可读摘要（JSON）含输入文件清单与内容指纹；口径如需变更须形成新指纹并在摘要中归档说明，不与冻结口径混算。
+- criterion_id: criterion-comparison-method
+  statement: docs/metrics/phase1-comparison-method.md 成文：以 session_comparability/replay 同任务重放为基准，规定指标差异报告最小字段（指标、前后值、样本、显著性判断规则），足以机械区分残差显著（发起 09 修订议题）与残差收敛（搁置 MCP 化）；对照方法只定义判定输入，不包含 Phase 1 实现或验证结论。
+success_criterion_results:
+- criterion_id: criterion-metric-definitions
+  outcome: satisfied
+  summary: docs/metrics/helper-interaction-metrics.md 覆盖三指标事件源字段/统计单元/计算规则/两条边界（invalid_request 识别口径、cacheReadTokens 归因切分），第三方可按同一输入与冻结正则经两脚本复算。
+- criterion_id: criterion-baseline-reproducible
+  outcome: satisfied
+  summary: 两扩展脚本 --input-dir/--json-out 一次运行复现 Study 更正后全部数字（757/155/224/6/64、token 三项）；摘要 JSON 含 65 文件清单与逐文件 SHA-256；口径冻结 v1，变更须 v2 新指纹归档。
+- criterion_id: criterion-comparison-method
+  outcome: satisfied
+  summary: phase1-comparison-method.md 成文：replay 基准+降级标注+样本下限；差异报告最小字段完整；四分支判定机械区分 significant/converged；未包含 Phase 1 实现或验证结论。
+result_summary: 三项交付全部完成：1) docs/metrics/helper-interaction-metrics.md（v1 冻结口径：三指标四要素+invalid_request 识别口径+cacheReadTokens 归因切分+字符量代理）；2) 扩展两脚本一次运行完整复现 Study 更正后数字（757/682/48/27、155/18、224、6/64、20.30M/1.80M/474.8M）并产出两份机器可读基线摘要（含 65 文件输入清单与逐文件 SHA-256；摘要文件指纹 bc098c8f…/157bb38c…），新口径产出 invalid_request 率 0.264%、r_chars 0.5656、cache 放大 23.39；3) docs/metrics/phase1-comparison-method.md（replay 优先对照设计、差异报告最小字段、残差显著/收敛四分支机械判定）。产物均在 measure worktree docs/ 下，可按文件粒度回退。
+validation_summary: 实际验证：1) 脚本运行——measure worktree 内两脚本以 --input-dir 指 65 会话日志一次运行，复现 Study 更正后全部数字(65 会话/103911 事件/3265 调用；Helper 直调 757=call 682+capabilities 48+check 27；heredoc 155/PYEOF 18；read-fact-objects 224；KeyError 6 会话/重复信号 64 会话；input 20.30M/output 1.80M/cacheRead 474.8M)，并产出两份含逐文件 SHA-256 输入清单的机器可读摘要(baseline-sessions-v1.json/baseline-calls-v1.json)；2) 口径文档与对照方法逐字段核对覆盖三指标四要素、invalid_request 识别口径、cacheReadTokens 归因切分与差异报告最小字段；3) 本 WorkCase 全部生命周期转换经 Helper update-workcase CAS 更新并精确回读。未验证范围：Phase 1 落地后的实际前后对照尚未发生(属后续 WorkCase)；基线脚本未对 65 会话以外日志运行；独立结果复核尚未执行。
+closure_outcome: completed
+disposition_summary: 本 WorkCase 三项成功标准全部 satisfied，原 scope 内无未满足或未验证责任，就此停止。可测量口径 v1 冻结成文（helper-interaction-metrics.md：三指标四要素+invalid_request 识别口径+cacheReadTokens 归因切分+字符量代理）；两脚本一次运行复现 Study 更正后全部基线数字并产出含 65 文件 SHA-256 清单的机器可读摘要（baseline-sessions/calls-v1.json+baseline-v1-manifest.json）；Phase 1 前后对照方法与残差四分支机械判定成文（phase1-comparison-method.md）。独立只读结果复核 round 1（subagent-read-only）结论 pass_with_followups，4 条低/极低 feedback 全部处置，Controller 补验（脚本重跑复现全部数字、manifest 6 文件 SHA-256 校验一致、git status 无越界 tracked 修改）全部通过。范围外事项说明（不构成本 scope 剩余责任）：measure worktree docs/logs/.build_gate1.py 为 0 字节空残留，当前会话受宿主路径白名单限制无法删除，Human 一键可清；本 WorkCase 全部产物位于 measure linked worktree 且按禁止项未执行 commit/push/PR，关闭后归档或合并方式由 Human 决定。Phase 1 验证与残差显著时潜在的 09 MCP 化修订议题以 follow_up Spark 建议（suggestion-phase1-validation）保留，属范围外后续机会。
+spark_suggestions:
+- suggestion_id: suggestion-phase1-validation
+  suggestion_kind: follow_up_opportunity
+  summary: Phase 1 CLI 扩展（--request/--example/--fields）与因果验证：以冻结口径 baseline-v1 为基线、按 phase1-comparison-method.md 对照方法执行前后对照与残差判定。
+  follow_up_summary: 日后独立建立该 Spark/WorkCase 时，从三项入口继续判断：1) 按 helper-interaction-metrics/v1-frozen 口径重跑基线脚本锁定 before 值；2) Phase 1 实现后以 replay 同任务重放采集 after 值（样本前后各≥20）；3) 按四分支规则判定残差——结构性残差显著则发起 09 规范 MCP 化修订议题（仍须 Human Gate），残差收敛则搁置 MCP 化。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a00246-3d5b-77d6-b6fa-e44c05db9aab
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-75f4-888d-2d7c6df0e8e2
+change_log:
+- signature:
+    product_name: TraeCode
+    model_name: glm-5.3
+    agent_runtime_name:
+  at: '2026-08-14T22:37:01.737621Z'
+  summary: 创建（Human 当次授权：先提交后创建本地 worktree 推动可测量口径立项）：Gate 1 候选计划 v1——3 个 work_items（指标口径文档/冻结口径基线复现/对照方法）带 depends_on 拓扑、4 项 authorized_actions（含 Gate 2 委派与记录两 action）与独立结果复核关口；创建前经独立只读子代理复核（changes_required），6 条实质反馈全部接受并落入计划；phase=human_plan_confirming 等待 Human Gate 1 审批。
+- signature:
+    product_name: TraeCode
+    model_name: glm-5.3
+    agent_runtime_name:
+  at: '2026-08-14T22:40:05.040770Z'
+  summary: lifecycle_change：Human Gate 1 批准记录——phase human_plan_confirming→executing，写入 execution_approval（subject_version=1，baseline_fingerprint 绑定 goal/scope/criteria/execution_authorization 冻结基线，source_refs 回指当前会话两条 Human 指令）；移除 waiting_on；计划与授权基线自此冻结。
+- signature:
+    product_name: TraeCode
+    model_name: glm-5.3
+    agent_runtime_name:
+  at: '2026-08-14T22:40:29.415920Z'
+  summary: execution：item-metric-definitions pending→in_progress（开始控制点）——同事务写入 current_summary 与有界 resume_from；实际撰写 docs/metrics/helper-interaction-metrics.md 尚未开始。
+- signature:
+    product_name: TraeCode
+    model_name: glm-5.3
+    agent_runtime_name:
+  at: '2026-08-14T22:41:46.974943Z'
+  summary: execution：item-metric-definitions in_progress→completed——交付 docs/metrics/helper-interaction-metrics.md（v1 冻结口径：三指标四要素 + invalid_request 识别口径 + cacheReadTokens 归因切分 + 字符量代理归因 + 辅助信号边界 + 第三方复算说明）；item-baseline-reproducible 依赖已满足，可开始。
+- signature:
+    product_name: TraeCode
+    model_name: glm-5.3
+    agent_runtime_name:
+  at: '2026-08-14T22:43:07.377780Z'
+  summary: execution：item-baseline-reproducible pending→in_progress（开始控制点）。
+- signature:
+    product_name: TraeCode
+    model_name: glm-5.3
+    agent_runtime_name:
+  at: '2026-08-14T22:46:49.959458Z'
+  summary: execution：item-baseline-reproducible in_progress→completed——v1 冻结口径一次运行复现全部 Study 更正后数字（757/682/48/27、155/18、224、6/64、20.30M/1.80M/474.8M），产出两份机器可读基线摘要（含输入清单与逐文件 SHA-256）及新口径指标（invalid_request 率 0.264%、r_chars 0.5656、cache 放大 23.39）；item-comparison-method 依赖已满足。
+- signature:
+    product_name: TraeCode
+    model_name: glm-5.3
+    agent_runtime_name:
+  at: '2026-08-14T22:47:02.483308Z'
+  summary: execution：item-comparison-method pending→in_progress（开始控制点）。
+- signature:
+    product_name: TraeCode
+    model_name: glm-5.3
+    agent_runtime_name:
+  at: '2026-08-14T22:48:20.055081Z'
+  summary: execution→controller_checking：item-comparison-method completed（三 item 全 terminal），同事务形成 canonical result projection v1（result_summary、controller_check_summary、三项 criterion results 全 satisfied）——进入 Controller 自检与独立结果复核链。
+- signature:
+    product_name: TraeCode
+    model_name: glm-5.3
+    agent_runtime_name:
+  at: '2026-08-14T22:56:07.769990Z'
+  summary: controller_checking 稳定检查点：补齐 canonical result projection 第 5 成员 validation_summary（记录实际采用的验证、覆盖与未验证范围）；projection 自此完整（version=1，尚无 review，不升版），为进入独立复核冻结。
+- signature:
+    product_name: TraeCode
+    model_name: glm-5.3
+    agent_runtime_name:
+  at: '2026-08-14T22:56:22.863079Z'
+  summary: controller_checking→independent_reviewing（projection 冻结转换）：完整 canonical result projection v1（含 validation_summary）已校验并精确回读（before=f90a77b0…）；按 independent-result-review 质量关口委派独立只读结果复核，写 Reviewer waiting；projection/version 不变。
+- signature:
+    product_name: TraeCode
+    model_name: glm-5.3
+    agent_runtime_name:
+  at: '2026-08-14T23:02:19.405728Z'
+  summary: independent_reviewing 同 phase：记录独立只读结果复核 round 1（subagent-read-only，conclusion=pass_with_followups，4 条低/极低 feedback）与 Controller 全量处置；复核完成后移除 Reviewer waiting；Controller 补验脚本重跑/SHA-256/git status 全部通过。projection/version 不变。
+- signature:
+    product_name: TraeCode
+    model_name: glm-5.3
+    agent_runtime_name:
+  at: '2026-08-14T23:03:24.263266Z'
+  summary: independent_reviewing→closure_preparing：复核 round 1 已形成且全部 feedback 处置完毕、projection 未变（before=0299929c…）；整体写入 closure_proposal（proposed_outcome=completed，无 scope 剩余责任故省略 residual_decisions；范围外事项在 disposition summary 说明；1 条 follow_up Spark 建议含 follow_up_summary）。
+- signature:
+    product_name: TraeCode
+    model_name: glm-5.3
+    agent_runtime_name:
+  at: '2026-08-14T23:03:38.572106Z'
+  summary: closure_preparing→human_closure_confirming：完整关闭提案（proposed_outcome=completed）已整体形成并冻结（before=5965d991…），结果、复核与处置链完整；写 Human Gate 2 waiting，等待 Human 唯一关闭决定（批准→close-workcase 原子关闭；不接受→零写入保留原对象）。
+- signature:
+    product_name: TraeCode
+    model_name: glm-5.3
+    agent_runtime_name:
+  at: '2026-08-14T23:06:38.996632Z'
+  summary: Gate 2 关闭（human_closure_confirming→closed）：Human 当次会话批准关闭提案；closure_outcome=completed 精确等于 proposed_outcome，disposition_summary/spark_suggestions 逐值取自 proposal，无 route_existing/accept_stop 故无 routed-to/residual_responsibilities；移除全部活动期字段。
+object_uid: 01a0026b-ed9d-7d0f-9d21-1537a7497ed5
+object_id: workcase-01M016QVCXFM7ST88N6YKMJZPN
+fact_type_key: workcase
+created_at: '2026-08-14T22:37:01.737621Z'
+updated_at: '2026-08-14T23:06:38.996632Z'
