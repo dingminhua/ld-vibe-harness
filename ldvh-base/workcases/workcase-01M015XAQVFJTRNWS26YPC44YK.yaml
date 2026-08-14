@@ -1,0 +1,121 @@
+status: closed
+title: 行动模板候选启用条件提示
+goal: 为 read-action-template-candidates 与 read-action-template-content 定义并实现由当前模板来源声明的最小 activation_hint，使 AI 无需展开全部模板正文即可选择应继续读取的模板，同时不由 Code 自动判断语义适用、授权、激活或可执行性。
+scope: 仅修改 specs/06-行动模板基础规范.md、specs/30–34 五份现行行动模板的‘行动模板声明’表、code/ldvh/specs/action_templates.py、code/ldvh/helper/operations/action_template_operation.py，以及直接受影响的 code/tests/specs/test_action_templates.py、code/tests/helper/test_action_template_operation.py、code/tests/helper/test_cli_process.py 和由实际直接失败证明必需的最小请求契约测试。activation_hint 冻结为声明表必填第四列、单个非空 string/单个 Markdown 表格单元格；五份来源同批执行当前唯一声明与响应字段闭集的原位 breaking migration，旧三列表头不双读、不默认补齐、不设 alias/profile。全候选与精确请求的来源失败矩阵、task 不参与筛选的边界、candidate/content 同源投影和风险匹配验证均在范围内。排除：任何 Spark 或其它事实对象更新、签名拼装减负、基于 task/observed_context 的过滤或排名、自动适用性结论、新公开操作、缓存/索引/第二权威、事实 Schema/状态机、Git commit/push/release、依赖安装、外部网络和任何不相关或并发工作树内容；尤其不触碰未跟踪 study-01M014CFAVEZBBDYQ49G2XQ6NB.md。
+success_criterion_definitions:
+- criterion_id: criterion-contract-boundary
+  statement: 06 唯一明确 activation_hint 的字段名、必填单个非空 string 类型、模板声明来源、解析后原文本边界、否定语义、candidate/content 精确字段闭集、共同 task 仅作未消费元数据的边界、全候选与精确读取的来源失败矩阵，以及旧三列表头不兼容的原位 breaking contract；不新增上下文筛选、自动过滤、排名、语义适用、授权、激活或可执行性判断。
+- criterion_id: criterion-source-inspection
+  statement: 五个当前真实模板声明均按新四列表头机械有效；旧三列表头、缺失或空 activation_hint、多余列、重复 key 和其它无效声明按冻结矩阵产生确定的 issue、incomplete source、scope、gap、diagnostic 与 outcome；行级错误不误删同源无冲突有效行，来源级结构错误暂停该来源全部声明，Code 不猜默认。
+- criterion_id: criterion-helper-projection
+  statement: read-action-template-candidates 与 read-action-template-content 对同一 template_key 投影逐值相同的 activation_hint，并保持各自精确字段闭集；content 只额外增加 content、content_sha256、source_content_sha256，声明表自然存在于 content 包不算新增正文副本，Helper 不额外展开提示或复制来源正文。
+- criterion_id: criterion-risk-validation
+  statement: 风险匹配测试覆盖五个真实模板、畸形来源、来源失败矩阵、精确选择、candidate/content 精确字段集、task 不影响结果和真实 CLI JSON；改动 Python/测试的 Ruff、相关 pytest 与 ldvh check 结果按实际命令、状态、计数和未运行范围如实记录，仓库外严格消费者与真实 AI 选择效果不得冒充已验证。
+success_criterion_results:
+- criterion_id: criterion-contract-boundary
+  outcome: satisfied
+  summary: specs/06 now defines activation_hint as the required single nonempty string fourth declaration column and candidate/content field, preserves optional task only as unconsumed metadata, freezes the full source-failure matrix, and explicitly denies applicability, authorization, activation, capability, and executability conclusions. All five sources use the breaking four-column contract with no dual-read, default, alias, or compatibility profile.
+- criterion_id: criterion-helper-projection
+  outcome: satisfied
+  summary: Both public reads project the source declaration activation_hint byte-for-value for the same template key. Candidate items have the exact nine-field closure; content items add only content, content_sha256, and source_content_sha256, and do not return source_content or semantic conclusion fields.
+- criterion_id: criterion-risk-validation
+  outcome: satisfied
+  summary: Risk-matched parser, Helper, and real CLI tests cover all five sources, malformed declarations, source-level and row-level failures, duplicate keys, exact selection, field closures, task invariance, and no semantic conclusion fields. Focused tests passed 62; broad specs+Helper suites passed 700 with 5 explicitly retired legacy tests skipped; Ruff, real CLI probes, git diff --check, and ldvh check passed. External strict consumers and real AI selection quality remain unverified and are not claimed.
+- criterion_id: criterion-source-inspection
+  outcome: satisfied
+  summary: The parser requires the exact four-column header and four nonempty row cells. Source-level structural errors suspend all declarations from that source; invalid rows preserve valid nonconflicting siblings while marking the source incomplete; duplicate keys are removed across affected sources. Helper returns source-level gaps, issue diagnostics and references while keeping template-key scope separate and applying the frozen all-candidate and exact-key outcomes.
+result_summary: Added a source-declared activation_hint to all five current action templates and exposed it through candidate and content reads without automatic template applicability semantics. The change is the approved in-place breaking contract for declaration tables and item field closures. Parser and Helper failure handling now disclose incomplete sources while preserving valid candidate scope. No Git commit, external network, dependency installation, cache/index, new operation, compatibility layer, Spark update, or unrelated file change was performed by this WorkCase.
+validation_summary: 'Final focused pytest on the three directly affected test modules: 62 passed. Final broad pytest on code/tests/specs and code/tests/helper: 700 passed, 5 skipped because migrate-legacy-change-log is retired. Ruff check passed for the two changed implementation files and three changed test files. Ruff format check passed for the four changed Python files without pre-existing CLI-format drift; no full-format claim is made for test_cli_process.py. Real CLI candidate/content probes returned outcome=ok, five nonempty hints, exact field closures, equal git-commit hints, and task-invariant candidate results. git diff --check passed. ldvh check returned outcome=ok, result.status=passed, no not_completed scope, while retaining 7 unproved rule-source qualification conditions and 67 direct-basis necessities requiring semantic review. External strict consumers, live environment routing, and real AI template-choice quality were not tested.'
+closure_outcome: completed
+disposition_summary: All four success criteria are satisfied within the approved scope. The four-column activation_hint contract, five source declarations, parser and Helper projections, frozen failure matrix, and risk-matched tests are complete with explicit external-consumer and live-AI assurance limits. There is no residual responsibility in this WorkCase scope. No Git commit, release, network action, dependency installation, or source Spark update is included in this disposition.
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7706-ba55-38e7bc9b1cc9
+- relation_key: related-to
+  target:
+    object_uid: 01a0004d-dc0c-71cd-806f-b5acb36d7057
+change_log:
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T22:22:32.605352Z'
+  summary: 受控创建 WorkCase 计划候选：承接模板启用判断，已完成两轮 native subagent 只读方案复核并由 Controller 在轮次上限内吸收反馈；当前等待 Human Gate 1，不授权实现或提交。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T22:27:37.895709Z'
+  summary: Human Gate 1 已批准当前 plan_version=1 与完整授权基线；写入 execution_approval，移除 Human waiting，进入 executing。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T22:30:17.140250Z'
+  summary: Started item-contract-design before specification edits; recorded the bounded resume point.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T22:33:09.001456Z'
+  summary: Completed item-contract-design after bounded source checks and started item-parser-projection at the parser/helper boundary.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T22:36:53.757861Z'
+  summary: Completed item-parser-projection after real Helper probes and Ruff; started item-validation with 15 explained old-shape fixture failures.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T22:47:43.916596Z'
+  summary: Completed item-validation with final risk-matched evidence; all work items are terminal, so entered controller_checking with result_version=1.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T22:48:21.824638Z'
+  summary: Formed complete result_version=1 canonical projection after Controller self-check; external consumer and live AI behavior limits remain explicit.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T22:49:02.277267Z'
+  summary: Complete result_version=1 projection was re-read; entered independent_reviewing and recorded the pending native subagent read-only result review.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T22:52:30.560183Z'
+  summary: Recorded the actual read-only result review for unchanged result_version=1 with conclusion pass and no feedback while remaining in independent_reviewing. Reviewer model and agent metadata were not exposed and were not fabricated.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T22:52:50.239053Z'
+  summary: Advanced the unchanged reviewed result_version=1 projection from independent_reviewing to closure_preparing.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T22:53:17.178535Z'
+  summary: Formed the complete closure proposal in closure_preparing with proposed_outcome=completed and no residual decisions or Spark suggestions.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T22:53:43.594592Z'
+  summary: Closure proposal and terminal preservation review are complete; entered human_closure_confirming and now wait only for Human Gate 2.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T23:06:00.214178Z'
+  summary: Human Gate 2 approved the complete closure proposal; closed with outcome=completed, no residual responsibilities, no Spark suggestions, and no Git commit or source Spark update.
+object_uid: 01a0025e-aafb-7cb5-8af3-2237acc213d3
+object_id: workcase-01M015XAQVFJTRNWS26YPC44YK
+fact_type_key: workcase
+created_at: '2026-08-14T22:22:32.605352Z'
+updated_at: '2026-08-14T23:06:00.214178Z'

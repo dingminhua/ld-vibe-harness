@@ -10,7 +10,7 @@ from ldvh.specs.identity import FormalDocument
 from ldvh.specs.markdown import parse_markdown
 from ldvh.specs.repository import RepositoryInspection
 
-DECLARATION_HEADERS = "| template_key | summary | definition_ref |\n|---|---|---|\n"
+DECLARATION_HEADERS = "| template_key | summary | activation_hint | definition_ref |\n|---|---|---|---|\n"
 
 
 def _source(
@@ -21,6 +21,7 @@ def _source(
     definition_level: int = 2,
     definition_title: str = "1. Template definition",
     definition_ref: str | None = None,
+    activation_hint: str = "Use when a local commit is explicitly authorized; do not use for inspection only.",
     declaration_heading: str = "行动模板声明",
     content_before_table: str = "",
     table_headers: str = DECLARATION_HEADERS,
@@ -33,7 +34,7 @@ def _source(
     reference = definition_ref if definition_ref is not None else f"{key}::{definition_title}"
     row = row_override
     if row is None:
-        row = f"| `{template_key}` | Commit changes | `{reference}` |\n"
+        row = f"| `{template_key}` | Commit changes | {activation_hint} | `{reference}` |\n"
     marks = "#" * definition_level
     if definition_level == 2:
         definition = f"{marks} {definition_title}\n\nTemplate body.\n\n### {declaration_heading}\n\n"
@@ -100,6 +101,9 @@ def test_reads_valid_h2_or_h3_definition_and_exact_range(tmp_path: Path, definit
     declaration = result.candidate_declarations[0]
     assert declaration.template_key == "git-commit"
     assert declaration.summary == "Commit changes"
+    assert declaration.activation_hint == (
+        "Use when a local commit is explicitly authorized; do not use for inspection only."
+    )
     assert declaration.source_key == "source-one"
     assert declaration.definition_heading.level == definition_level
     assert declaration.definition_start_line == declaration.definition_heading.line
@@ -118,7 +122,15 @@ def test_reads_valid_h2_or_h3_definition_and_exact_range(tmp_path: Path, definit
     [
         ({"content_before_table": "ordinary text\n\n"}, "必须紧接固定 Markdown 表格"),
         (
-            {"table_headers": "| template_key | summary | wrong |\n|---|---|---|\n"},
+            {"table_headers": "| template_key | summary | definition_ref |\n|---|---|---|\n"},
+            "表头与固定字段不一致",
+        ),
+        (
+            {
+                "table_headers": (
+                    "| template_key | summary | activation_hint | definition_ref | extra |\n|---|---|---|---|---|\n"
+                )
+            },
             "表头与固定字段不一致",
         ),
         ({"row_override": ""}, "至少包含一个数据行"),
@@ -170,7 +182,12 @@ def test_trailing_content_or_duplicate_heading_suspends_source(tmp_path: Path) -
         ({"definition_ref": "source-one::one::two"}, "definition_ref 无效"),
         ({"definition_ref": "source-one::Missing"}, "必须唯一指向同来源 H2 或 H3"),
         ({"definition_ref": "source-one::行动模板声明"}, "不得指向声明 H3 自身"),
-        ({"row_override": "| `git-commit` | only two |\n"}, "恰有三个非空单元格"),
+        ({"activation_hint": ""}, "恰有四个非空单元格"),
+        ({"row_override": "| `git-commit` | only two |\n"}, "恰有四个非空单元格"),
+        (
+            {"row_override": "| `git-commit` | Summary | Hint | `source-one::1. Template definition` | extra |\n"},
+            "恰有四个非空单元格",
+        ),
     ],
 )
 def test_invalid_rows_are_suspended_with_diagnostics(
@@ -206,8 +223,8 @@ def test_ambiguous_definition_heading_is_rejected(tmp_path: Path) -> None:
 
 def test_invalid_sibling_row_does_not_remove_valid_row(tmp_path: Path) -> None:
     rows = (
-        "| `git-commit` | Commit changes | `source-one::1. Template definition` |\n"
-        "| `Invalid_Key` | Invalid | `source-one::1. Template definition` |\n"
+        "| `git-commit` | Commit changes | Valid hint | `source-one::1. Template definition` |\n"
+        "| `Invalid_Key` | Invalid | Invalid hint | `source-one::1. Template definition` |\n"
     )
     source = _source(tmp_path, "source-one", row_override=rows)
 
@@ -234,9 +251,9 @@ def test_duplicate_key_removes_all_conflicts_but_preserves_other_keys(tmp_path: 
 
 def test_duplicate_key_in_one_source_removes_all_matching_rows(tmp_path: Path) -> None:
     rows = (
-        "| `git-commit` | First | `source-one::1. Template definition` |\n"
-        "| `git-commit` | Second | `source-one::1. Template definition` |\n"
-        "| `other-template` | Other | `source-one::1. Template definition` |\n"
+        "| `git-commit` | First | First hint | `source-one::1. Template definition` |\n"
+        "| `git-commit` | Second | Second hint | `source-one::1. Template definition` |\n"
+        "| `other-template` | Other | Other hint | `source-one::1. Template definition` |\n"
     )
     source = _source(tmp_path, "source-one", row_override=rows)
 

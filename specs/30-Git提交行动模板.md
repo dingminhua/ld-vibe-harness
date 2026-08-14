@@ -87,9 +87,9 @@ ldvh_spec:
 
 ### 行动模板声明
 
-| template_key | summary | definition_ref |
-|---|---|---|
-| `git-commit` | 在已有明确授权和唯一目标 worktree 中，按当前来源组织本地新 commit 的范围核对、验证、创建、回读与交还 | `git-commit-action-template::5. Git 提交行动模板定义` |
+| template_key | summary | activation_hint | definition_ref |
+|---|---|---|---|
+| `git-commit` | 在已有明确授权和唯一目标 worktree 中，按当前来源组织本地新 commit 的范围核对、验证、创建、回读与交还 | 当 Human 已明确授权在唯一目标 worktree 创建一个本地新 commit 时继续读取；仅检查差异、运行验证、讨论提交方案或尚无提交授权时不适用。 | `git-commit-action-template::5. Git 提交行动模板定义` |
 
 ### 5.1 输入与前置条件
 

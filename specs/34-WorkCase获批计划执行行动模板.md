@@ -45,9 +45,9 @@ ldvh_spec:
 
 ### 行动模板声明
 
-| template_key | summary | definition_ref |
-|---|---|---|
-| `workcase-approved-plan-execution` | 组织已获 Gate 1 批准 WorkCase 的精确读取、授权消费、按真实检查点写回、包内调整、实施、阻塞/恢复、结果复核、Gate 2 与上下文恢复；不复制 21 状态机、不成为调度器也不声称 spawn 能力 | `workcase-approved-plan-execution-action-template::5. WorkCase 获批计划执行行动模板定义` |
+| template_key | summary | activation_hint | definition_ref |
+|---|---|---|---|
+| `workcase-approved-plan-execution` | 组织已获 Gate 1 批准 WorkCase 的精确读取、授权消费、按真实检查点写回、包内调整、实施、阻塞/恢复、结果复核、Gate 2 与上下文恢复；不复制 21 状态机、不成为调度器也不声称 spawn 能力 | 当精确 WorkCase 已有有效 Gate 1 approval，需要执行、恢复、结果复核或进入 Gate 2 收敛链时继续读取；仅准备未获批计划或不存在当前 WorkCase 时不适用。 | `workcase-approved-plan-execution-action-template::5. WorkCase 获批计划执行行动模板定义` |
 
 ### 5.1 前置精确读取与执行期能力预检
 

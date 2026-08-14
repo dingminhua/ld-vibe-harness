@@ -23,7 +23,11 @@ from ldvh.helper.operations.action_template_request import (
 )
 from ldvh.helper.requests import CommonRequest
 from ldvh.helper.responses import source_reference
-from ldvh.specs.action_templates import ActionTemplateDeclaration, inspect_action_template_sources
+from ldvh.specs.action_templates import (
+    ActionTemplateDeclaration,
+    ActionTemplateSourceInspection,
+    inspect_action_template_sources,
+)
 from ldvh.specs.repository import RepositoryInspection
 
 CANDIDATE_OPERATION_KEY = "read-action-template-candidates"
@@ -55,6 +59,7 @@ class _ReadResult:
     unchecked_conditions: tuple[str, ...]
     sources: tuple[dict[str, object], ...]
     gaps: tuple[dict[str, object], ...]
+    diagnostics: tuple[dict[str, object], ...]
     verification: tuple[dict[str, object], ...]
 
 
@@ -70,6 +75,7 @@ def _candidate_item(declaration: ActionTemplateDeclaration) -> dict[str, object]
     return {
         "template_key": declaration.template_key,
         "summary": declaration.summary,
+        "activation_hint": declaration.activation_hint,
         "source_key": declaration.source_key,
         "canonical_path": declaration.document.canonical_path,
         "definition_ref": f"{declaration.source_key}::{declaration.definition_heading.title}",
@@ -92,6 +98,60 @@ def _content(declaration: ActionTemplateDeclaration) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _inspection_issue_reference(issue) -> dict[str, object]:
+    locator = issue.location.path if issue.location.line is None else f"{issue.location.path}:{issue.location.line}"
+    reference = source_reference("rule", locator)
+    if issue.location.heading is not None:
+        reference["details"] = {"heading": issue.location.heading}
+    return reference
+
+
+def _inspection_disclosure(
+    inspection: ActionTemplateSourceInspection,
+    repository: RepositoryInspection,
+) -> tuple[list[dict[str, object]], list[dict[str, object]], list[dict[str, object]]]:
+    gaps: list[dict[str, object]] = []
+    diagnostics: list[dict[str, object]] = []
+    sources: list[dict[str, object]] = []
+    source_paths = {document.key: document.canonical_path for document in repository.parsed_documents}
+    for source_key in inspection.incomplete_sources:
+        relevant = [issue for issue in inspection.issues if source_key in issue.affected]
+        references = [_inspection_issue_reference(issue) for issue in relevant]
+        if not references:
+            references = [
+                source_reference(
+                    "rule",
+                    source_paths.get(source_key, source_key),
+                    source_key=source_key,
+                )
+            ]
+        gaps.append(
+            {
+                "summary": f"行动模板声明来源 {source_key!r} 未通过全部机械检查；有效候选不代表该来源完整",
+                "scope": [],
+                "source_refs": references,
+            }
+        )
+        sources.extend(references)
+    for issue in inspection.issues:
+        reference = _inspection_issue_reference(issue)
+        details: dict[str, object] = {
+            "path": issue.location.path,
+            "line": issue.location.line,
+            "affected": list(issue.affected),
+        }
+        if issue.cause is not None:
+            details["cause"] = issue.cause
+        diagnostics.append(
+            {
+                "summary": issue.summary,
+                "details": details,
+                "source_refs": [reference],
+            }
+        )
+    return gaps, diagnostics, sources
+
+
 def _read(
     request: CommonRequest,
     repository: RepositoryInspection,
@@ -101,20 +161,26 @@ def _read(
     domain = _validated_request(request, require_keys=include_content)
     inspection = inspect_action_template_sources(repository)
     declarations = {item.template_key: item for item in inspection.candidate_declarations}
+    select_all = not domain.template_keys
     selection = domain.template_keys or tuple(sorted(declarations))
     completed: list[str] = []
     missing: list[str] = []
     items: list[dict[str, object]] = []
-    sources: list[dict[str, object]] = []
-    gaps: list[dict[str, object]] = []
+    source_gaps, diagnostics, issue_sources = _inspection_disclosure(inspection, repository)
+    sources: list[dict[str, object]] = list(issue_sources)
+    gaps: list[dict[str, object]] = list(source_gaps)
     verification: list[dict[str, object]] = []
     for key in selection:
         declaration = declarations.get(key)
         if declaration is None:
             missing.append(key)
+            if inspection.incomplete_sources:
+                summary = f"当前无法从机械有效声明确认 template_key {key!r}；已披露的不完整来源可能遮蔽该候选"
+            else:
+                summary = f"未从当前有效行动模板声明精确匹配 template_key {key!r}"
             gaps.append(
                 {
-                    "summary": f"未从当前有效行动模板声明精确匹配 template_key {key!r}",
+                    "summary": summary,
                     "scope": [key],
                     "source_refs": [_CONTENT_CONTRACT if include_content else _CANDIDATE_CONTRACT],
                 }
@@ -149,17 +215,20 @@ def _read(
         outcome: SuggestedOutcome = "partial"
     elif missing and not completed:
         outcome = "unavailable"
+    elif select_all and not completed and inspection.incomplete_sources:
+        outcome = "unavailable"
     else:
         outcome = "ok"
     return _ReadResult(
         outcome=outcome,
-        items=tuple(items) if items else (None if missing else ()),
+        items=tuple(items) if items else (None if outcome == "unavailable" else ()),
         requested=selection,
         completed=tuple(completed),
         not_completed=tuple(missing),
         unchecked_conditions=tuple(dict.fromkeys(inspection.unchecked_conditions)),
         sources=tuple(sources),
         gaps=tuple(gaps),
+        diagnostics=tuple(diagnostics),
         verification=tuple(verification),
     )
 
@@ -208,6 +277,7 @@ def _execution(result: _ReadResult, repository: RepositoryInspection, *, include
         not_completed_scope=result.not_completed,
         sources=(*result.sources, *_IMPLEMENTATION_EVIDENCE),
         gaps=result.gaps,
+        diagnostics=result.diagnostics,
         verification=result.verification,
     )
 

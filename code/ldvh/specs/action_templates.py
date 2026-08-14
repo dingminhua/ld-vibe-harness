@@ -17,7 +17,7 @@ from ldvh.specs.markdown import Heading, MarkdownTable, parse_table_after_headin
 from ldvh.specs.repository import RepositoryInspection
 
 DECLARATION_HEADING = "行动模板声明"
-DECLARATION_HEADERS = ("template_key", "summary", "definition_ref")
+DECLARATION_HEADERS = ("template_key", "summary", "activation_hint", "definition_ref")
 ACTION_TEMPLATE_UNCHECKED_CONDITIONS = ("行动模板的重复价值、稳定剩余结构、承载位置、独立失败和净价值是否满足准入条件",)
 
 
@@ -27,6 +27,7 @@ class ActionTemplateDeclaration:
 
     template_key: str
     summary: str
+    activation_hint: str
     source_key: str
     definition_heading: Heading
     definition_start_line: int
@@ -140,10 +141,10 @@ def _source_declarations(
                 )
             )
         if len(row) != len(DECLARATION_HEADERS) or any(not cell for cell in row):
-            issues.append(_issue(document, "行动模板声明行必须恰有三个非空单元格", line=line))
+            issues.append(_issue(document, "行动模板声明行必须恰有四个非空单元格", line=line))
             complete = False
             continue
-        template_key, summary, definition_ref = row
+        template_key, summary, activation_hint, definition_ref = row
         row_valid = True
         if KEY_PATTERN.fullmatch(template_key) is None:
             issues.append(_issue(document, f"template_key {template_key!r} 格式无效", line=line))
@@ -160,6 +161,7 @@ def _source_declarations(
             ActionTemplateDeclaration(
                 template_key=template_key,
                 summary=summary,
+                activation_hint=activation_hint,
                 source_key=document.key,
                 definition_heading=definition_heading,
                 definition_start_line=definition_start_line,

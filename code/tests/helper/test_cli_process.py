@@ -323,6 +323,12 @@ def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Pat
 
 def test_action_template_operations_discover_and_read_five_current_sources(tmp_path: Path) -> None:
     discovered, candidate_response = _run(tmp_path, "call", "read-action-template-candidates")
+    tasked, tasked_response = _run(
+        tmp_path,
+        "call",
+        "read-action-template-candidates",
+        stdin=json.dumps({"task": "Metadata must not filter or rank action templates.", "arguments": {}}),
+    )
     read, content_response = _run(
         tmp_path,
         "call",
@@ -342,9 +348,24 @@ def test_action_template_operations_discover_and_read_five_current_sources(tmp_p
         ),
     )
 
-    assert discovered.returncode == read.returncode == 0
-    assert candidate_response["outcome"] == "ok"
-    assert [item["template_key"] for item in candidate_response["result"]["items"]] == [
+    assert discovered.returncode == tasked.returncode == read.returncode == 0
+    assert candidate_response["outcome"] == tasked_response["outcome"] == "ok"
+    assert tasked_response["result"] == candidate_response["result"]
+    candidate_items = candidate_response["result"]["items"]
+    candidate_fields = {
+        "template_key",
+        "summary",
+        "activation_hint",
+        "source_key",
+        "canonical_path",
+        "definition_ref",
+        "definition_heading",
+        "definition_start_line",
+        "definition_end_line",
+    }
+    assert all(set(item) == candidate_fields for item in candidate_items)
+    assert all(item["activation_hint"] for item in candidate_items)
+    assert [item["template_key"] for item in candidate_items] == [
         "environment-integration-installation-verification",
         "fact-object-controlled-creation",
         "fact-object-lifecycle-change",
@@ -355,14 +376,20 @@ def test_action_template_operations_discover_and_read_five_current_sources(tmp_p
     assert content_response["outcome"] == "ok"
     assert content_response["scope"]["requested"] == content_response["scope"]["completed"]
     assert content_response["scope"]["not_completed"] == []
-    assert [item["template_key"] for item in content_response["result"]["items"]] == [
+    content_items = content_response["result"]["items"]
+    assert [item["template_key"] for item in content_items] == [
         "git-commit",
         "fact-object-controlled-creation",
         "fact-object-lifecycle-change",
         "environment-integration-installation-verification",
         "workcase-approved-plan-execution",
     ]
-    assert all("## 8. Stop Conditions" in item["content"] for item in content_response["result"]["items"])
+    assert all(
+        set(item) == candidate_fields | {"content", "content_sha256", "source_content_sha256"} for item in content_items
+    )
+    candidate_hints = {item["template_key"]: item["activation_hint"] for item in candidate_items}
+    assert all(item["activation_hint"] == candidate_hints[item["template_key"]] for item in content_items)
+    assert all("## 8. Stop Conditions" in item["content"] for item in content_items)
     assert all("source_content" not in item for item in content_response["result"]["items"])
     assert all(
         len(item["content_sha256"]) == len(item["source_content_sha256"]) == 64
