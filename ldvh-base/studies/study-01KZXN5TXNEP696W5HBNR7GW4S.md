@@ -1,6 +1,6 @@
 ---
 title: Kimi Work 技能图标机制调研：LDVH 接入的图标配置判定
-status: active
+status: retired
 urls:
 - ref: https://www.kimi.com/zh-cn/help/features/what-are-skills
   title: 什么是技能（Skills）— Kimi 帮助中心
@@ -12,11 +12,6 @@ research_question: Kimi Work 桌面应用当前版本是否为技能提供图标
 abstract: 为完成 LDVH 在 Kimi Work 环境接入的图标配置判定（环境接入规范 09 §5.3 要求的先调研机制再决定配置或交还），本轮读取 Kimi 官方技能资料两份，并对本机安装的 Kimi.app（macOS，观察时点 2026-07-31）做五个检查面的实证：技能登记表、33 个内建技能目录、全部 SKILL.md frontmatter、11 个插件清单、前端渲染包。官方文档契约与本机实证互证：当前版本不存在技能图标配置机制，前端对所有技能一律以字母头像回退渲染。结论：按 09 §5.3 对 Kimi Work 走“机制无法确认时如实交还”分支，图标事项在该环境关闭。关键限制：未覆盖 Windows/Linux 与云端 Agent 形态；前端留有 emoji 渲染位但无任何配置面提供数据，未文档字段的可能性无法排除。
 research_intent: LDVH 环境接入规范 09 §5.3 把技能图标配置定义为接入时的可选外观子步骤：处理方必须先依据目标环境官方或实际权威资料判定其技能图标机制，能配置则使用发行物 icons/ 素材执行，不能配置或机制无法确认时如实交还，且图标配置不构成接入成立条件。Kimi Work 是 LDVH 薄 Skill 已完成递达验证的环境（索引递达与行为路由探针均通过），图标机制判定是其接入闭环的最后一项未决事项。项目需要一份可独立引用的结论，避免后续会话重复调研，并把检查面方法沉淀给其它环境的接入调研复用。
 recommendation_summary: 建议无需对象化后续：按 09 §5.3 对 Kimi Work 执行“机制无法确认时如实交还”分支，图标事项在该环境关闭，接入成立不以图标为条件。判断依据：官方文档与五面实证互证一致。监测条件：Kimi.app 版本更新涉及技能管理界面、或官方文档新增技能图标配置说明时，应重新调研并按结论变化更正本对象或新建 Study。
-object_id: study-01KZXN5TXNEP696W5HBNR7GW4S
-object_uid: 019ffb52-ebb5-758c-9370-b15d70787099
-fact_type_key: study
-created_at: '2026-07-31T13:58:38.207788+08:00'
-updated_at: '2026-08-13T15:03:57Z'
 change_log:
 - signature:
     product_name: Cindy
@@ -30,6 +25,18 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-luna
+    agent_runtime_name: claude-code
+  at: '2026-08-15T19:08:05.680909Z'
+  summary: Kimi Work 技能图标机制调研已完成；当前环境无技能图标配置机制，后续仅在官方机制或版本变化时重新调研。
+disposition_summary: Kimi Work 技能图标机制调研已完成；当前环境无技能图标配置机制，后续仅在官方机制或版本变化时重新调研。
+object_uid: 019ffb52-ebb5-758c-9370-b15d70787099
+object_id: study-01KZXN5TXNEP696W5HBNR7GW4S
+fact_type_key: study
+created_at: '2026-07-31T13:58:38.207788+08:00'
+updated_at: '2026-08-15T19:08:05.680909Z'
 ---
 
 ## 研究问题

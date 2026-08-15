@@ -1,6 +1,6 @@
 ---
 title: Obsidian 与 LDVH 的 AI 协作分层调研
-status: active
+status: retired
 urls:
 - ref: https://obsidian.md/
   title: Obsidian 官网
@@ -15,11 +15,6 @@ research_intent: 判断 Obsidian 这类本地 Markdown 知识工作区与 LDVH �
 research_question: Obsidian 作为 LLM Wiki 对 LDVH 有什么价值？两者应分层协作还是互相替代？受控桥接需要哪些边界？
 abstract: Obsidian 作为 LLM Wiki 提供的是以本地 Vault、Markdown、链接、属性、搜索或图谱视图和插件为基础的探索性材料层。它适合 Human 沉淀阅读材料、草稿和自由关联，也能让 AI 或检索层发现可能有用的内容。LDVH 面向 AI 的价值则是"当前工作可以依据什么"：来源可回指、稳定对象身份、来源定义的关系、渐进式读取、coverage/gaps、验证与 Human Gate。两者更可能分层协作而非彼此替代。
 recommendation_summary: Obsidian 承载 Human 的广泛探索与项目背景；LDVH 承载当前规则、受管事实、工作责任和受控上下文。若未来存在真实需求，Obsidian 只能向 AI 提供可回指的候选材料、精确读取入口、已读取范围和缺口，不能替代 LDVH 的事实源。现有 Helper 的事实候选与一跳关系导航仍独立成立，尚未建立对任何外部知识系统的桥接。
-object_id: study-01KZXN5TXNE5SA025VEKEJD04S
-object_uid: 019ffb52-ebb5-7172-a008-bb74dd268099
-fact_type_key: study
-created_at: '2026-07-24T13:30:00+08:00'
-updated_at: '2026-08-13T15:03:57Z'
 change_log:
 - signature:
     product_name: Cindy
@@ -33,6 +28,18 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-luna
+    agent_runtime_name: claude-code
+  at: '2026-08-15T19:08:16.228595Z'
+  summary: Obsidian 与 LDVH 协作分层调研已完成；不建立外部知识系统桥接，Obsidian 不替代 LDVH 事实源。
+disposition_summary: Obsidian 与 LDVH 协作分层调研已完成；不建立外部知识系统桥接，Obsidian 不替代 LDVH 事实源。
+object_uid: 019ffb52-ebb5-7172-a008-bb74dd268099
+object_id: study-01KZXN5TXNE5SA025VEKEJD04S
+fact_type_key: study
+created_at: '2026-07-24T13:30:00+08:00'
+updated_at: '2026-08-15T19:08:16.228595Z'
 ---
 
 ## 研究问题

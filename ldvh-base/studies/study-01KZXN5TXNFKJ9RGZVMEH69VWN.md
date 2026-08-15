@@ -1,6 +1,6 @@
 ---
 title: Obsidian 技术对 LDVH AI 关联发现的价值评估
-status: active
+status: retired
 report_kind: technical_assessment
 urls:
 - ref: https://obsidian.md/
@@ -31,11 +31,6 @@ relations:
 - relation_key: inspired-by
   target:
     object_uid: 019ffb52-ebb5-79d6-9813-3baeb71710b5
-object_id: study-01KZXN5TXNFKJ9RGZVMEH69VWN
-object_uid: 019ffb52-ebb5-7ce4-9c43-fba3a264ef95
-fact_type_key: study
-created_at: '2026-08-08T00:00:00+08:00'
-updated_at: '2026-08-13T15:03:57Z'
 change_log:
 - summary: 补建变更流水以支持受控提交；事实内容（Obsidian 技术对 LDVH AI 关联发现的价值评估）由其他会话产出，此处仅补审计签名。
   signature:
@@ -67,6 +62,18 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-luna
+    agent_runtime_name: claude-code
+  at: '2026-08-15T19:08:09.219058Z'
+  summary: Obsidian 技术价值评估已完成；不引入 Obsidian 技术，现有 Helper 与 Web 能力覆盖当前关联发现需求。
+disposition_summary: Obsidian 技术价值评估已完成；不引入 Obsidian 技术，现有 Helper 与 Web 能力覆盖当前关联发现需求。
+object_uid: 019ffb52-ebb5-7ce4-9c43-fba3a264ef95
+object_id: study-01KZXN5TXNFKJ9RGZVMEH69VWN
+fact_type_key: study
+created_at: '2026-08-08T00:00:00+08:00'
+updated_at: '2026-08-15T19:08:09.219058Z'
 ---
 
 ## 研究问题
