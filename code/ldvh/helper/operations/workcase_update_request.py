@@ -9,48 +9,66 @@ from typing import Any
 
 from ldvh.facts.contracts import LAYOUTS
 from ldvh.facts.models import FactReference, StableFactReference, UIDFactReference
+from ldvh.facts.workcase_item_event import WorkCaseItemEvent
 from ldvh.governance.models import ScopeDescriptor, cwd_scope, explicit_scope
 from ldvh.helper.operation_runtime import OperationExecutionContext
 from ldvh.helper.operations.fact_reference_support import parse_stable_fact_reference
 from ldvh.helper.requests import CommonRequest
 from ldvh.source_references import source_reference_problems
 
-UPDATE_REQUIRED_INPUTS = (
+_FULL_AFTER_REQUIRED_INPUTS = (
     "arguments.fact_ref",
     "arguments.expected_content_fingerprint",
     "arguments.fact_object",
 )
+UPDATE_REQUIRED_INPUTS = _FULL_AFTER_REQUIRED_INPUTS[:2]
 UPDATE_OPTIONAL_INPUTS = (
     "work_object_locators",
     "arguments.workspace_root",
+    "arguments.fact_object",
+    "arguments.item_event",
     "authorization_reference",
 )
-CLOSE_REQUIRED_INPUTS = (*UPDATE_REQUIRED_INPUTS, "authorization_reference")
+CLOSE_REQUIRED_INPUTS = (*_FULL_AFTER_REQUIRED_INPUTS, "authorization_reference")
 CLOSE_OPTIONAL_INPUTS = (
     "work_object_locators",
     "arguments.workspace_root",
 )
-BEGIN_TERMINATION_REQUIRED_INPUTS = (*UPDATE_REQUIRED_INPUTS, "authorization_reference")
+BEGIN_TERMINATION_REQUIRED_INPUTS = (*_FULL_AFTER_REQUIRED_INPUTS, "authorization_reference")
 BEGIN_TERMINATION_OPTIONAL_INPUTS = CLOSE_OPTIONAL_INPUTS
-COMPLETE_TERMINATION_REQUIRED_INPUTS = UPDATE_REQUIRED_INPUTS
+COMPLETE_TERMINATION_REQUIRED_INPUTS = _FULL_AFTER_REQUIRED_INPUTS
 COMPLETE_TERMINATION_OPTIONAL_INPUTS = (
     "work_object_locators",
     "arguments.workspace_root",
 )
 CORRECT_CLOSED_REQUIRED_INPUTS = (
-    *UPDATE_REQUIRED_INPUTS,
+    *_FULL_AFTER_REQUIRED_INPUTS,
     "arguments.route_target_fingerprints",
     "arguments.independent_review_reference",
 )
-CORRECT_CLOSED_OPTIONAL_INPUTS = UPDATE_OPTIONAL_INPUTS
+CORRECT_CLOSED_OPTIONAL_INPUTS = (
+    "work_object_locators",
+    "arguments.workspace_root",
+    "authorization_reference",
+)
 
 _COMMON_ARGUMENT_FIELDS = frozenset({"workspace_root", "fact_ref", "expected_content_fingerprint", "fact_object"})
+_UPDATE_ARGUMENT_FIELDS = frozenset({*_COMMON_ARGUMENT_FIELDS, "item_event"})
 _CORRECT_ARGUMENT_FIELDS = frozenset(
     {*_COMMON_ARGUMENT_FIELDS, "route_target_fingerprints", "independent_review_reference"}
 )
 _FACT_REF_FIELDS = frozenset({"governed_project_id", "fact_type_key", "object_id"})
 _ROUTE_TARGET_FINGERPRINT_FIELDS = frozenset({"target", "content_fingerprint"})
 _CODE_MANAGED_FIELDS = frozenset({"object_uid", "object_id", "fact_type_key", "created_at", "updated_at"})
+_ITEM_EVENT_FIELDS = {
+    "start-work-item": frozenset(
+        {"event_key", "item_id", "current_summary", "resume_from", "change_summary"}
+    ),
+    "update-work-item-checkpoint": frozenset(
+        {"event_key", "item_id", "current_summary", "resume_from", "change_summary"}
+    ),
+    "complete-work-item": frozenset({"event_key", "item_id", "result_summary", "change_summary"}),
+}
 _FINGERPRINT = re.compile(r"[0-9a-f]{64}\Z")
 
 
@@ -67,7 +85,9 @@ class WorkCaseWriteRequest:
 
 @dataclass(frozen=True, slots=True)
 class UpdateWorkCaseRequest(WorkCaseWriteRequest):
-    """One complete desired active WorkCase snapshot."""
+    """One complete desired after, supplied directly or projected from one item event."""
+
+    item_event: WorkCaseItemEvent | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -166,6 +186,7 @@ def _parse_base(
     context: OperationExecutionContext,
     *,
     allowed_argument_fields: frozenset[str],
+    require_fact_object: bool = True,
 ) -> tuple[_ParsedBase | None, list[str]]:
     problems: list[str] = []
     if not context.cwd.is_absolute():
@@ -205,17 +226,20 @@ def _parse_base(
     if not isinstance(fingerprint, str) or _FINGERPRINT.fullmatch(fingerprint) is None:
         problems.append("arguments.expected_content_fingerprint 必须是 64 位小写十六进制 string")
 
-    raw_fact_object = request.arguments.get("fact_object")
     fact_object: dict[str, Any] = {}
-    if not isinstance(raw_fact_object, dict):
+    if "fact_object" in request.arguments:
+        raw_fact_object = request.arguments["fact_object"]
+        if not isinstance(raw_fact_object, dict):
+            problems.append("arguments.fact_object 必须是 object")
+        else:
+            if any(not isinstance(key, str) for key in raw_fact_object):
+                problems.append("arguments.fact_object 的字段名必须是 string")
+            fact_object = {key: value for key, value in raw_fact_object.items() if isinstance(key, str)}
+            managed = sorted(set(fact_object) & _CODE_MANAGED_FIELDS)
+            if managed:
+                problems.append(f"arguments.fact_object 不得提交 Code 托管字段: {', '.join(managed)}")
+    elif require_fact_object:
         problems.append("arguments.fact_object 必须是 object")
-    else:
-        if any(not isinstance(key, str) for key in raw_fact_object):
-            problems.append("arguments.fact_object 的字段名必须是 string")
-        fact_object = {key: value for key, value in raw_fact_object.items() if isinstance(key, str)}
-        managed = sorted(set(fact_object) & _CODE_MANAGED_FIELDS)
-        if managed:
-            problems.append(f"arguments.fact_object 不得提交 Code 托管字段: {', '.join(managed)}")
 
     if request.requested_disclosure is not None:
         problems.append("requested_disclosure 对 WorkCase 写入操作必须为 null 或省略")
@@ -239,14 +263,60 @@ def _parse_base(
     )
 
 
+def _parse_item_event(value: object, problems: list[str]) -> WorkCaseItemEvent | None:
+    if not isinstance(value, dict):
+        problems.append("arguments.item_event 必须是 object")
+        return None
+    if any(not isinstance(key, str) for key in value):
+        problems.append("arguments.item_event 的字段名必须是 string")
+        return None
+    event_key = value.get("event_key")
+    if not isinstance(event_key, str) or event_key not in _ITEM_EVENT_FIELDS:
+        problems.append(
+            "arguments.item_event.event_key 必须是 start-work-item、"
+            "update-work-item-checkpoint 或 complete-work-item"
+        )
+        return None
+    expected_fields = _ITEM_EVENT_FIELDS[event_key]
+    missing = sorted(expected_fields - set(value))
+    unknown = sorted(set(value) - expected_fields)
+    if missing:
+        problems.append(f"arguments.item_event 缺少字段: {', '.join(missing)}")
+    if unknown:
+        problems.append(f"arguments.item_event 包含未知字段: {', '.join(unknown)}")
+    for field in sorted(expected_fields - {"event_key"}):
+        if not _nonempty_string(value.get(field)):
+            problems.append(f"arguments.item_event.{field} 必须是非空 string（至少包含一个非空白字符）")
+    if missing or unknown or any(not _nonempty_string(value.get(field)) for field in expected_fields):
+        return None
+    return WorkCaseItemEvent(
+        event_key=event_key,
+        item_id=value["item_id"],
+        change_summary=value["change_summary"],
+        current_summary=value.get("current_summary"),
+        resume_from=value.get("resume_from"),
+        result_summary=value.get("result_summary"),
+    )
+
+
 def parse_update_workcase_request(
     request: CommonRequest,
     context: OperationExecutionContext,
 ) -> WorkCaseWriteRequestParseResult:
-    parsed, problems = _parse_base(request, context, allowed_argument_fields=_COMMON_ARGUMENT_FIELDS)
-    if parsed is None:
+    parsed, problems = _parse_base(
+        request,
+        context,
+        allowed_argument_fields=_UPDATE_ARGUMENT_FIELDS,
+        require_fact_object=False,
+    )
+    has_fact_object = "fact_object" in request.arguments
+    has_item_event = "item_event" in request.arguments
+    if has_fact_object == has_item_event:
+        problems.append("arguments.fact_object 与 arguments.item_event 必须且只能出现一个")
+    item_event = _parse_item_event(request.arguments.get("item_event"), problems) if has_item_event else None
+    if parsed is None or problems:
         return WorkCaseWriteRequestParseResult(None, tuple(problems))
-    return WorkCaseWriteRequestParseResult(UpdateWorkCaseRequest(*parsed.values()), ())
+    return WorkCaseWriteRequestParseResult(UpdateWorkCaseRequest(*parsed.values(), item_event), ())
 
 
 def parse_close_workcase_request(

@@ -139,6 +139,7 @@ def test_update_parses_one_complete_after_request() -> None:
         fact_object=after,
         authorization_reference=(HUMAN_REFERENCE,),
         base=CWD,
+        item_event=None,
     )
 
 
@@ -413,24 +414,30 @@ def test_input_metadata_matches_the_three_public_contracts() -> None:
     assert UPDATE_REQUIRED_INPUTS == (
         "arguments.fact_ref",
         "arguments.expected_content_fingerprint",
-        "arguments.fact_object",
     )
     assert UPDATE_OPTIONAL_INPUTS == (
         "work_object_locators",
         "arguments.workspace_root",
+        "arguments.fact_object",
+        "arguments.item_event",
         "authorization_reference",
     )
-    assert CLOSE_REQUIRED_INPUTS == (*UPDATE_REQUIRED_INPUTS, "authorization_reference")
+    full_after_inputs = (*UPDATE_REQUIRED_INPUTS, "arguments.fact_object")
+    assert CLOSE_REQUIRED_INPUTS == (*full_after_inputs, "authorization_reference")
     assert CLOSE_OPTIONAL_INPUTS == ("work_object_locators", "arguments.workspace_root")
     assert CORRECT_CLOSED_REQUIRED_INPUTS == (
-        *UPDATE_REQUIRED_INPUTS,
+        *full_after_inputs,
         "arguments.route_target_fingerprints",
         "arguments.independent_review_reference",
     )
-    assert CORRECT_CLOSED_OPTIONAL_INPUTS == UPDATE_OPTIONAL_INPUTS
-    assert BEGIN_TERMINATION_REQUIRED_INPUTS == (*UPDATE_REQUIRED_INPUTS, "authorization_reference")
+    assert CORRECT_CLOSED_OPTIONAL_INPUTS == (
+        "work_object_locators",
+        "arguments.workspace_root",
+        "authorization_reference",
+    )
+    assert BEGIN_TERMINATION_REQUIRED_INPUTS == (*full_after_inputs, "authorization_reference")
     assert BEGIN_TERMINATION_OPTIONAL_INPUTS == CLOSE_OPTIONAL_INPUTS
-    assert COMPLETE_TERMINATION_REQUIRED_INPUTS == UPDATE_REQUIRED_INPUTS
+    assert COMPLETE_TERMINATION_REQUIRED_INPUTS == full_after_inputs
     assert COMPLETE_TERMINATION_OPTIONAL_INPUTS == CLOSE_OPTIONAL_INPUTS
 
 

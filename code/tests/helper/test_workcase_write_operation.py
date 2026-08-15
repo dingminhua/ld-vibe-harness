@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -10,6 +11,7 @@ from ldvh.facts.creation import CreationBoundary
 from ldvh.facts.models import FactIssue, FactReference, UIDFactReference
 from ldvh.facts.repository import FactReadResult
 from ldvh.facts.schema import FactSchema
+from ldvh.facts.workcase_item_event import WorkCaseItemEvent
 from ldvh.facts.workcase_update import WorkCaseWriteResult
 from ldvh.filesystem import AtomicWriteResult
 from ldvh.governance.models import LocatorSource, ScopeDescriptor
@@ -34,6 +36,7 @@ def _domain() -> UpdateWorkCaseRequest:
         fact_object={"status": "open", "title": "After"},
         authorization_reference=(),
         base=Path("/project"),
+        item_event=None,
     )
 
 
@@ -79,25 +82,35 @@ def test_current_workcase_operations_are_registered_with_exact_inputs() -> None:
     assert update.required_inputs == (
         "arguments.fact_ref",
         "arguments.expected_content_fingerprint",
-        "arguments.fact_object",
     )
     assert update.optional_inputs == (
         "work_object_locators",
         "arguments.workspace_root",
+        "arguments.fact_object",
+        "arguments.item_event",
         "authorization_reference",
     )
-    assert close.required_inputs == (*update.required_inputs, "authorization_reference")
+    assert close.required_inputs == (
+        *update.required_inputs,
+        "arguments.fact_object",
+        "authorization_reference",
+    )
     assert close.optional_inputs == ("work_object_locators", "arguments.workspace_root")
-    assert begin.required_inputs == (*update.required_inputs, "authorization_reference")
+    full_after_inputs = (*update.required_inputs, "arguments.fact_object")
+    assert begin.required_inputs == (*full_after_inputs, "authorization_reference")
     assert begin.optional_inputs == close.optional_inputs
-    assert complete.required_inputs == update.required_inputs
+    assert complete.required_inputs == full_after_inputs
     assert complete.optional_inputs == close.optional_inputs
     assert correct.required_inputs == (
-        *update.required_inputs,
+        *full_after_inputs,
         "arguments.route_target_fingerprints",
         "arguments.independent_review_reference",
     )
-    assert correct.optional_inputs == update.optional_inputs
+    assert correct.optional_inputs == (
+        "work_object_locators",
+        "arguments.workspace_root",
+        "authorization_reference",
+    )
 
 
 def test_capability_discovery_exposes_all_current_implementations() -> None:
@@ -131,12 +144,16 @@ def test_capability_discovery_exposes_all_current_implementations() -> None:
     assert operations["update-workcase"]["required_inputs"] == [
         "arguments.fact_ref",
         "arguments.expected_content_fingerprint",
-        "arguments.fact_object",
     ]
+    assert len(operations["update-workcase"]["input_examples"]) == 2
+    assert operations["update-workcase"]["input_examples"][0]["arguments_fragment"]["item_event"][
+        "event_key"
+    ] == "update-work-item-checkpoint"
     assert operations["close-workcase"]["required_inputs"][-1] == "authorization_reference"
     assert operations["begin-workcase-termination"]["required_inputs"][-1] == "authorization_reference"
-    assert operations["complete-workcase-termination"]["required_inputs"] == operations["update-workcase"][
-        "required_inputs"
+    assert operations["complete-workcase-termination"]["required_inputs"] == [
+        *operations["update-workcase"]["required_inputs"],
+        "arguments.fact_object",
     ]
     assert operations["correct-closed-workcase"]["required_inputs"][-2:] == [
         "arguments.route_target_fingerprints",
@@ -356,6 +373,153 @@ def test_common_whitespace_authorization_is_rejected_before_rule_read_or_write(m
     assert result.response["outcome"] == "invalid_request"
     assert result.response["changes"] == []
     assert reached == []
+
+
+def _event_current(fingerprint: str) -> FactReadResult:
+    return FactReadResult(
+        "ldvh-base/workcases/workcase-0006.yaml",
+        "yaml",
+        "mechanically_valid",
+        {
+            "status": "open",
+            "phase": "executing",
+            "title": "Current",
+            "work_items": [
+                {
+                    "item_id": "item-main",
+                    "goal": "Do work",
+                    "expected_result": "One result",
+                    "status": "in_progress",
+                    "current_summary": "before",
+                    "resume_from": "before next",
+                }
+            ],
+            "change_log": [
+                {
+                    "signature": {
+                        "product_name": "existing",
+                        "model_name": "existing",
+                        "agent_runtime_name": "existing",
+                    },
+                    "at": "2026-07-26T15:00:00+08:00",
+                    "summary": "Existing checkpoint.",
+                }
+            ],
+        },
+        None,
+        (),
+        content_fingerprint=fingerprint,
+        raw_text="current\n",
+    )
+
+
+def _event_request() -> CommonRequest:
+    return CommonRequest(
+        None,
+        (),
+        {},
+        None,
+        {
+            "signature": {
+                "product_name": "pytest",
+                "model_name": "test-model",
+                "agent_runtime_name": "pytest",
+            }
+        },
+        (),
+    )
+
+
+def test_item_event_stale_fails_before_projection_or_core_write(monkeypatch: pytest.MonkeyPatch) -> None:
+    domain = replace(
+        _domain(),
+        fact_object={},
+        item_event=WorkCaseItemEvent(
+            "complete-work-item",
+            "item-main",
+            "Completed item-main.",
+            result_summary="stable result",
+        ),
+    )
+    monkeypatch.setattr(workcase_update_operation, "_validated_request", lambda *_: domain)
+    monkeypatch.setattr(workcase_update_operation, "_governance", lambda *_: _run())
+    monkeypatch.setattr(workcase_update_operation, "_boundary", lambda *_: _boundary())
+    monkeypatch.setattr(
+        workcase_update_operation,
+        "project_fact_schemas",
+        lambda *_: {"workcase": FactSchema("workcase", ())},
+    )
+    monkeypatch.setattr(workcase_update_operation, "native_atomic_fact_writes_supported", lambda: True)
+    monkeypatch.setattr(workcase_update_operation, "_current_read", lambda *_: _event_current("b" * 64))
+    monkeypatch.setattr(
+        workcase_update_operation,
+        "project_workcase_item_event",
+        lambda *_: (_ for _ in ()).throw(AssertionError("stale must stop before projection")),
+    )
+    monkeypatch.setattr(
+        workcase_update_operation,
+        "_apply_core_workcase_write",
+        lambda *_: (_ for _ in ()).throw(AssertionError("stale must stop before core write")),
+    )
+
+    execution = workcase_update_operation._execute(
+        "update",
+        _event_request(),
+        object(),
+        OperationExecutionContext(Path("/project"), "2026-07-26T16:00:00+08:00"),
+    )
+
+    assert execution.outcome == "rejected"
+    assert "指纹已过期" in execution.summary
+    assert execution.changes == ()
+
+
+def test_item_event_projects_complete_after_then_uses_shared_write_adapter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    domain = replace(
+        _domain(),
+        fact_object={},
+        item_event=WorkCaseItemEvent(
+            "complete-work-item",
+            "item-main",
+            "Completed item-main.",
+            result_summary="stable result",
+        ),
+    )
+    captured = {}
+    application = WorkCaseWriteResult("candidate_rejected", "2026-07-26T16:00:00+08:00")
+    monkeypatch.setattr(workcase_update_operation, "_validated_request", lambda *_: domain)
+    monkeypatch.setattr(workcase_update_operation, "_governance", lambda *_: _run())
+    monkeypatch.setattr(workcase_update_operation, "_boundary", lambda *_: _boundary())
+    monkeypatch.setattr(
+        workcase_update_operation,
+        "project_fact_schemas",
+        lambda *_: {"workcase": FactSchema("workcase", ())},
+    )
+    monkeypatch.setattr(workcase_update_operation, "native_atomic_fact_writes_supported", lambda: True)
+    monkeypatch.setattr(workcase_update_operation, "_current_read", lambda *_: _event_current("a" * 64))
+
+    def fake_apply(mode, projected_domain, *args):
+        captured["mode"] = mode
+        captured["domain"] = projected_domain
+        return application
+
+    monkeypatch.setattr(workcase_update_operation, "_apply_core_workcase_write", fake_apply)
+
+    execution = workcase_update_operation._execute(
+        "update",
+        _event_request(),
+        object(),
+        OperationExecutionContext(Path("/project"), "2026-07-26T16:00:00+08:00"),
+    )
+
+    assert execution.outcome == "rejected"
+    assert captured["mode"] == "update"
+    projected = captured["domain"].fact_object
+    assert projected["work_items"][0]["status"] == "completed"
+    assert projected["work_items"][0]["result_summary"] == "stable result"
+    assert projected["change_log"][-1]["summary"] == "Completed item-main."
 
 
 def test_helper_preserves_committed_result_when_coordination_release_is_uncertain(

@@ -772,7 +772,7 @@ WorkCase 的普通活动期写入必须使用 `update-workcase`；Human 主动�
 |---|---|---|---|---|
 | `prepare-closed-workcase-candidate` | 从刚读取的 Gate2 source 快照确定性投影完整非托管 closed 候选与 proposal 已保存的目标映射基础，不检查关闭授权或目标当前状态 | `read` | `workcase-fact-type::prepare-closed-workcase-candidate 输入与结果` | `workcase-fact-type::prepare-closed-workcase-candidate 输入与结果` |
 | `check-workcase-handoff` | 对精确绑定的当前 WorkCase 快照只读形成 `current_snapshot_projection` 与派生 handoff 判定，不写事实、不推进 phase、不选择 item | `read` | `workcase-fact-type::check-workcase-handoff 输入与结果` | `workcase-fact-type::check-workcase-handoff 输入与结果` |
-| `update-workcase` | 对一个已精确读取的活动期 WorkCase 提交完整目标 after，并按本文机械执行字段所有权、版本、失效、phase 与 CAS 检查 | `may_change_state` | `workcase-fact-type::update-workcase 输入与结果` | `workcase-fact-type::update-workcase 输入与结果` |
+| `update-workcase` | 对一个已精确读取的活动期 WorkCase 提交完整目标 after，或以严格 WorkCase item event 从当前快照机械投影完整 after；两者进入同一字段所有权、版本、phase、完整验证与 CAS 发布事务 | `may_change_state` | `workcase-fact-type::update-workcase 输入与结果` | `workcase-fact-type::update-workcase 输入与结果` |
 | `begin-workcase-termination` | 消费 Human 当次明确中止指令与 source CAS，原子冻结原计划并进入唯一善后 phase | `may_change_state` | `workcase-fact-type::begin-workcase-termination 输入与结果` | `workcase-fact-type::begin-workcase-termination 输入与结果` |
 | `complete-workcase-termination` | 在善后、结果与关系影响已收口后，无第二 Human Gate 原子形成带 termination 的 closed | `may_change_state` | `workcase-fact-type::complete-workcase-termination 输入与结果` | `workcase-fact-type::complete-workcase-termination 输入与结果` |
 | `close-workcase` | 消费完整活动期 before、Human 当次关闭决定和目标指纹，原子形成 closed 白名单并回读 | `may_change_state` | `workcase-fact-type::close-workcase 输入与结果` | `workcase-fact-type::close-workcase 输入与结果` |
@@ -811,10 +811,17 @@ WorkCase 的普通活动期写入必须使用 `update-workcase`；Human 主动�
 
 ### update-workcase 输入与结果
 
-本操作完整复用 05 §11.7 的 `workspace_root`、`fact_ref`、`expected_content_fingerprint`、`fact_object`、共同请求包装、结果字段和 §11.8 事务；不复制第二套公共字段。额外收紧如下：
+本操作完整复用 05 §11.7 的 `workspace_root`、`fact_ref`、`expected_content_fingerprint`、共同请求包装、结果字段和 §11.8 事务；不复制第二套公共字段。`fact_object` 与 `item_event` 是严格 XOR alternatives：恰好一个必须出现。capabilities 因而只把 `fact_ref` 与 `expected_content_fingerprint` 列为共同 required inputs，并以 source-bound examples 分别交付两个 alternative 的组合方式；不得把二者伪装成同时必填。额外收紧如下：
 
 - `fact_ref.fact_type_key` 固定为 `workcase`，before 必须是当前 mechanically valid 的活动期 WorkCase。invalid、unavailable、not-found 或只能解析部分字段的 before 一律拒绝且零写入；本操作不提供旧形状转换或 invalid 记录修复入口；
-- `fact_object` 是排除 Code 托管身份与时间字段后的完整目标 after，必须仍为活动期；未提交字段表示 after 中不存在，不做部分 merge；
+- `fact_object` alternative 是排除 Code 托管身份与时间字段后的完整目标 after，必须仍为活动期；未提交字段表示 after 中不存在，不做部分 merge。其现有语义保持不变；
+- `item_event` alternative 只允许以下 discriminated union；每种 object 都使用列出的 exact-key 闭集，全部 string 必须非空且不得带调用方提供的时间、字段路径、任意 fragment、`set` / `remove` 或 merge 指令：
+  - `start-work-item`：字段恰为 `event_key`、`item_id`、`current_summary`、`resume_from`、`change_summary`；目标 item 必须唯一且为 `pending`，完整 after 只把该 item 改为 `in_progress`、设置两项 checkpoint 文本并追加一条使用 `change_summary` 的 `change_log`；
+  - `update-work-item-checkpoint`：字段同上；目标 item 必须唯一且为 `in_progress`，完整 after 只替换该 item 的 `current_summary` / `resume_from` 并追加一条 `change_log`。两项新文本与当前值都相等时是 no-op 拒绝，不追加流水、不改 `updated_at`、不进入替换；
+  - `complete-work-item`：字段恰为 `event_key`、`item_id`、`result_summary`、`change_summary`；目标 item 必须唯一且为 `in_progress`，完整 after 只把该 item 改为 `completed`、移除 `current_summary` / `resume_from`、设置 `result_summary` 并追加一条 `change_log`；
+- `item_event` 只在 `status=open, phase=executing` 适用，不自动选择 item、推进 phase、解除依赖、修改 plan/result/review/approval/proposal/closure 或形成 Human 决定。start / complete 的状态不匹配和 checkpoint no-op 均拒绝；不提供幂等成功、自动 replay、rebase 或 merge，调用方必须重新精确读取；
+- event 路径的顺序固定为：精确解析单一当前对象并确认完整 mechanically valid → 在查找 item 或投影 candidate 前比较 `expected_content_fingerprint` → 检查 `open/executing` → 检查 item 唯一性 → 检查事件前置状态或 no-op → 从 fresh before 投影完整非托管 after。错误优先级依次为 stale、status/phase、item uniqueness、event state/no-op、完整 candidate/transition；任一步失败都不追加流水且零写入；
+- event projector 形成完整 after 后，必须与 `fact_object` alternative 调用同一个内部 WorkCase 发布函数；字段所有权、§6 transition、完整 candidate Schema、CAS、原子替换、精确回读与完整性审计不得复制或分叉，替换边界仍再次对同一 expected fingerprint 执行 CAS；
 - before 与全部 after 必须满足 §6 的字段所有权、projection、版本、review、approval、proposal 与转换规则；操作不替 Controller 选择 phase、版本或 Human Gate；
 - 当次变化消费 Human 的实际决定或授权时，共同 `authorization_reference` 只能回指该 Human 输入；没有可靠引用时不得补造，Code 也不把引用存在解释为语义授权充分。Reviewer 输入只由当次实际 `creation_reviews` / `result_reviews` 及其字段所有权承载，不写入 `authorization_reference`；
 - `update-workcase` 的 before 与 after 都不得为 `status=closed`；活动期 before 要形成 closed 必须改用 `close-workcase`，已经 closed 的 before 要更正必须改用 `correct-closed-workcase`；

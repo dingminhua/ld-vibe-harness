@@ -18,6 +18,7 @@ from ldvh.facts.repository import FactReadResult, read_fact_object
 from ldvh.facts.schema import FactSchema, project_fact_schemas
 from ldvh.facts.update_application import MANAGED_FIELDS
 from ldvh.facts.validation import validate_fact_object
+from ldvh.facts.workcase_item_event import WorkCaseItemEventError, project_workcase_item_event
 from ldvh.filesystem import native_atomic_fact_writes_supported
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
 from ldvh.helper.operation_runtime import (
@@ -49,6 +50,7 @@ from ldvh.helper.operations.workcase_update_request import (
     UPDATE_REQUIRED_INPUTS,
     CorrectClosedWorkCaseRequest,
     RouteTargetFingerprint,
+    UpdateWorkCaseRequest,
     WorkCaseWriteRequest,
     parse_begin_workcase_termination_request,
     parse_close_workcase_request,
@@ -83,6 +85,33 @@ _IMPLEMENTATION_SOURCE = source_reference(
     "implementation",
     "code/ldvh/helper/operations/workcase_update_operation.py",
 )
+_UPDATE_ITEM_EVENT_INPUT_EXAMPLE = {
+    "summary": "以严格 item event 更新一个 executing WorkCase item checkpoint",
+    "arguments_fragment": {
+        "item_event": {
+            "event_key": "update-work-item-checkpoint",
+            "item_id": "item-current",
+            "current_summary": "当前已形成的真实进展摘要",
+            "resume_from": "下一次从这一具体动作继续",
+            "change_summary": "记录本次 checkpoint 的事实变化。",
+        }
+    },
+    "source_refs": (_CONTRACTS["update"],),
+    "composition_note": (
+        "另行补入刚精确读取的 fact_ref、expected_content_fingerprint 和当前三字段 signature；"
+        "不要同时提交 fact_object。"
+    ),
+}
+_UPDATE_FULL_AFTER_INPUT_EXAMPLE = {
+    "summary": "保留既有 update-workcase 完整 after alternative",
+    "arguments_fragment": {"fact_object": {}},
+    "source_refs": (_CONTRACTS["update"],),
+    "composition_note": (
+        "空 object 只是不可执行的 whole-value 占位；必须用 read-fact-objects 当前结果移除 Code 托管字段后形成的"
+        "完整目标 after 整体替换，另行补入 fact_ref、expected_content_fingerprint 和 signature；"
+        "不要把该占位当作部分 merge，也不要同时提交 item_event。"
+    ),
+}
 
 RECOVER_REQUIRED_INPUTS = (
     "arguments.fact_ref",
@@ -1032,6 +1061,36 @@ def _execute(
             sources=(*sources, _SHARED_WRITE_CONTRACT),
         )
 
+    if mode == "update" and isinstance(domain, UpdateWorkCaseRequest) and domain.item_event is not None:
+        current = _current_read(boundary, schemas, reference.object_id)
+        if (
+            current.check_status != "mechanically_valid"
+            or current.fields is None
+            or current.content_fingerprint is None
+        ):
+            return _rejected(
+                mode,
+                domain,
+                run,
+                "当前 WorkCase 不能形成 item_event 完整 after",
+                "item_event 要求完整 mechanically valid 当前对象和 content fingerprint",
+                sources,
+            )
+        if current.content_fingerprint != domain.expected_content_fingerprint:
+            return _rejected(
+                mode,
+                domain,
+                run,
+                "item_event 请求内容指纹已过期",
+                "stale item_event 在查找 item 或投影 candidate 前拒绝；请重新精确读取",
+                sources,
+            )
+        try:
+            projected = project_workcase_item_event(current.fields, domain.item_event, context.event_at)
+        except WorkCaseItemEventError as error:
+            return _rejected(mode, domain, run, "当前 WorkCase 拒绝 item_event", str(error), sources)
+        domain = replace(domain, fact_object=projected)
+
     if mode == "recover":
         current = _current_read(boundary, schemas, reference.object_id)
         expected_check_status = _RECOVERY_REQUIRED_BEFORE_STATUS[reference.object_id]
@@ -1423,6 +1482,7 @@ UPDATE_WORKCASE_IMPLEMENTATION = OperationImplementation(
     evidence=(_IMPLEMENTATION_SOURCE, _CONTRACTS["update"]),
     check_availability=_update_availability,
     call=_update_call,
+    input_examples=(_UPDATE_ITEM_EVENT_INPUT_EXAMPLE, _UPDATE_FULL_AFTER_INPUT_EXAMPLE),
 )
 BEGIN_WORKCASE_TERMINATION_IMPLEMENTATION = OperationImplementation(
     required_inputs=BEGIN_TERMINATION_REQUIRED_INPUTS,
