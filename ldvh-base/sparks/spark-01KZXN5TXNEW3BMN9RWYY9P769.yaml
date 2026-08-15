@@ -2,7 +2,7 @@ title: 受控写入优化
 status: open
 priority: P2
 intent: 承接 spark-0019 路由的关闭候选与写入契约不闭合问题，以及 spark-0049 更新实操中暴露的 read→update 契约映射缺失、signature 发现成本高、模板启用判断不明确等受控写入操作的 AI 可消费性优化。按 study-0030 的「公共契约层 → 类型专属层」分层结构，通过逐项 WorkCase 推进，不试图一次性解决所有写入类操作。
-summary: "## 来源与分层结构\n\n本议题承接受控写入实操中暴露的关闭候选契约、read→update 映射、署名发现与模板启用判断问题，继续采用“公共契约层优先、类型专属层逐项判断”的分层方式；不试图用一次大改覆盖全部写入操作。\n\n## 已完成承接\n\n- **WorkCase 关闭候选契约闭合**已由 workcase-01KZYRGGGNEK8B20TKZSC10PDW 完成：关闭候选能够按 UID route target 形状保留目标及其 `content_fingerprint` 要求。\n- **read→update 最小桥接**已由同一 WorkCase 完成：`update-fact-object` capabilities 提供来源绑定、可组合的完整 after 示例，明确移除 Code 托管字段、保留既有 `change_log` 前缀并追加当前流水；`read-fact-objects` 的完整语义读取结果闭集没有因写入准备而膨胀。\n- 上述结果形成了当前统一判断的一部分：正常读取返回当前语义判断所需内容；构造写请求的辅助形状放在目标写操作 capabilities/input examples 中，而不是默认塞入全部读取响应。完成的 WorkCase 不表示其它公共契约项或类型专属项已经完成。\n\n## 当前剩余公共契约层\n\n1. **模板启用判断**：判断 `read-action-template-candidates` 是否应提供最小 `trigger_conditions` 或等价提示，使 AI 能选择适用模板而不复制模板正文，也不把提示冒充规则适用结论。\n2. **署名拼装减负**：在不跨角色推导、不把不可观察字段伪造成已知值的前提下，判断 capabilities 模板或既有能力如何降低三字段署名发现与请求拼装成本；必须保持不可观察项为 `null` 以及写入前逐项重新观察的边界。\n\n这两项作用面和失败闭环不同，后续宜分别承接、分别验证，不再与已完成的 read→update 桥接捆绑实施。\n\n## 当前剩余类型专属层\n\n- WorkCase 关闭候选已完成；后续只在真实实操证据显示 Study、Spark、Pitfall 或 ADR 的特定写路径仍有公共示例无法覆盖的摩擦时，再按类型逐项判断。\n- 没有具体证据时不为每类事实预建专属写入辅助，也不把局部请求、事实 Schema 或状态机改造纳入本 Spark。\n\n## 边界与保持 open 的原因\n\n- 不改变事实对象 Schema、类型状态机、Git 流程或规则源编辑方式；不新增缓存、第二权威或由 Code 猜测目标状态的动作式写入。\n- 模板启用判断、署名拼装减负及证据驱动的后续类型专属判断尚无完整承接位置，因此本 Spark 保持 `open`。"
+summary: "## 来源与分层结构\n\n本议题承接受控写入实操中暴露的关闭候选契约、read→update 映射、署名发现与模板启用判断问题，继续采用“公共契约层优先、类型专属层逐项判断”的分层方式；不试图用一次大改覆盖全部写入操作。\n\n## 已完成承接\n\n- **WorkCase 关闭候选契约闭合**已由 workcase-01KZYRGGGNEK8B20TKZSC10PDW 完成：关闭候选能够按 UID route target 形状保留目标及其 `content_fingerprint` 要求。\n- **read→update 最小桥接**已由同一 WorkCase 完成：`update-fact-object` capabilities 提供来源绑定、可组合的完整 after 示例，明确移除 Code 托管字段、保留既有 `change_log` 前缀并追加当前流水；`read-fact-objects` 的完整语义读取结果闭集没有因写入准备而膨胀。\n- **模板启用判断**已由 workcase-01M015XAQVFJTRNWS26YPC44YK 完成并 closed/completed：五份当前行动模板声明增加必填 `activation_hint` 第四列，候选与内容读取投影同源提示；提示只帮助 AI 选择下一步应读取的模板，不表示适用、授权、激活、能力可用或可执行。该实现采用原位 breaking contract，不提供旧三列表头双读、默认值、alias 或 compatibility profile。\n- 上述结果共同落实当前读写统一判断：正常读取返回当前行动和选择所需的最小内容；构造下一写请求所需的辅助形状进入目标写操作 capabilities/input examples；完整权威来源继续按需展开并核对来源身份。完成这些子项不表示署名拼装或其它类型专属摩擦已经解决，也不证明真实 AI 选择质量已有可重复改善。\n\n## 当前剩余公共契约层\n\n1. **署名拼装减负**：在不跨角色推导、不缓存旧会话值、不把不可观察字段伪造成已知值的前提下，降低三字段署名发现、归一化和事实请求/Git footer 拼装成本；必须保持每次事实写入与每次 Git 提交前逐项重新观察的边界。\n\n## 署名减负目标与判断边界\n\n- **第一层机械减负**：优先让 capabilities/input examples 或等价既有能力交付可组合的完整请求骨架、三字段角色、nullable 与归一化要求，以及 Git trailer 的可靠排列，使 AI 不必反复回查字段或通过失败试出 `model_name` / `agent_runtime_name` 规范形状。\n- **第二层事实写入减负候选**：评估是否可把同一请求中的 `observed_context.signature` 保持为当前写入唯一署名输入，并由 Helper 在完整 after 校验前形成最新 `change_log.signature`，减少同一快照在请求中的重复拼装；该候选必须继续保留完整对象 CAS、历史流水前缀、写后回读和完整性审计，不因文本重复减少而降低发布边界。\n- **Git 边界**：commit footer 仍由 AI 或调用方在最终 message 中显式承载；Hook 只验证，不自动注入、改写或从环境变量取得署名。模板或辅助只可做确定性字段/归一化/排列帮助，不证明观察真实性、Human 授权或提交内容正确。\n- **禁止方向**：不从产品推导模型或运行时，不把上一次 change_log、上一 commit 或全局配置当作本次快照，不建立 session signature 缓存或第二权威，三项全不可观察时仍阻断。\n- **判断方法**：先结合 study-01KZXN5TXNFV8T3AQS1QCPAQ8B 对完整对象发布主干、类型专属输入和局部编辑辅助边界进行独立复核，再决定机械模板是否已经足够，或是否仍需范围更窄的事实写入合同 WorkCase；没有真实摩擦和风险匹配验证时不直接实施第二层候选。\n\n该项与已完成的 read→update、关闭候选和模板启用判断具有不同失败闭环。后续只为独立、仍有证据的目标建立聚焦 WorkCase，不恢复大而全的统一写入改造。\n\n## 当前剩余类型专属层\n\n- WorkCase 关闭候选已完成；后续只在真实实操证据显示 Study、Spark、Pitfall 或 ADR 的特定写路径仍有公共示例无法覆盖的摩擦时，再按类型逐项判断。\n- 没有具体证据时不为每类事实预建专属写入辅助，也不把局部请求、事实 Schema 或状态机改造纳入本 Spark。\n\n## 边界与保持 open 的原因\n\n- 不改变事实对象 Schema、类型状态机、Git 流程或规则源编辑方式；不新增缓存、第二权威或由 Code 猜测目标状态、适用模板与会话署名的动作式写入。\n- 模板启用判断已经完成；署名拼装减负及证据驱动的后续类型专属判断尚无完整承接位置，因此本 Spark 保持 `open`。"
 relations:
 - relation_key: related-to
   target:
@@ -38,11 +38,27 @@ change_log:
     agent_runtime_name: deepseek-harness
   at: '2026-08-14T21:57:01.112934Z'
   summary: content_update：归并关闭候选与 read→update 最小桥接的完成事实，收敛剩余公共契约层和证据驱动的类型专属边界，保持 Spark open。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T23:29:49.638152Z'
+  summary: content_update：同步模板启用判断 closed/completed 事实及 activation_hint 四列契约，将剩余公共契约层收敛为署名拼装减负，并保持 Spark open。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T23:51:50.445560Z'
+  summary: content_update：细化署名拼装减负的机械层、事实写入候选、Git footer 与禁止边界，并绑定指定 Study 的独立复核后续；状态保持 open。
 evolution:
 - at: '2026-08-14T21:57:00.913626Z'
   summary: 关闭候选与 read→update 最小桥接已由专门 WorkCase 完成，公共契约层从三项收敛为相互独立的模板启用判断和署名拼装减负；类型专属层改为仅在真实摩擦证据出现时逐项承接。
+- at: '2026-08-14T23:29:49.435453Z'
+  summary: 模板启用判断已由 workcase-01M015XAQVFJTRNWS26YPC44YK 完成：activation_hint 四列契约和 Helper 同源投影已交付；当前剩余公共契约层收敛为署名拼装减负，Spark 继续保持 open。
+- at: '2026-08-14T23:51:50.250998Z'
+  summary: Human 将剩余公共契约项进一步收敛为可判断的署名减负目标：先区分 capabilities/footer 的机械拼装帮助与事实写入合同候选，并要求结合既有局部编辑策略 Study 独立复核后再决定是否实施第二层变化。
 object_uid: 019ffb52-ebb5-7706-ba55-38e7bc9b1cc9
 object_id: spark-01KZXN5TXNEW3BMN9RWYY9P769
 fact_type_key: spark
 created_at: '2026-08-12T20:25:10.993521Z'
-updated_at: '2026-08-14T21:57:01.112934Z'
+updated_at: '2026-08-14T23:51:50.445560Z'

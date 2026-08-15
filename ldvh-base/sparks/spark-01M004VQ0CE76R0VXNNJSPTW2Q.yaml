@@ -1,8 +1,7 @@
 title: 三个关联 Spark 细分出的五件优先事项
-status: open
-priority: P1
+status: implemented
 intent: 三个互相关联的 open Spark——Helper 只读交互优化（spark-01KZXN5TXNEQT8H39DFHPZ1T72）、LDVH 面向 AI 的服务质量评估与持续改进（spark-01KZXN5TXNEKNA5YCZ62F8BM0K）、受控写入优化（spark-01KZXN5TXNEW3BMN9RWYY9P769）——需要作为一个整体细分出当前更优先要做的具体事情：只读与写入是 Helper 响应契约的两侧，服务质量评估是验证这些优化是否有效的上位机制，单看任一 Spark 都无法发现跨议题的牵引与返工风险。后续要判断：细分出的各事项的承接顺序与承接形态（WorkCase、Study 或规范修订）、事项清单何时随承接进展更新、本入口何时处置。若不跨行动保留这层综合，每次接续都要重新精读三个长摘要、重新发现读写契约两侧的牵引关系和评估前置关系，增加定位、重新分析、分流与上下文恢复负担。
-summary: "## 三个来源 Spark 的当前结构\n\n- **A Helper 只读交互优化**（…QT8H，P2）：失败诊断结构化提示与行动模板成功响应去重均已有 closed/completed WorkCase 承接；仍保持 open 的范围收敛为对其它只读操作按真实任务证据逐项判断，不做无差别统一删减。\n- **B 服务质量评估**（…KNA5，P1）：最小执行证据协议已经由 workcase-01M00D4C9BFT4S0QTHVTYEB018 承接完成，可为后续优化提供执行身份、事件来源分级与评分前可比性门槛；该完成不等于任何具体优化已形成因果效益证据。\n- **C 受控写入优化**（…W3BM，P2）：WorkCase 关闭候选契约与 read→update 最小桥接已经由 workcase-01KZYRGGGNEK8B20TKZSC10PDW 完成；剩余公共契约项为模板启用判断和署名拼装减负，类型专属层改为仅在真实摩擦证据出现时逐项判断。\n\n## 已形成的读写统一判断\n\n读侧“少给”与写侧“提供构造帮助”不再被视为方向相反的响应改造，而按三层归位：\n\n1. **立即行动所需内容**进入正常响应；不得为缩短响应删除语义判断、机械校验或安全继续所需字段。\n2. **构造下一写请求所需的辅助形状**进入目标写操作的 capabilities/input examples 或范围匹配的专属候选结果；不默认塞入全部读取响应。\n3. **完整权威来源**通过已有精确读取能力按需展开，并使用来源身份、路径和摘要核对；不复制正文、缓存或建立第二权威。\n\n该判断已分别由行动模板成功响应去重和 update capabilities after 示例落地。它证明当前技术形状与契约可以成立，不证明 AI 服务质量已经产生可重复因果改善；效益声明仍受 B 的可比性、重复样本和独立评分边界约束。\n\n## 原五件优先事项的当前状态\n\n1. **定义并验证最小执行证据协议**：已完成，由 workcase-01M00D4C9BFT4S0QTHVTYEB018 承接并 closed/completed。\n2. **Helper 读写响应契约的统一设计判断**：判断已形成，并由两个独立 closed/completed WorkCase 在读侧去重和写侧构造帮助中分别实现；不再新开一个大而全的统一改造 WorkCase。\n3. **read→update 契约闭合**：最小方案已完成；`update-fact-object` capabilities 提供可组合完整 after 示例，未扩大 `read-fact-objects` 结果闭集。\n4. **署名拼装减负与模板启用判断**：尚未承接，是当前明确剩余公共契约工作；两者作用面和失败闭环不同，应拆分判断与实施。\n5. **行动模板成功路径 `source_content` 去重**：具体子项已完成；A 中更广泛的只读成功路径收缩只在真实任务证据命中具体操作后再形成候选，不把它冒充本项仍未完成。\n\n## 当前下一承接顺序\n\n1. **模板启用判断**：先判断候选结果中的最小适用条件提示如何帮助选择模板，同时不复制正文、不代替 AI 判断规则适用或 Human 授权。\n2. **署名拼装减负**：再判断可观察三字段如何由 capabilities 或既有入口帮助拼装；不可观察项保持 `null`，每次写入前仍须重新观察，不跨产品、模型和运行时推导。\n3. **代表性集成复验**：使用最小执行证据协议分别复验行动模板读取和事实更新准备，记录响应体积、工具往返、首次合法请求及可比性；没有受控对照和重复样本时只报告链路可用性。\n4. **证据驱动的后续候选**：只有复验或真实实操暴露其它只读操作或类型专属写路径的具体摩擦，才分别创建范围匹配的承接对象。\n\n## 本入口边界与保持 open 的原因\n\n- 本 Spark 只维护三个来源 Spark 的交叉牵引、完成状态与承接顺序，不复制其完整正文或下游 WorkCase 计划。\n- 细分与排序不是行动授权；新的 WorkCase、规范修订、事实更新和 Git 提交仍分别遵守其 Human Gate 与行动模板。\n- 第 4 项及证据驱动的后续候选尚未获得完整承接位置，因此本入口保持 `open`；待这些责任获得承接或本排序被新基线取代时再按 Spark 生命周期处置。"
+summary: "## 三个来源 Spark 的综合判断结果\n\n本入口针对 Helper 只读交互优化、LDVH 面向 AI 的服务质量评估与持续改进、受控写入优化三个来源 Spark，完成了跨议题的细分、依赖识别与承接顺序判断。当前已经形成并验证的结果包括：\n\n- 最小执行证据协议已经由 workcase-01M00D4C9BFT4S0QTHVTYEB018 完成，为后续对照提供执行身份、事件来源分级和评分前可比性门槛。\n- Helper 读写响应的统一判断已经按“立即行动所需内容、下一请求构造帮助、完整权威来源按需展开”三层归位；行动模板成功响应去重、read→update 最小桥接和 `activation_hint` 四列契约已分别落地。\n- 模板启用判断已经由 workcase-01M015XAQVFJTRNWS26YPC44YK 完成；提示只帮助选择下一步读取对象，不表示适用、授权、激活、能力可用或可执行。\n- Helper 交互可测量口径与 65 会话 before 基线已经由 workcase-01M016QVCXFM7ST88N6YKMJZPN 完成，Phase 1 前后对照已有冻结口径、样本下限与残差判定方法。\n\n## 下游责任位置\n\n- Phase 1 CLI 机械扩展、只读输出的证据化判断和后续对照继续由“Helper 只读交互优化”与“LDVH 面向 AI 的服务质量评估与持续改进”两个来源 Spark 承载；具体目标成熟时直接建立 WorkCase，不由本入口复制计划。\n- 署名拼装减负继续由“受控写入优化”Spark 承载；先判断机械请求骨架能够消除的摩擦，领域合同简化只在后续证据支持时独立承接。\n- ADR/Pitfall/Study 触发机制、多项目聚合和价值审计等其它 open Spark 不属于本入口的三来源细分范围，继续按自身语义判断。\n\n## 入口结束边界\n\n本 Spark 的限定信息需求是形成三个来源 Spark 的交叉分析和当前优先事项，而不是持续跟踪所有下游执行。该细分与排序责任已经直接落实，后续责任已有来源 Spark 稳定保留，因此本入口转为 `implemented`。这一终态不表示 Phase 1、署名拼装、集成复验、相关 WorkCase、项目、规则、代码、Git 提交、push 或发布已经完成。"
 relations:
 - relation_key: related-to
   target:
@@ -53,6 +52,18 @@ change_log:
     agent_runtime_name: deepseek-harness
   at: '2026-08-14T21:58:12.290216Z'
   summary: content_update：归并两个已完成契约优化 WorkCase 与最小执行证据协议的当前事实，确认第 2 项统一判断已分侧落地，重排剩余承接顺序并保持本 Spark open。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T23:30:40.795857Z'
+  summary: content_update：同步 activation_hint 四列契约和模板启用判断 closed/completed 事实，将下一承接顺序调整为署名拼装减负、代表性集成复验与证据驱动后续，并保持 Spark open。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-14T23:46:35.573701Z'
+  summary: single_object_lifecycle：经 Human 当前授权，将已完成三个来源 Spark 细分与排序职责的本入口从 open 转为 implemented；移除 priority，写入限定处置说明，不宣称下游完成。
 evolution:
 - at: '2026-08-14T12:46:02Z'
   summary: 起点：Human 在综合查看三个 open Spark（Helper 只读交互优化、LDVH 面向 AI 的服务质量评估、受控写入优化）并询问下一步后，要求把「当前最重要的 5 件事」固化为独立议题。影响：本 Spark 的五件清单与落选边界以创建时的 8 个 open Spark 全景与零 open WorkCase 空窗为基线，后续排序更新应对照该基线表达变化。
@@ -62,8 +73,13 @@ evolution:
   summary: 第 1 项「定义并验证最小执行证据协议」已由 workcase-01M00D4C9BFT4S0QTHVTYEB018 承接完成（closed/completed），related-to 关联已建立；summary 中 B 分支与第 1 项状态同步更新。剩余第 2–5 项仍待承接，本入口保持 open。
 - at: '2026-08-14T21:58:12.081875Z'
   summary: 读侧去重与写侧 read→update 最小桥接的完成事实被归并后，第 2 项统一判断由待设计转为已形成并分侧落地，第 3、5 项具体子项转为已完成；当前顺序收敛到模板启用判断、署名拼装减负和证据化复验。
+- at: '2026-08-14T23:30:40.592613Z'
+  summary: 模板启用判断已由 workcase-01M015XAQVFJTRNWS26YPC44YK 完成，原第 4 项拆分后的剩余责任只保留署名拼装减负；当前顺序更新为署名拼装减负、代表性集成复验和证据驱动后续候选。
+- at: '2026-08-14T23:46:35.379299Z'
+  summary: 65 会话可测量口径与 before 基线合入后，三个来源 Spark 的完成状态、剩余责任和验证顺序已能稳定归位；本入口不再需要持续复制下游进展，因而以 implemented 结束综合排序职责。
+disposition_summary: 本 Spark 限定的三个来源 Spark 交叉分析、五件事项细分、完成状态归并与当前承接顺序已经直接落实：最小执行证据协议、读写三层判断、read→update 桥接、行动模板去重、activation_hint 模板启用提示和 65 会话可测量 before 基线均已识别到当前稳定位置；Phase 1 CLI 机械扩展与对照继续由 Helper 只读交互优化和 AI 服务质量评估 Spark 承载，署名拼装减负继续由受控写入优化 Spark 承载。`implemented` 只结束本综合排序入口，不表示这些下游工作、相关 WorkCase、项目、规则、代码、Git 提交、push 或发布已经完成。
 object_uid: 01a0004d-dc0c-71cd-806f-b5acb36d7057
 object_id: spark-01M004VQ0CE76R0VXNNJSPTW2Q
 fact_type_key: spark
 created_at: '2026-08-14T12:44:56.611252Z'
-updated_at: '2026-08-14T21:58:12.290216Z'
+updated_at: '2026-08-14T23:46:35.573701Z'

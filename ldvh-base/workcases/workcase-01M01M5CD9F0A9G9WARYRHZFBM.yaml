@@ -1,0 +1,179 @@
+status: closed
+title: Phase 1/Phase 2 四十会话因子对照与残差判定
+goal: 形成一个冻结、可复算、隐私有界的 2×2 因子证据包：在 40 个 fresh 固定模型会话中分别估计 Phase 1 CLI affordances 与 Phase 2 WorkCase item_event 对机械交互摩擦和请求正确性的行为一致效应，并按冻结 v1 对照方法及实际证据层级形成 Phase 1 结构性残差分类候选，不把 harness-delivered/behavior-consistent 观察冒充 host-received 或广义 causal-effect 证明。
+scope: 入口依赖仅为已关闭 WC-A 01a002d2-c7c9-7566-b3a1-86675bcb9b6d、WC-B 01a00316-7cdd-7af0-a662-be99914175dc、冻结口径 WorkCase 01a0026b-ed9d-7d0f-9d21-1537a7497ed5 与 Study 01a00246-3d5b-77d6-b6fa-e44c05db9aab。只允许新增 docs/metrics/wc-c-factorial-protocol-v1.json、wc-c-factorial-results-v1.json、wc-c-factorial-report-v1.md，可选新增 code/ldvh/testing/helper_interaction_factorial.py 与 code/tests/testing/test_helper_interaction_factorial.py；使用一次 40-agent workflow 和最多 8 个按预注册原因 replacement，会话模型/任务/身份/顺序固定。Trial 只执行 read-only Helper 并构造但不执行 synthetic update-workcase request；禁止任何真实 create/update/close/correct/termination、其它事实更新、共享可变 trial 文件、raw prompt/prose/tool body/full command/request/path 持久化、09/MCP/generic patch、依赖安装、网络与 Git commit/push/PR/release。历史 65 会话只作 contextual frozen reference，不充当实验 control。
+success_criterion_definitions:
+- criterion_id: criterion-balanced-factorial
+  statement: 预注册 assignment/stopping/identity/comparability 后形成恰好 40 个 valid primary fresh sessions、每 cell 10 个、P1 与 P2 各 20 对 replay pairs；尝试总数不超过 48，全部 exclusion/replacement 以闭集原因进入 structural ledger，不能恢复平衡时该标准不满足且效果结论降级。
+- criterion_id: criterion-no-write-privacy
+  statement: 每个 trial 只完成固定 read-only Helper 任务并返回未执行的 synthetic update request；raw request 在任何修复前评分，真实写入调用为零。持久结果逐条满足 closed retained schema 且 denylist 字段为零，raw prompt/prose/tool body/full command/request/path 不进入仓库产物。
+- criterion_id: criterion-phase1-estimate
+  statement: 按 replicate 与 P2 stratum 形成 20 对 legacy/new-CLI replay pairs，逐项交付 helper/per-op/bash share、command chars、heredoc、read-only invalid_request、field-guess、usage/cache proxy 的 observed/proxy/structurally-constrained/not_run 分类、paired estimate/CI/permutation 与 interaction；仅在 v1 必需条件均成立时输出 conforming residual classification，否则明确 insufficient_sample。
+- criterion_id: criterion-phase2-estimate
+  statement: 按 replicate 与 P1 stratum 形成 20 对 full-object/item_event pairs；对 agent 原始 request 在不修复不归一化前检查 XOR/闭集/类型/非空/CAS/ref/full preservation/no-op/state，再经 parser/projector 与冻结 gold after 比较，分别报告 raw-valid、after-valid、canonical payload bytes/hash、paired effect 与 interaction，不外推 generic patch/MCP。
+- criterion_id: criterion-residual-report
+  statement: 在 canonical WorkCase result projection 前，由预注册算法和 item-local schema/reproducibility checks 生成完整 protocol/results/report 与 residual-classification candidate，区分 historical context、contemporaneous replay、harness-delivered、behavior-consistent、host-received unavailable、broad causal-effect 未证明及全部 not-run；significant 只作为范围外后续治理输入，不在本 WC 修改 09 或实现 Phase 3。
+success_criterion_results:
+- criterion_id: criterion-balanced-factorial
+  outcome: satisfied
+  summary: 43 attempts produced exactly 40 valid retained sessions, 10 per cell and 20 replay pairs per factor; the three replacements were only for preregistered missing-structured-output technical failures. All retained sessions were gpt-5.6-sol, structurally comparable, and identity-matched.
+- criterion_id: criterion-no-write-privacy
+  outcome: satisfied
+  summary: All 40 retained trials made zero state-changing Helper calls. Each record passed the closed retained schema and recursive denylist check; repository artifacts retain session hashes and aggregates, not raw prompts, commands, tool bodies, request bodies, session IDs or paths.
+- criterion_id: criterion-phase1-estimate
+  outcome: satisfied
+  summary: Twenty replay pairs were scored for every frozen metric. Treatment used each new flag 20 times; invalid-request hits fell from 22 to 0 and treatment field-guess errors were 0, while heredoc was 0 in both conditions. Helper command chars increased by 151.1/session (CI 127.7–172.05; p=1.9073e-6), direct calls were unchanged, and cache amplification was inconclusive.
+- criterion_id: criterion-phase2-estimate
+  outcome: satisfied
+  summary: Twenty replay pairs show item_event reduced raw request bytes by 1935.75 (CI -1945.6 to -1926.25; p=1.9073e-6). Raw validity was 19/20 in both groups; projected-after validity was 18/20 full-object vs 19/20 item_event with no significant difference. Raw failures were retained without repair; no generic patch or MCP claim was made.
+- criterion_id: criterion-residual-report
+  outcome: satisfied
+  summary: Protocol, results and report are hash-bound and byte-reproducible. The phase1-comparison/v1 replay residual candidate is significant because the mechanical acceptance components hold within stated boundaries while command characters significantly increased; evidence is limited to LDVH-prepared, harness-delivered and behavior-consistent, with host-received unavailable and broad causal-effect unproved.
+result_summary: WC-C completed a preregistered fixed-model 2×2 replay comparison with 40 valid sessions (10/cell, 20 pairs/factor, 43 attempts including three technical replacements). Phase 1 reduced read-only invalid-request/field-guess outcomes but added 151.1 Helper command characters per paired session and did not reduce direct Helper round trips, yielding residual_judgment=significant. Phase 2 strict item_event reduced raw request size by 1935.75 bytes (~75.8%) without significant request-validity evidence. The result is behavior-consistent for this task package only; it is not host-received or broad causal-effect proof and does not authorize Phase 3/MCP/09 work.
+validation_summary: 'Artifacts: protocol f651d1ad1053fcf162efbe68fd3cbf52db8f2d7c47bbe1d017dc71d2710455cd; results a2228442abd3f7cece65413d21548d0e6a5824937a5c788f492bab8b136930d2; records 3193838af32f52015f191de01b7713d9ee3192a0d114bf73a59cc5d19ad1c526; report dad83f36aa50cdb92f38658ea08b64798048e9a6fcfb37fd8daf048b9a2d60ec. After the pre-review correction, direct tests 12 passed; full code/tests 2013 passed, 15 skipped; focused Ruff/diff passed; results regenerated byte-identically. Baseline hashes remain frozen; earlier ldvh check and fact integrity were unaffected by this pure extractor change.'
+closure_outcome: completed
+disposition_summary: WC-C 的固定模型 2×2 对照、Phase 1/Phase 2 估计、证据分级与残差分类责任已全部完成；当前 scope 内没有未满足或未验证责任。significant narrow-task residual 只作为范围外后续治理机会保留，不构成 route、MCP/09 授权或本 WorkCase 的未完成执行。
+spark_suggestions:
+- suggestion_id: suggestion-phase3-governance-threshold
+  suggestion_kind: follow_up_opportunity
+  summary: 基于 significant 结构残差，独立判断是否需要建立 Phase 3 / 09 接入层治理议题。
+  follow_up_summary: 以 WC-C report/results 的 behavior-consistent 证据为输入，重新核对真实工作分布、host-received 不可观察性、command-character/round-trip/cache 残差和现有 CLI/strict-event 边界，再由独立 Human Gate 判断是否值得提出 09/MCP 方向；不得从 significant 自动推导实现授权。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a00246-3d5b-77d6-b6fa-e44c05db9aab
+- relation_key: related-to
+  target:
+    object_uid: 01a0026b-ed9d-7d0f-9d21-1537a7497ed5
+- relation_key: related-to
+  target:
+    object_uid: 01a002d2-c7c9-7566-b3a1-86675bcb9b6d
+- relation_key: related-to
+  target:
+    object_uid: 01a00316-7cdd-7af0-a662-be99914175dc
+change_log:
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T02:31:36.567482Z'
+  summary: Created the WC-C Gate 1 candidate after complete source recall and two fresh native subagent creation reviews; 40-valid/48-attempt factorial, no-write/privacy/stopping boundaries are frozen, and no trial has started.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T02:33:53.854564Z'
+  summary: Consumed the continuous Human instruction as WC-C Gate 1; froze plan v1 and the 40-valid/48-attempt no-write/privacy baseline without starting any item or trial.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T02:34:13.966091Z'
+  summary: Started WC-C protocol freezing after Gate 1; no trial or artifact existed before this checkpoint.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T02:43:50.025381Z'
+  summary: Completed the protocol-freeze item with a hash-bound, balanced 40-session design and no trial launch.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T02:44:07.907596Z'
+  summary: Started the deterministic scorer/extractor item after the protocol hash was frozen.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T02:44:38.718342Z'
+  summary: Completed the deterministic scorer/extractor item after direct and adjacent failure-branch validation.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T02:45:24.671233Z'
+  summary: Started the bounded 40-primary WC-C factorial trial item after scorer validation.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T03:00:35.310852Z'
+  summary: Completed the bounded factorial trial item with 40 balanced valid records, three technical replacements, and no fact-writing trial calls.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T03:00:55.688493Z'
+  summary: Started the report and residual-classification item after freezing the 40-record result set.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T03:04:03.131262Z'
+  summary: Completed the final report item and atomically entered controller_checking with a version-only result v1 shape; canonical result projection remains pending.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T03:04:45.895269Z'
+  summary: Formed and Controller-checked canonical WC-C result version 1 from the frozen 40-record evidence package; residual is significant within the narrow behavior-consistent boundary and does not authorize Phase 3.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T03:05:06.986875Z'
+  summary: Entered independent_reviewing with canonical WC-C result version 1 frozen and no result review prefilled.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T03:09:18.623059Z'
+  summary: Returned from independent_reviewing to controller_checking with result v1 projection frozen after interrupting the unfinished reviewer; no review conclusion was formed.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T03:10:24.392855Z'
+  summary: Before any valid result review, finalized result v1 after correcting helper command-character attribution to count each containing bash command once; all actual trial outputs and estimates remained byte-identical.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T03:10:48.077553Z'
+  summary: Re-entered independent_reviewing with the finalized pre-review result v1; the interrupted prior reviewer has no recorded conclusion.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T03:18:15.123771Z'
+  summary: Recorded the actual fresh native subagent read-only review of exact WC-C result v1 as pass; all five criteria and closure preparation were supported, with only informational not-rerun/interpretation notes.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T03:18:36.782600Z'
+  summary: Fresh result v1 review passed with no feedback; froze the reviewed projection and entered closure_preparing.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T03:19:30.282513Z'
+  summary: Formed the complete WC-C closure proposal as completed with no in-scope residual decisions or routes, while preserving the significant residual only as an out-of-scope Phase3 governance follow-up opportunity.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T03:20:04.718215Z'
+  summary: The complete reviewed WC-C closure proposal was reread and audited; entered human_closure_confirming while waiting on the Human Gate 2 decision without expanding Phase3 authorization.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T03:21:22.195441Z'
+  summary: Human continuous sequential-completion instruction was consumed as Gate 2; atomically closed WC-C as completed, preserving the significant residual only as a non-authorizing Phase3 governance follow-up opportunity.
+object_uid: 01a00342-b1a9-7814-9827-8ac7b11fbd74
+object_id: workcase-01M01M5CD9F0A9G9WARYRHZFBM
+fact_type_key: workcase
+created_at: '2026-08-15T02:31:36.567482Z'
+updated_at: '2026-08-15T03:21:22.195441Z'

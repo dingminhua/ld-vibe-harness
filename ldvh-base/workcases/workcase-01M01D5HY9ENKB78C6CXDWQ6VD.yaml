@@ -1,0 +1,195 @@
+title: Phase 1 CLI 请求文件化、请求骨架与结果投影
+status: closed
+goal: 在不改变 Helper 公开操作领域语义、事实发布主干或 Git Gate 职责的前提下，为当前源码 launcher 交付 --request、--example、--fields 三项显式 CLI 机械辅助，并闭合事实写入署名请求骨架与 Git trailer 示例；以已冻结 baseline-v1 的重跑一致性作为代码改动前锚点，只交付功能与机械验证，不作因果效果结论。
+scope: 仅修改 specs/04-Helper CLI 服务规范.md、specs/attachments/04.Att.01-Helper CLI 请求与响应字段表.md，及真实 footer 示例确有必要时的 specs/03-Git协作规范.md；修改源码 launcher ldvh、code/ldvh/cli.py、可选新增的 code/ldvh/cli_projection.py、形成 source-bound example 所需的最小 operation metadata，以及直接受影响的 tests。--request 只读取一个调用方显式指定的普通 UTF-8 JSON 文件并与非空 stdin 冲突；--example 只投影当前 capabilities 的 operation metadata、required_inputs 与 input_examples，真实 observed signature 每次仍由 AI 直接观察，不缓存、不推导；--fields 只在完整 Helper response 形成后做确定性 object dotted-path 投影，缺失、非法和重复路径不静默。不新增 Helper operation_key，不改变 CommonRequest、领域 result、事实 Schema/状态机、完整对象 CAS、原子替换、回读审计、Hook 或 Git Gate 责任。排除 Phase 2 WorkCase 事件输入、通用 patch、MCP/环境 adapter、因果验证、其它事实更新、依赖安装、外部网络、Git commit/push/PR/release，以及启动前已存在的两个 Spark 差异。
+success_criterion_definitions:
+- criterion_id: criterion-cli-contract
+  statement: 04 与 04.Att.01 精确定义 --request、--example、--fields 的命令语法、互斥矩阵、默认完整机器响应、显式 projection 输出、错误与退出码，并保持全部不带新 flag 的当前入口行为和领域语义兼容；必要的 03 footer 示例只投影既有提交合同。
+- criterion_id: criterion-request-file
+  statement: --request 对调用方显式普通文件的 UTF-8 原文与相同 stdin 原文进入同一 handle_request；文件缺失、目录、非普通文件、超限、不可读、非 UTF-8、缺值、未知选项及与非空 stdin 冲突均形成稳定结构化 invalid_request、原 Helper exit code 边界和零领域副作用，不猜 workspace、环境变量、glob 或 URL。
+- criterion_id: criterion-example-signature
+  statement: capabilities 单操作 --example 只从当前 source-bound operation metadata 形成可填写而非可直接盲用的请求骨架；覆盖 required input path 与既有 arguments_fragment，事实写骨架使用当前三字段闭集的 null 占位并明确全空不可执行、不得缓存/推导，precheck-git-commit 骨架提供能够由现行合同验证的 trailer 排列；--example 不调用目标操作或产生写副作用。
+- criterion_id: criterion-fields-projection
+  statement: --fields 仅在完整 Helper response 形成后按闭合 object dotted-path 语法保留嵌套形状并返回原 ServiceResult exit code；成功投影不输出未选大字段，空、非法、重复、缺失路径或穿越 array 均形成结构化诊断，不抛 KeyError、不把 absent 伪装为 null，也不把 projection 表述为完整 common response。
+- criterion_id: criterion-validation-boundary
+  statement: 代码改动前 baseline-sessions-v1.json 与 baseline-calls-v1.json 的冻结脚本重跑结果逐对象完全一致且 SHA-256 分别为 bc098c8fef056b40c2664538be69914ddcea00debfe9ea4ad109d0654933ea72 与 157bb38c2b8f07a1ac3e597e0d92f16427daf6e8109345a842f6446349e9fd54；三 flag 的直接 CLI 正反、launcher、signature、service 与相关回归测试按实际结果记录，测试通过不冒充因果改善、全模型外推或 MCP 必要性。
+success_criterion_results:
+- criterion_id: criterion-cli-contract
+  outcome: satisfied
+  summary: 04/04.Att.01 定义三 flag、non-symlink/live-pipe 输入、单次 general-discovery metadata-only example、完整 metadata/path fail-closed、fields core invariant/回退与旧入口兼容；不新增领域 operation/CommonRequest。
+- criterion_id: criterion-request-file
+  outcome: satisfied
+  summary: --request 通过 symlink 预拒绝和可用时 O_NOFOLLOW、fstat、有界 strict UTF-8 读取；tty 无第二源，非 tty 仅 closed-empty EOF 允许，非空或 live writer pipe 均零等待 invalid_request，领域调用前失败。
+- criterion_id: criterion-example-signature
+  outcome: satisfied
+  summary: --example 成功/失败均只调用一次通用 capabilities discovery，再精确筛选 key；不做 request-check/availability/目标写调用。不可投影由 CLI invalid_request；metadata/path 完整校验，写骨架 FIELD_NAMES 三 null，precheck trailer 连续且来源绑定。
+- criterion_id: criterion-fields-projection
+  outcome: satisfied
+  summary: --fields 只在完整 ServiceResult 后投影；校验 common core/gaps，不完整回退来源响应；成功保留原 exit/status core/gap count，missing/null/array 分离，不因 selector 缺失诱导重试。
+- criterion_id: criterion-validation-boundary
+  outcome: satisfied
+  summary: version 3 full 1990 passed/15 skipped，focused 279 passed，Ruff/diff/ldvh/fact checks 通过；baseline 两 JSON 与冻结对象相等。两轮 review feedback 全部实现，不宣称因果改善、native Windows 实测或 MCP 结论。
+result_summary: Phase 1 CLI 三项机械扩展已交付并完成两轮独立 review 返工：--request 提供 non-symlink、有界 UTF-8 文件输入和双源 fail-closed；--example 用单次通用 discovery 形成完整校验的 source-bound 骨架、null 署名与 Git trailer 示例，绝不进入 request-check；--fields 在完整响应后安全窄投影并保留原结果/exit。Helper 领域语义、事实发布和 Git Gate 未改变。
+validation_summary: result_version=3：full code/tests 1990 passed、15 skipped；focused suite 279 passed；Ruff、git diff --check、ldvh check、check-fact-integrity 通过；baseline sessions/calls 相等且 SHA 保持 bc098c8f…3ea72 / 157bb38c…9fd54。native Windows 为 skipped；外部严格消费者、真实 AI 使用质量与 Phase 1 因果效果未验证。
+closure_outcome: completed
+disposition_summary: WC-A 的 Phase 1 CLI 机械实现、规则合同、署名/footer 骨架和风险匹配验证已完成，并经两次 changes_required 修复循环后由 fresh result_version=3 独立 review pass。没有 WC-A 内部残余决策或 Spark 建议；WC-B WorkCase 写入减负与 WC-C 因果比较按 Human 已定分立路线继续，不由本关闭结果提前宣称。未创建 Git commit。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a00246-3d5b-77d6-b6fa-e44c05db9aab
+- relation_key: related-to
+  target:
+    object_uid: 01a0026b-ed9d-7d0f-9d21-1537a7497ed5
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7706-ba55-38e7bc9b1cc9
+change_log:
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T00:29:22.200501Z'
+  summary: 受控创建 WC-A 计划候选：代码前 baseline-v1 已精确复现；两轮 native subagent 只读方案复核完成，第 1 轮反馈已吸收，第 2 轮 pass；当前等待受控消费 Human 连续执行 Gate 1 授权，未修改规则或代码。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T00:31:30.706409Z'
+  summary: Human Gate 1：消费当前连续执行指令，批准 plan_version=1 与完整 execution_authorization；移除 Human waiting，进入 executing，尚未开始任何 item。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T00:32:14.932374Z'
+  summary: Started item-contract-before-anchor before any specification or code edits; recorded baseline and contract resume point.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T00:35:10.837256Z'
+  summary: Completed item-contract-before-anchor with frozen baseline equality and 161 passing spec tests; started item-request-file-mode before CLI implementation.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T00:42:40.368131Z'
+  summary: Completed item-request-file-mode with 51 passing focused tests and Ruff; started item-example-signature-mode.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T00:49:18.932323Z'
+  summary: Completed item-example-signature-mode with 240 passing focused tests and Ruff; started item-fields-projection-mode.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T00:55:20.257005Z'
+  summary: Completed item-fields-projection-mode with 265 passing focused tests and 333-byte probe; started integration validation.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:03:07.770006Z'
+  summary: 'Completed item-integration-validation; all items terminal, so formed and Controller-checked complete result_version=1 in controller_checking. Final full suite: 1973 passed, 15 skipped.'
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:03:46.932794Z'
+  summary: Exact result_version=1 was reread and audited; entered independent_reviewing before delegating the pending native subagent read-only review.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:06:48.334308Z'
+  summary: Recorded the actual native subagent read-only review for result_version=1 with conclusion changes_required and seven major feedback items; no phase change or correction was combined.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:07:53.679318Z'
+  summary: Resolved all result_version=1 review feedback by accepting a version-2 repair/revalidation/fresh-review route, then returned to controller_checking without changing implementation or result content.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:09:29.051100Z'
+  summary: Bumped reviewed result identity to version 2, removed frozen version-1 projection/review, and reopened only the integration-validation leaf for the review repair loop while preserving completed dependencies.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:17:44.807437Z'
+  summary: Completed the version-2 review repair loop and integration validation; all seven prior feedback items were implemented, full suite passed 1986 with 15 skips, and complete result_version=2 entered controller_checking.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:18:25.385214Z'
+  summary: Exact repaired result_version=2 was reread and audited; entered fresh independent_reviewing without reusing the version-1 review.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:20:38.076727Z'
+  summary: 'Recorded fresh result_version=2 native subagent review as changes_required with one major: example failure fallback must not call single-operation request-check.'
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:21:02.825035Z'
+  summary: Resolved the sole result-version-2 feedback by accepting a version-3 removal of the single-operation fallback plus failure-path call-count tests, then returned unchanged to controller_checking.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:21:31.011822Z'
+  summary: Bumped reviewed result identity to version 3, removed version-2 projection/review, and reopened the integration-validation leaf for the sole example-fallback repair.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:25:26.519033Z'
+  summary: 'Completed the version-3 repair loop: example failure paths now remain single-discovery metadata-only; focused 279 and full 1990 tests passed, and complete result_version=3 entered controller_checking.'
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:26:07.842162Z'
+  summary: Exact result_version=3 was reread and audited; entered a fresh independent review without reusing version-1 or version-2 reviews.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:29:00.641188Z'
+  summary: Recorded the actual fresh native subagent final review for result_version=3 with conclusion pass, no feedback, and independent risk-matched evidence.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:29:26.975871Z'
+  summary: Advanced unchanged reviewed result_version=3 from independent_reviewing to closure_preparing; closure proposal not yet formed.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:29:54.281214Z'
+  summary: 'Formed the complete WC-A closure proposal: completed, no internal residual decisions or Spark suggestions, no commit, and WC-B/WC-C remain separate authorized follow-up responsibilities.'
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:30:22.012552Z'
+  summary: Closure proposal and terminal preservation were checked; entered human_closure_confirming and now wait only for Human Gate 2 on the complete proposal.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:34:10.753247Z'
+  summary: 'Human Gate 2: consumed the current continuous instruction to complete WC-A/WC-B/WC-C sequentially without per-item waiting; accepted the unchanged complete proposal and closed WC-A as completed with no internal residuals, suggestions, or commit.'
+object_uid: 01a002d2-c7c9-7566-b3a1-86675bcb9b6d
+object_id: workcase-01M01D5HY9ENKB78C6CXDWQ6VD
+fact_type_key: workcase
+created_at: '2026-08-15T00:29:22.200501Z'
+updated_at: '2026-08-15T01:34:10.753247Z'

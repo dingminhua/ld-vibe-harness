@@ -1,0 +1,153 @@
+status: closed
+title: WorkCase 执行项事件输入与完整对象发布桥接
+goal: 在不建立通用 patch 或第二事实发布协议的前提下，为 update-workcase 增加三个 executing item checkpoint 的严格 item_event 输入，使 Helper 从 expected fingerprint 绑定的当前 WorkCase 在内存生成完整 after，并复用现有完整验证、CAS、原子替换、回读和审计主干，降低 Controller 反复拼装完整对象的机械摩擦。
+scope: 仅修改 specs/21-WorkCase-工作项.md 的 update-workcase 专属合同；code/ldvh/helper/operations/workcase_update_request.py、workcase_update_operation.py，可选新增 code/ldvh/facts/workcase_item_event.py，以及直接相关 parser/operation/process/capabilities/source-contract tests。item_event 与 fact_object 严格互斥，事件闭集仅 start-work-item、update-work-item-checkpoint、complete-work-item；只接受 status=open、phase=executing，先比 expected fingerprint 再找 item/投影；事件只改变目标 item 的已列字段并追加调用方 change_summary，完整 after 随后进入同一 _apply_core_workcase_write/apply_workcase_write。保留 full fact_object 入口和 close/correct/termination 合同。排除 specs/32 预设修改、04 字段语义变化、通用 set/remove/path/fragment/merge、自动 phase/plan/result/review/approval/closure、更改状态机或事实 Schema、其它事实对象更新、Spark/Study 更新、依赖安装、网络、Git commit/push/PR/release，以及 WC-A CLI 与 WC-C 因果责任。
+success_criterion_definitions:
+- criterion_id: criterion-event-contract
+  statement: 21 精确定义 update-workcase 的 fact_object/item_event XOR、三事件 discriminated union 的 exact-key/非空字段、stale-first 错误顺序、重复/no-op 语义和完整 after 发布边界；capabilities 以 source-bound examples 分别交付 event 与 full-after 组合方式，不把 alternatives 伪装为同时必填。
+- criterion_id: criterion-event-mutation-closure
+  statement: start 只允许 pending→in_progress 并设置 current_summary/resume_from；checkpoint 只允许 in_progress→in_progress 并替换两字段；complete 只允许 in_progress→completed、移除 checkpoint 两字段并设置 result_summary；每次只追加一条 change_log。stale、非法 phase/status、item 不唯一、状态不符、checkpoint no-op、未知/缺失/错型字段均稳定零写入失败。
+- criterion_id: criterion-single-publication-path
+  statement: item_event 只负责从 fresh current snapshot 形成完整 after，随后与 fact_object 入口调用同一内部发布函数和现有 transition/schema/CAS/atomic replacement/readback/integrity audit；替换边界再次 CAS，不复制第二套发布流水，且事件不能改写 phase、plan、results、reviews、approval 或 closure。
+- criterion_id: criterion-compatibility-no-generic-patch
+  statement: 原 update-workcase full fact_object 路径及 close/correct/begin/complete termination 的 required/optional inputs 与行为按当前合同兼容；公开能力中不出现 generic patch、JSON Pointer、set/remove、任意 fragment、自动 merge 或其它事实类型事件。
+- criterion_id: criterion-validation-boundary
+  statement: 根据变更风险记录所选 parser、projector、真实 Helper write fixture、capabilities/source-contract、回归、Ruff、diff、ldvh 与事实检查的实际 passed/failed/not_run 结果和未验证范围；机械通过不外推生产质量、语义真实性、真实并发或 Human 授权。
+success_criterion_results:
+- criterion_id: criterion-event-contract
+  outcome: satisfied
+  summary: 21 定义 fact_object/item_event XOR、三事件 exact-key discriminated union、stale-first、state/no-op 和完整 after 单一路径；capabilities required 只含 fact_ref/fingerprint，并有 event 与 full-after source-bound alternatives；--example 机械可消费。
+- criterion_id: criterion-event-mutation-closure
+  outcome: satisfied
+  summary: start/checkpoint/complete 只修改目标 item 列明字段并 append 一条 change_log；真实 WC-B 连续使用三事件成功。相同 checkpoint 重放 rejected 且 fingerprint/change_log/updated_at 不变；旧 fingerprint+unknown item 先报 stale，事实不变。
+- criterion_id: criterion-single-publication-path
+  outcome: satisfied
+  summary: event 只在 _execute 输入准备阶段投影完整 after，随后进入与 fact_object 相同的 _apply_core_workcase_write/apply_workcase_write；真实 event 响应证明 transition/schema/CAS/atomic/readback 和独立完整性审计通过。最后 item 的 event completion 因不能自动 phase 被原子拒绝。
+- criterion_id: criterion-compatibility-no-generic-patch
+  outcome: satisfied
+  summary: full fact_object update 仍可用；close/begin/complete/correct 继续要求完整 fact_object，相关回归通过。公开 metadata 没有 arguments.set/remove、path/fragment/merge 或其它事实类型 event；未修改状态机、Schema 或 specs/32。
+- criterion_id: criterion-validation-boundary
+  outcome: satisfied
+  summary: before baseline 173 passed；最终 comprehensive 600 passed，full 2001 passed/15 skipped，scoped Ruff/diff/ldvh/fact checks passed。project-wide Ruff 实际 failed（6 个 WC-B 范围外既有问题）并保留为未处理边界；native Windows 未运行，不外推生产/真实并发/语义授权。
+result_summary: update-workcase 现在支持与完整 fact_object 严格互斥的三个 executing item_event。调用方只提交 event + fresh fingerprint；Helper 在任何 item lookup 前拒绝 stale，从完整当前 WorkCase 投影仅含获准 item/checkpoint/change_log 变化的完整 after，再复用唯一 WorkCase 发布函数。真实 WC-B 自举写入证明 start/checkpoint/complete 成功，no-op/stale 零写入，最后 item 不会自动 phase。原 full-after 与其它 WorkCase write 操作保持兼容；没有通用 patch。
+validation_summary: 实际选择基于 parser exact union、fresh-snapshot/stale、状态/no-op、共享发布、capability alternative 和回归风险。before focused 173 passed；初始 focused 136 passed；comprehensive 首轮 599 passed/1 old allowlist failure，更新 capability allowlist 后 41 passed，最终 clean comprehensive 600 passed；full code/tests 2001 passed/15 skipped。WC-B changed-file Ruff、git diff --check、ldvh check（2 qualification gaps）、check-fact-integrity（255 objects/0 problems）passed。project-wide Ruff failed 6 items，均在未修改的 testing/controller files，按 scope not_run-for-fix；native Windows、外部消费者、长期并发负载和生产效果未验证。
+closure_outcome: completed
+disposition_summary: WC-B 原 scope 的五项 success criteria 全部 satisfied，严格 item_event 与现有完整 after 共享发布交付完成；验证与独立复核边界已保存在终态结果中。没有剩余责任、route_existing、accepted-stop 项或 Spark 建议；未创建 commit，WC-C 仍是独立后续 WorkCase，不由本案关闭承接。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7ed1-a1aa-f90dd9655d0b
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7706-ba55-38e7bc9b1cc9
+- relation_key: related-to
+  target:
+    object_uid: 01a002d2-c7c9-7566-b3a1-86675bcb9b6d
+change_log:
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:43:19.381199Z'
+  summary: 受控创建 WC-B 计划候选：无 open/blocked WorkCase 且两次 F2 查重零命中；focused before baseline 173 passed；首轮 creation review feedback 已全部吸收，第二轮 pass；当前等待 Gate1，尚未修改实现。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:45:04.005014Z'
+  summary: Consumed the Human continuous sequential-execution instruction as Gate 1 for exact plan_version=1 and entered executing with all work items unchanged and pending.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:45:26.767929Z'
+  summary: Started only the contract/event-boundary item after Gate 1; retained the other three dependent items as pending and recorded the 173-test before baseline.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:56:40.953825Z'
+  summary: Completed WC-B contract/event-boundary item through the new strict item_event path after 136 focused tests, Ruff, diff check, and a source-bound capability probe.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:57:02.438599Z'
+  summary: Started the parser/event-candidate item through the new strict start-work-item event after the first production event write passed full publication and integrity checks.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:57:45.768384Z'
+  summary: Updated the parser/event-candidate checkpoint through the strict event path before a deliberate identical no-op replay.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:58:37.071626Z'
+  summary: Completed the WC-B parser/event-candidate item after real checkpoint, identical no-op, and stale-before-item-lookup evidence.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T01:58:57.440369Z'
+  summary: Started the WC-B shared-write integration item after the strict parser/projector and real event failure boundaries were verified.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T02:00:26.744022Z'
+  summary: Completed the WC-B shared-write integration item after structural, capability, regression, and repeated real event publication evidence.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T02:00:46.486139Z'
+  summary: Started the WC-B adversarial validation item after parser, projector, and shared publication integration completed.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T02:03:55.545428Z'
+  summary: The last-item event correctly refused to auto-advance phase; used the original full-after path to complete validation and form canonical result_version=1 with 600 comprehensive and 2001 full tests passed plus scoped Ruff and explicit unrelated project-wide Ruff failures.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T02:05:10.703491Z'
+  summary: Exact WC-B result_version=1 was reread and audited; entered fresh independent_reviewing without prefilled review.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T02:12:56.537075Z'
+  summary: Recorded the actual fresh native subagent read-only review for WC-B result_version=1 as pass with no findings; preserved all reviewer not-run and residual boundaries.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T02:13:36.535640Z'
+  summary: Fresh result_version=1 review passed with no feedback; froze the reviewed projection and entered closure_preparing.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T02:14:29.226728Z'
+  summary: 'Formed the complete WC-B closure proposal: completed, no residual decisions, routes, Spark suggestions, or commit; preserved validation and review boundaries in the terminal result fields.'
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T02:15:34.378106Z'
+  summary: The complete WC-B closure proposal was reread and audited; entered human_closure_confirming while explicitly waiting on the Human Gate 2 closure decision.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T02:16:21.596565Z'
+  summary: Human continuous sequential-completion instruction was consumed as Gate 2; atomically closed WC-B as completed with no residual decisions, routes, Spark suggestions, or commit.
+object_uid: 01a00316-7cdd-7af0-a662-be99914175dc
+object_id: workcase-01M01HCZ6XFBRACRNYK68M2XEW
+fact_type_key: workcase
+created_at: '2026-08-15T01:43:19.381199Z'
+updated_at: '2026-08-15T02:16:21.596565Z'
