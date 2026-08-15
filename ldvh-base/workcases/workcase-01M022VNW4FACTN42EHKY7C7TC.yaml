@@ -1,0 +1,183 @@
+title: 知识预检与复用效用的配对实验
+goal: 在不修改 Helper、事实 Schema、规则语义或 Web 的前提下，以预注册、可重放、固定模型的配对任务实验，判断 source-bound F2→F3 与 ADR/Pitfall/Study 三段知识预检组合包是否在冻结的代表性只读判断任务中提高适用性判断、减少重复研究或错误选择，并量化新增读取与上下文成本；结果只形成当前任务包的 harness-delivered/behavior-consistent 证据，为两个既有 open Spark 提供依据。
+scope: 仅新增 code/ldvh/testing/knowledge_precheck_factorial.py 及直接测试，并形成 docs/metrics/knowledge-precheck-protocol-v1.json、knowledge-precheck-results-v1.json、knowledge-precheck-report-v1.md 三份冻结产物；results-v1 内嵌 allowlisted 原始结构化 attempt records 与 exclusion ledger。运行固定 gpt-5.6-sol fresh native subagent treatment/control 和 condition-blind scoring，只读当前 facts/Helper。严格排除 Helper operation/contract、Specs、事实 Schema/状态、Web、依赖安装、外部网络/消息、其它事实更新、Git commit/push/PR/release、P2/P3/F1 delta/MCP，以及启动前已有 dirty 文件与 WC-C ignored artifacts。
+success_criterion_definitions:
+- criterion_id: criterion-protocol-freeze
+  statement: 任何 retained execution 前冻结并散列 protocol/task/gold/prompt/packet：精确 12 个 pair IDs（ADR decision、Pitfall implementation/debug、Study research 各 4），覆盖 positive、negative/non-use、ambiguity；逐任务定义 applicable 与 tempting-nonapplicable refs、admissible answers、duplicate/wrong-selection taxonomy、first-legal-action/source 与 adjudication。两条件使用同 task/output/deliberation/procedure skeleton；control 使用结构尽量匹配的 source-free neutral packet，treatment 独有 source-bound F2/F3 与 applicability instruction，estimand 只称 combined source-bound precheck package。pair members 使用 fresh independent contexts、无共享状态，顺序 6/6 counterbalance；泄漏为技术 exclusion。目标恰 12 retained pairs，最多 15 pair attempts/3 replacements，closed technical codes 为 missing_structured_output/model_technical_failure/runner_failure/cross_condition_leakage；wrong/adverse/null/surprising 永不排除，停止规则与结果方向无关。
+- criterion_id: criterion-balanced-records
+  statement: 取得恰 12 个 identity-matched retained pairs，或如实形成未满足/阻塞材料；每次 attempt 的 allowlisted structured record 含随机 attempt id、condition（scorer 输入剥离）、pair/order/fresh-context identity、全部 hashes、固定 model/agent、structured validity/exclusion、fact reads/expansions、first action、selection/non-use、response chars、prompt/packet/material chars，以及 observable input/output token、usage/cache、wall/queue latency；不可观察字段显式 unavailable。全实验 0 state-changing Helper calls。
+- criterion_id: criterion-blind-knowledge-value
+  statement: 客观字段由 deterministic scorer 计算，语义字段由独立 native subagent 在不见 condition/order/treatment provenance 的随机 attempt IDs 上按冻结 gold/rubric condition-blind 评分；默认一视角，仅预注册 ambiguity/disagreement 启用第二视角与冻结 adjudication。报告对 applicability/correct choice/non-use/duplicate avoidance/first legal action 给出 paired estimate 与 CI 或 exact paired test，并分列新增读取、prompt/packet/context 与可观察 usage/latency 成本；fact reads 只算 behavior，不冒充 reuse/value。
+- criterion_id: criterion-reproducibility
+  statement: runner/parser tests 覆盖 malformed records、privacy allowlist/denylist、hash、balance/order、technical codes、attempt/replacement ceiling、blind scorer packet、retention 与 deterministic analysis；三份冻结产物可由 records byte-identical 重建。canonical result projection 前实际运行 focused tests、Ruff、diff check、ldvh check 与 fact integrity，并保留 item-local 输出；失败或 unavailable 如实记录。只有 production import/public contract/shared core 实际变化时才触发 full suite。
+- criterion_id: criterion-evidence-boundary
+  statement: 结论严格区分 ldvh-prepared、harness-delivered、host-received、behavior-consistent 与 causal-effect；无 provider receipt 时 host-received=unavailable，只对冻结 corpus 报告 task-specific behavior-consistent estimate，不关闭 broad service-quality Spark、不声称 HV4 一般成立；null、adverse 或成本高于收益均为可接受结果。
+success_criterion_results:
+- criterion_id: criterion-protocol-freeze
+  outcome: satisfied
+  summary: 在首个 retained member 前冻结 12-task protocol/task/gold/prompt/packet；ADR/Pitfall/Study 各4，覆盖 positive/negative-non-use/ambiguity，6/6 counterbalance 与 12/15/3 ceilings。加强后的 validator 已从 frozen task/materials 重算 task/prompt/packet hashes 和 chars、assignment sequence 与 fixed model/agent；fresh-context hashes 24/24 唯一，实际 freshness 仍只作为本次独立 agent 创建记录的执行证据，不由 hash 本身证明。
+- criterion_id: criterion-balanced-records
+  outcome: satisfied
+  summary: 12 pair attempts 产生恰 12 identity-matched retained pairs/24 records，6 control-first/6 treatment-first，technical replacements=0，state-changing Helper calls=0。validator 强制 allowlist/denylist、task/prompt/packet binding、sequence、structured validity、zero writes、unavailable usage/latency、response sizes、context-hash shape/uniqueness；opaque hash 不升级为 host freshness proof。
+- criterion_id: criterion-blind-knowledge-value
+  outcome: satisfied
+  summary: 每 attempt 一项 condition-blind 第一视角，8 个 ambiguity attempts 有独立第二视角，7 个 disputed fields 仅按 frozen gold adjudicate。combined source-identity-plus-content package 下 selection_correct nominal mean difference=+0.666667，95% CI [0.416667,0.916667]，unadjusted exact p=0.0078125；六个质量指标未做 multiplicity adjustment，其它指标 null/mixed。
+- criterion_id: criterion-reproducibility
+  outcome: not_satisfied
+  summary: 原标准要求三份 artifacts 从 records source-completely byte-identical 重建。当前测试只能从既有 results + frozen protocol 重算 record-bound hashes、paired analysis、evidence fields 与 report；sample/scoring failure/perspectives/adjudication provenance 仍由既有 results 提供，protocol 也是额外输入。因此 derived-field replay 通过但 records-only 原要求未满足，不能以 byte equality 自证。
+- criterion_id: criterion-evidence-boundary
+  outcome: satisfied
+  summary: 结果区分 ldvh-prepared、harness-delivered、host-received unavailable 与 frozen-corpus behavior。selection 只描述 source identity/content/instruction 不可分的 combined package nominal scoring difference，不声称 knowledge/reuse improvement、broad causal effect 或 multiplicity-adjusted discovery；不关闭 broad Spark、不授权 Phase3/MCP。
+result_summary: WC-D 完成 12 个固定模型 fresh-context 配对（24 members，0 replacements，0 写 Helper）。在 selected frozen corpus 中，combined source-identity-plus-content package 的 selection_correct nominal difference 为 +0.666667（95% CI 0.416667–0.916667；unadjusted exact p=0.0078125）；source identity、content 与 instruction 不可分，六质量指标未做 multiplicity adjustment，其它质量结果 null/mixed。treatment 每 pair 增加 2 candidate expansions、约 194.75 prompt chars、230.75 packet/material chars 与 56.33 response chars；usage/latency unavailable。四项标准满足；records-only source-complete reproduction 原标准未满足。
+validation_summary: 'Artifacts: protocol 1197e337f2964e3e427e4024c74a0a839e68d79f40b929094bf629638c9a5f1f; results 0773ebf7e920872c0f1d024f0848216822870f71902c919da8b1736aea6e0e3a; records 98653684a1b2b7873878447f982ea0360ca76f24387b2031540d57547f44a472; report a6f9a02d46fb25d230131ab214a5a469305e60737c203bc5dc8340528f5f0cac; module ff1feb09d13fa80da23e12698e3ae38384b3a22d59614c690bac346303f5255d; tests 9a1807d0d2119b8485b78bb4348301216bc1fdbca435a7adf2c835e32b54435e. Focused 12 passed; Ruff passed; git diff --check clean; ldvh check passed with existing 7/67 disclosures; fact integrity complete/259/0. Validator recomputes hashes/sizes/sequence/fixed runtime/zero-write/unavailable/context-hash uniqueness. Derived-field replay from existing results+protocol is byte stable but not source-complete records-only reconstruction; full suite not triggered because no production import/public contract/shared core change. Host receipt, tokens/cache/wall/queue unavailable.'
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
+- relation_key: related-to
+  target:
+    object_uid: 01a0038b-e990-7648-a886-df98559d26cf
+- relation_key: related-to
+  target:
+    object_uid: 01a00342-b1a9-7814-9827-8ac7b11fbd74
+change_log:
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T06:48:27.208490Z'
+  summary: 受控创建 WC-D plan_version=1：知识预检 12-pair 配对实验经两轮 fresh native creation review，首轮 blockers 已全部吸收、次轮 pass；当前停在 human_plan_confirming 等待 Human 对完整 Gate1 基线决定，未执行实验或普通文件写入。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T06:55:49.241167Z'
+  summary: Human Gate 1：批准 plan_version=1 与完整 execution_authorization；baseline fingerprint 已绑定，移除 Human waiting，phase 进入 executing；本事务未启动任何 item。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T06:56:20.053373Z'
+  summary: 开始 item-protocol-runner；尚未修改普通文件或执行 retained attempt。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T07:07:06.876105Z'
+  summary: 完成 item-protocol-runner：冻结协议、runner/parser 和直接测试，保留后续实验执行为独立 item。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T07:07:56.719834Z'
+  summary: 开始 item-balanced-execution；尚未发起 retained pair member。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T07:23:12.081888Z'
+  summary: 进入 plan_revising：发现 blind scoring 在 item3 写入 in_progress 前已实际发生；停止后续动作，准备 baseline 内 PlanΔ，无损修正 item 边界并接受 fresh native review。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T07:26:11.440476Z'
+  summary: 应用 baseline 内 PlanΔ v2：fresh native review pass；baseline/approval 与已有 item execution snapshot 原样，item2 计划边界吸收 execution+scoring，item3 收窄后 pending，phase 返回 executing；下一步 strict 完成 item2。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T07:26:43.323958Z'
+  summary: 完成 PlanDelta v2 的 item-balanced-execution：12 balanced retained pairs、0 replacements、盲评分与 adjudication 全部冻结，并保留 sequencing error 披露。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T07:27:17.355965Z'
+  summary: 开始 PlanDelta v2 的 item-blind-analysis-report；scoring 已属于完成的 item2，本 item 尚未完成项目级验证。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T07:28:40.382102Z'
+  summary: 完成 item-blind-analysis-report 并原子进入 controller_checking，首次分配 result_version=1；当前仅 version-only，下一步形成 canonical result projection。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T07:30:34.606390Z'
+  summary: 形成并 Controller-check canonical WC-D result version 1：五项 criteria 均有证据支持，selection improvement 与 added context cost 按 frozen-corpus 边界报告，sequencing error/PlanDelta/scorer failure 全部披露；尚未进入独立结果复核。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T07:31:15.049236Z'
+  summary: 进入 independent_reviewing：canonical WC-D result version 1 已完整回读与校验，projection 冻结，尚无 result review。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T07:34:35.920022Z'
+  summary: 记录 fresh native independent result review：result v1 changes_required；三项 feedback 针对 source-complete regeneration、record/hash/freshness 验证和 nominal combined-package selection 解释，尚未写 Controller resolution。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T07:35:06.539174Z'
+  summary: 接受 result v1 三项 feedback 并返回 controller_checking：准备 source-complete regeneration、record/hash validation 和 nominal combined-package/multiplicity disclosure；旧 review 暂保留，ResultDelta 时将按规则移除。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T07:40:43.226801Z'
+  summary: 形成 ResultDelta v2：接受全部 review feedback，加强 record/source binding validation，缩窄 nominal combined-package selection 解释，criterion-reproducibility 据实改为 not_satisfied；result_version 升2并删除旧 review，等待 fresh re-review。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T07:42:00.076347Z'
+  summary: 进入 fresh independent re-review：ResultDelta v2 已完整回读、旧 review 已移除，三项 feedback resolution 与 not_satisfied residual 均进入 frozen projection。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T07:44:31.018313Z'
+  summary: 记录 fresh native result v2 re-review：pass、无 feedback；四项 satisfied 有支持，records-only reproducibility unsupported 已如实标 not_satisfied，可进入 partial closure proposal。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T07:45:37.289452Z'
+  summary: 进入 closure_preparing：result v2 fresh review pass，无 feedback；开始形成覆盖 records-only reproducibility residual 的 partial closure proposal。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T07:46:13.064021Z'
+  summary: 形成 WC-D partial closure proposal：唯一 residual 为 records-only source-complete reproduction 未满足，拟 accept_stop；不 route、不建议 Spark，Gate2 尚未决定。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T07:47:02.372623Z'
+  summary: 终态保留审查完成并进入 human_closure_confirming：partial proposal 完整覆盖唯一 residual；重要结果/边界/验证/历史均有终态或 change_log 承载，等待 Human Gate2，未关闭。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-sol
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T08:01:22.616869Z'
+  summary: Human Gate 2 接受 reviewed result v2 与 partial proposal；原子关闭 WC-D，保留四项 satisfied 结果，并接受 records-only source-complete reproduction residual 在本 WC 停止；无 route、无 Spark suggestion。
+status: closed
+closure_outcome: partial
+disposition_summary: 建议以 partial 停止 WC-D：保留四项满足标准、12-pair nominal combined-package 结果、成本与全部证据边界；接受 records-only source-complete reproduction 未满足这一明确 residual 在本 WC 停止，不路由现有事实、不建议新 Spark。若 Human 日后认为完整 scorer provenance archive 有独立净价值，应在本 WC 关闭后由新 WorkCase/Gate1 决定，不能在当前 Gate2 倒写为已完成。
+residual_responsibilities:
+- residual_id: residual-records-only-reproduction
+  summary: 三份 artifacts 不能由当前 retained records source-completely byte-identical 重建；scorer failure/method/perspectives/adjudication 与 sample provenance 依赖既有 results metadata，protocol 也是额外输入。当前仅验证 derived-field replay；接受该原 criterion 责任在本次 partial closure 停止。
+object_uid: 01a0042d-d784-7a99-aa90-4e8cfc761f4c
+object_id: workcase-01M022VNW4FACTN42EHKY7C7TC
+fact_type_key: workcase
+created_at: '2026-08-15T06:48:27.208490Z'
+updated_at: '2026-08-15T08:01:22.616869Z'
