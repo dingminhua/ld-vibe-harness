@@ -43,6 +43,10 @@ from ldvh.helper.operations.fact_object_operation import FACT_OBJECT_IMPLEMENTAT
 from ldvh.helper.operations.fact_object_operation import OPERATION_KEY as FACT_OBJECT_OPERATION_KEY
 from ldvh.helper.operations.fact_update_operation import FACT_UPDATE_IMPLEMENTATION
 from ldvh.helper.operations.fact_update_operation import OPERATION_KEY as FACT_UPDATE_OPERATION_KEY
+from ldvh.helper.operations.fact_update_prepare_operation import FACT_UPDATE_PREPARE_IMPLEMENTATION
+from ldvh.helper.operations.fact_update_prepare_operation import (
+    OPERATION_KEY as FACT_UPDATE_PREPARE_OPERATION_KEY,
+)
 from ldvh.helper.operations.git_hooks_status_operation import (
     GIT_HOOKS_STATUS_IMPLEMENTATION,
 )
@@ -114,6 +118,7 @@ IMPLEMENTATIONS = MappingProxyType[str, OperationImplementation](
         FACT_INTEGRITY_OPERATION_KEY: FACT_INTEGRITY_IMPLEMENTATION,
         FACT_OBJECT_OPERATION_KEY: FACT_OBJECT_IMPLEMENTATION,
         FACT_UPDATE_OPERATION_KEY: FACT_UPDATE_IMPLEMENTATION,
+        FACT_UPDATE_PREPARE_OPERATION_KEY: FACT_UPDATE_PREPARE_IMPLEMENTATION,
         GIT_HOOKS_STATUS_OPERATION_KEY: GIT_HOOKS_STATUS_IMPLEMENTATION,
         LEGACY_ROUTED_SPARK_MIGRATION_OPERATION_KEY: LEGACY_ROUTED_SPARK_MIGRATION_IMPLEMENTATION,
         LOCAL_EDIT_OPERATION_KEY: LOCAL_EDIT_IMPLEMENTATION,

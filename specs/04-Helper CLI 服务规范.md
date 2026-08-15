@@ -144,6 +144,8 @@ Helper 使用的规则源视图只由 01 §§6.3–6.4 确定，并固定为当�
 
 机器调用从标准输入接收至多一个 UTF-8 JSON 对象；空输入等同空对象。`--request` 只替换该原文的传输来源，文件原文仍进入同一个请求解析与领域操作链，不先解析重写或补字段。默认标准输出只包含一个完整 JSON 响应对象。无法解析的输入按 `invalid_request` 返回；进程尚未启动、可执行文件不存在或操作系统无法创建进程，不属于已经进入 Helper 服务后的响应范围。具体字段类型、默认空值、未知字段处理和文本呈现边界由授权附件定义。
 
+来源定义的只读 composition 操作（包括 05 的 `prepare-fact-object-update`）仍使用同一共同请求与响应 envelope：当其领域来源要求 `observed_context` 与 `authorization_reference` 为空时，Helper 不得因为结果内含未来写请求草案就把该次调用升级为状态变更、观察环境署名或消费 Human 授权；草案、待填 signature 形状和 completion requirements 只能位于该操作自身的领域 `result`，不得成为新的共同顶层字段。真正状态变更仍是调用方后续独立提交给来源声明的 `may_change_state` operation 的另一请求。
+
 `--example` 和 `--fields` 产生的是显式 CLI projection，不是完整共同响应，也不取得新的 `contract` 身份。`--example` 必须且只调用一次不带领域 request body 的通用 capabilities discovery，并按命令位置精确选择唯一单操作，只可从机械完整的 `effect`、`required_inputs`、`input_examples` 和来源信息组装可填写骨架；成功与失败路径都不进入单操作 request-check、不形成 availability。unknown value 保持 `null`，写操作的三字段署名只投影空占位和当前边界，不观察、缓存、推导或默认填值；目标不存在、实现不可投影、metadata 不完整或 required path 与 fragment 结构冲突时由 CLI 返回稳定 `invalid_request`，不输出骨架、不追加第二次 Helper 调用；骨架本身不表示合法请求、授权、适用、可用或可执行。`--fields` 必须先让完整 Helper 请求和响应真实完成，并确认共同响应 core 与 gaps 类型完整，再从 object 成员按附件闭合路径语法投影；core 不变量失败时回退实际来源响应，不得宣称 complete projection。成功投影必须回显来源响应的 `outcome`、退出码、未完成范围和 gap 计数；完整 `gaps` 仅在 selector 明确选择时返回，缺失路径与字段实际为 `null` 可区分，且字段投影失败不得把已经发生的领域写入伪装为零副作用失败或诱导无条件重试。
 
 操作不得要求与其职责无关的完整会话记录、模型内部推理或厂商私有 payload。缺少必需输入时必须指出具体缺口，不得以名称相似或历史缓存静默补足；只有具体操作来源明确把进程实际 `cwd` 定义为回退观察时，才能使用该目录，并必须保留其来源且不得覆盖显式工作对象定位符。

@@ -130,6 +130,7 @@ def test_candidate_discovery_publishes_only_the_source_bound_text_match_input_fr
         not in {
             "find-fact-object-candidates",
             "precheck-git-commit",
+            "prepare-fact-object-update",
             "update-fact-object",
             "update-workcase",
         }
@@ -403,6 +404,7 @@ def test_unrelated_candidate_problem_does_not_block_defined_operation(
         "precheck-git-commit",
         "prepare-closed-workcase-candidate",
         "prepare-fact-object-draft",
+        "prepare-fact-object-update",
         "prepare-local-edit-candidates",
         "read-action-template-candidates",
         "read-action-template-content",

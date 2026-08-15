@@ -1,0 +1,144 @@
+{
+  "caliber": "wc-e-prepare-update-replay/1",
+  "protocol_version": 1,
+  "frozen_before_execution": true,
+  "estimand": "Mechanical interaction and caller-transformation difference between a known-contract read/compose/write path and the source-defined prepare/write path on exactly twelve deterministic isolated fixture tasks.",
+  "task_package_sha256": "ea4b59327e34f37dc47dda9e48666d9d18abdd1a2b84f2a7bd9978dda9756684",
+  "tasks": [
+    {
+      "task_id": "T01-spark-positive-minimal",
+      "fact_type_key": "spark",
+      "branch": "positive",
+      "discovery_mode": "minimal"
+    },
+    {
+      "task_id": "T02-study-positive-minimal",
+      "fact_type_key": "study",
+      "branch": "positive",
+      "discovery_mode": "minimal"
+    },
+    {
+      "task_id": "T03-adr-positive-minimal",
+      "fact_type_key": "adr",
+      "branch": "positive",
+      "discovery_mode": "minimal"
+    },
+    {
+      "task_id": "T04-pitfall-positive-minimal",
+      "fact_type_key": "pitfall",
+      "branch": "positive",
+      "discovery_mode": "minimal"
+    },
+    {
+      "task_id": "T05-workcase-positive-minimal",
+      "fact_type_key": "workcase",
+      "branch": "positive",
+      "discovery_mode": "minimal"
+    },
+    {
+      "task_id": "T06-spark-stale-minimal",
+      "fact_type_key": "spark",
+      "branch": "stale",
+      "discovery_mode": "minimal"
+    },
+    {
+      "task_id": "T07-study-stale-cold",
+      "fact_type_key": "study",
+      "branch": "stale",
+      "discovery_mode": "cold"
+    },
+    {
+      "task_id": "T08-adr-noop-minimal",
+      "fact_type_key": "adr",
+      "branch": "no-op",
+      "discovery_mode": "minimal"
+    },
+    {
+      "task_id": "T09-pitfall-invalid-cold",
+      "fact_type_key": "pitfall",
+      "branch": "invalid-signature",
+      "discovery_mode": "cold"
+    },
+    {
+      "task_id": "T10-workcase-noop-cold",
+      "fact_type_key": "workcase",
+      "branch": "no-op",
+      "discovery_mode": "cold"
+    },
+    {
+      "task_id": "T11-spark-positive-cold",
+      "fact_type_key": "spark",
+      "branch": "positive",
+      "discovery_mode": "cold"
+    },
+    {
+      "task_id": "T12-adr-invalid-cold",
+      "fact_type_key": "adr",
+      "branch": "invalid-signature",
+      "discovery_mode": "cold"
+    }
+  ],
+  "execution": {
+    "strategies": [
+      "known-contract",
+      "prepare"
+    ],
+    "isolation": "Each task-strategy member receives a fresh temporary Git worktree and one mechanically valid target fact; no mutable state is shared between members.",
+    "known_contract_minimal": "read-fact-objects plus official write route: exactly two Helper calls.",
+    "known_contract_cold": "general capabilities discovery plus read-fact-objects plus official write route: exactly three Helper calls.",
+    "prepare": "prepare-fact-object-update plus its returned official write route: exactly two Helper calls.",
+    "fixture_instrumentation": "Stale branches append one byte sequence directly between preparation and the official write attempt; this setup mutation is not a Helper or strategy shell roundtrip and is compared byte-for-byte before and after the official failure.",
+    "outcome_dependent_stopping": false
+  },
+  "metrics": {
+    "helper_calls_and_shell_invocations_separate": true,
+    "request_chars": "Sum of compact JSON request characters at the in-process Helper service boundary.",
+    "caller_transformations": "Count of frozen named caller-side composition steps, not a claim about cognitive effort.",
+    "invalids": "Every stale, no-op, or all-null-signature branch must fail without an official-route write.",
+    "host_metrics": "unavailable-unless-observed"
+  },
+  "privacy": {
+    "retained_record_fields": [
+      "branch",
+      "cache_read_tokens",
+      "caller_transformations",
+      "discovery_mode",
+      "expected_outcome_met",
+      "fact_type_key",
+      "helper_calls",
+      "host_receipt",
+      "input_tokens",
+      "output_tokens",
+      "queue_ms",
+      "request_chars",
+      "shell_invocations",
+      "state_changed",
+      "strategy",
+      "task_hash",
+      "task_id",
+      "wall_ms",
+      "zero_write_failure"
+    ],
+    "denylist": [
+      "absolute_path",
+      "authorization_reference",
+      "fact_object",
+      "prompt",
+      "raw_prompt",
+      "request",
+      "request_body",
+      "secret",
+      "session_id",
+      "signature",
+      "transcript"
+    ],
+    "artifact_boundary": "Retain labels, hashes, counts, booleans, unavailable markers, and aggregates only. Never retain raw prompts, full facts, authorization, signatures, absolute paths, session identifiers, transcripts, or secrets."
+  },
+  "evidence_boundary": {
+    "allowed": "Deterministic isolated fixture integration evidence for the frozen tasks and service boundary.",
+    "minimal_claim": "Known-contract baseline 2 to prepare 2 is parity only.",
+    "cold_claim": "Cold-discovery baseline 3 to prepare 2 is one mechanical Helper-call reduction.",
+    "unavailable": "Host receipt, provider tokens, cache use, wall latency, and queue latency unless actually observed.",
+    "forbidden_claims": "No real-task, representative, fresh-agent, host-delivery, causal, or broad service-quality conclusion."
+  }
+}

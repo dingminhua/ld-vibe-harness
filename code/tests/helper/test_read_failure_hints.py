@@ -27,6 +27,7 @@ _READ_ONLY_OPERATIONS = (
     "precheck-git-commit",
     "prepare-closed-workcase-candidate",
     "prepare-fact-object-draft",
+    "prepare-fact-object-update",
     "prepare-local-edit-candidates",
     "read-action-template-candidates",
     "read-action-template-content",

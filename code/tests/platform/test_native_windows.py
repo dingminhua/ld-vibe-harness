@@ -36,6 +36,7 @@ OPERATIONS = {
     "precheck-git-commit",
     "prepare-closed-workcase-candidate",
     "prepare-fact-object-draft",
+    "prepare-fact-object-update",
     "read-action-template-candidates",
     "read-action-template-content",
     "read-fact-objects",

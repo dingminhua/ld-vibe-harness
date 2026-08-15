@@ -809,6 +809,14 @@ WorkCase 的普通活动期写入必须使用 `update-workcase`；Human 主动�
 - 成功结果包含 `actual_ref`、`canonical_path`、`carrier`、`source_content_fingerprint`、`current_snapshot_projection`、派生 `handoff_allowed` / `handoff_reason`，以及 `resolution=resolved` 时的 `next_required_control_step`（unresolved 时为 `null`）。投影与判定只绑定刚读取 source 指纹，source 变化后必须重新精确读取并重新投影；
 - 成功只说明对当次完整 source 完成确定性只读投影，不表示已获授权、Human Gate 成立、工作完成、phase 应推进或下一控制步骤可执行；真正交还或停止仍按 34 §5.4 的合法退出集判断。操作不生成或改写任何 WorkCase 自然语言事实，不推进 phase，不选择 item。
 
+### prepare-fact-object-update 对 WorkCase 的限制
+
+05 §11.6.1 声明的 `prepare-fact-object-update` 只有在 source 为当前 mechanically valid、`status=open` 的 WorkCase 时才返回 `target_operation=update-workcase` 与 whole-object `request_draft`。`status=blocked`、closed、invalid、unavailable、not-found、引用歧义或只能安全读取部分字段时不产生草案。该资格只允许调用方继续完成 `update-workcase` 的 `fact_object` alternative，不允许投影 `item_event`，也不表示当前 phase 应变化、item 可开始/完成、依赖已解除、Gate 已成立或未来 after 合法。
+
+WorkCase 草案必须完整保留当前非托管业务字段与既有 `change_log` 前缀，只移除 05 §11.6.1 列出的五个 Code 托管字段；prepare 不选择 phase/version、不失效 review/approval、不追加流水、不生成 Human waiting/result/proposal/termination/closure，不观察署名，也不制造 `authorization_reference`。调用方仍须在草案之外依据当前真实意图形成 §6 允许的完整活动期 after，恰追加一条 caller-authored 真实变化流水，在该次写入前重新观察三字段 signature，并只在实际变化消费 Human 决定或来源要求时提供可靠授权回指。
+
+prepare 成功只绑定形成草案时的 source fingerprint，既不是 `update-workcase` 的锁或 reservation，也不绕过本节字段所有权与 lifecycle。source 后续变化时官方入口按 stale 优先级零写入；原样草案、非法 phase/version/review/approval/proposal 组合、无效 signature 或缺失/伪造/scope 不当的实际所需 Human 引用，仍只由 `update-workcase` 的当前完整事务拒绝。prepare 的读取成功不得表达为执行已批准、WorkCase 已推进、更新已准备完成或上层责任已完成。
+
 ### update-workcase 输入与结果
 
 本操作完整复用 05 §11.7 的 `workspace_root`、`fact_ref`、`expected_content_fingerprint`、共同请求包装、结果字段和 §11.8 事务；不复制第二套公共字段。`fact_object` 与 `item_event` 是严格 XOR alternatives：恰好一个必须出现。capabilities 因而只把 `fact_ref` 与 `expected_content_fingerprint` 列为共同 required inputs，并以 source-bound examples 分别交付两个 alternative 的组合方式；不得把二者伪装成同时必填。额外收紧如下：
