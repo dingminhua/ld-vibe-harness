@@ -56,6 +56,7 @@ def _input(contract: CommitContractProjection, **changes: object) -> CommitValid
         "snapshot_identity": "sha256:snapshot",
         "source_path": contract.source_path,
         "source_fingerprint": contract.content_fingerprint,
+        "governance_instance_name": "LDVH Governance",
     }
     values.update(changes)
     return CommitValidationInput(**values)  # type: ignore[arg-type]
@@ -230,6 +231,75 @@ def test_single_path_minimum_body_passes_mechanical_layer(contract: CommitContra
 
     assert result.outcome == "passed"
     assert "主要目的与拆分" in result.semantic_checks_required
+
+
+def test_governance_instance_name_cannot_be_used_as_product_signature(
+    contract: CommitContractProjection,
+) -> None:
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            governance_instance_name="  LDVH Governance  ",
+            message=(
+                "docs(specs): 明确提交契约\n\n关键变更:\n- 覆盖实例名碰撞\n\n"
+                "LDVH-Product-Name: LDVH Governance\n"
+                "LDVH-Model-Name: gpt-5\nLDVH-Agent-Runtime-Name: codex"
+            ),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "signature_governance_instance_collision" in _codes(result)
+
+
+def test_governance_instance_collision_is_case_sensitive_and_nullable(
+    contract: CommitContractProjection,
+) -> None:
+    case_mismatch = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "docs(specs): 明确提交契约\n\n关键变更:\n- 覆盖实例名大小写\n\n"
+                "LDVH-Product-Name: ldvh governance\n"
+                "LDVH-Model-Name: gpt-5\nLDVH-Agent-Runtime-Name: codex"
+            ),
+        ),
+    )
+    product_unavailable = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "docs(specs): 明确提交契约\n\n关键变更:\n- 覆盖产品不可观察\n\n"
+                "LDVH-Model-Name: gpt-5\nLDVH-Agent-Runtime-Name: codex"
+            ),
+        ),
+    )
+
+    assert "signature_governance_instance_collision" not in _codes(case_mismatch)
+    assert "signature_governance_instance_collision" not in _codes(product_unavailable)
+
+
+def test_invalid_or_duplicate_signature_trailer_keeps_existing_error_priority(
+    contract: CommitContractProjection,
+) -> None:
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "docs(specs): 明确提交契约\n\n关键变更:\n- 覆盖重复 trailer\n\n"
+                "LDVH-Product-Name: LDVH Governance\n"
+                "LDVH-Product-Name: LDVH Governance\n"
+                "LDVH-Model-Name: gpt-5\nLDVH-Agent-Runtime-Name: codex"
+            ),
+        ),
+    )
+
+    assert "signature_trailer_multiple" in _codes(result)
+    assert "signature_governance_instance_collision" not in _codes(result)
 
 
 def test_explicit_merge_commit_message_passes_the_same_contract(contract: CommitContractProjection) -> None:

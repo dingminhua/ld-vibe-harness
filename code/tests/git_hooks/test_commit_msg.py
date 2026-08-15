@@ -89,7 +89,14 @@ def _managed_project(tmp_path: Path, *, governed: bool = True) -> tuple[Path, Pa
         else ("projects: []",)
     )
     (workspace / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
-        "\n".join(("product_name: Hook Tests", "product_description: Common-dir Hook tests.", *projects, "")),
+        "\n".join(
+            (
+                "governance_instance_name: Hook Tests",
+                "product_description: Common-dir Hook tests.",
+                *projects,
+                "",
+            )
+        ),
         encoding="utf-8",
     )
     return workspace, project

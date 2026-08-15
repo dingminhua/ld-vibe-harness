@@ -61,7 +61,7 @@ change_log:
     (workspace / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
         "\n".join(
             [
-                "product_name: Test Workspace",
+                "governance_instance_name: Test Workspace",
                 "product_description: Fact update tests.",
                 "projects:",
                 "  - id: sample",
@@ -280,6 +280,27 @@ def test_generic_update_rejects_workcase_before_core_or_write(
     assert "correct-closed-workcase" in problem
     assert response["changes"] == []
     assert fact.read_bytes() == original
+    assert not (project / ".git/ldvh").exists()
+
+
+def test_update_rejects_governance_instance_signature_before_write(tmp_path: Path) -> None:
+    workspace, project, fact = _fixture(tmp_path)
+    current = _read(workspace, project)
+    supplied = _mutable(current)
+    supplied["summary"] = "Must not be written"
+    _append_update_log(supplied)
+    payload = json.loads(_update_payload(workspace, project, current["content_fingerprint"], supplied))
+    payload["response_profile"] = "diagnostic"
+    payload["observed_context"]["signature"]["product_name"] = "Test Workspace"
+    before = fact.read_bytes()
+
+    response = handle_request("call", "update-fact-object", json.dumps(payload)).response
+
+    assert response["outcome"] == "rejected"
+    assert response["changes"] == []
+    assert response["gaps"][0]["code"] == "signature_governance_instance_collision"
+    assert response["diagnostics"][0]["code"] == "signature_governance_instance_collision"
+    assert fact.read_bytes() == before
     assert not (project / ".git/ldvh").exists()
 
 
@@ -1490,7 +1511,7 @@ def _legacy_fixture(tmp_path: Path, *, include_log: bool = False) -> tuple[Path,
     (workspace / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
         "\n".join(
             [
-                "product_name: Test Workspace",
+                "governance_instance_name: Test Workspace",
                 "product_description: First-log update tests.",
                 "projects:",
                 "  - id: sample",

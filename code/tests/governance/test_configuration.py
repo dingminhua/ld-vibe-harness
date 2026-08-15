@@ -18,7 +18,7 @@ def _write_configuration(root: Path, body: str | None = None) -> Path:
     path = root / CONFIGURATION_FILENAME
     path.write_text(
         body
-        or """product_name: LDVH workspace
+        or """governance_instance_name: LDVH workspace
 product_description: Test workspace
 projects:
   - id: ldvh
@@ -43,9 +43,9 @@ def test_explicit_workspace_root_reads_only_its_current_file(tmp_path: Path) -> 
 
     assert first.status is ConfigurationStatus.VALID
     assert first.configuration is not None
-    assert first.configuration.product_name == "LDVH workspace"
+    assert first.configuration.governance_instance_name == "LDVH workspace"
     assert second.configuration is not None
-    assert second.configuration.product_name == "Current bytes"
+    assert second.configuration.governance_instance_name == "Current bytes"
     assert second.config_path == source.resolve()
     assert second.workspace_root == selected.resolve()
     assert second.discovered[0].bases == second.search_bases
@@ -89,7 +89,7 @@ def test_unsupported_windows_project_path_is_rejected_before_resolve(
     workspace = tmp_path / "workspace"
     source = _write_configuration(
         workspace,
-        f"""product_name: Workspace
+        f"""governance_instance_name: Workspace
 product_description: Test
 projects:
   - id: project
@@ -125,7 +125,7 @@ def test_absolute_project_path_keeps_its_actual_meaning(tmp_path: Path) -> None:
     project = tmp_path / "elsewhere" / "project"
     _write_configuration(
         workspace,
-        f"""product_name: Workspace
+        f"""governance_instance_name: Workspace
 product_description: Test
 projects:
   - id: project
@@ -143,7 +143,7 @@ def test_default_project_id_must_reference_a_registered_project(tmp_path: Path) 
     workspace = tmp_path / "workspace"
     _write_configuration(
         workspace,
-        """product_name: Workspace
+        """governance_instance_name: Workspace
 product_description: Test
 default_project_id: project
 projects:
@@ -158,7 +158,7 @@ projects:
 
     _write_configuration(
         workspace,
-        """product_name: Workspace
+        """governance_instance_name: Workspace
 product_description: Test
 default_project_id: missing
 projects:
@@ -174,17 +174,32 @@ projects:
 @pytest.mark.parametrize(
     "body, expected_summary",
     [
-        ("product_name: [", "YAML 1.2"),
+        ("governance_instance_name: [", "YAML 1.2"),
         (
-            """product_name: one
-product_name: two
+            """product_name: legacy instance
+product_description: test
+projects: []
+""",
+            "缺少字段",
+        ),
+        (
+            """governance_instance_name: current instance
+product_name: legacy instance
+product_description: test
+projects: []
+""",
+            "未知字段",
+        ),
+        (
+            """governance_instance_name: one
+governance_instance_name: two
 product_description: test
 projects: []
 """,
             "YAML 1.2",
         ),
         (
-            """product_name: test
+            """governance_instance_name: test
 product_description: test
 projects: []
 extra: false
@@ -192,7 +207,7 @@ extra: false
             "未知字段",
         ),
         (
-            """product_name: test
+            """governance_instance_name: test
 product_description: test
 projects:
   - id: one
@@ -202,14 +217,14 @@ projects:
             "未知字段",
         ),
         (
-            """product_name: test
+            """governance_instance_name: test
 product_description: test
 projects: nope
 """,
             "必须是列表",
         ),
         (
-            """product_name: test
+            """governance_instance_name: test
 product_description: test
 projects:
   - id: one
@@ -217,7 +232,7 @@ projects:
             "缺少字段",
         ),
         (
-            """product_name: test
+            """governance_instance_name: test
 product_description: test
 projects:
   - id: one
@@ -228,7 +243,7 @@ projects:
             "id 'one' 必须在全配置唯一",
         ),
         (
-            """product_name: test
+            """governance_instance_name: test
 product_description: test
 projects:
   - id: one
@@ -298,7 +313,7 @@ def test_nearest_ancestor_discovery_stops_at_the_first_candidate(tmp_path: Path)
     inner = outer / "inner"
     worktree = inner / "project"
     outer_source = _write_configuration(outer)
-    inner_source = _write_configuration(inner, "product_name: [\n")
+    inner_source = _write_configuration(inner, "governance_instance_name: [\n")
     worktree.mkdir(parents=True)
 
     result = read_governed_projects_configuration(
@@ -368,7 +383,7 @@ def test_empty_projects_list_is_valid(tmp_path: Path) -> None:
     workspace = tmp_path / "workspace"
     _write_configuration(
         workspace,
-        """product_name: Empty workspace
+        """governance_instance_name: Empty workspace
 product_description: No registered projects
 projects: []
 """,

@@ -1,0 +1,314 @@
+title: 管辖实例配置与署名产品防混淆
+status: open
+summary: canonical result v2 的 fresh 独立只读复核已通过；准备执行冻结授权中的唯一受控本地 commit。
+priority: P1
+goal: 将管辖配置根字段从 product_name 硬切换为 governance_instance_name，保持 product_description 的用途说明语义，并以同一配置快照驱动共享碰撞守卫，阻止管辖实例名被写入事实署名或 Git 提交署名，同时保持现有署名三字段、trailers、历史 facts 与 Web 署名呈现合同不变。
+scope: 修改 specs/02、02.Att.01、03、05 的配置与写入约束；修改 Python 管辖配置解析/模型/解析结果并新增共享无副作用 signature guard；将同次 GovernanceScopeResult 快照接入 Git adapter/validator 和事实 create、update、全部 WorkCase lifecycle/recovery 写入口；原子迁移仓库内全部管辖配置语义 fixtures 与外部 /Users/dmh2002/poker_hud_projects/LDVH-GOVERNED-PROJECTS.yaml，将根 product_name 硬切换为 governance_instance_name，外部实例值设为 LDVH Dogfood Governance，product_description 保持用途说明。Web 只允许修改 web/api/services/governedProjectsSettings.ts 及配置读取直接测试 web/tests/api/{commit-dto,project-files,settings}.test.ts；禁止修改 web/shared/signature.ts、署名 DTO/解析/展示/组件/文案。签名 product_name/model_name/agent_runtime_name、Git trailers、历史 facts、specs/04 与 04.Att.01 保持不变。迁移不提供旧键 alias，旧键、混合键及未知根键均拒绝；迁移窗口内不调用 Helper。Hook 不安装、不改 managed 文件，仅经既有 native commit-msg→adapter→validator 链做真实 E2E。全部 item 终态且验证通过后允许一个本地受控 commit，不 push、PR、发布。
+success_criterion_definitions:
+- criterion_id: criterion-config-hard-cutover
+  statement: 权威配置语义由根 product_name 硬切换为 governance_instance_name，product_description 保持用途说明；Python、全部配置 fixtures、外部配置与允许范围内 Web settings reader 原子迁移，无 alias，old-only、old+new 和未知根键均拒绝；迁移前后项目数、IDs、paths、default、common-dir、解析结论及注释头保持等价，外部实例值为 LDVH Dogfood Governance。
+- criterion_id: criterion-shared-collision-guard
+  statement: 单一无副作用 guard 使用同次 governance snapshot 中 trim 后的有效实例名与现有 parse_signature 归一后的 product_name 比较，碰撞稳定返回 code=signature_governance_instance_collision；不额外大小写折叠，null product_name 不碰撞，非法或重复 trailer 继续优先走既有错误。
+- criterion_id: criterion-all-write-entries
+  statement: 事实 create、update、全部 update-workcase lifecycle/recovery modes 均在 inject_observed_write_signature 成功后且任何 native atomic backend、锁或文件写副作用前消费同一 guard；Git precheck 与 native commit-msg Hook 共同消费 adapter→CommitValidationInput→validator 链，同码阻断碰撞，负例证明 backend、锁与文件均未触发。
+- criterion_id: criterion-contract-and-web-boundary
+  statement: 署名 schema、product_name/model_name/agent_runtime_name、Git trailers、历史 facts 字面保持不变；Web production 仅修改 governedProjectsSettings.ts 以读取新配置，三个直接配置 fixture 测试随迁移，Codex / gpt-5 / codex-desktop 的署名显示只读验证，失败只报告而不扩权修复。
+- criterion_id: criterion-validation-and-isolation
+  statement: 直接、focused、full Python 与允许范围内 Web 测试、Ruff、git diff --check、ldvh check、check-fact-integrity、真实 precheck/native Hook 验证通过；创建/执行开始时全部 pre-existing dirty/untracked 逐路径基线保持不变且不被暂存或提交；仅在完整验证通过后形成一个本地受控 commit。
+phase: independent_reviewing
+plan_version: 1
+work_items:
+- item_id: item-config-hard-cutover
+  goal: 完成管辖实例字段的规则、Python、配置 fixtures、外部配置及限定 Web settings 读取面的硬切换。
+  expected_result: 所有配置消费者只接受 governance_instance_name，product_description 语义不变，迁移前后治理身份与项目解析等价，外部配置可按冻结 bytes/hash 回滚。
+  status: completed
+  approach_summary: 先冻结仓库与外部配置基线；在不调用 Helper 的连续迁移窗口内完成代码、fixtures 与外部配置切换；失败时仅回退本 WorkCase hunks并恢复外部配置快照。
+  template_keys:
+  - fact-object-controlled-creation
+  result_summary: 已将配置根 product_name 硬切换为 governance_instance_name，保留 product_description 用途语义；规则、Python、全部配置 fixtures、外部配置及限定 Web settings reader 已迁移。旧键、混合键、未知根键拒绝测试通过；Python 配置直接测试 52 passed，Web API 213 passed；三项目 IDs/paths/common-dir 解析等价，外部实例值为 LDVH Dogfood Governance，三条既有 untracked 哈希保持。
+- item_id: item-shared-collision-enforcement
+  goal: 实现并接入事实与 Git 共用的实例名/署名产品碰撞守卫。
+  expected_result: 全部新署名写入口和 Git 两入口在任何副作用前以同一稳定错误码拒绝碰撞，并保持既有解析错误优先级。
+  status: completed
+  depends_on:
+  - item-config-hard-cutover
+  approach_summary: 从同次 GovernanceScopeResult 传递实例名；共享 core 只做归一后比较，入口不重复实现判断。
+  template_keys:
+  - fact-object-controlled-creation
+  result_summary: 单一无副作用 guard 已消费同次 governance snapshot；Git precheck/Hook 共用 adapter→validator，事实 create/update/全部 WorkCase 模式在 backend、锁和文件写前同码拒绝。聚焦 263 passed，完整测试首次暴露并已修正一处测试事实署名字段误迁移。
+- item_id: item-integrated-validation
+  goal: 完成隔离、契约、全量测试与真实 Git Gate 验证并准备受控本地提交。
+  expected_result: 全部验收绿，限定 Web 边界和现有署名显示得到验证，三条既有 untracked 精确保持，提交仅含本 WorkCase 文件。
+  status: completed
+  depends_on:
+  - item-shared-collision-enforcement
+  approach_summary: 执行 focused/full 测试、静态检查、LDVH 检查、事实完整性和真实 precheck/Hook；任何超界 production surface 或第四个 Web production 文件需求触发停止。
+  template_keys:
+  - fact-object-controlled-creation
+  result_summary: Python 全量 2039 passed/15 skipped，Web 213 passed；授权变更文件 Ruff、git diff --check、ldvh check、事实完整性均通过。真实 precheck 与 native commit-msg Hook 对实例名碰撞同码拒绝、对 codex-desktop/gpt-5/codex 通过；Hook 与三条保护文件哈希不变。全仓 Ruff 另有 7 个 HEAD 既有范围外错误，未越界修改。
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-config-migration
+    summary: 执行管辖配置字段硬切换及全部仓库内配置语义 fixture 迁移。
+    target_scope: specs/02、02.Att.01、03、05；code/ldvh/governance/{configuration,models,resolver}.py；.github/workflows/ci.yml；code/tests 下由当前配置 product_description fixture 命中闭集识别的 doctor、git_hooks、governance、helper、hooks、platform、testing、tools 文件及直接测试。
+    effect_scope: 仓库工作树中的规则、Python 配置实现与测试 fixture 写入；不触碰署名对象、trailers、历史 facts 或 specs/04。
+    risk_summary: 硬切换可能造成迁移先后不兼容、遗漏 fixture 或解析结果外部形状变化。
+    rollback_summary: 按执行前逐路径基线仅回退本 WorkCase 新增 hunks；不整文件覆盖、不清理既有 dirty/untracked。
+    rule_refs:
+    - specs/02-工作对象与管辖范围规范.md
+    - specs/03-事实源与信息溯源规范.md
+    - specs/05-事实模型基础规范.md
+  - action_id: authorization-delegate-independent-review
+    summary: 委派本 WorkCase 结果的独立只读复核。
+    target_scope: 当前 WorkCase plan_version=1 的最终结果、实际 diff、验证证据、范围隔离与残余风险。
+    effect_scope: 只读 collaboration Reviewer；不得修改工作树、事实、外部配置、Index 或 Hook。
+    risk_summary: Reviewer 结论为建议，不能替代 Controller 核验或 Human Gate。
+    rollback_summary: 不接受越界建议；仅记录实际复核结果。
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-external-config
+    summary: 原子迁移外部管辖配置的实例名字段和值。
+    target_scope: /Users/dmh2002/poker_hud_projects/LDVH-GOVERNED-PROJECTS.yaml，执行前 SHA-256 3de1a3a22814e14c94450a54f8bdac2e54b3539819e1c2116e2bf523b9e330f9 及原始 bytes 快照。
+    effect_scope: '将根 product_name 改为 governance_instance_name: LDVH Dogfood Governance，保留 product_description、项目条目、注释与示例；与仓库解析器迁移连续完成，中间不调用 Helper。'
+    risk_summary: 仓库代码与外部配置若只完成一侧，会短暂令 Helper 无法解析管辖。
+    rollback_summary: 任一迁移或等价验证失败即按冻结 bytes/CAS 恢复外部配置，并仅回退本 WorkCase 仓库 hunks。
+    rule_refs:
+    - specs/02-工作对象与管辖范围规范.md
+    - specs/attachments/02.Att.01-管辖项目配置字段表.md
+  - action_id: authorization-fact-git-guard
+    summary: 实现共享碰撞 core 并接入全部新署名事实写入口和 Git 验证入口。
+    target_scope: 新增 code/ldvh/governance/signature_guard.py；修改 code/ldvh/commits/{validation,git_adapter}.py、code/ldvh/helper/operations/{fact_creation_operation,fact_update_operation,workcase_update_operation}.py 及直接测试。
+    effect_scope: 同次 governance snapshot 进入 CommitValidationInput 与事实入口；在签名注入/解析后、任何锁、atomic backend 或文件写前返回稳定 collision code。
+    risk_summary: 入口遗漏、重复读取配置或错误优先级变化会造成绕过、误报或副作用先发生。
+    rollback_summary: 回退共享 guard 及本 WorkCase 接线 hunks，保留其它工作树状态。
+    rule_refs:
+    - specs/03-事实源与信息溯源规范.md
+    - specs/05-事实模型基础规范.md
+  - action_id: authorization-independent-result-review
+    summary: 执行并记录必经独立只读结果复核。
+    target_scope: 当前 WorkCase result_version 的实现结果、验证矩阵、范围隔离和残余风险。
+    effect_scope: 只读检查；Reviewer 不推进 phase、不写事实、不提交。
+    risk_summary: 复核可能发现阻断项，导致结果不能进入 Gate 2。
+    rollback_summary: 保留结果现状，Controller 处置 feedback 或回到获批范围内返修。
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-local-commit
+    summary: 在全部 item terminal、结果复核和验证闭合后创建一个受控本地 Git commit。
+    target_scope: 仅本 WorkCase 授权路径及本 WorkCase 事实生命周期产生的跟踪文件；排除三条 pre-existing untracked。
+    effect_scope: Index 与本地 dev-v4 历史新增一个 commit；提交消息显式携带 Codex / gpt-5 / codex-desktop 契约 trailers。
+    risk_summary: 错误暂存可能混入并行改动，错误署名可能再次混淆产品与实例。
+    rollback_summary: 提交前逐路径核对 Index；任何污染即停止，不使用 reset --hard、rebase 或 amend 擅自修复。
+    rule_refs:
+    - specs/03-事实源与信息溯源规范.md
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-validation
+    summary: 运行直接、focused、full、静态、事实完整性和真实 Git Gate 验证。
+    target_scope: 本 WorkCase 修改及仓库当前完整测试面；Web 只运行/修改配置读取相关测试，署名显示仅只读检查。
+    effect_scope: 测试缓存与临时输出；真实 native commit-msg 事件仅验证现有 Hook 链，不安装、不修改 Hook。
+    risk_summary: 全量验证可能暴露批准范围外的生产面或并行失败。
+    rollback_summary: 删除或忽略仅由测试产生且可确认属于本次的临时物；范围外失败如实报告并停止扩权。
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+    - specs/34-WorkCase获批计划执行行动模板.md
+  - action_id: authorization-web-settings-read
+    summary: 仅适配 Web 对新管辖配置字段的读取与直接配置 fixtures。
+    target_scope: web/api/services/governedProjectsSettings.ts；web/tests/api/commit-dto.test.ts、project-files.test.ts、settings.test.ts。
+    effect_scope: 只涉及管辖配置读取；署名 DTO、解析、展示、组件、文案和 web/shared/signature.ts 禁止修改。
+    risk_summary: Web 根键闭集若遗漏会接受新旧键并存；超出精确文件闭集会违反 Human 边界。
+    rollback_summary: 仅回退上述允许路径中的本 WorkCase hunks；发现第四个必须迁移的 Web production 文件立即停止并报告。
+    rule_refs:
+    - specs/02-工作对象与管辖范围规范.md
+    - specs/08-Web 呈现与交互规范.md
+  - action_id: authorization-workcase-lifecycle
+    summary: 仅通过 Helper 更新当前 WorkCase 的执行、结果、复核与关闭生命周期。
+    target_scope: 本次创建产生的唯一 WorkCase 对象。
+    effect_scope: 按 CAS 和当前 phase 写入当前 WorkCase；不修改其它 facts。
+    risk_summary: 错误 phase、过期 fingerprint 或不真实 projection 会污染事实。
+    rollback_summary: Helper 拒绝时零写入；成功后立即公开精确回读并以新 fingerprint 继续。
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+    - specs/32-事实对象生命周期变更与承接处置行动模板.md
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-delegate-independent-review
+    result_review_action_id: authorization-independent-result-review
+  reviewer_policy:
+    model: gpt-5
+    collaboration_agent: review_governance_config_rename (Pasteur)
+    effort: high
+    fast: false
+    preferred_method: collaboration-worker-read-only
+    fallback_order:
+    - collaboration-worker-read-only
+    - subagent-read-only
+    - same-ai-switched-role-read-only
+    max_perspectives: 2
+    activation: 沿用当前任务中已实际启用并完成创建前审阅的只读 collaboration Reviewer；后续仅在获批计划要求的结果复核时激活。
+    same_ai_limit: 仅当 collaboration worker 与 subagent 均明确不可用、当前 capability evidence 充分且冻结 stop conditions 允许时，才可采用 same-AI switched-role；否则停止。
+  action_ceiling: 仅执行 plan_version=1 明列的规则、Python、配置 fixture、外部配置、精确 Web settings 读取面、直接/全量验证、当前 WorkCase 生命周期和一个本地受控 commit；不得扩大到其它 Web production、署名合同、历史 facts、Skill、Hook 安装或发布。
+  prohibited_actions:
+  - 修改 web/shared/signature.ts 或 Web 署名 DTO、解析、展示、组件、文案
+  - 修改署名三字段名称、Git trailers、历史 facts 或 legacy migration
+  - 在仓库解析器与外部配置不兼容的迁移窗口调用 Helper
+  - 安装或修改 managed Git Hook、部署 Skill 或执行 environment-sync update
+  - 覆盖、清理、暂存或提交任何 pre-existing dirty/untracked
+  - 修改 specs/04、specs/attachments/04.Att.01 或批准范围外 production surface
+  - 执行 amend、rebase、reset --hard、push、PR、release 或发布
+  allowed_adjustments: 允许在已列 Python 与测试闭集内调整函数落点、内部字段是否进入 GovernanceScopeResult.to_json 及测试组织，但必须保持单次配置读取、02.Att.01 外部形状合同与全部成功标准；若需要新增 production surface、第四个 Web production 文件或改变署名合同，必须停止并回到 Human。
+  verification_and_rollback: 执行开始前冻结 HEAD b635e8b2715ab1a00cd3e2b0a64da42a83e5d249、外部配置原始 bytes/hash、全部 pre-existing dirty/untracked 的 per-path hash/diff。连续完成仓库+外部配置迁移并比较三项目 IDs/paths/default/common-dir/解析结论与注释头；随后运行直接/focused/full Python 与 Web 测试、Ruff、git diff --check、ldvh check、check-fact-integrity、真实 precheck/native Hook、只读 Web 显示检查。任一失败仅回退本 WorkCase 新增 hunks并以 CAS 恢复外部配置，绝不整文件覆盖或清理并行内容。
+  out_of_bounds_handling: 发现需要批准范围外 production 文件、第四个 Web production 文件、无法保持原子迁移/回滚、pre-existing 基线变化、署名合同变化、外部配置 CAS 失配或测试失败根因属于并行修改时立即停止，更新当前 WorkCase 的真实阻断或残余并请求 Human 决定，不自行扩权。
+  human_prerequisites:
+  - Human 明确批准公开精确回读后的 plan_version=1 Gate 1 执行基线。
+  - 外部配置路径继续可写且执行开始时 SHA-256/bytes 与冻结基线一致。
+creation_reviews:
+- reviewer: review_governance_config_rename (Pasteur)
+  reviewed_at: '2026-08-15T08:09:34Z'
+  subject_version: 1
+  scope: plan_version=1 的目标、真实字段映射、规则归口、配置与外部原子迁移、共享 guard、事实/Git 入口闭集、Web 精确边界、验证、回滚、dirty 保护、授权与禁止项。
+  conclusion: pass
+  covered_quality_gate_ids:
+  - independent-result-review
+  actual_method: collaboration-worker-read-only
+  actual_agent: review_governance_config_rename (Pasteur)
+  actual_model: gpt-5
+  evidence:
+  - collaboration://review_governance_config_rename/2026-08-15T08:09:34Z：Pasteur 独立只读复核修正版并返回 conclusion=pass；确认 product_name→governance_instance_name 的真实语义映射、入口闭集、原子迁移、Web 限界和 dirty 保护，无剩余 blocker。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7706-ba55-38e7bc9b1cc9
+change_log:
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T08:15:46.753801Z'
+  summary: 受控创建管辖实例配置与署名产品防混淆 WorkCase；形成 plan_version=1 并等待 Human Gate 1，未执行实现、外部配置迁移或提交。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T08:20:13.919365Z'
+  summary: 记录 Human 对 plan_version=1 Gate 1 的明确批准，WorkCase 进入 executing；尚未开始任何实现或外部配置迁移。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T08:20:42.586183Z'
+  summary: 开始执行配置字段硬切换 item；尚未修改实现或外部配置。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T08:24:02.051065Z'
+  summary: 完成配置字段硬切换 item，并验证配置解析、Web 读取和隔离基线。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T08:24:18.900252Z'
+  summary: 开始执行共享碰撞守卫 item。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T08:33:11.252171Z'
+  summary: 完成共享碰撞守卫、Git 与事实写入链接入；聚焦验证 263 passed，并修正一处配置 fixture 机械迁移误触署名字段。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T08:33:32.079067Z'
+  summary: 开始执行集成验证与受控提交准备。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T08:38:31.753432Z'
+  summary: 完成集成验证与真实 Git Gate 验证；全部 work item 终态并进入 Controller 结果检查。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T08:39:12.680558Z'
+  summary: 形成并完成 Controller 检查的 canonical result version 1；五项标准均满足，完整验证与范围外既有 Ruff 残余均如实披露，尚未进入独立结果复核。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T08:39:41.874895Z'
+  summary: canonical result version 1 完整回读并进入 independent_reviewing，等待冻结 Reviewer 实际复核。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T08:47:09.670380Z'
+  summary: 记录 result v1 独立复核 changes_required 并返回 controller_checking；Controller 接受越权落点反馈，保持不提交并准备在授权文件内返修。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T08:47:29.828152Z'
+  summary: result v1 changes_required 已处置，返回 controller_checking；保持不提交，开始授权闭集内返修。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T08:50:48.806035Z'
+  summary: 完成 result v1 feedback 返修：移除越权 fact_operation_support.py diff并全量复验；形成 ResultDelta v2，清理 v1 review，准备 fresh 独立复核。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T08:51:14.566500Z'
+  summary: canonical result v2 完整回读并进入 independent_reviewing，等待 fresh Reviewer 复核。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T08:54:40.669220Z'
+  summary: 记录 canonical result v2 fresh 独立只读复核 pass；无 blocker，准备执行唯一受控本地 commit。
+execution_approval:
+  subject_version: 1
+  approved_at: '2026-08-15T08:20:13.696Z'
+  summary: Human 明确批准执行公开精确回读后的 plan_version=1 Gate 1 基线。
+  baseline_fingerprint: 935e209de95676e5fb3c19357b39f62e3e02b452b0d4f6cc2fd42cdf5cb676f5
+  source_refs:
+  - conversation:user-gate1-approval-2026-08-15
+result_version: 2
+success_criterion_results:
+- criterion_id: criterion-all-write-entries
+  outcome: satisfied
+  summary: 事实 create、普通 update 与 WorkCase update/close/termination/correction/recovery 共用同一入口守卫；零副作用负例覆盖 backend/Core/文件未触发。Git precheck 与既有 native Hook 对碰撞均返回 signature_governance_instance_collision。
+- criterion_id: criterion-config-hard-cutover
+  outcome: satisfied
+  summary: 根 product_name 已硬切换为 governance_instance_name，product_description 保持用途说明；Python、全部配置 fixtures、外部配置和限定 Web reader 完成迁移。old-only、混合、unknown 均拒绝，三项目身份/路径/common-dir 与注释头等价。
+- criterion_id: criterion-contract-and-web-boundary
+  outcome: satisfied
+  summary: 署名三字段、Git trailers、历史 facts 与 Web 署名实现均未修改；Web production 只改 governedProjectsSettings.ts，三个允许测试 fixture 随迁移。当前最近提交只读观察为 codex-desktop / gpt-5 / codex，Web 全量 213 passed。
+- criterion_id: criterion-shared-collision-guard
+  outcome: satisfied
+  summary: 单一纯 guard 使用同次 GovernanceScopeResult 内部实例名与 parse_signature 归一 product_name 做 trim 后精确大小写比较；null 与大小写不等不碰撞，非法/重复 trailer 保留既有错误优先。
+- criterion_id: criterion-validation-and-isolation
+  outcome: satisfied
+  summary: v1 review 指出的 fact_operation_support.py 越权 hunk 已清零；共享响应适配仅位于已授权 fact_creation_operation.py 并由另两个入口导入。Python 2039 passed/15 skipped、Web 213 passed，授权文件 Ruff/diff/ldvh/fact integrity 与真实双向 Gate 均通过；42 个 staged paths 全属授权闭集，三条预存 untracked 未暂存。
+result_summary: 已完成管辖实例字段去歧义和新署名写入防混淆：配置根使用 governance_instance_name，外部实例为 LDVH Dogfood Governance；事实与 Git 共享无副作用碰撞守卫，碰撞稳定同码拒绝。署名合同、历史 facts 和 Web 署名面保持不变，Web 仅适配配置读取。result v1 Reviewer 指出的越权 Helper support 落点已移回冻结授权入口文件并全量复验。
+controller_check_summary: Controller 接受并完成 result v1 changes_required：fact_operation_support.py 当前相对 HEAD 零 diff，共享 envelope adapter 落在已授权 fact_creation_operation.py，update/workcase 两入口仅导入复用；Index 由 43 路径降为 42 个且全部属于 Gate1 精确授权。重新核对实际 diff、Web 闭集、外部配置、Hook 与保护哈希，无其它越界。
+validation_summary: Result v2 fresh validation：Python focused 222 passed；Python full 2039 passed/15 skipped；Web full 213 passed；授权变更文件 Ruff passed；git diff --check passed；ldvh check passed；fact integrity complete/260/0。precheck 与 native commit-msg 均对 LDVH Dogfood Governance 返回 signature_governance_instance_collision、对 codex-desktop/gpt-5/codex 通过。Index 42 paths，fact_operation_support.py 无 HEAD diff；Hook 与三条 protected untracked 哈希保持。全仓 Ruff 的 7 个未修改 HEAD 路径既有错误继续披露且未越界修复。
+result_reviews:
+- reviewer: review_governance_config_rename (Pasteur)
+  reviewed_at: '2026-08-15T08:53:52Z'
+  subject_version: 2
+  scope: 修复后 result_version=2、实际 staged/unstaged diff、外部配置、Web 闭集、全量验证、保护哈希、Index 与提交时序。
+  conclusion: pass
+  actual_method: collaboration-worker-read-only
+  actual_agent: review_governance_config_rename (Pasteur)
+  actual_model: gpt-5
+  evidence:
+  - collaboration://review_governance_config_rename/2026-08-15T08:53:52Z：fresh 独立只读复核确认 v1 越权落点已清零、Index 42 路径均授权、五项 satisfied 与验证/提交时序自洽，conclusion=pass。
+object_uid: 01a0047d-ca7d-73e9-8a6a-6942c7a59354
+object_id: workcase-01M027VJKXEFMRMTK98B3TB4TM
+fact_type_key: workcase
+created_at: '2026-08-15T08:15:46.753801Z'
+updated_at: '2026-08-15T08:54:40.669220Z'

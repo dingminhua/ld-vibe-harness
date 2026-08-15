@@ -84,7 +84,7 @@ def _managed_workspace(tmp_path: Path) -> tuple[Path, Path, Path]:
     (workspace / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
         "\n".join(
             (
-                "product_name: Sync Tests",
+                "governance_instance_name: Sync Tests",
                 "product_description: environment-sync tests.",
                 "projects:",
                 "  - id: sample",

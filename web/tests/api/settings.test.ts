@@ -24,7 +24,7 @@ execFileSync('git', ['-C', firstProject, '-c', 'user.name=Settings test', '-c', 
 execFileSync('git', ['-C', firstProject, 'worktree', 'add', '-q', '-b', 'linked-settings-fixture', firstLinkedWorktree])
 fs.writeFileSync(configPath, [
   '# Settings test configuration.',
-  'product_name: Settings test',
+  'governance_instance_name: Settings test',
   'product_description: A governed-project configuration fixture.',
   'projects:',
   '  - id: first',
@@ -68,6 +68,25 @@ test('reads the editable project projection without changing the configuration',
   assert.equal(body.hasExplicitDefault, false)
   assert.deepEqual(body.projects, [{ id: 'first', path: firstProject, name: 'First project' }])
   assert.match(fs.readFileSync(configPath, 'utf8'), /description: This description must survive/)
+})
+
+test('rejects legacy, mixed and unknown configuration root fields', async () => {
+  const valid = fs.readFileSync(configPath, 'utf8')
+  const invalidConfigurations = [
+    valid.replace('governance_instance_name:', 'product_name:'),
+    valid.replace('governance_instance_name: Settings test', 'governance_instance_name: Settings test\nproduct_name: Legacy settings test'),
+    `${valid}unknown_root: true\n`,
+  ]
+  try {
+    for (const content of invalidConfigurations) {
+      fs.writeFileSync(configPath, content)
+      const { response, body } = await request('/api/settings/governed-projects')
+      assert.notEqual(response.status, 200)
+      assert.equal(body.ok, false)
+    }
+  } finally {
+    fs.writeFileSync(configPath, valid)
+  }
 })
 
 test('validates existing entries only when the explicit verification endpoint is requested', async () => {

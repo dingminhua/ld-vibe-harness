@@ -22,7 +22,10 @@ from ldvh.helper.operation_runtime import (
     OperationImplementation,
     OperationRequestError,
 )
-from ldvh.helper.operations.fact_creation_operation import inject_observed_write_signature
+from ldvh.helper.operations.fact_creation_operation import (
+    inject_observed_write_signature,
+    signature_governance_collision_execution,
+)
 from ldvh.helper.operations.fact_creation_request import observed_write_signature_required_problem
 from ldvh.helper.operations.fact_operation_support import (
     configuration_reading_boundaries,
@@ -717,6 +720,15 @@ def _execute(
             gaps=({"summary": observed_problem, "scope": list(requested), "source_refs": [_CONTRACT]},),
         )
     supplied = inject_observed_write_signature(supplied, request.observed_context)
+    collision = signature_governance_collision_execution(
+        run,
+        request.observed_context,
+        requested,
+        request_sources,
+        diagnostic_profile=request.response_profile == "diagnostic",
+    )
+    if collision is not None:
+        return collision
     if not native_atomic_fact_writes_supported():
         return OperationExecution(
             outcome="unavailable",

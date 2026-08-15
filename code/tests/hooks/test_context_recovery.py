@@ -33,7 +33,7 @@ def _workspace(tmp_path: Path, *, project_count: int = 1, with_workcase: bool = 
         target = projects[0] / "ldvh-base/workcases/workcase-0007.yaml"
         shutil.copyfile(WORKCASE_FIXTURE, target)
     lines = [
-        "product_name: Test",
+        "governance_instance_name: Test",
         "product_description: Test workspace.",
         "projects:" if projects else "projects: []",
     ]

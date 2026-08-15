@@ -14,7 +14,7 @@ from ldvh.facts.schema import FactSchema
 from ldvh.facts.workcase_item_event import WorkCaseItemEvent
 from ldvh.facts.workcase_update import WorkCaseWriteResult
 from ldvh.filesystem import AtomicWriteResult
-from ldvh.governance.models import LocatorSource, ScopeDescriptor
+from ldvh.governance.models import ConfigStatus, GovernanceScopeResult, LocatorSource, ScopeDescriptor
 from ldvh.governance.resolver import GovernanceResolutionRun
 from ldvh.helper.operation_runtime import OperationExecutionContext
 from ldvh.helper.operations import IMPLEMENTATIONS, workcase_update_operation
@@ -42,6 +42,18 @@ def _domain() -> UpdateWorkCaseRequest:
 
 def _run() -> GovernanceResolutionRun:
     return GovernanceResolutionRun(None, (), (), (), (), (), ())
+
+
+def _governed_run() -> GovernanceResolutionRun:
+    result = GovernanceScopeResult(
+        workspace_root="/workspace",
+        config_path="/workspace/LDVH-GOVERNED-PROJECTS.yaml",
+        config_status=ConfigStatus.VALID,
+        object_resolutions=(),
+        source_refs=({"kind": "rule", "locator": "LDVH-GOVERNED-PROJECTS.yaml"},),
+        governance_instance_name="Test Workspace",
+    )
+    return GovernanceResolutionRun(result, (), (), (), (), (), ())
 
 
 def _read(
@@ -245,6 +257,10 @@ def test_helper_adapter_passes_complete_correct_request_to_core_without_reconstr
 
     monkeypatch.setattr("ldvh.facts.workcase_update.apply_workcase_write", fake_apply)
 
+    supplied = workcase_update_operation.inject_observed_write_signature(
+        dict(domain.fact_object),
+        {"signature": {"product_name": "Cindy", "model_name": "gpt-5.6-luna", "agent_runtime_name": "codex-cli"}},
+    )
     result = workcase_update_operation._apply_core_workcase_write(
         "correct",
         domain,
@@ -252,13 +268,13 @@ def test_helper_adapter_passes_complete_correct_request_to_core_without_reconstr
         {"workcase": schema},
         schema,
         "2026-07-26T16:00:00+08:00",
-        {"signature": {"product_name": "Cindy", "model_name": "gpt-5.6-luna", "agent_runtime_name": "codex-cli"}},
+        supplied,
     )
 
     assert isinstance(result, WorkCaseWriteResult)
     command = captured["command"]
     assert command.mode == "correct"
-    # 提供 observed_context.signature → supplied 中的 change_log 最新签名被替换为观察快照
+    # Helper 在进入 Core adapter 前已注入 observed signature；adapter 透传完整 after。
     assert command.supplied != domain.fact_object
     latest = command.supplied["change_log"][-1]
     assert latest["signature"]["product_name"] == "Cindy"
@@ -272,6 +288,55 @@ def test_helper_adapter_passes_complete_correct_request_to_core_without_reconstr
     assert command.route_target_fingerprints[0].target == target
     assert command.route_target_fingerprints[0].content_fingerprint == "b" * 64
     assert command.route_target_fingerprints[0].origin_path == "route_target_fingerprints[0].target"
+
+
+def test_workcase_update_rejects_instance_signature_before_backend_or_core(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(workcase_update_operation, "_validated_request", lambda *_args: _domain())
+    monkeypatch.setattr(workcase_update_operation, "_governance", lambda *_args: _governed_run())
+    monkeypatch.setattr(workcase_update_operation, "_boundary", lambda *_args: _boundary())
+    monkeypatch.setattr(
+        workcase_update_operation,
+        "project_fact_schemas",
+        lambda *_args: {"workcase": FactSchema("workcase", ())},
+    )
+    monkeypatch.setattr(
+        workcase_update_operation,
+        "native_atomic_fact_writes_supported",
+        lambda: (_ for _ in ()).throw(AssertionError("collision must stop before backend selection")),
+    )
+    monkeypatch.setattr(
+        workcase_update_operation,
+        "_apply_core_workcase_write",
+        lambda *_args: (_ for _ in ()).throw(AssertionError("collision must stop before core write")),
+    )
+
+    execution = workcase_update_operation._execute(
+        "update",
+        CommonRequest(
+            None,
+            (),
+            {},
+            None,
+            {
+                "signature": {
+                    "product_name": "Test Workspace",
+                    "model_name": "gpt-5",
+                    "agent_runtime_name": "codex",
+                }
+            },
+            (),
+            response_profile="diagnostic",
+        ),
+        object(),
+        OperationExecutionContext(Path("/project"), "2026-07-26T16:00:00+08:00"),
+    )
+
+    assert execution.outcome == "rejected"
+    assert execution.changes == ()
+    assert execution.gaps[0]["code"] == "signature_governance_instance_collision"
+    assert execution.diagnostics[0]["code"] == "signature_governance_instance_collision"
 
 
 def test_correct_closed_accepts_uid_route_target_without_name_error(monkeypatch: pytest.MonkeyPatch) -> None:

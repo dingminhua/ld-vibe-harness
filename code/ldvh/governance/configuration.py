@@ -18,7 +18,7 @@ from ldvh.governance.models import ConfigStatus
 
 CONFIGURATION_FILENAME = "LDVH-GOVERNED-PROJECTS.yaml"
 
-_REQUIRED_ROOT_FIELDS = frozenset({"product_name", "product_description", "projects"})
+_REQUIRED_ROOT_FIELDS = frozenset({"governance_instance_name", "product_description", "projects"})
 _OPTIONAL_ROOT_FIELDS = frozenset({"default_project_id"})
 _ROOT_FIELDS = _REQUIRED_ROOT_FIELDS | _OPTIONAL_ROOT_FIELDS
 _PROJECT_REQUIRED_FIELDS = frozenset({"id", "path"})
@@ -75,7 +75,7 @@ class GovernedProjectRegistration:
 class GovernedProjectsConfiguration:
     """A valid current Working Tree configuration."""
 
-    product_name: str
+    governance_instance_name: str
     product_description: str
     default_project_id: str | None
     projects: tuple[GovernedProjectRegistration, ...]
@@ -225,7 +225,12 @@ def _parse_configuration(
         if unknown:
             diagnostics.append(_diagnostic(f"配置根包含未知字段: {unknown!r}", source_path))
 
-    product_name = _non_empty_string(loaded.get("product_name"), "product_name", source_path, diagnostics)
+    governance_instance_name = _non_empty_string(
+        loaded.get("governance_instance_name"),
+        "governance_instance_name",
+        source_path,
+        diagnostics,
+    )
     product_description = _non_empty_string(
         loaded.get("product_description"), "product_description", source_path, diagnostics
     )
@@ -333,11 +338,11 @@ def _parse_configuration(
                 )
             )
 
-    if diagnostics or product_name is None or product_description is None:
+    if diagnostics or governance_instance_name is None or product_description is None:
         return None, tuple(diagnostics)
     return (
         GovernedProjectsConfiguration(
-            product_name=product_name,
+            governance_instance_name=governance_instance_name,
             product_description=product_description,
             default_project_id=default_project_id,
             projects=tuple(projects),

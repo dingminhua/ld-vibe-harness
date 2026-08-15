@@ -44,7 +44,7 @@ def _fixture(tmp_path: Path, *, staged: bool = True) -> tuple[Path, Path]:
     (workspace / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
         "\n".join(
             [
-                "product_name: Test Workspace",
+                "governance_instance_name: Test Workspace",
                 "product_description: Git commit precheck tests.",
                 "projects:",
                 "  - id: sample",

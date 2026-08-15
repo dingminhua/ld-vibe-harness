@@ -23,7 +23,7 @@ def _workspace(tmp_path: Path) -> tuple[Path, Path]:
     (workspace / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
         "\n".join(
             [
-                "product_name: Doctor Test",
+                "governance_instance_name: Doctor Test",
                 "product_description: Read-only diagnostics.",
                 "projects:",
                 "  - id: sample",

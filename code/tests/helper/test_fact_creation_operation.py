@@ -38,7 +38,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path]:
     (workspace / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
         "\n".join(
             [
-                "product_name: Test Workspace",
+                "governance_instance_name: Test Workspace",
                 "product_description: Controlled creation tests.",
                 "projects:",
                 "  - id: sample",
@@ -835,6 +835,24 @@ def test_create_rejects_unavailable_signature_shapes_without_writing(
     assert response["outcome"] == "invalid_request"
     assert response["changes"] == []
     assert tuple(project.rglob("*.yaml")) == yaml_paths_before
+
+
+def test_create_rejects_governance_instance_signature_before_writing(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    basis = _prepare(workspace, project, "spark")
+    payload = json.loads(_create_payload(workspace, project, basis, _spark()))
+    payload["response_profile"] = "diagnostic"
+    payload["observed_context"]["signature"]["product_name"] = "Test Workspace"
+    yaml_paths_before = tuple(project.rglob("*.yaml"))
+
+    response = handle_request("call", "create-fact-object", json.dumps(payload)).response
+
+    assert response["outcome"] == "rejected"
+    assert response["changes"] == []
+    assert response["gaps"][0]["code"] == "signature_governance_instance_collision"
+    assert response["diagnostics"][0]["code"] == "signature_governance_instance_collision"
+    assert tuple(project.rglob("*.yaml")) == yaml_paths_before
+    assert not (project / ".git/ldvh").exists()
 
 
 def test_prepare_has_no_canonical_side_effect_and_create_injects_managed_fields(tmp_path: Path) -> None:

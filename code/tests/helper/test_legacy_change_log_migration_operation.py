@@ -44,7 +44,7 @@ priority: P2
     (workspace / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
         "\n".join(
             [
-                "product_name: Test Workspace",
+                "governance_instance_name: Test Workspace",
                 "product_description: Legacy change-log migration tests.",
                 "projects:",
                 "  - id: sample",

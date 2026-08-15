@@ -28,7 +28,10 @@ from ldvh.helper.operation_runtime import (
     OperationImplementation,
     OperationRequestError,
 )
-from ldvh.helper.operations.fact_creation_operation import inject_observed_write_signature
+from ldvh.helper.operations.fact_creation_operation import (
+    inject_observed_write_signature,
+    signature_governance_collision_execution,
+)
 from ldvh.helper.operations.fact_creation_request import observed_write_signature_required_problem
 from ldvh.helper.operations.fact_operation_support import (
     configuration_reading_boundaries,
@@ -665,7 +668,7 @@ def _apply_core_workcase_write(
     schemas: dict[str, FactSchema],
     schema: FactSchema,
     event_at: str,
-    observed_context: dict[str, Any],
+    supplied: dict[str, Any],
     object_id: str | None = None,
 ) -> object:
     """The only Helper-to-Core WorkCase transaction adapter."""
@@ -696,7 +699,7 @@ def _apply_core_workcase_write(
             schema=schema,
             object_id=object_id,
             expected_content_fingerprint=domain.expected_content_fingerprint,
-            supplied=inject_observed_write_signature(dict(domain.fact_object), observed_context),
+            supplied=supplied,
             event_at=event_at,
             mode=mode,
             authorization_reference=domain.authorization_reference,
@@ -1051,16 +1054,6 @@ def _execute(
             governance_resolution=run.result.to_json() if run.result else None,
             sources=sources,
         )
-    if not native_atomic_fact_writes_supported():
-        return OperationExecution(
-            outcome="unavailable",
-            summary="当前平台没有启用 WorkCase 写入的原生原子后端",
-            requested_scope=requested,
-            not_completed_scope=requested,
-            governance_resolution=run.result.to_json() if run.result else None,
-            sources=(*sources, _SHARED_WRITE_CONTRACT),
-        )
-
     if mode == "update" and isinstance(domain, UpdateWorkCaseRequest) and domain.item_event is not None:
         current = _current_read(boundary, schemas, reference.object_id)
         if (
@@ -1158,6 +1151,25 @@ def _execute(
             sources=sources,
             gaps=({"summary": observed_problem, "scope": list(requested), "source_refs": [_CONTRACTS[mode]]},),
         )
+    supplied = inject_observed_write_signature(dict(domain.fact_object), request.observed_context)
+    collision = signature_governance_collision_execution(
+        run,
+        request.observed_context,
+        requested,
+        sources,
+        diagnostic_profile=request.response_profile == "diagnostic",
+    )
+    if collision is not None:
+        return collision
+    if not native_atomic_fact_writes_supported():
+        return OperationExecution(
+            outcome="unavailable",
+            summary="当前平台没有启用 WorkCase 写入的原生原子后端",
+            requested_scope=requested,
+            not_completed_scope=requested,
+            governance_resolution=run.result.to_json() if run.result else None,
+            sources=(*sources, _SHARED_WRITE_CONTRACT),
+        )
     try:
         application = _apply_core_workcase_write(
             mode,
@@ -1166,7 +1178,7 @@ def _execute(
             schemas,
             schema,
             context.event_at,
-            request.observed_context,
+            supplied,
             reference.object_id,
         )
     except FactCoordinationUnavailable as error:

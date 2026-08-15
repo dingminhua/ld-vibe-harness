@@ -92,6 +92,7 @@ def test_result_serializes_exact_attachment_field_closure_and_sorts_by_index() -
         object_resolutions=(second, first),
         source_refs=SOURCE,
         registered_project_candidates=(candidate("zeta"), candidate("alpha")),
+        governance_instance_name="Test Governance",
     )
 
     serialized = result.to_json()
@@ -106,6 +107,7 @@ def test_result_serializes_exact_attachment_field_closure_and_sorts_by_index() -
         "source_refs",
     }
     assert serialized["scope_status"] == "mixed_scope"
+    assert result.governance_instance_name == "Test Governance"
     assert [item["locator_index"] for item in serialized["object_resolutions"]] == [0, 1]
     assert [item["governed_project_id"] for item in serialized["registered_project_candidates"]] == [
         "alpha",

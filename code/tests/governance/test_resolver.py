@@ -49,7 +49,7 @@ def _configuration(root: Path, projects: list[tuple[str, Path]], *, body: str | 
     root.mkdir(parents=True, exist_ok=True)
     if body is None:
         entries = "\n".join(f"  - id: {project_id}\n    path: {path}" for project_id, path in projects)
-        body = f"product_name: Test\nproduct_description: Test workspace\nprojects:\n{entries}\n"
+        body = f"governance_instance_name: Test\nproduct_description: Test workspace\nprojects:\n{entries}\n"
     source = root / CONFIGURATION_FILENAME
     source.write_text(body, encoding="utf-8")
     return source
@@ -162,13 +162,14 @@ def test_nearest_valid_unregistered_configuration_fails_closed_without_climbing(
     inner_source = _configuration(
         inner,
         [],
-        body="product_name: Test\nproduct_description: Test workspace\nprojects: []\n",
+        body="governance_instance_name: Test\nproduct_description: Test workspace\nprojects: []\n",
     )
 
     run = resolve_governance_scope(_scope(str(repository / "tracked.txt")), base=tmp_path)
 
     assert run.result is not None
     assert run.result.config_status is ConfigStatus.VALID
+    assert run.result.governance_instance_name == "Test"
     assert run.result.config_path == str(inner_source.resolve())
     assert run.result.scope_status is ScopeStatus.NON_GOVERNED
     assert run.result.object_resolutions[0].status is ObjectStatus.NOT_GOVERNED
@@ -180,7 +181,7 @@ def test_nearest_invalid_configuration_stops_before_outer_configuration(tmp_path
     inner = outer / "inner"
     repository = _repository(inner / "repository")
     _configuration(outer, [("repository", repository)])
-    inner_source = _configuration(inner, [], body="product_name: [\n")
+    inner_source = _configuration(inner, [], body="governance_instance_name: [\n")
 
     run = resolve_governance_scope(_scope(str(repository / "tracked.txt")), base=tmp_path)
 
@@ -236,7 +237,7 @@ def test_single_worktree_starts_at_the_actual_root_not_a_locator_child(tmp_path:
     source = _configuration(workspace, [("repository", repository)])
     nested = repository / "nested"
     nested.mkdir()
-    _configuration(nested, [], body="product_name: [\n")
+    _configuration(nested, [], body="governance_instance_name: [\n")
     target = nested / "new-file.txt"
 
     run = resolve_governance_scope(_scope(str(target)), base=tmp_path)
@@ -327,7 +328,7 @@ def test_complete_non_valid_configuration_returns_unknown_domain_results(
     workspace = tmp_path / "workspace"
     repository = _repository(workspace / "repository")
     if setup == "invalid":
-        _configuration(workspace, [], body="product_name: [\n")
+        _configuration(workspace, [], body="governance_instance_name: [\n")
 
     run = resolve_governance_scope(
         _scope(str(repository / "tracked.txt")),

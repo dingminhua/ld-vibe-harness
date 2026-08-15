@@ -21,7 +21,7 @@ execFileSync('git', ['init', '-q', secondaryProjectRoot])
 fs.writeFileSync(
   path.join(workspaceRoot, 'LDVH-GOVERNED-PROJECTS.yaml'),
   [
-    'product_name: Project files test',
+    'governance_instance_name: Project files test',
     'product_description: Code-controlled governance resolution fixture.',
     'projects:',
     '  - id: demo',

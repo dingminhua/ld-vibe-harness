@@ -291,7 +291,13 @@ def test_linked_worktree_resolves_registered_common_dir_but_captures_linked_root
     linked = workspace / "linked"
     _git(main, "worktree", "add", "-qb", "linked-capture", str(linked))
     (workspace / CONFIGURATION_FILENAME).write_text(
-        f"product_name: Test\nproduct_description: Test workspace\nprojects:\n  - id: ldvh\n    path: {main}\n",
+        (
+            "governance_instance_name: Test\n"
+            "product_description: Test workspace\n"
+            "projects:\n"
+            "  - id: ldvh\n"
+            f"    path: {main}\n"
+        ),
         encoding="utf-8",
     )
     (linked / "untracked.txt").write_text("linked only\n", encoding="utf-8")

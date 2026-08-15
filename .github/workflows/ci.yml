@@ -29,7 +29,7 @@ jobs:
         run: |
           mkdir -p "$(dirname "$GITHUB_WORKSPACE")"
           cat > "$(dirname "$GITHUB_WORKSPACE")/LDVH-GOVERNED-PROJECTS.yaml" <<EOF
-          product_name: LD Vibe Harness
+          governance_instance_name: LD Vibe Harness
           product_description: CI 测试管辖配置 fixture
           projects:
             - id: ldvh
@@ -68,7 +68,7 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/ldvh-workspace"
           cat > "$RUNNER_TEMP/ldvh-workspace/LDVH-GOVERNED-PROJECTS.yaml" <<EOF
-          product_name: LD Vibe Harness
+          governance_instance_name: LD Vibe Harness
           product_description: CI 测试管辖配置 fixture
           projects:
             - id: ldvh

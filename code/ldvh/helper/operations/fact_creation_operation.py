@@ -21,6 +21,7 @@ from ldvh.facts.schema import project_fact_schemas
 from ldvh.filesystem import native_atomic_fact_writes_supported
 from ldvh.governance.models import ObjectStatus
 from ldvh.governance.resolver import GovernanceResolutionRun, resolve_governance_scope
+from ldvh.governance.signature_guard import signature_governance_instance_collision
 from ldvh.helper.operation_runtime import (
     AvailabilityEvaluation,
     OperationExecution,
@@ -39,7 +40,10 @@ from ldvh.helper.operations.fact_creation_request import (
     parse_draft_request,
     parse_observed_write_signature,
 )
-from ldvh.helper.operations.fact_operation_support import configuration_reading_boundaries, post_write_integrity_audit
+from ldvh.helper.operations.fact_operation_support import (
+    configuration_reading_boundaries,
+    post_write_integrity_audit,
+)
 from ldvh.helper.requests import CommonRequest
 from ldvh.helper.responses import source_reference
 from ldvh.specs.repository import RepositoryInspection
@@ -87,6 +91,51 @@ def inject_observed_write_signature(
     newest["signature"] = parsed.signature.as_dict()
     newest.pop("session_id", None)
     return {**supplied, "change_log": [*change_log[:-1], newest]}
+
+
+def signature_governance_collision_execution(
+    run: GovernanceResolutionRun,
+    observed_context: dict[str, Any],
+    requested_scope: tuple[object, ...],
+    sources: tuple[dict[str, Any], ...],
+    *,
+    diagnostic_profile: bool,
+) -> OperationExecution | None:
+    """Project the shared pure collision guard before any fact write side effect."""
+
+    if run.result is None:
+        return None
+    parsed = parse_observed_write_signature(observed_context)
+    if parsed.problems or parsed.signature is None:
+        return None
+    collision = signature_governance_instance_collision(
+        run.result.governance_instance_name,
+        parsed.signature,
+    )
+    if collision is None:
+        return None
+    gap = {
+        "summary": collision.message,
+        "scope": list(requested_scope),
+        "source_refs": list(sources),
+        "code": collision.code,
+    }
+    diagnostic = {
+        "summary": collision.message,
+        "details": {"stage": "signature_governance_guard", "code": collision.code},
+        "source_refs": list(sources),
+        "code": collision.code,
+    }
+    return OperationExecution(
+        outcome="rejected",
+        summary=collision.message,
+        requested_scope=requested_scope,
+        not_completed_scope=requested_scope,
+        governance_resolution=run.result.to_json(),
+        sources=sources,
+        gaps=(gap,),
+        diagnostics=(diagnostic,) if diagnostic_profile else (),
+    )
 
 
 def _governance(domain: FactDraftRequest | FactCreateRequest) -> GovernanceResolutionRun:
@@ -694,6 +743,15 @@ def _create_execute(
             sources=request_sources,
         )
     supplied = inject_observed_write_signature(supplied, request.observed_context)
+    collision = signature_governance_collision_execution(
+        run,
+        request.observed_context,
+        requested,
+        request_sources,
+        diagnostic_profile=request.response_profile == "diagnostic",
+    )
+    if collision is not None:
+        return collision
     initial_statuses = LAYOUTS[basis.fact_type_key].initial_statuses
     if supplied.get("status") not in initial_statuses:
         rendered_statuses = ", ".join(sorted(initial_statuses))

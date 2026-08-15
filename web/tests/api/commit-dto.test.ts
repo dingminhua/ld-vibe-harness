@@ -143,7 +143,7 @@ git(['push', '--quiet', '--set-upstream', 'origin', 'main'])
 fs.writeFileSync(
   path.join(workspaceRoot, 'LDVH-GOVERNED-PROJECTS.yaml'),
   [
-    'product_name: Commit DTO test',
+    'governance_instance_name: Commit DTO test',
     'product_description: Code-controlled governance resolution fixture.',
     'projects:',
     '  - id: demo',

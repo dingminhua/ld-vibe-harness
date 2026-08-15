@@ -147,6 +147,7 @@ def _governance(repository: Path, *, resolved_root: Path | None = None) -> Gover
         config_status=ConfigStatus.VALID,
         object_resolutions=(resolution,),
         source_refs=({"kind": "rule", "locator": "LDVH-GOVERNED-PROJECTS.yaml"},),
+        governance_instance_name="LDVH Governance",
     )
 
 
@@ -169,6 +170,7 @@ def test_observes_staged_add_without_mutating_repository(tmp_path: Path) -> None
     assert observed.candidate_paths == ("added.txt",)
     assert observed.snapshot_identity is not None and observed.snapshot_identity.startswith("sha256:")
     assert observed.validation_input is not None
+    assert observed.validation_input.governance_instance_name == "LDVH Governance"
     assert validate_commit(_contract(), observed.validation_input).outcome == "passed"
     assert _git(repository, "status", "--porcelain=v2", "-z") == before_status
     assert _git(repository, "ls-files", "--stage", "-z") == before_index

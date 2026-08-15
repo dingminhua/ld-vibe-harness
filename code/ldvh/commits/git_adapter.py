@@ -570,6 +570,7 @@ def _observe_index(
         snapshot_identity=snapshot_after,
         source_path=contract.source_path,
         source_fingerprint=contract.content_fingerprint,
+        governance_instance_name=governance.governance_instance_name,
         fact_candidates=fact_candidates,
     )
     return CommitCandidateObservation(

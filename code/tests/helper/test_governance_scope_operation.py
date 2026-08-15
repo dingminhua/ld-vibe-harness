@@ -34,7 +34,7 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
     config.write_text(
         "\n".join(
             [
-                "product_name: Test Workspace",
+                "governance_instance_name: Test Workspace",
                 "product_description: Test governed projects configuration.",
                 "projects:",
                 "  - id: sample",
@@ -198,7 +198,7 @@ def test_invalid_config_follow_up_provides_guidance(tmp_path: Path) -> None:
     _git(project, "init", "-q")
     (project / "current.txt").write_text("current\n", encoding="utf-8")
     config = workspace / "LDVH-GOVERNED-PROJECTS.yaml"
-    config.write_text("product_name: Only a name without projects key.\n", encoding="utf-8")
+    config.write_text("governance_instance_name: Only a name without projects key.\n", encoding="utf-8")
 
     payload = json.dumps(
         {
@@ -234,7 +234,7 @@ def test_conflict_config_follow_up_provides_guidance(tmp_path: Path) -> None:
     (first_workspace / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
         "\n".join(
             [
-                "product_name: First",
+                "governance_instance_name: First",
                 "product_description: First configuration.",
                 "projects:",
                 "  - id: first",
@@ -249,7 +249,7 @@ def test_conflict_config_follow_up_provides_guidance(tmp_path: Path) -> None:
     (second_workspace / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
         "\n".join(
             [
-                "product_name: Second",
+                "governance_instance_name: Second",
                 "product_description: Second configuration.",
                 "projects:",
                 "  - id: second",

@@ -6,7 +6,9 @@ import { LDVH_WORKSPACE_ROOT } from './pytools.js'
 import { verifyWebGovernanceConfiguration } from './governanceScope.js'
 
 export type GovernedProjectSetting = { id: string; path: string; name?: string }
-type Configuration = { product_name: string; product_description: string; projects: Array<Record<string, unknown>>; default_project_id?: string }
+type Configuration = { governance_instance_name: string; product_description: string; projects: Array<Record<string, unknown>>; default_project_id?: string }
+
+const ROOT_FIELDS = new Set(['governance_instance_name', 'product_description', 'projects', 'default_project_id'])
 
 function configPath(): string { return path.join(LDVH_WORKSPACE_ROOT, 'LDVH-GOVERNED-PROJECTS.yaml') }
 function fingerprint(content: string): string { return createHash('sha256').update(content).digest('hex') }
@@ -14,7 +16,7 @@ function isRecord(value: unknown): value is Record<string, unknown> { return Boo
 
 function parse(content: string): Configuration {
   const value = yaml.load(content)
-  if (!isRecord(value) || typeof value.product_name !== 'string' || typeof value.product_description !== 'string' || !Array.isArray(value.projects) || (value.default_project_id !== undefined && typeof value.default_project_id !== 'string')) {
+  if (!isRecord(value) || Object.keys(value).some((key) => !ROOT_FIELDS.has(key)) || typeof value.governance_instance_name !== 'string' || !value.governance_instance_name.trim() || typeof value.product_description !== 'string' || !value.product_description.trim() || !Array.isArray(value.projects) || (value.default_project_id !== undefined && typeof value.default_project_id !== 'string')) {
     throw new Error('管辖项目配置缺少必填根字段，无法在设置页修改')
   }
   return value as Configuration
@@ -68,7 +70,7 @@ function normalizeDefaultProjectId(input: unknown, projects: GovernedProjectSett
 }
 
 function header(content: string): string {
-  const match = /^(.*?)(?=^product_name:)/ms.exec(content)
+  const match = /^(.*?)(?=^governance_instance_name:)/ms.exec(content)
   return match?.[1] ?? ''
 }
 

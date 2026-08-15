@@ -45,7 +45,7 @@ def _managed_project(root: Path) -> tuple[Path, Path]:
     (workspace / "LDVH-GOVERNED-PROJECTS.yaml").write_text(
         "\n".join(
             [
-                "product_name: Native Windows Matrix",
+                "governance_instance_name: Native Windows Matrix",
                 "product_description: Disposable native verification workspace.",
                 "projects:",
                 "  - id: sample",

@@ -346,6 +346,7 @@ def resolve_governance_scope(
             object_resolutions=tuple(resolutions),
             source_refs=all_sources,
             registered_project_candidates=registered_project_candidates,
+            governance_instance_name=configuration.configuration.governance_instance_name,
         )
 
     technical = _technical_non_completions(failures)

@@ -233,6 +233,7 @@ class GovernanceScopeResult:
     object_resolutions: tuple[ObjectResolution, ...]
     source_refs: tuple[JsonObject, ...]
     registered_project_candidates: tuple[RegisteredProjectCandidate, ...] = ()
+    governance_instance_name: str | None = None
     scope_status: ScopeStatus = field(init=False)
 
     def __post_init__(self) -> None:
@@ -246,6 +247,8 @@ class GovernanceScopeResult:
         object.__setattr__(self, "source_refs", _freeze_references(self.source_refs))
         if not self.source_refs:
             raise ValueError("source_refs must be non-empty")
+        if self.governance_instance_name is not None and not self.governance_instance_name.strip():
+            raise ValueError("governance_instance_name must be non-empty or None")
         candidates = tuple(sorted(self.registered_project_candidates, key=lambda item: item.governed_project_id))
         for field_name in ("governed_project_id", "registered_project_path", "git_common_dir"):
             values = [getattr(item, field_name) for item in candidates]

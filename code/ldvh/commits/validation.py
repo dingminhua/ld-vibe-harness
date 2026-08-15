@@ -12,6 +12,7 @@ from ldvh.commits.contract_source import CommitContractProjection
 from ldvh.facts.content import validate_fact_content
 from ldvh.facts.contracts import LAYOUTS, is_legacy_spark_object
 from ldvh.facts.schema import FactSchema
+from ldvh.governance.signature_guard import signature_governance_instance_collision
 from ldvh.signature import parse_signature
 
 _HEADER = re.compile(r"^(?P<type>[a-z]+)(?:\((?P<scope>[a-z]+(?:-[a-z]+)*)\))?(?P<breaking>!)?: (?P<description>.+)$")
@@ -85,6 +86,7 @@ class CommitValidationInput:
     snapshot_identity: str | None
     source_path: str | None
     source_fingerprint: str | None
+    governance_instance_name: str | None
     spec_candidate_statuses: dict[str, str] | None = None
     spec_activated_paths: tuple[str, ...] | None = None
     fact_candidates: tuple[StagedFactCandidate, ...] = ()
@@ -220,7 +222,9 @@ def _footer_trailers(lines: list[str]) -> dict[str, list[str]]:
     return trailers
 
 
-def _signature_trailer_issues(lines: list[str]) -> list[CommitValidationIssue]:
+def _signature_trailer_issues(
+    lines: list[str], governance_instance_name: str | None
+) -> list[CommitValidationIssue]:
     trailers = _footer_trailers(lines)
     issues: list[CommitValidationIssue] = []
     present = 0
@@ -271,6 +275,9 @@ def _signature_trailer_issues(lines: list[str]) -> list[CommitValidationIssue]:
                             f"footer 的 {name}: 必须使用归一后的值 {normalized[field]!r}",
                         )
                     )
+            collision = signature_governance_instance_collision(governance_instance_name, signature)
+            if collision is not None:
+                issues.append(_issue(collision.code, collision.message))
     return issues
 
 
@@ -622,6 +629,7 @@ def validate_commit(contract: CommitContractProjection, value: CommitValidationI
         "snapshot_identity": value.snapshot_identity,
         "source_path": value.source_path,
         "source_fingerprint": value.source_fingerprint,
+        "governance_instance_name": value.governance_instance_name,
     }
     for field, field_value in required.items():
         if field_value is None or (field != "message" and field_value == ""):
@@ -699,7 +707,7 @@ def validate_commit(contract: CommitContractProjection, value: CommitValidationI
                 require_impact_boundary=impact_boundary_required,
             )
         )
-        signature_issues = _signature_trailer_issues(body_lines)
+        signature_issues = _signature_trailer_issues(body_lines, value.governance_instance_name)
         failures.extend(signature_issues)
         if not signature_issues:
             trace_unavailable, trace_failures = _fact_trace_issues(value)
