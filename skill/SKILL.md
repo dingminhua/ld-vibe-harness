@@ -7,7 +7,7 @@ description: 项目待办/工作项/进展、技术决策/决策记录、踩坑�
 
 # LDVH 接入（薄路由）
 
-> Skill 版本：2026-08-14 00:00
+> Skill 版本：2026-08-15 00:00
 
 LDVH 让长期项目"判断有据、行动可续、结果可验"。本文件不承载规则正文；固定能力边界只作路由提示。
 权威只有一个：LDVH CLI 从当前规则源现取的结果。
@@ -97,6 +97,8 @@ AI 不得自行猜测或传递路径。若自动发现返回 `missing`，如实�
 在提交 Human Gate 1 之前，必须经 Helper 读取规范 21 §4.3 与 §4.4，及当次适用
 行动模板的 Stop Conditions，照其逐项审核 work items 与 success_criterion_definitions
 是否吸收生命周期关口或 Human Gate；不得凭本文件概括替代规范与模板原文。
+
+若 `create-fact-object` 尚未返回 WorkCase 的 `result.actual_ref`，或 Controller 尚未用该引用另行调用公开 `read-fact-objects` 并取得完整当前对象与非空 `content_fingerprint`，不得把候选计划称为或呈交为 Human Gate 1；创建响应内部的 readback/audit 不替代这次公开精确回读。
 
 此纪律不改变 Code 行为，只约束 AI 审核责任；机械测试无法替代。
 

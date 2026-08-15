@@ -49,6 +49,15 @@ class TestSkillVersion:
         not_skill.write_text("just some text\n", encoding="utf-8")
         assert tool_module._has_ldvh_frontmatter(not_skill) is False
 
+    def test_canonical_skill_guards_public_workcase_readback_before_gate_1(self) -> None:
+        canonical = (PROJECT_ROOT / "skill" / "SKILL.md").read_text(encoding="utf-8")
+
+        assert "`result.actual_ref`" in canonical
+        assert "公开 `read-fact-objects`" in canonical
+        assert "完整当前对象与非空 `content_fingerprint`" in canonical
+        assert "不得把候选计划称为或呈交为 Human Gate 1" in canonical
+        assert "创建响应内部的 readback/audit 不替代这次公开精确回读" in canonical
+
 
 class TestCheckSkillCopy:
     def test_aligned_when_identical(self) -> None:
