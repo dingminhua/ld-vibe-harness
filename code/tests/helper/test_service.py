@@ -126,7 +126,13 @@ def test_candidate_discovery_publishes_only_the_source_bound_text_match_input_fr
     assert all(
         operation["input_examples"] == []
         for operation in operations
-        if operation["operation_key"] not in {"find-fact-object-candidates", "update-fact-object"}
+        if operation["operation_key"]
+        not in {
+            "find-fact-object-candidates",
+            "precheck-git-commit",
+            "update-fact-object",
+            "update-workcase",
+        }
     )
     assert len(candidate_operation["input_examples"]) == 2
     assert candidate_operation["input_examples"][0] == {
@@ -171,6 +177,26 @@ def test_fact_update_publishes_a_source_bound_read_to_update_after_example() -> 
     ]
     assert "全部非托管字段" in example["composition_note"]
     assert "observed_context.signature" in example["composition_note"]
+
+
+def test_commit_precheck_publishes_a_source_bound_trailer_skeleton() -> None:
+    response = handle_request("capabilities", None, "").response
+    operation = next(
+        item for item in response["result"]["operations"] if item["operation_key"] == "precheck-git-commit"
+    )
+
+    assert len(operation["input_examples"]) == 1
+    example = operation["input_examples"][0]
+    message = example["arguments_fragment"]["message"]
+    assert message.splitlines()[-3:] == [
+        "LDVH-Product-Name: <fill-directly-observed-product-name>",
+        "LDVH-Model-Name: <fill-directly-observed-model-name>",
+        "LDVH-Agent-Runtime-Name: <fill-directly-observed-agent-runtime-name>",
+    ]
+    assert example["source_refs"][0]["locator"] == (
+        "source-of-truth-traceability::9.7 Git commit 候选机械预检输入字段"
+    )
+    assert "三项均不可观察时必须停止" in example["composition_note"]
 
 
 def test_repository_problem_is_not_rewritten_as_empty_discovery(monkeypatch, tmp_path: Path) -> None:

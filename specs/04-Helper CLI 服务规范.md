@@ -98,13 +98,16 @@ Helper CLI 的公开可执行入口使用当前源码仓库交付的稳定 `ldvh
 ```text
 ldvh capabilities
 ldvh capabilities <operation_key>
+ldvh capabilities <operation_key> --example
 ldvh call <operation_key>
 ldvh check
 ```
 
+`capabilities [<operation_key>]`、`call <operation_key>` 与 `check` 还可显式使用 `--request <path>` 选择一个请求文件，或使用 `--fields <selector>[,<selector>...]` 对已经形成的完整响应做 CLI 投影；两个选项可同时使用。`--example` 只允许用于带精确 `operation_key` 的 `capabilities`，不得与 `--request` 或 `--fields` 同用，也不得触发目标操作。三个选项只属于源码 launcher 的机械输入或输出投影，不新增 Helper 公开操作、不进入共同请求字段、不改变领域请求、结果、授权、适用或可用性语义。选项的结构化字段、互斥、错误与投影闭集由授权附件定义。
+
 不带 `operation_key` 的 `capabilities` 用于发现已经由当前规则源定义的公开操作、实现情况和调用所需输入，不对尚未提供的具体请求判断可用性。带 `operation_key` 的 `capabilities` 针对所提供的请求内容检查该操作在当次范围内是否可调用。`call` 通过稳定的 `operation_key` 调用某项公开操作。
 
-所有公开入口读取请求时无条件等待 stdin 到达 EOF。调用方必须保证 stdin 闭合：经管道或重定向供给请求；无请求输入时以 `< /dev/null` 或等价方式闭合。无 tty 且 EOF 不可控的执行环境不得裸调任何入口。调用挂起类故障先按 stdin 未闭合排查，不得直接记为服务不可用。
+未使用 `--request` 时，所有公开入口读取请求均等待 stdin 到达 EOF。调用方必须保证 stdin 闭合：经管道或重定向供给请求；无请求输入时以 `< /dev/null` 或等价方式闭合。使用 `--request` 时，CLI 只读取调用方显式提供、相对实际 `cwd` 解析的一个非 symlink 普通 UTF-8 文件；支持 `O_NOFOLLOW` 时必须在 open 边界原子禁止跟随。tty 视为没有第二输入源；非 tty stdin 只有在零等待探测时已经可读且读取一个 byte 得到 EOF，才视为已关闭的空输入，已有 byte 或仍有 live writer 的 pipe 一律以输入源冲突返回 `invalid_request`，不得等待未来 EOF。CLI 不展开 glob、URL 或环境变量，不从 workspace、缓存或历史请求猜路径；symlink、非普通文件、超过 4 MiB、不可读、非 UTF-8 或不存在的路径均在调用领域操作前返回 `invalid_request`，不得产生领域副作用。无 tty 且 EOF 不可控的执行环境在未使用 `--request` 时不得裸调任何入口。调用挂起类故障先按 stdin 未闭合或请求文件不是普通文件排查，不得直接记为服务不可用。
 
 公开操作标识（Public Operation Identifier）是由定义某项 Helper 公开操作语义的当前来源赋予、用于跨 AI、Code、tests 和环境入口稳定引用同一服务行为的标识，机器字段为 `operation_key`。它在全部当前公开操作中唯一；改名或移动不改变该标识，取消后的标识不得改派给其它操作。Code、tests 和环境入口不得反向创造该身份。已有当前来源但没有实现的操作可以被发现，但不能被调用为可用能力。只有当前来源、实际实现、可复核能力依据和当次条件同时成立的范围，才可以声明为当次可调用。仅有计划、占位符、内部函数或文档名称不得形成公开操作。
 
@@ -139,7 +142,9 @@ Helper 使用的规则源视图只由 01 §§6.3–6.4 确定，并固定为当�
 | `observed_context` | 当次环境、工具或调用方可观察且该操作确有需要的补充输入 | 必须保留输入来源；不直接成为稳定事实 |
 | `authorization_reference` | 状态变更操作在来源规则要求授权时提供 | 只证明所引用决定及其作用范围，不证明技术结果 |
 
-机器调用从标准输入接收至多一个 UTF-8 JSON 对象；空输入等同空对象。默认标准输出只包含一个完整 JSON 响应对象。无法解析的输入按 `invalid_request` 返回；进程尚未启动、可执行文件不存在或操作系统无法创建进程，不属于已经进入 Helper 服务后的响应范围。具体字段类型、默认空值、未知字段处理和文本呈现边界由授权附件定义。
+机器调用从标准输入接收至多一个 UTF-8 JSON 对象；空输入等同空对象。`--request` 只替换该原文的传输来源，文件原文仍进入同一个请求解析与领域操作链，不先解析重写或补字段。默认标准输出只包含一个完整 JSON 响应对象。无法解析的输入按 `invalid_request` 返回；进程尚未启动、可执行文件不存在或操作系统无法创建进程，不属于已经进入 Helper 服务后的响应范围。具体字段类型、默认空值、未知字段处理和文本呈现边界由授权附件定义。
+
+`--example` 和 `--fields` 产生的是显式 CLI projection，不是完整共同响应，也不取得新的 `contract` 身份。`--example` 必须且只调用一次不带领域 request body 的通用 capabilities discovery，并按命令位置精确选择唯一单操作，只可从机械完整的 `effect`、`required_inputs`、`input_examples` 和来源信息组装可填写骨架；成功与失败路径都不进入单操作 request-check、不形成 availability。unknown value 保持 `null`，写操作的三字段署名只投影空占位和当前边界，不观察、缓存、推导或默认填值；目标不存在、实现不可投影、metadata 不完整或 required path 与 fragment 结构冲突时由 CLI 返回稳定 `invalid_request`，不输出骨架、不追加第二次 Helper 调用；骨架本身不表示合法请求、授权、适用、可用或可执行。`--fields` 必须先让完整 Helper 请求和响应真实完成，并确认共同响应 core 与 gaps 类型完整，再从 object 成员按附件闭合路径语法投影；core 不变量失败时回退实际来源响应，不得宣称 complete projection。成功投影必须回显来源响应的 `outcome`、退出码、未完成范围和 gap 计数；完整 `gaps` 仅在 selector 明确选择时返回，缺失路径与字段实际为 `null` 可区分，且字段投影失败不得把已经发生的领域写入伪装为零副作用失败或诱导无条件重试。
 
 操作不得要求与其职责无关的完整会话记录、模型内部推理或厂商私有 payload。缺少必需输入时必须指出具体缺口，不得以名称相似或历史缓存静默补足；只有具体操作来源明确把进程实际 `cwd` 定义为回退观察时，才能使用该目录，并必须保留其来源且不得覆盖显式工作对象定位符。
 

@@ -107,7 +107,9 @@ if str(CODE_ROOT) not in sys.path:
 
 def _usage() -> int:
     sys.stderr.write(
-        "usage: ldvh capabilities [operation_key] | ldvh call <operation_key> | "
+        "usage: ldvh capabilities [operation_key] [--request PATH] [--fields PATHS] | "
+        "ldvh capabilities <operation_key> --example | "
+        "ldvh call <operation_key> [--request PATH] [--fields PATHS] | "
         "ldvh check | "
         "ldvh {worktree-bootstrap,work-context,context-recovery,doctor,environment-sync,git-commit-msg,git-hook} ...\n"
     )

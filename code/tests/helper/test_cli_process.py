@@ -102,8 +102,8 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     assert operations["update-workcase"]["required_inputs"] == [
         "arguments.fact_ref",
         "arguments.expected_content_fingerprint",
-        "arguments.fact_object",
     ]
+    assert "arguments.item_event" in operations["update-workcase"]["optional_inputs"]
     assert operations["update-workcase"]["implementation"]["present"] is True
     assert operations["close-workcase"]["required_inputs"] == [
         "arguments.fact_ref",
@@ -739,3 +739,321 @@ def test_specification_context_invalid_heading_is_whole_request_invalid(tmp_path
     assert completed.returncode == 2
     assert response["outcome"] == "invalid_request"
     assert response["result"] is None
+
+
+def test_request_file_uses_same_helper_request_chain(tmp_path: Path) -> None:
+    request = json.dumps({"response_profile": "compact"})
+    request_file = tmp_path / "request.json"
+    request_file.write_text(request, encoding="utf-8")
+
+    from_file, file_response = _run(
+        tmp_path,
+        "capabilities",
+        "read-action-template-candidates",
+        "--request",
+        str(request_file),
+    )
+    from_stdin, stdin_response = _run(
+        tmp_path,
+        "capabilities",
+        "read-action-template-candidates",
+        stdin=request,
+    )
+
+    assert from_file.returncode == from_stdin.returncode == 0
+    assert file_response["outcome"] == stdin_response["outcome"] == "ok"
+    assert file_response["result"]["mode"] == stdin_response["result"]["mode"] == "request_check"
+    assert file_response["result"]["operations"][0]["operation_key"] == (
+        stdin_response["result"]["operations"][0]["operation_key"]
+    )
+
+
+def test_request_file_preserves_raw_helper_json_diagnostics(tmp_path: Path) -> None:
+    request_file = tmp_path / "invalid.json"
+    request_file.write_text("{not-json", encoding="utf-8")
+
+    completed, response = _run(tmp_path, "capabilities", "--request", request_file.name)
+
+    assert completed.returncode == 2
+    assert response["outcome"] == "invalid_request"
+    assert any("JSON" in item["summary"] for item in response["gaps"])
+
+
+@pytest.mark.parametrize("case", ["missing", "directory", "non_utf8", "oversize"])
+def test_request_file_rejects_unsafe_inputs_before_helper_call(tmp_path: Path, case: str) -> None:
+    request_path = tmp_path / "request.json"
+    if case == "directory":
+        request_path.mkdir()
+    elif case == "non_utf8":
+        request_path.write_bytes(b"\xff")
+    elif case == "oversize":
+        request_path.write_bytes(b" " * (4 * 1024 * 1024 + 1))
+
+    completed, response = _run(tmp_path, "capabilities", "--request", str(request_path))
+
+    assert completed.returncode == 2
+    assert response["outcome"] == "invalid_request"
+    assert response["changes"] == []
+    assert "Traceback" not in completed.stderr
+
+
+def test_request_file_rejects_symlink_before_helper_call(tmp_path: Path) -> None:
+    target = tmp_path / "target.json"
+    target.write_text("{}", encoding="utf-8")
+    request_path = tmp_path / "request.json"
+    try:
+        request_path.symlink_to(target)
+    except OSError:
+        pytest.skip("symlink fixture is unavailable")
+
+    completed, response = _run(tmp_path, "capabilities", "--request", str(request_path))
+
+    assert completed.returncode == 2
+    assert response["outcome"] == "invalid_request"
+    assert response["changes"] == []
+
+
+def test_request_file_rejects_live_empty_stdin_pipe_without_waiting(tmp_path: Path) -> None:
+    request_path = tmp_path / "request.json"
+    request_path.write_text("{}", encoding="utf-8")
+    process = subprocess.Popen(
+        [str(HELPER_EXECUTABLE), "capabilities", "--request", str(request_path)],
+        cwd=tmp_path,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+    )
+    try:
+        returncode = process.wait(timeout=10)
+        assert process.stdout is not None
+        assert process.stderr is not None
+        response = json.loads(process.stdout.read())
+        stderr = process.stderr.read()
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait()
+        if process.stdin is not None:
+            process.stdin.close()
+        if process.stdout is not None:
+            process.stdout.close()
+        if process.stderr is not None:
+            process.stderr.close()
+
+    assert returncode == 2
+    assert response["outcome"] == "invalid_request"
+    assert response["changes"] == []
+    assert stderr == ""
+
+
+def test_request_file_rejects_nonempty_stdin_and_option_errors(tmp_path: Path) -> None:
+    request_file = tmp_path / "request.json"
+    request_file.write_text("{}", encoding="utf-8")
+
+    conflict, conflict_response = _run(
+        tmp_path,
+        "capabilities",
+        "--request",
+        str(request_file),
+        stdin="{}",
+    )
+    duplicate, duplicate_response = _run(
+        tmp_path,
+        "capabilities",
+        "--request",
+        str(request_file),
+        "--request",
+        str(request_file),
+    )
+    unknown, unknown_response = _run(tmp_path, "capabilities", "--unknown")
+    dash, dash_response = _run(tmp_path, "capabilities", "--request", "-")
+
+    for completed, response in (
+        (conflict, conflict_response),
+        (duplicate, duplicate_response),
+        (unknown, unknown_response),
+        (dash, dash_response),
+    ):
+        assert completed.returncode == 2
+        assert response["outcome"] == "invalid_request"
+        assert response["changes"] == []
+
+
+def _run_projection(
+    cwd: Path, *arguments: str, stdin: str = ""
+) -> tuple[subprocess.CompletedProcess[str], dict[str, Any]]:
+    completed = subprocess.run(
+        [str(HELPER_EXECUTABLE), *arguments],
+        cwd=cwd,
+        input=stdin,
+        text=True,
+        capture_output=True,
+        check=False,
+    )
+    assert completed.stderr == ""
+    return completed, json.loads(completed.stdout)
+
+
+def test_example_projects_source_bound_write_signature_without_calling_operation(tmp_path: Path) -> None:
+    before = list(tmp_path.iterdir())
+
+    completed, projection = _run_projection(
+        tmp_path,
+        "capabilities",
+        "create-fact-object",
+        "--example",
+    )
+
+    assert completed.returncode == 0
+    assert set(projection) == {
+        "operation_key",
+        "request",
+        "required_input_paths",
+        "composition_note",
+        "source_refs",
+    }
+    assert projection["operation_key"] == "create-fact-object"
+    assert projection["request"]["observed_context"]["signature"] == {
+        "product_name": None,
+        "model_name": None,
+        "agent_runtime_name": None,
+    }
+    assert projection["request"]["arguments"]["draft_basis"] is None
+    assert projection["request"]["arguments"]["fact_object"] is None
+    assert "全为 null 时不可执行" in projection["composition_note"]
+    assert list(tmp_path.iterdir()) == before
+
+
+def test_example_uses_first_source_example_and_commit_trailer_order(tmp_path: Path) -> None:
+    completed, projection = _run_projection(
+        tmp_path,
+        "capabilities",
+        "precheck-git-commit",
+        "--example",
+    )
+
+    assert completed.returncode == 0
+    assert projection["request"]["work_object_locators"] is None
+    message = projection["request"]["arguments"]["message"]
+    assert message.splitlines()[-3:] == [
+        "LDVH-Product-Name: <fill-directly-observed-product-name>",
+        "LDVH-Model-Name: <fill-directly-observed-model-name>",
+        "LDVH-Agent-Runtime-Name: <fill-directly-observed-agent-runtime-name>",
+    ]
+    assert "observed_context" not in projection["request"]
+    assert any(
+        source["locator"] == "source-of-truth-traceability::9.7 Git commit 候选机械预检输入字段"
+        for source in projection["source_refs"]
+    )
+
+
+def test_example_rejects_wrong_entry_combination_and_nonempty_stdin(tmp_path: Path) -> None:
+    invalid_cases = [
+        ("capabilities", "--example"),
+        ("call", "create-fact-object", "--example"),
+        ("capabilities", "create-fact-object", "--example", "--request", "request.json"),
+    ]
+    for arguments in invalid_cases:
+        completed, response = _run(tmp_path, *arguments)
+        assert completed.returncode == 2
+        assert response["outcome"] == "invalid_request"
+
+    completed, response = _run(
+        tmp_path,
+        "capabilities",
+        "create-fact-object",
+        "--example",
+        stdin="{}",
+    )
+    assert completed.returncode == 2
+    assert response["outcome"] == "invalid_request"
+
+
+def test_fields_projects_complete_response_with_mandatory_status_core(tmp_path: Path) -> None:
+    completed, projection = _run_projection(
+        tmp_path,
+        "capabilities",
+        "--fields",
+        "outcome,result.mode",
+    )
+
+    assert completed.returncode == 0
+    assert projection["projection"] == {
+        "requested": ["outcome", "result.mode"],
+        "missing": [],
+        "source_outcome": "ok",
+        "source_exit_code": 0,
+        "source_gap_count": projection["projection"]["source_gap_count"],
+        "source_response_complete": True,
+    }
+    assert projection["response"]["outcome"] == "ok"
+    assert projection["response"]["result"] == {"mode": "discovery"}
+    assert projection["response"]["scope"] == {"not_completed": []}
+    assert isinstance(projection["projection"]["source_gap_count"], int)
+    assert "gaps" not in projection["response"]
+    assert "sources" not in projection["response"]
+    assert "operations" not in projection["response"]["result"]
+
+
+def test_check_shortcut_supports_fields_projection() -> None:
+    completed, projection = _run_projection(
+        PROJECT_ROOT,
+        "check",
+        "--fields",
+        "outcome,result.status",
+    )
+
+    assert completed.returncode == 0
+    assert projection["response"]["operation_key"] == "check-current-governed-sources"
+    assert projection["response"]["outcome"] == "ok"
+    assert projection["response"]["result"] == {"status": "passed"}
+
+
+def test_fields_combines_with_request_file_and_reports_missing_after_response(tmp_path: Path) -> None:
+    request_file = tmp_path / "request.json"
+    request_file.write_text("{}", encoding="utf-8")
+
+    completed, projection = _run_projection(
+        tmp_path,
+        "capabilities",
+        "--request",
+        request_file.name,
+        "--fields",
+        "result.operations.operation_key",
+    )
+
+    assert completed.returncode == 0
+    assert projection["projection"]["source_outcome"] == "ok"
+    assert projection["projection"]["source_exit_code"] == 0
+    assert projection["projection"]["missing"] == ["result.operations.operation_key"]
+    assert projection["response"]["outcome"] == "ok"
+
+
+def test_fields_preserves_invalid_request_exit_and_actual_null(tmp_path: Path) -> None:
+    completed, projection = _run_projection(
+        tmp_path,
+        "capabilities",
+        "unknown-operation",
+        "--fields",
+        "result",
+    )
+
+    assert completed.returncode == 2
+    assert projection["projection"]["source_exit_code"] == 2
+    assert projection["projection"]["source_outcome"] == "invalid_request"
+    assert projection["projection"]["missing"] == []
+    assert projection["response"]["result"] is None
+    assert projection["response"]["outcome"] == "invalid_request"
+
+
+@pytest.mark.parametrize(
+    "field_value",
+    ["", "result..items", "result.*", "result.items[0]", "a,a", "result,result.items"],
+)
+def test_fields_rejects_invalid_selector_before_helper_call(tmp_path: Path, field_value: str) -> None:
+    completed, response = _run(tmp_path, "capabilities", "--fields", field_value)
+
+    assert completed.returncode == 2
+    assert response["outcome"] == "invalid_request"
+    assert response["changes"] == []

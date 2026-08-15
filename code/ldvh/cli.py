@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import select
 import sys
 from pathlib import Path
@@ -15,6 +16,12 @@ _CODE_ROOT = str(Path(__file__).resolve().parent.parent)
 if _CODE_ROOT not in sys.path:
     sys.path.insert(0, _CODE_ROOT)
 
+from ldvh.cli_projection import (  # noqa: E402
+    build_example_projection,
+    parse_cli_arguments,
+    project_response_fields,
+    read_request_file,
+)
 from ldvh.helper.responses import common_response, diagnostic, gap  # noqa: E402
 from ldvh.helper.service import handle_request, invalid_request_result  # noqa: E402
 
@@ -24,29 +31,9 @@ def _emit(response: dict[str, Any]) -> None:
     sys.stdout.buffer.write(payload.encode("utf-8"))
 
 
-def _command(arguments: list[str]) -> tuple[str, str | None] | None:
-    if arguments == ["capabilities"]:
-        return "capabilities", None
-    if len(arguments) == 2 and arguments[0] in {"capabilities", "call"}:
-        return arguments[0], arguments[1]
-    return None
-
-
 def _read_request_input() -> str:
-    """Read the machine request body from stdin without blocking.
+    """Read the ordinary stdin request body with the pre-existing compatibility path."""
 
-    An unconditional ``sys.stdin.buffer.read()`` blocks forever when stdin is a
-    pipe without EOF (CI/sandbox/tooling that leaves stdin open), and the
-    surrounding timeout/watchdog then SIGKILLs the process (exit 137). Probe stdin
-    first: read the full body only when data is immediately available, otherwise
-    fall back to an empty body. Callers that pipe a request (``subprocess.run(
-    input=...)`` or ``echo body | ldvh ...``) pre-buffer the data before the Helper
-    finishes importing, so the probe sees it; an idle open pipe yields "" instead
-    of hanging. Windows ``select()`` does not support pipe/file handles, so on that
-    platform the probe raises and we fall back to a blocking read — callers that
-    pipe a body always provide EOF, so body reading is preserved; an idle open pipe
-    would hang there, matching pre-existing behaviour rather than adding a regression.
-    """
     stdin_buffer = getattr(sys.stdin, "buffer", None)
     if stdin_buffer is None:
         return ""
@@ -59,31 +46,108 @@ def _read_request_input() -> str:
     return stdin_buffer.read().decode("utf-8")
 
 
+def _alternate_input_conflicts() -> bool:
+    """Reject redirected stdin unless it is observably closed and empty, without waiting."""
+
+    stdin_buffer = getattr(sys.stdin, "buffer", None)
+    if stdin_buffer is None or sys.stdin.isatty():
+        return False
+    try:
+        readable, _, _ = select.select([stdin_buffer], [], [], 0.0)
+    except (OSError, ValueError):
+        try:
+            descriptor = stdin_buffer.fileno()
+            was_blocking = os.get_blocking(descriptor)
+            os.set_blocking(descriptor, False)
+            try:
+                raw = os.read(descriptor, 1)
+            except BlockingIOError:
+                return True
+            finally:
+                os.set_blocking(descriptor, was_blocking)
+        except (AttributeError, OSError, ValueError):
+            return True
+        return bool(raw)
+    if not readable:
+        # A non-tty pipe with a live writer may receive bytes later.  Treat that
+        # indeterminate second source as a conflict instead of waiting for EOF.
+        return True
+    raw = stdin_buffer.read(1)
+    return raw is None or bool(raw)
+
+
 def main() -> int:
-    arguments = sys.argv[1:]
-    command = _command(arguments)
-    if command is None:
-        if len(arguments) > 2 and arguments[0] in {"capabilities", "call"} and arguments[1]:
+    parsed, command_problems, show_usage = parse_cli_arguments(sys.argv[1:])
+    if show_usage or parsed is None:
+        sys.stderr.write(
+            "usage: ldvh capabilities [operation_key] [--request PATH] [--fields PATHS] | "
+            "ldvh capabilities <operation_key> --example | "
+            "ldvh call <operation_key> [--request PATH] [--fields PATHS]\n"
+        )
+        return 2
+    request_kind = parsed.request_kind
+    operation_key = parsed.operation_key
+    if command_problems:
+        result = invalid_request_result(request_kind, operation_key, command_problems)
+        _emit(result.response)
+        return result.exit_code
+
+    if parsed.example:
+        if _alternate_input_conflicts():
             result = invalid_request_result(
-                arguments[0],  # type: ignore[arg-type]
-                arguments[1],
-                ("命令位置包含公开入口未定义的额外参数",),
+                request_kind,
+                operation_key,
+                ("--example 不接受非空标准输入",),
             )
             _emit(result.response)
             return result.exit_code
-        sys.stderr.write("usage: ldvh capabilities [operation_key] | ldvh call <operation_key>\n")
-        return 2
-    request_kind, operation_key = command
-    try:
+        result = handle_request("capabilities", None, "")
+        if result.exit_code != 0 or result.response.get("outcome") != "ok":
+            _emit(result.response)
+            return result.exit_code
         try:
-            raw_input = _read_request_input()
-        except UnicodeDecodeError:
-            result = invalid_request_result(request_kind, operation_key, ("标准输入必须是 UTF-8",))
+            operations = result.response["result"]["operations"]
+            operation = next(item for item in operations if item["operation_key"] == operation_key)
+        except (KeyError, StopIteration, TypeError):
+            problem = "--example 指定的 operation_key 不在当前 capabilities discovery"
         else:
-            result = handle_request(request_kind, operation_key, raw_input)
+            try:
+                if operation["implementation"]["present"] is not True:
+                    raise ValueError("目标操作没有可投影的实现 metadata")
+                projection = build_example_projection(operation)
+            except (KeyError, TypeError, ValueError):
+                problem = "--example 目标 metadata 不完整，不能形成请求骨架"
+            else:
+                _emit(projection)
+                return result.exit_code
+        invalid = invalid_request_result("capabilities", operation_key, (problem,))
+        _emit(invalid.response)
+        return invalid.exit_code
+
+    try:
+        if parsed.request_path is None:
+            try:
+                raw_input = _read_request_input()
+            except UnicodeDecodeError:
+                result = invalid_request_result(request_kind, operation_key, ("标准输入必须是 UTF-8",))
+            else:
+                result = handle_request(request_kind, operation_key, raw_input)
+        else:
+            if _alternate_input_conflicts():
+                result = invalid_request_result(
+                    request_kind,
+                    operation_key,
+                    ("--request 不得与非空标准输入同时使用",),
+                )
+            else:
+                raw_input, file_problems = read_request_file(parsed.request_path)
+                if file_problems:
+                    result = invalid_request_result(request_kind, operation_key, file_problems)
+                else:
+                    result = handle_request(request_kind, operation_key, raw_input or "")
     except Exception as exc:  # last boundary: still form the defined machine response
         result = common_response(
-            request_kind=request_kind,  # type: ignore[arg-type]
+            request_kind=request_kind,
             operation_key=operation_key,
             outcome="error",
             summary="Helper 实现发生未预期错误",
@@ -91,7 +155,16 @@ def main() -> int:
             gaps=[gap("实现异常使 Helper 无法形成所请求的可信结果")],
             diagnostics=[diagnostic("Helper 服务边界捕获未预期异常", exception_type=type(exc).__name__)],
         )
-    _emit(result.response)
+    if parsed.field_selectors:
+        try:
+            output = project_response_fields(result.response, parsed.field_selectors, result.exit_code)
+        except ValueError:
+            # A malformed internal common response cannot truthfully claim a
+            # complete projection.  Preserve the source response and exit code.
+            output = result.response
+    else:
+        output = result.response
+    _emit(output)
     return result.exit_code
 
 
