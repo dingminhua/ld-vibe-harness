@@ -318,6 +318,59 @@ def test_create_supports_all_yaml_fact_types(
     assert object_uid_from_locator(fact_type_key, created_fields["object_id"]) == created_fields["object_uid"]
 
 
+def test_workcase_create_follow_up_requires_public_exact_read_before_gate_1(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    basis = _prepare(workspace, project, "workcase")
+
+    response = handle_request(
+        "call",
+        "create-fact-object",
+        _create_payload(workspace, project, basis, _workcase()),
+    ).response
+
+    assert response["outcome"] == "ok"
+    actual_ref = response["result"]["actual_ref"]
+    assert set(actual_ref) == {"object_uid"}
+    assert "content_fingerprint" not in actual_ref
+    follow_up = response["follow_up"]
+    assert "完整当前对象和非空 content_fingerprint" in follow_up["summary"]
+    assert "不得向 Human 呈交 Gate 1" in follow_up["summary"]
+    assert follow_up["required_human_decisions"] == []
+    assert follow_up["required_inputs"][0]["scope"] == [actual_ref]
+    assert "result.actual_ref 原样" in follow_up["required_inputs"][0]["summary"]
+    assert "内部的 post-create readback 或 integrity audit 不替代" in (
+        follow_up["resume_conditions"][0]["summary"]
+    )
+    assert follow_up["suggested_operations"] == [
+        {
+            "operation_key": "read-fact-objects",
+            "summary": "使用 result.actual_ref 公开精确回读刚创建的 WorkCase",
+            "scope": [actual_ref],
+            "source_refs": follow_up["suggested_operations"][0]["source_refs"],
+        }
+    ]
+
+
+def test_non_workcase_create_success_keeps_generic_follow_up(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    basis = _prepare(workspace, project, "spark")
+
+    response = handle_request(
+        "call",
+        "create-fact-object",
+        _create_payload(workspace, project, basis, _spark()),
+    ).response
+
+    assert response["outcome"] == "ok"
+    assert response["follow_up"] == {
+        "summary": "当前响应没有能够由 Helper 明确的专属后续信息",
+        "required_inputs": [],
+        "required_human_decisions": [],
+        "resume_conditions": [],
+        "suggested_operations": [],
+    }
+
+
 def test_create_rejects_non_open_workcase_initial_state(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     basis = _prepare(workspace, project, "workcase")

@@ -524,6 +524,42 @@ def _merge_follow_up(
     }
 
 
+def _workcase_public_readback_follow_up(actual_ref: dict[str, str]) -> dict[str, Any]:
+    scope = [actual_ref]
+    return {
+        "summary": (
+            "先以 result.actual_ref 公开精确回读已创建的 WorkCase；取得完整当前对象和非空 "
+            "content_fingerprint 前不得向 Human 呈交 Gate 1"
+        ),
+        "required_inputs": [
+            {
+                "summary": "把 result.actual_ref 原样作为 read-fact-objects 的精确定位输入",
+                "scope": scope,
+                "source_refs": [_CREATE_CONTRACT],
+            }
+        ],
+        "required_human_decisions": [],
+        "resume_conditions": [
+            {
+                "summary": (
+                    "公开 read-fact-objects 已返回完整当前 WorkCase 和非空 content_fingerprint；"
+                    "create-fact-object 内部的 post-create readback 或 integrity audit 不替代该公开读取"
+                ),
+                "scope": scope,
+                "source_refs": [_CREATE_CONTRACT],
+            }
+        ],
+        "suggested_operations": [
+            {
+                "operation_key": "read-fact-objects",
+                "summary": "使用 result.actual_ref 公开精确回读刚创建的 WorkCase",
+                "scope": scope,
+                "source_refs": [_CREATE_CONTRACT],
+            }
+        ],
+    }
+
+
 def _creation_release_overlay(
     execution: OperationExecution,
     creation: object,
@@ -977,32 +1013,37 @@ def _create_execute(
     return finalized(
         post_write_integrity_audit(
             OperationExecution(
-            outcome="ok",
-            summary="事实对象已由 Code 最终分配身份、原子创建并完成写后回读",
-            result=domain_result,
-            requested_scope=requested,
-            completed_scope=requested,
-            governance_resolution=run.result.to_json() if run.result else None,
-            sources=sources,
-            changes=(
-                {
-                    "summary": "已原子创建并回读事实对象",
-                    "status": "target-created",
-                    "target": layout.canonical_path(actual_id),
-                    "source_refs": [*change_sources, working_tree_source],
-                },
-            ),
-            verification=(
-                {
-                    "check": (
-                        "写后读取、派生 Schema、身份、引用和关系机械检查已通过；"
-                        f"namespace={creation_result.namespace_state}"
-                    ),
-                    "status": "passed",
-                    "scope": [actual_ref],
-                    "evidence": [working_tree_source, _CREATE_CONTRACT],
-                },
-            ),
+                outcome="ok",
+                summary="事实对象已由 Code 最终分配身份、原子创建并完成写后回读",
+                result=domain_result,
+                requested_scope=requested,
+                completed_scope=requested,
+                governance_resolution=run.result.to_json() if run.result else None,
+                sources=sources,
+                changes=(
+                    {
+                        "summary": "已原子创建并回读事实对象",
+                        "status": "target-created",
+                        "target": layout.canonical_path(actual_id),
+                        "source_refs": [*change_sources, working_tree_source],
+                    },
+                ),
+                verification=(
+                    {
+                        "check": (
+                            "写后读取、派生 Schema、身份、引用和关系机械检查已通过；"
+                            f"namespace={creation_result.namespace_state}"
+                        ),
+                        "status": "passed",
+                        "scope": [actual_ref],
+                        "evidence": [working_tree_source, _CREATE_CONTRACT],
+                    },
+                ),
+                follow_up=(
+                    _workcase_public_readback_follow_up(actual_ref)
+                    if basis.fact_type_key == "workcase"
+                    else None
+                ),
             ),
             boundary=boundary,
             schemas=schemas,

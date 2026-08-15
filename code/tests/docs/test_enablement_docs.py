@@ -163,6 +163,10 @@ def test_b4_covers_pre_gate_creation_reviewer_and_post_gate_consumption() -> Non
     assert "Human 范围清楚地要求由项目承担并建立/推进 WorkCase" in b4
     assert "自动委派只读 creation Reviewer" in b4
     assert "不为计划准备、只读 creation Reviewer 或 subagent 委派提出专门的 Human 许可请求" in b4
+    assert "把创建响应的 `result.actual_ref` 原样传给公开 `read-fact-objects`" in b4
+    assert "完整当前对象与非空 `content_fingerprint`" in b4
+    assert "把候选计划称为或向 Human 呈交为 Gate 1，则验收失败" in b4
+    assert "内部的 post-create readback、observation 或 audit 不能替代该公开回读" in b4
     assert "Gate 1 后，已列明的有界本地动作与只读 Reviewer 委派直接消费同一批准" in b4
     assert "上位环境能力/权限边界、不是 LDVH 的第三个 Human Gate" in b4
     assert "当次无法观察时记 `unverified`" in b4

@@ -1,0 +1,131 @@
+status: closed
+title: WorkCase Gate 1 顺序的分层防误读
+goal: 消除把 WorkCase 创建前候选错误称为 Gate 1 的流程风险，通过权威模板、Helper 成功响应和薄 Skill 路由守卫共同固定“创建前复核→受控创建→公开精确回读→Gate 1”的顺序，同时保持既有 WorkCase Schema 与两 Gate 生命周期语义不变。
+scope: 仅修改 specs/31-事实对象判定与受控创建行动模板.md、specs/attachments/09.Att.02-接入验收行为清单.md、code/ldvh/helper/operations/fact_creation_operation.py、skill/SKILL.md 及其直接 Python/spec/Skill 回归测试；允许经 Helper 更新本 WorkCase 生命周期并形成一个本地提交。明确排除 Web、管辖配置改名、署名合同、WorkCase Schema/状态机重构、当前 Codex 部署件 /Users/dmh2002/.codex/skills/ldvh/SKILL.md、common-dir Git Hook、其它事实、历史改写、push/PR/release，以及执行开始时全部既有 dirty/untracked。
+success_criterion_definitions:
+- criterion_id: criterion-authoritative-sequence
+  statement: 31 模板以不可反读措辞明确：WorkCase 未经 Helper 受控创建并由 Controller 通过 read-fact-objects(actual_ref) 公开精确回读前，不得向 Human 呈交或命名为 Gate 1；09.Att.02 同时具有正向顺序和创建前错误呈交 Gate 1 的负例验收，且不在薄 Skill 复制完整状态机。
+- criterion_id: criterion-helper-follow-up
+  statement: create-fact-object 成功创建 WorkCase 时，follow_up 只以 result.actual_ref 指向 read-fact-objects，明确 create 内部 post-create readback/integrity audit 不替代 Controller 的公开精确回读；只有公开读取返回完整当前对象和非空 content_fingerprint 后才可呈交 Gate 1，不预填或猜测 fingerprint，也不先建议 Gate 1 写操作。
+- criterion_id: criterion-skill-routing-guard
+  statement: canonical skill/SKILL.md 以一句最小路由守卫要求缺少已创建 WorkCase 的公开精确回读引用和内容指纹时不得称为 Gate 1，并继续要求从 Helper/当前规则源现取细节；Skill 保持薄路由且通过结构验证。
+- criterion_id: criterion-regression-boundary
+  statement: 直接测试覆盖 WorkCase 成功 follow_up、非 WorkCase 成功响应结构等价、公开回读前置条件的规范/Skill 锚点及既有 Gate 1 CAS/baseline/authorization 行为；focused tests、相关完整测试、git diff --check 与 ldvh check 均如实通过或记录失败。
+- criterion_id: criterion-deployment-residual
+  statement: 结果明确记录执行前 Codex 部署件版本 2026-08-12 07:17、canonical 版本 2026-08-14 00:00、byte_aligned=false 与 Hook managed/aligned；本 WC 不修改部署件或 Hook，不宣称新守卫已真实递达，未来同步保持为独立授权责任。
+success_criterion_results:
+- criterion_id: criterion-authoritative-sequence
+  outcome: satisfied
+  summary: 规范 31 与 09.Att.02 已固定受控创建、公开 read-fact-objects 精确回读、非空指纹、再 Gate 1 的顺序和负例；文档测试通过。
+- criterion_id: criterion-deployment-residual
+  outcome: satisfied
+  summary: 已保留执行前部署件 2026-08-12 07:17、canonical 2026-08-14 00:00、byte_aligned=false 与 Hook managed/aligned 基线；部署件和 Hook 未修改，未宣称真实递达。
+- criterion_id: criterion-helper-follow-up
+  outcome: satisfied
+  summary: WorkCase 创建成功响应现专属建议 read-fact-objects(result.actual_ref)，要求完整对象与非空指纹，并明确内部 readback/audit 不替代；非 WorkCase 响应保持原样。
+- criterion_id: criterion-regression-boundary
+  outcome: not_satisfied
+  summary: focused 65/65、Helper 44/44、ruff、diff check、Skill quick_validate、ldvh check 与事实完整性通过；完整 code/tests 为 2025 passed、15 skipped、3 failed，失败均为 Skill 2026-08-15 00:00 未登记摘要。
+- criterion_id: criterion-skill-routing-guard
+  outcome: not_satisfied
+  summary: canonical Skill 已保持薄路由并加入一句守卫、结构验证通过，但新版本摘要未登记到批准范围外的 version_guard_registry，仓库版本守卫尚未闭合。
+result_summary: Gate 1 防误读的来源契约、Helper 专属 follow_up 和 canonical Skill 守卫均已实现；但 canonical Skill 新版本必须同步登记 code/ldvh/version_guard_registry.py 摘要，属于已批准范围外第四个 production 面。按 Stop Condition 未扩权，完整测试仍有 3 个版本守卫失败，未创建本地提交。
+validation_summary: 直接组合回归 65 passed；fact_creation_operation 44 passed；完整 code/tests 2025 passed、15 skipped、3 failed，失败为 Skill 2026-08-15 00:00 缺 version_guard_registry 摘要。ruff、git diff --check、Skill Creator quick_validate、ldvh check 与全库事实完整性通过。执行前 3 个预存未跟踪文件随后被并行工作修改，Controller 未覆盖、暂存或提交。
+closure_outcome: partial
+disposition_summary: 来源契约和 Helper follow_up 已稳定实现，canonical Skill 守卫已落盘但版本摘要登记、全量绿灯和本地提交未完成；当前 Codex 部署件仍为旧版本且未同步。建议以 partial 停止本 WorkCase，并由 Human 分别决定是否另行授权版本登记/重跑/提交，以及部署 Skill/byte equality/Hook 副作用复验。三条并行 dirty 未被覆盖或暂存；一条错误署名流水与紧随的正确纠正流水按不可改写历史保留。
+residual_responsibilities:
+- residual_id: residual-version-registry-and-commit
+  summary: 为 canonical Skill 2026-08-15 00:00 在 code/ldvh/version_guard_registry.py 追加当前 SHA-256 登记，重跑完整测试，验证通过后再决定创建本地提交；当前授权未覆盖该 production 面。
+- residual_id: residual-skill-deployment
+  summary: 将 canonical Skill 同步到当前 Codex 部署目标并验证 byte equality；任何 environment-sync 引发的 common-dir Hook 检查或可能重装必须在独立授权中显式覆盖。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7396-9ebc-39ba0839c44e
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-7389-8768-a39baaadb673
+change_log:
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T07:18:34.496006Z'
+  summary: 受控创建 Gate 1 顺序分层防误读 WorkCase；当前仅形成 plan_version=1 并等待 Human Gate 1，未执行任何实现。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T07:20:43.745387Z'
+  summary: Human Gate 1 批准 plan_version=1 与完整执行授权；进入 executing，尚未启动任何 work item。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T07:20:53.920721Z'
+  summary: 开始 item-source-contract。
+- signature:
+    product_name: Codex
+    model_name: gpt-5
+    agent_runtime_name: codex-desktop
+  at: '2026-08-15T07:23:57.283032Z'
+  summary: 完成来源契约与负例验收的收紧。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T07:25:01.126752Z'
+  summary: 开始 item-helper-follow-up；同时如实记录上一条流水署名值被 Controller 写反，当前及后续恢复为 codex-desktop / gpt-5 / codex，既有流水按不可改写规则保留。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T07:26:56.832646Z'
+  summary: 完成 WorkCase 创建成功 follow_up 与非 WorkCase 等价回归。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  at: '2026-08-15T07:27:10.324176Z'
+  summary: 开始 item-canonical-skill-and-tests。
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  summary: 最后一项据实完成并原子进入 controller_checking；形成 result_version=1 部分结果投影，记录范围外版本登记阻断、3 项全量测试失败及未提交边界。
+  at: '2026-08-15T07:32:00.011847Z'
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  summary: 完整 result_version=1 已校验回读；进入 independent_reviewing，等待已批准 collaboration Worker 只读复核。
+  at: '2026-08-15T07:32:16.382780Z'
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  summary: 记录 result_version=1 独立只读复核 pass_with_followups；Controller 接受全部反馈，保持 partial 投影且不扩权补 registry、提交或部署。
+  at: '2026-08-15T07:35:46.000811Z'
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  summary: 独立复核反馈已全部处置；进入 closure_preparing，形成 partial 关闭提案及两项 accept_stop 剩余责任。
+  at: '2026-08-15T07:36:55.465295Z'
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  summary: 完整 partial 关闭提案已冻结；进入 human_closure_confirming，等待 Human Gate 2 唯一关闭决定。
+  at: '2026-08-15T07:37:11.923268Z'
+- signature:
+    product_name: codex-desktop
+    model_name: gpt-5
+    agent_runtime_name: codex
+  summary: Human Gate 2 明确接受 partial 关闭提案及两项 accept_stop 剩余责任；关闭本 WorkCase。
+  at: '2026-08-15T07:40:45.205045Z'
+object_uid: 01a00449-6be6-79be-9b75-ad000c3c295f
+object_id: workcase-01M024JTZ6F6Z9PXDD0063RAAZ
+fact_type_key: workcase
+created_at: '2026-08-15T07:18:34.496006Z'
+updated_at: '2026-08-15T07:40:45.205045Z'
