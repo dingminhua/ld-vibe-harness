@@ -1,0 +1,17 @@
+title: WorkCase 语义重复创建的分层防线与验证闭环
+intent: 保留并持续验证同一任务被重复创建多个内容相同 WorkCase 的问题及其分层解决方案：后续需要判断锁内 UID 重检、创建前 title 精确去重和 Skill 创建前候选检索是否共同阻断机械竞态、语义重复与 AI 重试诱因；若防线仍有缺口，需要定位缺口属于 Code 事务、事实索引、Skill 行为还是上下文与并行执行。若不跨行动保留该议题，重复 WC 复发时将增加根因定位、污染清理、方案复核和上下文恢复负担。
+status: open
+priority: P1
+summary: "## 问题现象\n同一个任务近期可能被重复创建多个 WorkCase，内容完全相同但 UID 不同，曾观察到最多同时存在 4 个重复 WC，造成事实库污染。\n\n## 根因分层\n1. **TOCTOU 竞态**：UID 唯一性检查在写锁外完成，锁内不重检；并发调用可各自生成不同 UID 并分别创建。\n2. **缺少语义去重**：系统只检查 UID，不检查已有 WorkCase 的语义是否重复；不同 UID 因而都能通过。\n3. **AI 行为诱因**：上下文压缩后重试、并行子代理互不知晓，以及首次创建后的回读或 follow-up 失败，可能导致再次创建。\n\n## 分层方案\n- **机械级**：在 `create_fact_object_locked` 内重建 `ConfigurationFactIndex`，锁内再次验证 UID，封堵 TOCTOU。\n- **语义级**：在创建前按 title 精确匹配已有 `open`/`blocked` WorkCase；命中则返回 `creation_conflict` 并携带已有 WC 引用，避免误判并阻止重复写入。\n- **AI 行为级**：Skill 创建路由要求先调用 `find-fact-object-candidates`；命中已有对象时走更新路径而不是新建。\n\n## 验证与剩余关注\n- 静态分析已沿 `fact_creation_operation.py`、`creation_application.py`、`creation.py`、`filesystem.py`、`configuration_index.py` 与 `relations.py` 梳理创建链路。\n- `test_creation_application.py` 33 项与 `test_fact_creation_operation.py` 46 项已通过。\n- 仍需持续确认并发、上下文压缩重试、并行委派和创建后回读失败场景下，三层防线能否共同避免事实库再次污染。"
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-luna
+    agent_runtime_name: claude-code
+  at: '2026-08-15T21:51:56.174733Z'
+  summary: 根据 Human 提供的问题梳理、根因分析、分层修复方案和测试结果创建 Spark，记录 WorkCase 语义重复创建的防线与后续验证重点。
+object_uid: 01a00769-0149-76a6-afd0-d66b715a7dd1
+object_id: spark-01M03PJ0A9ETKAZM6PDDRNMZEH
+fact_type_key: spark
+created_at: '2026-08-15T21:51:56.174733Z'
+updated_at: '2026-08-15T21:51:56.174733Z'

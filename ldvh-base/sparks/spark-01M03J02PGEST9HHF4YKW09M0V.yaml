@@ -1,0 +1,17 @@
+title: Subagent 模型选择由宿主平台负责，LDVH 保持模型无关
+intent: 明确 LDVH 与宿主平台在 subagent 模型选择上的职责边界：后续需要判断的是 LDVH 是否只描述协作能力与调用约束、把具体模型配置交给各平台；若把平台级模型选择继续写进 LDVH，会增加跨平台定位、重复分析、分流和规则维护负担。
+status: open
+summary: "## 当前判断\n- subagent 使用哪个模型属于各自宿主平台的配置与能力范围。\n- LDVH 不负责规定、选择或维护 subagent 模型。\n\n## 待判断\n- LDVH 的相关规范、行动模板或记录中是否仍有平台模型选择内容，需要删减为平台无关的职责边界。\n- 后续只保留 LDVH 自身必须表达的协作语义、授权与验证要求。\n\n## 边界\n- 不因 LDVH 需要协作能力，就新增统一模型清单、模型推荐或跨平台适配责任。"
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-luna
+    agent_runtime_name: claude-code
+  at: '2026-08-15T20:32:14.467293Z'
+  summary: 根据 Human 当前指令创建 Spark，记录将 subagent 模型选择责任留给各宿主平台、简化 LDVH 的方向。
+priority: P2
+object_uid: 01a00720-0ad0-7674-98c5-e4f4f804d01b
+object_id: spark-01M03J02PGEST9HHF4YKW09M0V
+fact_type_key: spark
+created_at: '2026-08-15T20:32:14.467293Z'
+updated_at: '2026-08-15T20:32:14.467293Z'

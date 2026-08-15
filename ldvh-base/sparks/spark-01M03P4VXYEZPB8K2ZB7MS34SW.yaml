@@ -1,0 +1,17 @@
+title: 以 Gate 1 与 Gate 2 为阶段目标能否降低 WorkCase 中途停下
+intent: 判断是否应把一个 WorkCase 的阶段目标明确拆成“依据 LDVH 行动规范推进到 Gate 1”和“执行阶段推进到 Gate 2”，以及这种阶段化目标是否能减少执行者在中途停止、失去接续点或无法判断下一步行动的情况；若有效，还需明确它能解决的是目标与恢复点不清，还是另有调度、能力或环境原因导致的中断。
+status: open
+priority: P2
+summary: "## 核心假设\n- 创建 WorkCase 时，将计划阶段目标明确设为依据 LDVH 行动规范推进到 Gate 1。\n- Gate 1 获批后，在执行阶段将目标明确设为推进到 Gate 2。\n- 每个阶段都有清晰的终点、当前等待条件和可恢复入口，可能减少执行者因缺少短期目标而中途停下。\n\n## 待验证\n- Gate 目标是否足以让执行者在每个阶段知道下一步动作、停止条件和恢复条件。\n- Gate 1/Gate 2 的阶段化是否只是改善可见性，还是也能解决委派未递达、上下文丢失、能力不足或环境事件未触发等中断原因。\n- 是否需要在 WorkCase 的 phase、waiting_on、work item 或行动模板中补充明确的阶段目标与恢复点。\n\n## 预期边界\n- Gate 目标不能替代具体 work item、验证证据、Human 授权或 Gate 本身的判断。\n- 即使阶段目标清晰，也不能据此声称已经解决所有中途停止问题。"
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-luna
+    agent_runtime_name: claude-code
+  at: '2026-08-15T21:44:45.694536Z'
+  summary: 根据 Human 当前问题创建 Spark，研究以 Gate 1 与 Gate 2 作为 WorkCase 阶段目标能否降低中途停下。
+object_uid: 01a00762-6fbe-77ec-b44c-5f59e991933c
+object_id: spark-01M03P4VXYEZPB8K2ZB7MS34SW
+fact_type_key: spark
+created_at: '2026-08-15T21:44:45.694536Z'
+updated_at: '2026-08-15T21:44:45.694536Z'
