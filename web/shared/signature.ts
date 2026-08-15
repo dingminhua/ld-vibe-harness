@@ -28,6 +28,7 @@ function normalizeProductName(value: unknown): string {
   const trimmed = value.trim()
   if (!trimmed) return ''
   if (signatureIdentityKey(trimmed) === 'deepseekharness') return 'DeepSeek Harness'
+  if (signatureIdentityKey(trimmed) === 'codexdesktop') return 'Codex'
   if (signatureIdentityKey(trimmed).includes('trae')) return 'Trae'
   return `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)}`
 }
@@ -35,7 +36,9 @@ function normalizeProductName(value: unknown): string {
 /** Runtime display uses only its family name before the first connector. */
 function normalizeAgentRuntimeName(value: unknown): string {
   if (typeof value !== 'string') return ''
-  return normalizeProductName(value.trim().split('-', 1)[0])
+  const trimmed = value.trim()
+  if (signatureIdentityKey(trimmed) === 'deepseekharness') return 'DeepSeek Harness'
+  return normalizeProductName(trimmed.split('-', 1)[0])
 }
 
 /**

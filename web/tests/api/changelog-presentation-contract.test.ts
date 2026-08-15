@@ -23,6 +23,24 @@ test('compact signature metadata shows model and product(runtime), with field fa
   assert.match(deepSeekHarness, /DeepSeek Harness/);
   assert.doesNotMatch(deepSeekHarness, /DeepSeek Harness\(Dsh\)/);
 
+  const hyphenatedDeepSeekHarness = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
+    productName: 'deepseek-harness', modelName: 'deepseek-v4-flash', agentRuntimeName: 'dsh',
+  } }));
+  assert.match(hyphenatedDeepSeekHarness, /DeepSeek Harness/);
+  assert.doesNotMatch(hyphenatedDeepSeekHarness, /deepseek-harness|DeepSeek Harness\(Dsh\)/);
+
+  const deepSeekHarnessRuntime = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
+    agentRuntimeName: 'deepseek-harness',
+  } }));
+  assert.match(deepSeekHarnessRuntime, /DeepSeek Harness/);
+  assert.doesNotMatch(deepSeekHarnessRuntime, /Deepseek|deepseek-harness/);
+
+  const codexDesktop = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
+    productName: 'codex-desktop', agentRuntimeName: 'codex',
+  } }));
+  assert.match(codexDesktop, /Codex/);
+  assert.doesNotMatch(codexDesktop, /codex-desktop|Codex\(Codex\)/);
+
   const trae = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
     productName: 'Trae Code', agentRuntimeName: 'Dsh',
   } }));

@@ -506,6 +506,36 @@ test('recent activity environment usage applies platform signature normalization
   assert.deepEqual(view.environmentUsage, [{ value: 'DeepSeek Harness', count: 1 }, { value: 'Trae', count: 1 }])
 })
 
+test('recent activity environment usage normalizes a runtime-only DeepSeek Harness signature', async () => {
+  const { buildRecentActivityView } = await import('../../api/routes/cognition.ts')
+  const view = buildRecentActivityView([{
+    type: 'spark' as const, object_id: 'spark-deepseek-runtime-only', title: 'Runtime-only platform',
+    activity: 'updated' as const, occurred_at: '2026-08-01T00:00:00Z', status: 'open',
+    read_status: 'readable', field_issues: [], unparsed_structures: [],
+    signature: { agentRuntimeName: 'deepseek-harness' },
+  }])
+  assert.deepEqual(view.environmentUsage, [{ value: 'DeepSeek Harness', count: 1 }])
+})
+
+test('recent activity environment usage merges Codex Desktop and Codex into one server statistic', async () => {
+  const { buildRecentActivityView } = await import('../../api/routes/cognition.ts')
+  const common = {
+    type: 'spark' as const, title: 'Codex platform', activity: 'updated' as const,
+    status: 'open', read_status: 'readable', field_issues: [], unparsed_structures: [],
+  }
+  const view = buildRecentActivityView([
+    {
+      ...common, object_id: 'spark-codex-desktop', occurred_at: '2026-08-01T00:00:00Z',
+      signature: { productName: 'codex-desktop', agentRuntimeName: 'codex' },
+    },
+    {
+      ...common, object_id: 'spark-codex', occurred_at: '2026-08-01T01:00:00Z',
+      signature: { agentRuntimeName: 'codex' },
+    },
+  ])
+  assert.deepEqual(view.environmentUsage, [{ value: 'Codex', count: 2 }])
+})
+
 test('duplicate object UIDs never merge distinct activity objects', async () => {
   const { buildRecentActivityView } = await import('../../api/routes/cognition.ts')
   const duplicateUid = '0198f1c7-8a2b-7c3d-9e4f-123456789abc'
