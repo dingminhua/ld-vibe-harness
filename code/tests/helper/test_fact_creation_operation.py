@@ -817,7 +817,7 @@ def _assert_creation_result_matrix(response: dict[str, object], fact_type_key: s
                 assert rollback in {"not_removed", "uncertain"}
                 assert observation in fresh_observations
 
-    success_fields = {"actual_ref", "carrier", "fact_object"}
+    success_fields = {"created", "actual_ref", "content_fingerprint", "carrier", "fact_object"}
     base_fields = {"identity", "target_namespace"}
     if create_state == "created" and readback == "passed":
         assert set(result) == base_fields | success_fields
@@ -1086,7 +1086,9 @@ def test_prepare_has_no_canonical_side_effect_and_create_injects_managed_fields(
     assert set(response["result"]) == {
         "identity",
         "target_namespace",
+        "created",
         "actual_ref",
+        "content_fingerprint",
         "carrier",
         "fact_object",
     }

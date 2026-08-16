@@ -206,6 +206,20 @@ export default function ObjectDetail() {
                 copyLabel={t('common.copyObjectId')}
                 copiedLabel={t('common.copiedObjectId')}
               />
+              {(obj.mainWorktreeDiffers || obj.sourceBranch) && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {obj.mainWorktreeDiffers && (
+                    <span className="ldvh-chip inline-flex h-[22px] shrink-0 items-center justify-center gap-1 rounded-md border border-sky-500/30 bg-sky-500/10 px-2 text-[11px] font-medium leading-3 text-sky-600 dark:text-sky-400">
+                      {t('objectList.mainWorktreeDiffers')}
+                    </span>
+                  )}
+                  {obj.sourceBranch && (
+                    <span className="ldvh-chip inline-flex h-[22px] shrink-0 items-center justify-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-2 text-[11px] font-medium leading-3 text-amber-600 dark:text-amber-400">
+                      {t('objectList.sourceBranch', { branch: obj.sourceBranch })}
+                    </span>
+                  )}
+                </div>
+              )}
           </div>
           </div>
 

@@ -130,6 +130,9 @@ export interface ObjectItem {
   /** Study-specific */
   report_kind?: 'external_research' | 'internal_audit' | 'technical_assessment' | 'comparison';
   input_refs?: Array<Record<string, unknown>>;
+  /** 跨工作区合并元数据 */
+  sourceBranch?: string;
+  mainWorktreeDiffers?: boolean;
   research_intent?: string;
   research_question?: string;
   abstract?: string;

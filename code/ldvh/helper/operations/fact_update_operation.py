@@ -80,13 +80,7 @@ _READ_TO_UPDATE_INPUT_EXAMPLE = {
                     "summary": "既有流水必须按原顺序和原值保留。",
                 },
                 {
-                    "signature": {
-                        "product_name": None,
-                        "model_name": None,
-                        "agent_runtime_name": None,
-                    },
-                    "at": "2026-01-02T00:00:00Z",
-                    "summary": "描述本次真实更新。",
+                    "summary": "描述本次真实更新（at 与 signature 由写入口按当次 event_at 与 observed_context.signature 托管）。",
                 },
             ],
         },
