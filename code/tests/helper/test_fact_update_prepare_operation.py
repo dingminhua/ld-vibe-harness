@@ -108,7 +108,7 @@ def _completed_update_request(prepared: dict[str, Any], *, summary: str) -> dict
     fact_object["change_log"].append(
         {
             "at": "2000-01-01T00:00:00Z",
-            "summary": "Apply a real isolated fixture update.",
+            "summary": "应用一次真实的隔离 fixture 更新",
         }
     )
     request["observed_context"]["signature"] = deepcopy(_SIGNATURE)
@@ -361,7 +361,7 @@ def test_completed_prepare_draft_uses_official_update_route(tmp_path: Path) -> N
     workspace, project, fact = _fixture(tmp_path)
     prepared = _prepare(workspace, project)
     before = fact.read_bytes()
-    request = _completed_update_request(prepared, summary="After prepared update")
+    request = _completed_update_request(prepared, summary="完成 prepared 更新")
     request["work_object_locators"] = [str(project)]
     request["arguments"]["workspace_root"] = str(workspace)
 
@@ -374,20 +374,20 @@ def test_completed_prepare_draft_uses_official_update_route(tmp_path: Path) -> N
     assert response["outcome"] == "ok"
     assert response["changes"][0]["status"] == "updated"
     assert fact.read_bytes() != before
-    assert response["result"]["fact_object"]["summary"] == "After prepared update"
+    assert response["result"]["fact_object"]["summary"] == "完成 prepared 更新"
     assert response["result"]["fact_object"]["change_log"][-1]["signature"] == _SIGNATURE
 
 
 def test_stale_prepared_draft_is_rejected_without_second_write(tmp_path: Path) -> None:
     workspace, project, fact = _fixture(tmp_path)
     prepared = _prepare(workspace, project)
-    first = _completed_update_request(prepared, summary="First official update")
+    first = _completed_update_request(prepared, summary="第一次官方更新")
     first["work_object_locators"] = [str(project)]
     first["arguments"]["workspace_root"] = str(workspace)
     assert handle_request("call", "update-fact-object", json.dumps(first)).response["outcome"] == "ok"
     after_first = fact.read_bytes()
 
-    stale = _completed_update_request(prepared, summary="Stale second update")
+    stale = _completed_update_request(prepared, summary="过期第二次更新")
     stale["work_object_locators"] = [str(project)]
     stale["arguments"]["workspace_root"] = str(workspace)
     response = handle_request("call", "update-fact-object", json.dumps(stale)).response
@@ -411,7 +411,7 @@ def test_uncompleted_or_invalid_signature_drafts_never_write(tmp_path: Path) -> 
     assert no_op_response["changes"] == []
     assert fact.read_bytes() == original
 
-    invalid = _completed_update_request(prepared, summary="Must remain unwritten")
+    invalid = _completed_update_request(prepared, summary="不得被写入")
     invalid["work_object_locators"] = [str(project)]
     invalid["arguments"]["workspace_root"] = str(workspace)
     invalid["observed_context"]["signature"] = {

@@ -13,10 +13,10 @@
 
 | Discovery mode | Strategy | Tasks | Helper calls/task | Shell invocations | Request chars total | Caller transformations total |
 |---|---|---:|---:|---:|---:|---:|
-| minimal | known-contract | 7 | 2.0 | 0 | 12153 | 35 |
-| minimal | prepare | 7 | 2.0 | 0 | 12132 | 21 |
-| cold | known-contract | 5 | 3.0 | 0 | 9347 | 30 |
-| cold | prepare | 5 | 2.0 | 0 | 9322 | 15 |
+| minimal | known-contract | 7 | 2.0 | 0 | 12024 | 35 |
+| minimal | prepare | 7 | 2.0 | 0 | 12003 | 21 |
+| cold | known-contract | 5 | 3.0 | 0 | 9263 | 30 |
+| cold | prepare | 5 | 2.0 | 0 | 9238 | 15 |
 
 The minimal known-contract comparison is **parity only**: `2.0 → 2.0` Helper calls/task. The cold-discovery comparison is `3.0 → 2.0`, one mechanical Helper call fewer because the source-defined prepare operation removes the separate capabilities-discovery call in this frozen setup. Helper calls and shell invocations are separate metrics; strategy shell invocations were zero.
 
