@@ -548,10 +548,10 @@ export async function listObjects(type: ObjectType, _baseDir?: string, status?: 
     if (mergeMeta.ok) {
       const { itemsByWorktree, meta } = mergeMeta
       for (const item of projectedItems) {
-        const metaForItem = meta.get(String(item.id))
+        const metaForItem = meta.get(String(item.object_id ?? item.id))
         if (metaForItem) Object.assign(item, metaForItem)
       }
-      const presentIds = new Set(projectedItems.map((item) => String(item.id)))
+      const presentIds = new Set(projectedItems.map((item) => String(item.object_id ?? item.id)))
       const extraProjects: Array<Promise<Record<string, unknown>>> = []
       for (const fps of itemsByWorktree) {
         for (const item of fps.items) {
