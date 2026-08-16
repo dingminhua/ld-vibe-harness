@@ -50,6 +50,7 @@ relations:
 - relation_key: informs
   target:
     object_uid: 019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c
+action_relevance: 进行规范-代码-实践三轴对齐审计时，按发现优先级排序，先修复阻塞性缺口再处理结构性改进
 change_log:
 - signature:
     agent_id: glm-5.2
@@ -81,11 +82,17 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 object_id: study-01KZXN5TXNF7SBYR5AYF73SGTT
 object_uid: 019ffb52-ebb5-79f2-bf60-aaf3ce3cc35a
 fact_type_key: study
 created_at: '2026-08-05T16:40:00+08:00'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 ---
 
 ## 研究问题

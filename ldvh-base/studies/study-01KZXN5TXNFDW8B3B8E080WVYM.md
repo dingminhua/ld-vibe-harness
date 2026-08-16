@@ -71,12 +71,18 @@ change_log:
     agent_runtime_name: trae
   at: '2026-08-14T13:43:34.194506Z'
   summary: 按 Human 当前指令退出：输出由各环境 harness 自行控制，LDVH 不再寻求干预。关联 spark 已废弃。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 disposition_summary: Human 决定：各环境的回复展现形式由各环境 harness 自行控制，LDVH 不再寻求干预制定统一纪律或行动模板。本研究报告不再作为当前研究入口。
 object_uid: 019ffb52-ebb5-7b78-858d-6870100e6fd4
 object_id: study-01KZXN5TXNFDW8B3B8E080WVYM
 fact_type_key: study
 created_at: '2026-08-03T14:50:25.960589+08:00'
-updated_at: '2026-08-14T13:43:34.194506Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 ---
 
 ## 研究问题

@@ -18,6 +18,7 @@ relations:
 - relation_key: inspired-by
   target:
     object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
+action_relevance: 分析或比较不同会话日志的可比性时，标注各环境的事件观察面差异，不假设字段对称
 change_log:
 - signature:
     product_name: DeepSeek Harness
@@ -25,11 +26,17 @@ change_log:
     agent_runtime_name:
   at: '2026-08-13T21:48:03.167269Z'
   summary: 受控创建 technical_assessment：保存 6 个 DSH 会话日志的执行可比性观察面盘点聚合结论；只保存聚合与结构指纹，不保存原始会话内容。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 object_uid: 019ffd18-bafe-714f-be81-257c1502b922
 object_id: study-01KZYHHEQYE57VX095FGAG5E92
 fact_type_key: study
 created_at: '2026-08-13T21:48:03.167269Z'
-updated_at: '2026-08-13T21:48:03.167269Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 ---
 
 ## 研究问题

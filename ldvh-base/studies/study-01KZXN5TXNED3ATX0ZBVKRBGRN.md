@@ -16,7 +16,8 @@ object_id: study-01KZXN5TXNED3ATX0ZBVKRBGRN
 object_uid: 019ffb52-ebb5-7346-ad74-1f5ee785c315
 fact_type_key: study
 created_at: '2026-07-24T13:30:00+08:00'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
+action_relevance: 设计或评估团队协作模式时，区分专家团（独立判断+汇总）与流水线（分步交接），不对应固定 WorkCase 结构
 change_log:
 - signature:
     product_name: Cindy
@@ -30,6 +31,12 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 ---
 
 ## 研究问题

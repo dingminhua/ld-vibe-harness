@@ -62,12 +62,18 @@ change_log:
     agent_runtime_name: claude-code
   at: '2026-08-15T19:08:12.730183Z'
   summary: Kiro 与 Beads 对照调研已完成；不采用两者本身，结论作为根规范重梳理的外部参照保留。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 disposition_summary: Kiro 与 Beads 对照调研已完成；不采用两者本身，结论作为根规范重梳理的外部参照保留。
 object_uid: 019ffb52-ebb5-7efb-96ce-5c4abefd4496
 object_id: study-01KZXN5TXNFVXSDKJW9AZFTH4P
 fact_type_key: study
 created_at: '2026-07-29T12:40:00.000000+08:00'
-updated_at: '2026-08-15T19:08:12.730183Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 ---
 
 ## 研究问题

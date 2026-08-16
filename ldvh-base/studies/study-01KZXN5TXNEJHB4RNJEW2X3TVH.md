@@ -39,6 +39,7 @@ relations:
 - relation_key: informs
   target:
     object_uid: 019ffb52-ebb5-71da-8f50-223f834fad25
+action_relevance: 评估新增规范、字段或机制时，对照 00 的价值标准（V1-V8/HV1-HV5）做净价值判断，避免过度设计
 change_log:
 - signature:
     agent_id: kimi
@@ -70,11 +71,17 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 object_id: study-01KZXN5TXNEJHB4RNJEW2X3TVH
 object_uid: 019ffb52-ebb5-74a2-b262-b27705d1eb71
 fact_type_key: study
 created_at: '2026-08-05T15:49:52.936666+08:00'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 ---
 
 ## 研究问题

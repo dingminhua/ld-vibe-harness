@@ -65,6 +65,7 @@ input_refs:
   locator: code/tests/platform/test_native_windows.py
   version: cb03dc809
   observed_at: '2026-08-06T01:05:00+08:00'
+action_relevance: 设计或评估跨平台变更传播方案时，确保验证纪律与规则落点机制已同时覆盖多平台
 change_log:
 - signature:
     agent_id: glm-5.2
@@ -96,11 +97,17 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 object_id: study-01KZXN5TXNEW59FX77VA3G8FPM
 object_uid: 019ffb52-ebb5-770a-97f4-e7da87043ed4
 fact_type_key: study
 created_at: '2026-08-06T01:29:48.505010+08:00'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 ---
 
 ## 研究问题

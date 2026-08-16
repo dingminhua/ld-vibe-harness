@@ -38,6 +38,7 @@ research_question: 针对 LDVH 的规则源 specs/及授权附件与五类受管
 abstract: 本技术评估于 2026-08-12 回读 LDVH 当前规则源、五类事实类型、受控更新实现与 study-0028，并比较其中已记录的条件请求、JSON Patch、TextEdit、Git 三方合并与 OT/CRDT 资料线索。结论是六类资产应采用不同语义策略：规范源走直接工作树编辑、独立复核、风险匹配验证、条件性 Human Gate 与 Git 闭环；五类事实继续由 Helper 的完整对象验证、CAS、原子替换、回读和审计发布。两边可共享局部定位、候选 diff、草稿与 stale 提示，但不能共享写权限、正式生效条件或权威校验。Study 是局部正文请求的首个候选；其余事实类型应先优化各自的候选、草稿、更正或专属生命周期输入。
 research_intent: 此前关于大段事实文本局部补丁的研究已产生一个需要重新分层的问题：规则源与事实源都包含 Markdown 或 YAML，但它们的权威边界、授权路径和发布机制不同。项目需要一份可独立复读的技术评估，避免把规范源误写成 Helper 受控事实更新，或把五类事实对象误写成同一种通用 patch。
 recommendation_summary: 将共同能力限于局部读取、精确候选与差异审阅。规范源保持直接编辑后的语义治理和 Git 闭环；事实源保持 Helper 完整对象发布。若继续降低事实编辑成本，先以 Study 正文的严格局部请求试点，随后按 Spark、Pitfall、ADR、WorkCase 的字段所有权和生命周期逐类判断，不承诺全类型通用 patch、自动合并或 OT/CRDT。
+action_relevance: 设计或评估事实对象局部编辑策略时，明确规则源与事实源的编辑边界，不把实现便利反向定义为规则
 change_log:
 - signature:
     product_name: Cindy
@@ -57,11 +58,17 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 object_id: study-01KZXN5TXNFV8T3AQS1QCPAQ8B
 object_uid: 019ffb52-ebb5-7ed1-a1aa-f90dd9655d0b
 fact_type_key: study
 created_at: '2026-08-12T08:21:51.342725Z'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 ---
 
 ## 研究问题
