@@ -1,0 +1,106 @@
+status: closed
+title: 以环境阶段 Goal 明确推进到 Gate 1 与 Gate 2
+goal: 在不改变现有 LDVH 机制的前提下，为宿主原生目标能力增加非持久化、宿主中立的 Gate 1/Gate 2 阶段 Goal 概念，使 Controller 的阶段终点和续跑条件更明确。
+scope: 只修改 specs/31、specs/34 与直接契约测试；按现有 Helper 更新本 WorkCase 与来源 Spark；执行规范/测试检查并受控形成仅含本事项文件的本地提交。不修改 LDVH 状态机、事实 Schema、投影或宿主适配层，不 push、PR、发布或混入现有无关改动。
+success_criterion_definitions:
+- criterion_id: criterion-stage-goal-semantics
+  statement: 规范将环境阶段 Goal 定义为可选、非持久化、宿主中立的执行约束，不是 LDVH 事实、状态、授权、投影或第二调度器。
+- criterion_id: criterion-gate-completion
+  statement: Gate 1 与 Gate 2 阶段 Goal 只在公开精确回读得到指纹匹配的 fresh resolved gate1_waiting/human_gate_1 或 gate2_waiting/human_gate_2 投影时成功完成，中间里程碑与安全退出不冒充成功。
+- criterion_id: criterion-contract-validation
+  statement: 直接契约测试覆盖宿主中立、无专有 API、fresh 投影完成边界和安全退出语义，相关检查通过且无关改动未纳入提交。
+- criterion_id: criterion-source-disposition
+  statement: 实现与验证完成后，来源 Spark 依据既有生命周期受控处置为 implemented，并保留准确 disposition summary。
+success_criterion_results:
+- criterion_id: criterion-stage-goal-semantics
+  outcome: satisfied
+  summary: specs/31 与 specs/34 明确定义可选、非持久化、宿主中立的环境阶段 Goal，并明确其不是 LDVH 事实、状态、授权、投影或第二调度器。
+- criterion_id: criterion-gate-completion
+  outcome: satisfied
+  summary: Gate 1/Gate 2 完成只绑定公开精确回读的 fresh resolved、指纹匹配 gate waiting 投影；内部成功、中间里程碑与安全退出均明确排除。
+- criterion_id: criterion-contract-validation
+  outcome: satisfied
+  summary: 新增 4 项直接契约测试并与相关续跑契约共 20 项通过；ldvh check passed；commit 93513631 的 Index 仅含 3 个授权文件并通过 Git Gate。
+- criterion_id: criterion-source-disposition
+  outcome: satisfied
+  summary: 来源 Spark 已受控更新为 implemented，含准确 disposition summary 且无 routed-to，精确回读与完整性检查通过。
+result_summary: 已在不改变 LDVH 状态机、Gate、事实 Schema 与投影的前提下，把宿主原生 Goal 明确为可选非持久化阶段续跑约束：形成 WorkCase 后推进到 Gate 1，Gate 1 获批后推进到 Gate 2。成功只由公开精确回读的 fresh 指纹匹配 Gate 投影证明；能力缺口、中间里程碑和安全退出不冒充成功。规范与测试已由本地提交 93513631 落地，来源 Spark 已处置为 implemented。
+validation_summary: PYTHONPATH=code .venv/bin/python -m pytest 对新增环境阶段 Goal 与既有 Controller 续跑契约共 20 项通过；ldvh check outcome=ok、result.status=passed、请求范围全部完成，并保留规则资格与 basis 直接必要性的既有语义复核提示；git diff --cached --check 与 precheck-git-commit passed，commit-msg Git Gate 实际通过；Spark 与 WorkCase 写后精确读取 mechanically_valid，check-fact-integrity complete。未验证真实宿主在所有产品中的 Goal 调度行为，本次规范按能力可观察/可调用条件保持宿主中立且失败时不改变 LDVH 行为。
+closure_outcome: completed
+disposition_summary: 四项成功标准均 satisfied：环境阶段 Goal 以可选、非持久化、宿主中立方式进入 specs/31 与 specs/34；fresh 指纹匹配 Gate 投影是唯一成功条件；契约测试、规则检查、受控提交、独立结果复核与来源 Spark 处置均完成。没有当前 scope 内剩余责任或待路由决定。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a00762-6fbe-77ec-b44c-5f59e991933c
+change_log:
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T09:32:19.916924Z'
+  summary: 根据 Human 要求形成 WorkCase，并记录通过独立方案复核的 Gate 1 计划与执行授权包。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T09:32:45.614096Z'
+  summary: 消费 Human 对当前完整 Gate 1 计划的执行批准并进入执行阶段。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T09:33:05.013193Z'
+  summary: 确认规范与契约测试结果，并完成前两个获批工作项。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T09:34:21.451195Z'
+  summary: 完成来源 Spark 处置，并在全部工作项 terminal 后进入 Controller 结果检查。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T09:36:20.637217Z'
+  summary: 形成 result_version=1 的完整 canonical result projection。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T09:36:37.312515Z'
+  summary: 冻结 result_version=1 的完整结果投影并进入独立结果复核。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T09:37:37.494522Z'
+  summary: 记录 result_version=1 的独立只读结果复核 PASS，并完成 Controller 反馈处置。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T09:37:54.131857Z'
+  summary: 独立结果复核完成后进入关闭提案准备。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T09:38:12.600733Z'
+  summary: 形成 proposed_outcome=completed 且无剩余责任的完整关闭提案。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T09:38:29.810513Z'
+  summary: 关闭提案冻结后进入 Human Gate 2 等待。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T09:39:53.367752Z'
+  summary: 消费 Human Gate 2 批准，按 completed 关闭提案关闭 WorkCase。
+object_uid: 01a009ea-3c20-770b-b5e3-aa4c655513e9
+object_id: workcase-01M04YMF10EW5VBRXA9HJNA4Z9
+fact_type_key: workcase
+created_at: '2026-08-16T09:32:19.916924Z'
+updated_at: '2026-08-16T09:39:53.367752Z'
