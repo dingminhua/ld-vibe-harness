@@ -1,0 +1,177 @@
+{
+  "schema_version": "ldvh-representative-task-retrial-results/2",
+  "protocol_sha256": "42a8e371b652d89938021084afc96ed232adbc6f47a6f1708e1251e7791c207d",
+  "generated_at": "2026-08-16T15:49:14Z",
+  "result": {
+    "batch_status": "model_unverified",
+    "claim_boundary": "本协议允许在产品名称可得而模型名称不可得时执行有界、可审计的描述性 attempts；所有此类证据均为 product-bound/model-unverified，不得形成 fixed-model 可比性、operation residual、统计区间、go/no-go、因果/业务收益或 Helper 整体质量结论。",
+    "preflight": {
+      "status": "product_bound",
+      "reasons": [],
+      "provider": null,
+      "model": null,
+      "runner_identity": "codex",
+      "tool_entry": "collaboration.spawn_agent",
+      "entrypoint": "Cindy collaboration spawn_agent with inherited configuration",
+      "permission_profile": "filesystem-unrestricted;approval-never",
+      "prompt_layout": "representative-task-retrial-v2-envelope/1",
+      "identity_source": null,
+      "carrier_fingerprint": "c3bd13771ad802b833c5be437fac47010cd874088f01187101c117b6f8468ed6",
+      "product_name": "Cindy",
+      "identity_scope": "product_bound",
+      "disclosures": [
+        "controller_model_name_unavailable",
+        "fixed_model_comparability_unavailable",
+        "fixed_model_scoring_and_go_no_go_prohibited"
+      ]
+    },
+    "attempt_count": 3,
+    "retained_session_count": 0,
+    "maximum_attempts": 42,
+    "exclusion_ledger": [
+      {
+        "attempt_index": 1,
+        "task_id": "read-01",
+        "reason": "model_identity_unavailable"
+      },
+      {
+        "attempt_index": 2,
+        "task_id": "fact-update-01",
+        "reason": "isolated_fixture_unavailable"
+      },
+      {
+        "attempt_index": 3,
+        "task_id": "workcase-update-01",
+        "reason": "isolated_fixture_unavailable"
+      }
+    ],
+    "family_results": [
+      {
+        "family": "read",
+        "status": "model_unverified",
+        "reason": "fixed_model_comparability_unavailable",
+        "attempted_sessions": 1,
+        "retained_sessions": 0,
+        "complete_frames": 0,
+        "positive_frames": null,
+        "median_frame_burden_points": null,
+        "bootstrap_median_ci_95": null
+      },
+      {
+        "family": "ordinary_fact_update",
+        "status": "model_unverified",
+        "reason": "fixed_model_comparability_unavailable",
+        "attempted_sessions": 1,
+        "retained_sessions": 0,
+        "complete_frames": 0,
+        "positive_frames": null,
+        "median_frame_burden_points": null,
+        "bootstrap_median_ci_95": null
+      },
+      {
+        "family": "workcase_non_item_update",
+        "status": "model_unverified",
+        "reason": "fixed_model_comparability_unavailable",
+        "attempted_sessions": 1,
+        "retained_sessions": 0,
+        "complete_frames": 0,
+        "positive_frames": null,
+        "median_frame_burden_points": null,
+        "bootstrap_median_ci_95": null
+      }
+    ],
+    "unavailable_semantics": {
+      "host_received": "unavailable",
+      "fixed_model_identity": "unverified",
+      "fixed_model_comparability": "prohibited",
+      "operation_residual": "not_scored",
+      "go_no_go": "prohibited",
+      "causal_effect": "not_measured",
+      "business_benefit": "not_measured",
+      "raw_session_content": "not_retained"
+    },
+    "reproduction": {
+      "bootstrap_seed": 20260816,
+      "protocol_schema_version": "ldvh-representative-task-retrial-protocol/2",
+      "session_schema_version": "ldvh-representative-task-retrial-session/1",
+      "record_hashes": []
+    },
+    "attempt_ledger": [
+      {
+        "attempt_index": 1,
+        "scheduled_session_slot": 1,
+        "task_id": "read-01",
+        "replicate": 1,
+        "family": "read",
+        "status": "completed",
+        "target_reached": true,
+        "started_at": "2026-08-16T15:45:35Z",
+        "completed_at": "2026-08-16T15:46:03Z",
+        "retained": false,
+        "exclusion_reason": "model_identity_unavailable",
+        "evidence_unavailable": [
+          "fixed_model_identity",
+          "raw_session_trace"
+        ],
+        "runner_receipt_sha256": "46a3e718e2146d8235bccaaac15dc436974662e57b62eb869d161d7f5cc350a0",
+        "facts_fingerprint_before": "4955b48d310edd3fee069685b8b87f85cfba97b09b321c43fcd2a933e465b1c6",
+        "facts_fingerprint_after": "4955b48d310edd3fee069685b8b87f85cfba97b09b321c43fcd2a933e465b1c6",
+        "state_change_guard_passed": true,
+        "replacement_for_attempt_index": null
+      },
+      {
+        "attempt_index": 2,
+        "scheduled_session_slot": 2,
+        "task_id": "fact-update-01",
+        "replicate": 1,
+        "family": "ordinary_fact_update",
+        "status": "aborted_before_target",
+        "target_reached": false,
+        "started_at": "2026-08-16T15:45:18Z",
+        "completed_at": "2026-08-16T15:46:04Z",
+        "retained": false,
+        "exclusion_reason": "isolated_fixture_unavailable",
+        "evidence_unavailable": [
+          "fixed_model_identity",
+          "raw_session_trace",
+          "isolated_fixture"
+        ],
+        "runner_receipt_sha256": "b58be391249d02c4939627913601833d9b692c8a4b463a459021da7fc0501b9b",
+        "facts_fingerprint_before": "4955b48d310edd3fee069685b8b87f85cfba97b09b321c43fcd2a933e465b1c6",
+        "facts_fingerprint_after": "4955b48d310edd3fee069685b8b87f85cfba97b09b321c43fcd2a933e465b1c6",
+        "state_change_guard_passed": true,
+        "replacement_for_attempt_index": null
+      },
+      {
+        "attempt_index": 3,
+        "scheduled_session_slot": 3,
+        "task_id": "workcase-update-01",
+        "replicate": 1,
+        "family": "workcase_non_item_update",
+        "status": "aborted_before_target",
+        "target_reached": false,
+        "started_at": "2026-08-16T15:47:58Z",
+        "completed_at": "2026-08-16T15:47:58Z",
+        "retained": false,
+        "exclusion_reason": "isolated_fixture_unavailable",
+        "evidence_unavailable": [
+          "fixed_model_identity",
+          "raw_session_trace",
+          "isolated_fixture"
+        ],
+        "runner_receipt_sha256": "0b427233a41e447c5e5cea39d1c9982a06f9ec5960dd1a20532c2da9dfd74974",
+        "facts_fingerprint_before": "4955b48d310edd3fee069685b8b87f85cfba97b09b321c43fcd2a933e465b1c6",
+        "facts_fingerprint_after": "4955b48d310edd3fee069685b8b87f85cfba97b09b321c43fcd2a933e465b1c6",
+        "state_change_guard_passed": true,
+        "replacement_for_attempt_index": null
+      }
+    ],
+    "identity_scope": "product_bound",
+    "identity_disclosures": [
+      "controller_model_name_unavailable",
+      "fixed_model_comparability_unavailable",
+      "fixed_model_scoring_and_go_no_go_prohibited"
+    ]
+  },
+  "results_payload_sha256": "e51954afee25ecc761e46db0f133f48115436ab296cbb7d2896b58fbe468aa05"
+}

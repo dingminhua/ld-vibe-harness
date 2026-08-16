@@ -1,0 +1,322 @@
+title: 纠正身份停止规则并重新执行代表性 Helper 测试
+status: open
+priority: P1
+goal: 将代表性 Helper 测试的产品名/模型名身份门槛纠正为仅二者都不可得时才因身份信息停止；当前 product_name=Cindy、model_name 不可得时继续形成产品绑定、模型未验证的可审计测试证据，同时禁止把它提升为固定模型可比性、operation residual、go/no-go 或 Helper 整体质量结论，并受控纠正旧 WorkCase 的错误关闭记录。
+scope: 保留已提交的 v1 代码与 protocol/results/report 工件作为历史证据。仅允许修改 code/ldvh/testing/representative_task_retrial.py 与 code/tests/testing/test_representative_task_retrial.py，并新增 docs/metrics/representative-task-retrial-protocol-v2.json、docs/metrics/representative-task-retrial-results-v2.json、docs/metrics/representative-task-retrial-report-v2.md。新协议明确区分两层门槛：试验身份层仅在 product_name 与 model_name 同时不可得时因身份停止；事实 change_log 与 Git commit 层仍在每次写入/提交前重新取得 product/model/runtime 三字段快照，只有三项均不可得才停止相应写入或提交。当前 Cindy/模型不可得只允许 product-bound/model-unverified 证据，禁止固定模型评分、区间和 go/no-go。允许在不超过 42 次的上限内启动安全可审计的只读或隔离代表性 attempts，逐项记录 planned、started、completed、retained、excluded 与 family evidence_unavailable；runner/session trace/fixture 能力不可得时如实记录能力缺口，不伪造 attempts 或 retained，也不回退成 model-missing 的零尝试身份停止。通过专属 Helper 对 closed WorkCase workcase-01M0579NAPFVTT5PFJM9KNYBVA 做最小事实更正：旧对象保持 closed 与 closure_outcome=completed，完整保留原 v1 scope、五项 success criterion definitions/results、技术 metrics/hashes、Spark suggestion、relations 和全部既有 change_log；只把 disposition_summary 改为“当前记录所称 Gate 2 授权仅来自 UI 回包，Human 现明确否认曾作出该文字授权；closed/completed 技术分类不得解释为 Human 已接受 Gate 2。”，并由 Helper 严格追加一条新更正日志。旧对象不新增 routed-to、residual responsibility 或 relation；本 WorkCase 独立承接后续 v2 责任，现有从本 WorkCase 指向旧对象的单向 related-to 已足够。更正必须基于旧对象完整 closed after、源指纹、实际独立复核和 Human 对该精确语义的明确普通聊天文字决定。当前其它事实零 trial 写入。明确排除修改生产 Helper、Specs、09、Web、Schema、MCP、其它事实对象、网络/外部消息、依赖安装、push、PR、release、deploy、历史重写与归属不明文件清理。
+success_criterion_definitions:
+- criterion_id: criterion-identity-rule
+  statement: 实现和 v2 协议均证明：试验身份层只有 product_name 与 model_name 同时不可得才产生身份硬停止；当前 Cindy/null 不因模型单独不可得而停止，且事实写入/提交的三字段署名门槛保持独立、不被混同。
+- criterion_id: criterion-safety-boundary
+  statement: model_name 不可得的任何记录均显式为 product-bound/model-unverified，不进入 fixed-model comparable、operation residual、统计区间或 go/no-go；runner、entrypoint、permission、prompt、fixture、事件证据、隐私和当前事实零写入等其它守卫继续失败关闭。
+- criterion_id: criterion-execution-evidence
+  statement: 目标和复用测试实际执行并报告；代表性 attempts 在不超过 42 次上限内按 planned/started/completed/retained/excluded 逐项记账，各 family 的 evidence_unavailable 精确披露，既不伪造启动/保留数量，也不把 trace/fixture 能力缺口改写成模型单独不可得导致的身份停止。
+- criterion_id: criterion-history-correction
+  statement: v1 代码与工件不覆写；旧 closed WorkCase 仅经 correct-closed-workcase 在完整 after、源指纹、独立复核和 Human 明确普通聊天文字决定成立后做最小更正：保持 closed/completed 并保留原 v1 scope、五项标准定义/结果、技术证据、Spark suggestion、relations 与全部既有 change_log，只改 disposition_summary 并严格追加一条新日志，不新增 routed-to、residual responsibility 或 relation。
+- criterion_id: criterion-v2-report
+  statement: v2 protocol/results/report 具有可复核 hash 与隐私边界，明确 product_name=Cindy、model_name unavailable、实际 attempts/retained/exclusions 以及能证明和不能证明的范围，不形成生产改造授权。
+phase: human_closure_confirming
+plan_version: 2
+work_items:
+- item_id: item-closed-record-correction
+  goal: 形成并执行旧 closed WorkCase 的最小合规事实更正。
+  expected_result: 旧 WorkCase 的完整 after 保持 closed 与 closure_outcome=completed，原 v1 scope、五项标准定义/结果、技术 metrics/hashes、Spark suggestion、relations 和全部既有 change_log 原样保留；仅 disposition_summary 澄清 UI 回包不是 Human Gate 2 文字授权，并由 Helper 追加一条更正日志；不写 routed-to、residual 或新 relation。
+  status: completed
+  approach_summary: 以源指纹 dacafd9a3ced20a7bdc734f725242c05360cdc3283b1fffeb4645c6b87100e9d 的完整 closed 当前快照形成 after，逐字段验证除 disposition_summary 与严格追加的 change_log 外均保持；取得独立复核和 Human 对该精确语义的普通聊天文字批准后才调用专属 Helper。不重开、不直接编辑 ldvh-base。
+  result_summary: 已通过 correct-closed-workcase 对源指纹 dacafd9a…e9d 完成最小更正，写后指纹 b032ca0e8ddf67d354e6c4c63b056e141ded2e50ae533e3e94c864bbe41f5a03；旧对象保持 closed/completed，17 条旧日志、v1 历史、Spark suggestion 与 related-to 原样保留，仅 disposition_summary 变化并追加第 18 条澄清日志，route_target_fingerprints=[]。
+- item_id: item-protocol-v2
+  goal: 冻结修正身份门槛和结论边界的 v2 协议。
+  expected_result: 新增 protocol v2 并 hash 绑定：Cindy/null 进入 product-bound/model-unverified；product/model 同时 null 才身份停止；其它安全守卫独立；v1 保持不变。
+  status: completed
+  result_summary: protocol-v2 已冻结并校验：schema /2，18 frames、36 slots、42 attempts、最多 6 replacements；仅 product_name 与 model_name 同时不可得才身份停止。当前 Cindy/null 进入 product-bound/model-unverified，禁止 fixed-model comparability、operation residual、CI 与 go/no-go。canonical SHA-256=42a8e371b652d89938021084afc96ed232adbc6f47a6f1708e1251e7791c207d；v1 文件未改。
+- item_id: item-tooling-tests
+  goal: 实现身份分层、披露和不可评分分支并补齐直接测试。
+  expected_result: 模块与直接测试覆盖完整模型身份、仅产品可得、产品/模型均不可得、carrier drift、事件/fixture 缺口、隐私、hash 和当前事实零写入；产品绑定记录永不产生评分或 go/no-go。
+  status: completed
+  depends_on:
+  - item-protocol-v2
+  result_summary: 实现 v1/v2 schema 分派、RunnerPreflight 的 model_bound/product_bound/unavailable 身份分层、product-bound canonical fingerprint 与 disclosures、v2 attempt ledger 连续索引/receipt/fact-zero-write/replacement 校验，以及 model_unverified 结果分支；产品绑定分支不产生 fixed-model scoring、CI、operation residual 或 go/no-go。直接测试 16 passed；目标与复用模块 101 passed；Ruff、git diff --check 通过；v1 三工件未改。
+- item_id: item-representative-retest
+  goal: 在当前安全能力边界内重新执行代表性 Helper 测试。
+  expected_result: 不超过 42 次 actual attempts；对每个 family 如实记录 planned/started/completed/retained/excluded 与 evidence_unavailable，当前 Cindy/null 不在 attempt 1 前因模型单独不可得而停止，且没有不可审计证据被伪造成 retained 或 fixed-model 可比。
+  status: completed
+  depends_on:
+  - item-tooling-tests
+  approach_summary: 只读任务使用精确当前快照；状态变化任务仅在可证明隔离且受控的 fixture 中执行。session trace 或隔离 fixture 能力不足时记录实际缺口并停止受影响 attempt，不触碰当前其它事实。
+  result_summary: 已按冻结 schedule 实际启动连续 slots 1–3 共 3 次 attempts：read-01 completed 且唯一命中目标 Spark；fact-update-01 与 workcase-update-01 均因无法证明隔离受管 fixture 而 aborted_before_target。三次前后当前 WorkCase 指纹均为 4955b48d…b1c6，state-change guard 通过；receipt SHA-256 分别为 46a3e718…50a0、b58be391…b9b、0b427233…974。产品身份 Cindy 可得、模型身份不可得，故 3 次全部 excluded、0 retained，只形成 product-bound/model-unverified 描述性证据，不评分、不生成 CI 或 go/no-go。
+- item_id: item-v2-report
+  goal: 形成产品绑定、模型未验证的 v2 结果与报告。
+  expected_result: results/report v2 绑定 protocol hash，报告真实 attempts/retained/exclusions、三类 family 状态和证据缺口，明确不证明模型固定、跨模型可比、operation residual、因果/业务收益或 Helper 整体质量。
+  status: completed
+  depends_on:
+  - item-representative-retest
+  result_summary: 已新增并复核 v2 protocol/results/report：protocol canonical SHA-256=42a8e371b652d89938021084afc96ed232adbc6f47a6f1708e1251e7791c207d（file=518dfdea…1614）；results payload=e51954af…a05、file=290a1ad7…557；report file=48ff3ea6…686。结果为 product_bound/model_unverified、3 attempts/0 retained；三类 family 均显式 model_unverified，attempt ledger 逐项披露 1 completed/2 aborted_before_target、排除原因和 evidence_unavailable。无 fixed-model scoring、operation residual、CI 或 go/no-go。101 个目标/复用测试、Ruff、git diff --check、schema/hash/privacy 与报告确定性重渲染均通过；v1 三工件未改。
+execution_authorization:
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-delegation
+    result_review_action_id: authorization-result-review
+  authorized_actions:
+  - action_id: authorization-v2-files
+    summary: 修改两处已有复验代码/测试并新增三个 v2 metrics 工件，保留 v1。
+    target_scope: 仅 code/ldvh/testing/representative_task_retrial.py、code/tests/testing/test_representative_task_retrial.py、docs/metrics/representative-task-retrial-protocol-v2.json、docs/metrics/representative-task-retrial-results-v2.json、docs/metrics/representative-task-retrial-report-v2.md。
+    effect_scope: 允许修改前两文件并创建后三文件；禁止覆写 v1 或修改其它代码、规则、事实和文档。
+    risk_summary: 身份分层可能误把 model=null 提升为固定模型可比，或 artifact schema/hash 与实现错位。
+    rollback_summary: 仅撤销可证明属于本 WorkCase 的列明普通文件；事实和提交不以直接文件恢复或历史重写伪造回滚。
+    rule_refs:
+    - workcase-fact-type::6.5 执行授权基线
+    - code-engineering-practices::测试与证据边界
+  - action_id: authorization-representative-attempts
+    summary: 执行有上限的只读或可证明隔离的代表性 Helper attempts。
+    target_scope: 最多 42 个一次一任务 attempts；只读当前快照或本次创建且身份/realpath 可核对的隔离 fixture；不得写当前其它事实。
+    effect_scope: 允许启动、观察和记录 planned/started/completed/retained/excluded；能力不足时只记录 evidence_unavailable 并停止受影响 attempt。
+    risk_summary: session trace、隔离或身份观察不足会使证据不可评分；误用当前事实会造成污染。
+    rollback_summary: 只清理可证明归属本次的临时工件；不确定时保留最小脱敏现场并停止，不改当前事实。
+    rule_refs:
+    - workcase-approved-plan-execution::临时工件与失败关闭
+    - fact-model-foundation::受控事实写入边界
+  - action_id: authorization-closed-correction
+    summary: 受控澄清旧 closed WorkCase 的 Gate 2 授权记录，不改变 v1 技术完成分类。
+    target_scope: 仅 workcase-01M0579NAPFVTT5PFJM9KNYBVA 当前指纹 dacafd9a3ced20a7bdc734f725242c05360cdc3283b1fffeb4645c6b87100e9d 的完整 closed after；route_target_fingerprints=[]。
+    effect_scope: 仅在完整 after、源指纹、实际独立复核与 Human 明确普通聊天文字决定成立后调用 correct-closed-workcase；保持 closed/completed，原 v1 scope、criteria definitions/results、技术 metrics/hashes、Spark suggestion、relations 与全部既有 change_log 原样保留；只改 disposition_summary 并由 Helper 严格追加一条更正日志；不新增 routed-to、residual responsibility 或 relation。
+    risk_summary: 若改动旧技术完成分类、删除旧日志或回写后来形成的 v2 责任，就会把后来事实冒充原关闭事实；本次更正只能澄清Human Gate 2 未获文字授权，且不能声称历史已恢复。
+    rollback_summary: 不直接恢复 YAML；失败保持最近已精确回读的合法状态。成功后仍不能删除旧错误日志，只能按新事实再次走专属 Helper。
+    rule_refs:
+    - workcase-fact-type::correct-closed-workcase 输入与结果
+    - fact-object-lifecycle-change::closed 终态更正
+  - action_id: authorization-delegation
+    summary: 创建有界 trial 与只读 reviewer subagents。
+    target_scope: 最多 42 个一次一任务 trial subagents、旧 closed 更正的一次只读复核、当前 result_version 的一次只读结果复核。
+    effect_scope: trial 仅只读或在授权隔离 fixture 内行动；reviewer 只读；禁止网络、外部消息、安装、远端 Git、当前其它事实和范围外文件写入。
+    risk_summary: subagent 上下文和模型不可证明一致，相关证据只能按实际 identity_scope 使用。
+    rollback_summary: 发现越界或漂移立即停止后续委派；模型输出不可回滚，只保留脱敏结果和缺口。
+    rule_refs:
+    - workcase-fact-type::4.4 受控创建
+    - workcase-approved-plan-execution::委派边界
+  - action_id: authorization-result-review
+    summary: 对 canonical result projection 执行实际独立只读复核。
+    target_scope: 仅本 WorkCase 当前 result_version、v2 protocol/results/report hash、diff 与验证摘要。
+    effect_scope: 只读反馈，无文件/事实/网络副作用；Reviewer 不推进 phase、不修改结果、不替代 Controller 或 Human。
+    risk_summary: 只读复核可能遗漏问题，不证明环境级独立。
+    rollback_summary: 无状态副作用；需要 fresh review 时新增事件，不覆盖旧结论。
+    rule_refs:
+    - workcase-fact-type::6.5 质量关口
+  - action_id: authorization-workcase-lifecycle
+    summary: 仅通过 Helper 记录本 WorkCase 自身的执行、结果和关闭准备事实。
+    target_scope: 仅本 WorkCase canonical 对象。
+    effect_scope: 按当前 WorkCase 规则与 CAS 更新；禁止直接编辑 ldvh-base。
+    risk_summary: 错误写回会造成生命周期失真。
+    rollback_summary: 事实不直接文件回滚；失败时停在最近合法回读并受控收敛。
+    rule_refs:
+    - workcase-fact-type::7. AI 写回与受控操作
+  - action_id: authorization-local-commit
+    summary: 在全部验证、事实审计和精确 diff 审核后创建一次不 push 的本地 commit。
+    target_scope: 仅五个 v2 代码/测试/metrics 路径、本 WorkCase canonical 文件，以及经 authorization-closed-correction 实际形成并精确回读的旧 WorkCase canonical 文件。
+    effect_scope: 允许一次本地 stage/commit并触发真实 commit-msg Gate；禁止 push、PR、release、deploy、amend、reset、rebase 或其它历史重写。
+    risk_summary: 错误 Index 可能带入无关 diff，提交不自动证明语义正确。
+    rollback_summary: 提交后不改写历史；需要修正必须另行取得新受控提交授权。
+    rule_refs:
+    - git-commit-action-template
+    - source-of-truth-traceability::Git Gate
+  action_ceiling: 仅影响精确列明的五个 v2 普通文件、新旧两个 WorkCase 的授权事实变化、本次可证明归属的临时工件、最多 42 次 attempts 与一次不 push 本地 commit。
+  prohibited_actions:
+  - 覆写 v1 protocol/results/report 或删除历史证据
+  - 修改生产 Helper、Specs、09、Web、Schema、MCP 或未列明普通文件
+  - 直接编辑 ldvh-base 或写当前其它事实对象
+  - 把 model=null 或 evidence_unavailable 纳入 fixed-model 评分、CI 或 go/no-go
+  - 伪造 planned/started/completed/retained/excluded 数量或 session trace
+  - 安装依赖、访问网络、发送外部消息或调用外部系统
+  - restore/reset/rebase/amend、删除归属不明内容或改写 Git 历史
+  - push、PR、release 或 deploy
+  - 在旧 WorkCase 写入 v2 新责任、routed-to、residual responsibility 或新 relation，或删除/改写其既有 change_log
+  - 使用隐藏 UI 回包或 Reviewer 结论推定 Human Gate 1、旧 closed 精确更正决定或新 WorkCase Gate 2
+  allowed_adjustments: v2 protocol 冻结前可在不改变两层身份门槛、精确文件范围、42 次上限、model-unverified 禁止评分、当前其它事实零写入和风险上限的前提下修正文案、字段和测试组织；冻结后不得修改身份规则、排除、阈值、隐私或证据口径。
+  verification_and_rollback: 运行直接/目标/复用测试、Ruff、git diff --check、v1 不变检查、v2 hash/schema/privacy 校验、attempt ledger 一致性、当前事实指纹检查；旧 WC 更正逐字段验证仅 disposition_summary 与严格追加的一条 change_log 变化，route_target_fingerprints=[]；每次事实写后公开精确回读并要求 check-fact-integrity 外层 outcome=ok/result.status=complete；提交另过 precheck 与真实 commit-msg Gate。失败停在最近合法状态，只撤销可证明归属的普通文件，不直接回滚事实或改写历史。
+  out_of_bounds_handling: 发现未授权路径、旧 closed 完整 after/独立复核/Human 普通文字决定不成立、旧历史字段将被改变、隔离或 trace 不可审计、新风险、基线变化或关键指标不可得时，不执行或停止受影响动作，按实际取消、记录 evidence_unavailable 或安全收敛；不在执行中索取扩权，不把缺口写成成功。
+creation_reviews:
+- reviewer: Codex subagent closed_wc_rules
+  reviewed_at: '2026-08-16T15:18:29Z'
+  subject_version: 2
+  scope: 只读复核 plan v2 的五个 work item、五项成功标准、产品/模型两层身份门槛、五个精确 v2 普通文件、42 次上限、一次本地 commit，以及旧 closed WC 的最小更正语义；对照源指纹 dacafd9a...，重点检查是否保留全部 v1 历史与 completed 技术分类、是否误写 route/residual/new relation、以及 Gate 1 文字授权边界。未复核尚未形成的实现或测试结果。
+  conclusion: pass_with_followups
+  feedback:
+  - 旧 WC 必须保留原 v1 scope、五项 criterion definitions/results、技术 metrics/hashes、closure_outcome=completed、Spark suggestion、relations 与全部既有 change_log。
+  - 旧 WC 只改 disposition_summary 并由 Helper 严格追加一条新日志；不得新增 routed-to、residual responsibility 或 relation。
+  - 旧 change_log 中错误的“消费 Human Gate2”记录不能删除；本次更正只能追加澄清，不能宣称历史已恢复。
+  - Gate 1 必须由 Human 以普通聊天文字同时明确批准新 WC plan_version=2 和旧 WC 源指纹下的精确最小更正；普通“批准执行”或隐藏 UI 回包不足。
+  controller_resolution: 四项反馈全部吸收：scope、criterion、item、authorization 与 verification 已冻结最小更正边界；旧 WC 保持 closed/completed 并保留全部 v1 历史，仅 disposition_summary 与严格追加日志可变；不写 route/residual/new relation；waiting_on 明列源指纹、精确更正文案及必须由普通聊天文字同时批准的两个对象。
+  covered_quality_gate_ids:
+  - independent-result-review
+  actual_method: subagent-read-only
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a00a74-d556-7ef5-a2d9-f2a2675f2f6a
+change_log:
+- at: '2026-08-16T15:13:37.218866Z'
+  summary: 受控创建纠正 WorkCase：保留 v1，建立仅产品与模型都不可得才因试验身份停止的 v2 计划；当前 Cindy/模型不可得只允许 product-bound/model-unverified 证据，并等待 Human Gate 1。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:23:18.632173Z'
+  summary: Gate 1 前进入 plan_revising；冻结 plan_version=1 的旧计划、work items、授权基线与创建复核，移除 Human waiting，准备形成经复核的 plan_version=2 完整候选。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:24:55.256074Z'
+  summary: 完成 Gate 1 前 PlanΔ：plan_version 1→2；保留 v2 身份门槛与测试范围，将旧 closed WC 处置收紧为保持 closed/completed 及全部 v1 历史、仅澄清 Gate 2 授权并严格追加日志的最小更正；fresh 独立只读复核通过并返回等待 Human 文字决定。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:30:28.967318Z'
+  summary: 记录 Human 普通聊天文字对 plan_version=2 与完整执行授权的明确 Gate 1 批准；baseline_fingerprint=8a17c321335051f3169fae34e28319271b03e2d67e4be6b17252ffa015316bab，进入 executing。该 Human 输入同时批准旧 WC 指定源指纹下的最小更正，但不构成新 WC Gate 2。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:32:51.517009Z'
+  summary: 据实完成 item-closed-record-correction：旧 WC 最小更正已写入、精确回读并通过全库完整性检查；保持 closed/completed 与全部 v1 历史，只澄清 Gate 2 授权并追加日志。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T15:33:37.936128Z'
+  summary: 开始 item-protocol-v2：冻结仅产品名和模型名同时不可得才身份停止、Cindy/null 只允许 product-bound/model-unverified 的 v2 协议。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T15:38:18.737527Z'
+  summary: 完成 item-protocol-v2：冻结 v2 身份门槛、模型未验证边界、attempt ledger、隐私与 hash 契约；尚未启动实际代表性 attempt。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T15:38:43.509828Z'
+  summary: 开始 item-tooling-tests：实现 Cindy/null 继续但 fixed-model scoring/go-no-go 禁止的 v2 分支。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T15:39:22.105172Z'
+  summary: 完成 item-tooling-tests：Cindy/null 继续且模型未验证绝不评分的实现与测试均通过。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T15:42:31.912090Z'
+  summary: 开始 item-representative-retest：按 v2 冻结协议执行三类真实 attempts；模型名不可得不停止启动，但所有 attempt 均禁止进入固定模型评分。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T15:50:20.025536Z'
+  summary: 完成 item-representative-retest：真实记录 3 attempts/0 retained；只读任务到达目标，两个写任务因隔离 fixture 不可得而在目标前停止，当前事实零 trial 写入。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T15:51:07.937582Z'
+  summary: 开始 item-v2-report：核对 product-bound/model-unverified 的 v2 结果和报告，确保三次 attempts、0 retained 与能力缺口均可复核且无越界结论。
+- at: '2026-08-16T15:52:26.793435Z'
+  summary: 完成 item-v2-report 并同事务进入 controller_checking：v2 结果与报告真实绑定 3 attempts/0 retained，hash、隐私和结论边界校验通过，v1 保持不变。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:53:59.076504Z'
+  summary: 形成 result_version=1 的完整 canonical result projection：五项标准按限定范围满足；当前结论严格保持 product-bound/model-unverified、3 attempts/0 retained 与隔离能力缺口。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:57:26.974073Z'
+  summary: 进入 independent_reviewing：冻结 result_version=1 的完整结果投影，等待已实际创建的独立只读 Reviewer 对五项成功标准、精确 diff、v2 工件、三份 receipt、旧记录最小更正与 v1 不变性给出结论。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:58:27.877653Z'
+  summary: 记录 result_version=1 的实际独立只读复核：结论 pass_with_followups，五项标准均满足；保留 validate_results 深层语义校验、Reviewer Python 3.9 无法复跑测试及 receipt 历史证据边界三项反馈，尚未推定 Human Gate 2。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:59:38.034193Z'
+  summary: 处置 result_version=1 的全部独立复核反馈并进入 closure_preparing：项目 Python 3.13 复跑 16/101 tests 通过；receipt 历史边界继续披露；validate_results 深层语义校验不足保留为非阻断残余，不改变冻结结果。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T16:00:23.642765Z'
+  summary: 形成完整 closure proposal：建议 completed，逐项保留 product-bound/model-unverified、3 attempts/0 retained、隔离能力缺口、旧 Gate2 记录澄清与不可证明边界；将 validate_results 深层语义校验列为非阻断 follow-up opportunity。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T16:00:48.151359Z'
+  summary: 进入 human_closure_confirming：冻结 result_version=1、独立复核及 completed closure proposal，明确等待 Human 普通聊天 Gate 2 决定；当前仍为 open，未关闭。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+execution_approval:
+  approved_at: '2026-08-16T15:30:28.778510Z'
+  baseline_fingerprint: 8a17c321335051f3169fae34e28319271b03e2d67e4be6b17252ffa015316bab
+  source_refs:
+  - 'Human ordinary chat: 批准 workcase-01M05J5E6TEFQS4MD64N7EHWEH plan_version=2 的完整计划和执行授权；并批准对旧 workcase-01M0579NAPFVTT5PFJM9KNYBVA 当前指纹 dacafd9a3ced20a7bdc734f725242c05360cdc3283b1fffeb4645c6b87100e9d 做所列最小更正。'
+  subject_version: 2
+  summary: Human 以普通聊天文字明确批准 plan_version=2 与完整 execution authorization，并同时批准旧 WC 在指定源指纹下的最小事实更正；本 approval 仅是新 WC 的 Gate 1，不替代未来新 WC Gate 2。
+result_version: 1
+success_criterion_results:
+- criterion_id: criterion-execution-evidence
+  outcome: satisfied
+  summary: 直接测试 16 passed、目标与复用 testing 模块 101 passed；实际连续启动 schedule slots 1–3。read-01 到达目标并唯一命中；两个状态变化任务因隔离受管 fixture 不可证明而在目标前停止。attempt ledger 记录 3 attempts/0 retained、三份 receipt hash、逐项状态/排除/evidence_unavailable；没有伪造 trace、fixture 或 retained。
+- criterion_id: criterion-history-correction
+  outcome: satisfied
+  summary: 旧 closed WorkCase 已经专属 Helper 最小更正并精确回读：保持 closed/completed、原 v1 scope、五项标准定义/结果、技术证据、Spark suggestion、relations 与 17 条旧日志；仅 disposition_summary 改为 Human 否认曾作出所称 Gate2 文字授权，并严格追加第 18 条日志。写后指纹 b032ca0e…a03，route_target_fingerprints=[]，未新增 route/residual/relation。
+- criterion_id: criterion-identity-rule
+  outcome: satisfied
+  summary: 实现、v2 protocol 与直接测试证明试验身份层仅 product_name/model_name 同时不可得才身份停止；当前 Cindy/null 进入 product_bound/model_unverified。事实流水写入继续使用 product/model/runtime 三字段 fresh signature，三项并非全不可得时没有被错误停止；该门槛未与试验身份规则混同。
+- criterion_id: criterion-safety-boundary
+  outcome: satisfied
+  summary: product-bound 分支强制 records 为空、retained=0，所有 family 均为 model_unverified；fixed-model scoring、operation residual、bootstrap CI 与 go/no-go 均为空或 prohibited。runner/entrypoint/permission/prompt 守卫仍失败关闭；两个写任务因 isolated fixture 不可得而未调用目标，当前事实指纹守卫通过。
+- criterion_id: criterion-v2-report
+  outcome: satisfied
+  summary: 新增 protocol/results/report v2 并通过 schema/hash/privacy 与确定性重渲染校验：protocol canonical=42a8e371…207d，results payload=e51954af…a05、file=290a1ad7…557，report file=48ff3ea6…686。报告明确 Cindy、model unavailable、3 attempts/0 retained、1 completed/2 aborted、各 family 证据缺口及不能证明的范围；v1 三工件未改，也未形成生产改造授权。
+result_summary: v2 已纠正“模型名单独不可得即零尝试停止”的错误：当前产品名 Cindy 可得，因此实际启动三类代表性 attempts；只读族 1 次到达目标，两个状态变化族因无法证明隔离受管 fixture 而在目标前停止。结果是 product_bound/model_unverified、3 attempts/0 retained；只证明真实启动、失败关闭和证据边界成立，不证明固定模型可比性、operation residual、统计区间、go/no-go、因果/业务收益或 Helper 整体质量。旧 closed WorkCase 同时完成了不改变 v1 技术分类的 Gate2 授权记录澄清。
+controller_check_summary: Controller 已逐项核对五项成功标准、三份脱敏 receipt、v2 协议/结果/报告 hash、测试与隐私边界，并确认全部 item 的 completed 仅表示其有界局部结果形成。模型身份仍不可得，两个写族仍缺可证明隔离 fixture；这些限制被保留为 model_unverified/evidence_unavailable，未被提升为固定模型通过、Helper 质量结论或生产改造依据。
+validation_summary: 直接测试 16 passed；代表性复验、session comparability、evidence protocol、equivalence retrial、trial measurement 共 101 passed；修改的两个 Python 文件 Ruff passed；git diff --check passed；v1 protocol/results/report 对 HEAD 零差异。v2 schema、attempt ledger 连续性/receipt hash/事实前后指纹、protocol canonical SHA-256=42a8e371…207d、results payload=e51954af…a05、results file=290a1ad7…557、report file=48ff3ea6…686、隐私扫描与报告确定性重渲染通过。当前事实写入均经精确回读及 ldvh check；全量非目标测试未作为本结果的完成依据。
+result_reviews:
+- reviewer: Codex subagent result_review_v2
+  reviewed_at: '2026-08-16T15:58:27.665993Z'
+  subject_version: 1
+  scope: 只读复核 result_version=1 的完整 canonical result projection、精确 Git diff 与七个授权路径、v2 protocol/results/report 的 schema/hash/文案、三份实际 receipt、旧 closed WorkCase 最小更正、v1 不变性及五项成功标准；不复核未获授权的生产改造，也不替代 Controller 或 Human。
+  conclusion: pass_with_followups
+  actual_method: subagent-read-only
+  feedback:
+  - 中等后续项：code/ldvh/testing/representative_task_retrial.py 的 validate_results() 当前只校验顶层字段与哈希，尚未自行重验 v2 result 结构、attempt ledger，以及 model_unverified 分支的 records/retained/scoring 禁止条件；当前工件经静态交叉核对符合约束，但未来重算哈希的语义无效载荷不一定被该入口拒绝。
+  - 低等级复核限制：Reviewer 只读环境为 Python 3.9.6，因 dataclass(slots=True) 无法独立复跑声明的 16/101 tests；现有测试代码、Controller 已有执行输出与 canonical 验证摘要支持当前声明，但提交前应在项目支持的 Python 环境复跑并保留输出。
+  - 信息边界：receipt 的历史事实指纹和结构/哈希相互一致，但“当时零写入”属于 receipt 证据，无法由当前工作树重新证明历史快照。
+  controller_resolution: 三项反馈均已逐项处置：其一，接受 validate_results() 尚未独立重验全部 v2 ledger/禁止评分语义为非阻断后续责任；当前工件已由静态交叉核对、canonical hash/schema 校验和直接测试支持，五项标准不要求声称任意重算哈希的未来无效载荷都会被该入口拒绝，冻结后的 result_version=1 不为此制造未授权 ResultΔ，并在 closure proposal 明示该残余。其二，已在项目 Python 3.13.15 环境重新实际执行并得到直接测试 16 passed、五个目标/复用测试文件 101 passed，Ruff、git diff --check 与 v1 三工件零变化通过，消除 Reviewer Python 3.9 无法复跑的执行缺口，但不伪称由 Reviewer 亲自复跑。其三，接受 receipt 只能证明当时记录的历史边界，继续把零写入结论限定为三份 receipt 与其前后指纹/hash 证据，不声称当前工作树可重新证明历史瞬间。
+closure_proposal:
+  proposed_outcome: completed
+  proposed_disposition_summary: 建议将本 WorkCase 按 completed 关闭：产品名 Cindy 可得而模型名不可得时已不再错误地在 attempt 1 前停止；实际形成 product-bound/model-unverified 的 3 attempts/0 retained 证据，两个写族因隔离 fixture 不可证明而安全停止；五项成功标准、v2 hash/schema/privacy、16/101 tests、Ruff、diff 与 v1 不变性均已验证；旧 closed WorkCase 仅澄清了 Human Gate 2 授权记录并保持 v1 技术完成分类。该结论不证明 fixed-model 可比性、operation residual、CI、go/no-go、因果/业务收益或 Helper 整体质量，也不把 Reviewer 或 UI 回包当作 Human Gate 2。
+  spark_suggestions:
+  - suggestion_id: suggestion-deep-v2-results-validation
+    suggestion_kind: follow_up_opportunity
+    summary: 后续可增强 validate_results()，使其除顶层字段与哈希外，还独立重验 v2 result 结构、attempt ledger 和 model_unverified 禁止评分语义。
+    follow_up_summary: 该增强不是本次五项成功标准的剩余责任；由 Human 在本 WorkCase Gate 2 之后独立决定是否另建 Spark 或 WorkCase，当前不自动创建、不执行。
+waiting_on: 等待 Human 以普通聊天文字对 result_version=1 的完整关闭提案作 Gate 2 决定；Reviewer、UI 回包和先前 Gate 1 均不替代该决定。
+object_uid: 01a00b22-b8da-73ef-9251-a6254ee8f1d1
+object_id: workcase-01M05J5E6TEFQS4MD64N7EHWEH
+fact_type_key: workcase
+created_at: '2026-08-16T15:13:37.218866Z'
+updated_at: '2026-08-16T16:00:48.151359Z'

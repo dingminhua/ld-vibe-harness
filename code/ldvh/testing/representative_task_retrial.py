@@ -32,9 +32,17 @@ from ldvh.testing.evidence_protocol import (
 from ldvh.testing.session_comparability import audit_events
 from ldvh.testing.trial_measurement import SafeTrialTempRoot, TrialMeasurementError
 
-PROTOCOL_SCHEMA_VERSION = "ldvh-representative-task-retrial-protocol/1"
-RESULTS_SCHEMA_VERSION = "ldvh-representative-task-retrial-results/1"
+PROTOCOL_SCHEMA_VERSION_V1 = "ldvh-representative-task-retrial-protocol/1"
+PROTOCOL_SCHEMA_VERSION_V2 = "ldvh-representative-task-retrial-protocol/2"
+RESULTS_SCHEMA_VERSION_V1 = "ldvh-representative-task-retrial-results/1"
+RESULTS_SCHEMA_VERSION_V2 = "ldvh-representative-task-retrial-results/2"
 SESSION_SCHEMA_VERSION = "ldvh-representative-task-retrial-session/1"
+
+# Backwards-compatible aliases.  The committed v1 artifacts remain a closed
+# historical batch; callers that do not opt into the v2 protocol keep the v1
+# schema and byte-for-byte protocol hash.
+PROTOCOL_SCHEMA_VERSION = PROTOCOL_SCHEMA_VERSION_V1
+RESULTS_SCHEMA_VERSION = RESULTS_SCHEMA_VERSION_V1
 FAMILIES = ("read", "ordinary_fact_update", "workcase_non_item_update")
 RUNNER_IDENTITY_SOURCE = "harness-request-header"
 EXPECTED_FRAME_COUNT = 18
@@ -79,6 +87,30 @@ _RUNNER_OBSERVATION_FIELDS = {
     "permission_profile",
     "prompt_layout",
     "identity_source",
+}
+_ATTEMPT_LEDGER_FIELDS = {
+    "attempt_index",
+    "scheduled_session_slot",
+    "task_id",
+    "replicate",
+    "family",
+    "status",
+    "target_reached",
+    "started_at",
+    "completed_at",
+    "retained",
+    "exclusion_reason",
+    "evidence_unavailable",
+    "runner_receipt_sha256",
+    "facts_fingerprint_before",
+    "facts_fingerprint_after",
+    "state_change_guard_passed",
+    "replacement_for_attempt_index",
+}
+_ATTEMPT_STATUSES = {
+    "completed",
+    "technical_failure_before_target",
+    "aborted_before_target",
 }
 _METRIC_FIELDS = {
     "helper_call_count",
@@ -208,7 +240,8 @@ def validate_protocol(protocol: Mapping[str, Any]) -> None:
     """Validate the closed 18-frame/36-session protocol."""
 
     _require_exact_fields(protocol, _PROTOCOL_FIELDS, "protocol")
-    if protocol["schema_version"] != PROTOCOL_SCHEMA_VERSION:
+    schema_version = protocol["schema_version"]
+    if schema_version not in {PROTOCOL_SCHEMA_VERSION_V1, PROTOCOL_SCHEMA_VERSION_V2}:
         raise RepresentativeRetrialError("unrecognized protocol schema version")
     _nonempty_string(protocol["protocol_id"], "protocol_id")
     _nonempty_string(protocol["frozen_at"], "frozen_at")
@@ -246,21 +279,78 @@ def validate_protocol(protocol: Mapping[str, Any]) -> None:
     runner = protocol["runner_binding"]
     if not isinstance(runner, Mapping):
         raise RepresentativeRetrialError("runner_binding must be an object")
-    required_runner_fields = {
-        "entrypoint",
-        "model_binding_rule",
-        "allowed_model_identity_source",
-        "controller_declared_product_name",
-        "controller_declared_model_name",
-        "controller_declared_agent_runtime_name",
-        "fixed_fields",
-        "unknown_is_not_fixed",
-    }
+    required_runner_fields = (
+        {
+            "entrypoint",
+            "model_binding_rule",
+            "allowed_model_identity_source",
+            "controller_declared_product_name",
+            "controller_declared_model_name",
+            "controller_declared_agent_runtime_name",
+            "fixed_fields",
+            "unknown_is_not_fixed",
+        }
+        if schema_version == PROTOCOL_SCHEMA_VERSION_V1
+        else {
+            "entrypoint",
+            "controller_declared_product_name",
+            "controller_declared_model_name",
+            "controller_declared_agent_runtime_name",
+            "identity_availability_stop_rule",
+            "model_identity_source",
+            "model_unavailable_policy",
+            "fixed_fields_model_bound",
+            "fixed_fields_product_bound",
+        }
+    )
     _require_exact_fields(runner, required_runner_fields, "runner_binding")
-    if runner["allowed_model_identity_source"] != RUNNER_IDENTITY_SOURCE:
+    identity_source_field = (
+        "allowed_model_identity_source"
+        if schema_version == PROTOCOL_SCHEMA_VERSION_V1
+        else "model_identity_source"
+    )
+    if runner[identity_source_field] != RUNNER_IDENTITY_SOURCE:
         raise RepresentativeRetrialError("runner model identity source changed")
-    if runner["unknown_is_not_fixed"] is not True:
-        raise RepresentativeRetrialError("unknown runner identity must fail closed")
+    if schema_version == PROTOCOL_SCHEMA_VERSION_V1:
+        if runner["unknown_is_not_fixed"] is not True:
+            raise RepresentativeRetrialError("unknown runner identity must fail closed")
+    else:
+        if runner["identity_availability_stop_rule"] != (
+            "stop only when controller_declared_product_name and "
+            "controller_declared_model_name are both null"
+        ):
+            raise RepresentativeRetrialError("v2 identity availability stop rule changed")
+        if runner["model_unavailable_policy"] != (
+            "allow product_bound descriptive attempts; prohibit fixed_model scoring and all go/no-go"
+        ):
+            raise RepresentativeRetrialError("v2 model-unavailable policy changed")
+        for field_name in (
+            "controller_declared_product_name",
+            "controller_declared_model_name",
+            "controller_declared_agent_runtime_name",
+        ):
+            value = runner[field_name]
+            if value is not None and (not isinstance(value, str) or not value):
+                raise RepresentativeRetrialError(f"runner_binding.{field_name} must be non-empty or null")
+        if runner["fixed_fields_model_bound"] != [
+            "entrypoint",
+            "runner_identity",
+            "tool_entry",
+            "provider",
+            "model",
+            "permission_profile",
+            "prompt_layout",
+        ]:
+            raise RepresentativeRetrialError("v2 model-bound fixed fields changed")
+        if runner["fixed_fields_product_bound"] != [
+            "product_name",
+            "entrypoint",
+            "runner_identity",
+            "tool_entry",
+            "permission_profile",
+            "prompt_layout",
+        ]:
+            raise RepresentativeRetrialError("v2 product-bound fixed fields changed")
 
     frames = protocol["task_frames"]
     if not isinstance(frames, list) or len(frames) != EXPECTED_FRAME_COUNT:
@@ -348,6 +438,17 @@ def validate_protocol(protocol: Mapping[str, Any]) -> None:
         "technical_failure_before_target"
     ]:
         raise RepresentativeRetrialError("replacement reason changed")
+    reason_codes = protocol["exclusions"].get("closed_reason_codes")
+    if not isinstance(reason_codes, list) or not all(
+        isinstance(reason, str) and reason for reason in reason_codes
+    ):
+        raise RepresentativeRetrialError("closed exclusion reasons are incomplete")
+    if schema_version == PROTOCOL_SCHEMA_VERSION_V2 and not {
+        "model_identity_unavailable",
+        "session_trace_unavailable",
+        "isolated_fixture_unavailable",
+    }.issubset(reason_codes):
+        raise RepresentativeRetrialError("v2 product-bound evidence-unavailable reasons are incomplete")
     if not isinstance(protocol["privacy"], Mapping) or not isinstance(
         protocol["privacy"].get("forbidden_fields"), list
     ):
@@ -387,6 +488,9 @@ class RunnerPreflight:
     prompt_layout: str | None
     identity_source: str | None
     carrier_fingerprint: str | None
+    product_name: str | None = None
+    identity_scope: str = "unavailable"
+    disclosures: tuple[str, ...] = ()
 
     def payload(self) -> dict[str, Any]:
         return asdict(self)
@@ -406,25 +510,32 @@ def assess_runner_preflight(
             raise RepresentativeRetrialError(f"runner observation {field_name} must be non-empty or null")
         values[field_name] = value
 
+    schema_version = protocol["schema_version"]
+    runner_binding = protocol["runner_binding"]
+    product_name = runner_binding.get("controller_declared_product_name")
+    declared_model_name = runner_binding.get("controller_declared_model_name")
     reasons: list[str] = []
-    if (
-        values["identity_source"] != RUNNER_IDENTITY_SOURCE
-        or values["provider"] is None
-        or values["model"] is None
-    ):
-        reasons.append("runner_model_identity_unavailable")
     if values["runner_identity"] is None or values["tool_entry"] is None:
         reasons.append("runner_identity_drift")
-    if values["entrypoint"] != protocol["runner_binding"]["entrypoint"]:
+    if values["entrypoint"] != runner_binding["entrypoint"]:
         reasons.append("entrypoint_drift")
     if values["permission_profile"] is None:
         reasons.append("permission_profile_drift")
     if values["prompt_layout"] is None:
         reasons.append("prompt_layout_drift")
 
+    if schema_version == PROTOCOL_SCHEMA_VERSION_V1 and (
+        values["identity_source"] != RUNNER_IDENTITY_SOURCE
+        or values["provider"] is None
+        or values["model"] is None
+    ):
+        reasons.insert(0, "runner_model_identity_unavailable")
     reasons = list(dict.fromkeys(reasons))
     carrier_fingerprint: str | None = None
-    if not reasons:
+    identity_scope = "unavailable"
+    disclosures: tuple[str, ...] = ()
+    status = "not_comparable"
+    if schema_version == PROTOCOL_SCHEMA_VERSION_V1 and not reasons:
         carrier = CarrierDeclaration(
             provider=values["provider"],  # type: ignore[arg-type]
             model=values["model"],  # type: ignore[arg-type]
@@ -432,8 +543,48 @@ def assess_runner_preflight(
             tool_entry=values["tool_entry"],  # type: ignore[arg-type]
         )
         carrier_fingerprint = carrier.fingerprint()
+        identity_scope = "model_bound"
+        status = "comparable"
+    elif schema_version == PROTOCOL_SCHEMA_VERSION_V2:
+        directly_observed_model = (
+            values["identity_source"] == RUNNER_IDENTITY_SOURCE
+            and values["provider"] is not None
+            and values["model"] is not None
+        )
+        if product_name is None and declared_model_name is None and not directly_observed_model:
+            reasons.insert(0, "controller_identity_unavailable")
+        reasons = list(dict.fromkeys(reasons))
+        if not reasons and directly_observed_model:
+            carrier = CarrierDeclaration(
+                provider=values["provider"],  # type: ignore[arg-type]
+                model=values["model"],  # type: ignore[arg-type]
+                runner_identity=values["runner_identity"],  # type: ignore[arg-type]
+                tool_entry=values["tool_entry"],  # type: ignore[arg-type]
+            )
+            carrier_fingerprint = carrier.fingerprint()
+            identity_scope = "model_bound"
+            status = "model_bound"
+        elif not reasons:
+            identity_scope = "product_bound" if product_name is not None else "declared_model_unverified"
+            disclosures = (
+                "controller_model_name_unavailable",
+                "fixed_model_comparability_unavailable",
+                "fixed_model_scoring_and_go_no_go_prohibited",
+            )
+            carrier_fingerprint = _canonical_sha256(
+                {
+                    "identity_scope": identity_scope,
+                    "product_name": product_name,
+                    "entrypoint": values["entrypoint"],
+                    "runner_identity": values["runner_identity"],
+                    "tool_entry": values["tool_entry"],
+                    "permission_profile": values["permission_profile"],
+                    "prompt_layout": values["prompt_layout"],
+                }
+            )
+            status = identity_scope
     return RunnerPreflight(
-        status="comparable" if not reasons else "not_comparable",
+        status=status,
         reasons=tuple(reasons),
         provider=values["provider"],
         model=values["model"],
@@ -444,6 +595,9 @@ def assess_runner_preflight(
         prompt_layout=values["prompt_layout"],
         identity_source=values["identity_source"],
         carrier_fingerprint=carrier_fingerprint,
+        product_name=product_name if isinstance(product_name, str) else None,
+        identity_scope=identity_scope,
+        disclosures=disclosures,
     )
 
 
@@ -564,7 +718,7 @@ def make_session_record(
     """Convert one structural session into a privacy-safe machine record."""
 
     validate_protocol(protocol)
-    if preflight.status != "comparable" or preflight.carrier_fingerprint is None:
+    if preflight.status not in {"comparable", "model_bound"} or preflight.carrier_fingerprint is None:
         raise RepresentativeRetrialError("cannot create a session record after failed preflight")
     _nonempty_string(trial_id, "trial_id")
     _nonnegative_int(attempt_index, "attempt_index")
@@ -714,6 +868,84 @@ def validate_session_record(record: Mapping[str, Any], protocol: Mapping[str, An
         _sha256_string(record[field_name], field_name)
 
 
+def validate_attempt_ledger(
+    entries: Sequence[Mapping[str, Any]], protocol: Mapping[str, Any]
+) -> None:
+    """Validate actual dispatch receipts without treating them as comparable sessions."""
+
+    validate_protocol(protocol)
+    if protocol["schema_version"] != PROTOCOL_SCHEMA_VERSION_V2:
+        if entries:
+            raise RepresentativeRetrialError("attempt ledger is only defined by the v2 protocol")
+        return
+    if len(entries) > MAXIMUM_ATTEMPTS:
+        raise RepresentativeRetrialError("attempt ledger exceeds the 42-attempt ceiling")
+    prior_statuses: dict[int, str] = {}
+    replacements = 0
+    for expected_index, entry in enumerate(entries, start=1):
+        if not isinstance(entry, Mapping):
+            raise RepresentativeRetrialError("attempt ledger entry must be an object")
+        _require_exact_fields(entry, _ATTEMPT_LEDGER_FIELDS, "attempt ledger entry")
+        if entry["attempt_index"] != expected_index:
+            raise RepresentativeRetrialError("attempt indices must be the consecutive 1..N sequence")
+        status = entry["status"]
+        if status not in _ATTEMPT_STATUSES:
+            raise RepresentativeRetrialError("attempt status is outside the closed set")
+        slot = _nonnegative_int(entry["scheduled_session_slot"], "scheduled_session_slot")
+        if slot not in range(1, EXPECTED_SCHEDULE_COUNT + 1):
+            raise RepresentativeRetrialError("scheduled_session_slot is outside 1..36")
+        schedule = protocol["schedule"][slot - 1]
+        if (
+            entry["task_id"] != schedule["task_id"]
+            or entry["replicate"] != schedule["replicate"]
+        ):
+            raise RepresentativeRetrialError("attempt ledger task does not match its scheduled slot")
+        frame = _frame_by_id(protocol, entry["task_id"])
+        if entry["family"] != frame["family"]:
+            raise RepresentativeRetrialError("attempt ledger family drifted")
+        target_reached = entry["target_reached"]
+        if type(target_reached) is not bool or target_reached != (status == "completed"):
+            raise RepresentativeRetrialError("target_reached must exactly match completed status")
+        if entry["retained"] is not False:
+            raise RepresentativeRetrialError("v2 product-bound attempt ledger cannot retain sessions")
+        reason = entry["exclusion_reason"]
+        if reason not in protocol["exclusions"]["closed_reason_codes"]:
+            raise RepresentativeRetrialError("attempt exclusion reason is outside the frozen set")
+        unavailable = entry["evidence_unavailable"]
+        if not isinstance(unavailable, list) or not unavailable:
+            raise RepresentativeRetrialError("attempt must disclose at least one unavailable evidence field")
+        for disclosure in unavailable:
+            _nonempty_string(disclosure, "evidence_unavailable entry")
+        for field_name in (
+            "runner_receipt_sha256",
+            "facts_fingerprint_before",
+            "facts_fingerprint_after",
+        ):
+            _sha256_string(entry[field_name], field_name)
+        assert_current_fact_fingerprint_unchanged(
+            before=entry["facts_fingerprint_before"],
+            after=entry["facts_fingerprint_after"],
+        )
+        if entry["state_change_guard_passed"] is not True:
+            raise RepresentativeRetrialError("attempt must pass the current-fact state-change guard")
+        _nonempty_string(entry["started_at"], "started_at")
+        _nonempty_string(entry["completed_at"], "completed_at")
+        replacement_for = entry["replacement_for_attempt_index"]
+        if replacement_for is not None:
+            replacements += 1
+            if (
+                type(replacement_for) is not int
+                or replacement_for not in prior_statuses
+                or prior_statuses[replacement_for] != "technical_failure_before_target"
+            ):
+                raise RepresentativeRetrialError(
+                    "replacement must point to a prior technical_failure_before_target"
+                )
+        prior_statuses[expected_index] = status
+    if replacements > int(protocol["exclusions"]["maximum_replacements"]):
+        raise RepresentativeRetrialError("attempt replacements exceed the frozen ceiling")
+
+
 def _percentile(values: Sequence[float], quantile: float) -> float:
     ordered = sorted(values)
     index = (len(ordered) - 1) * quantile
@@ -784,6 +1016,7 @@ def build_results(
     preflight: RunnerPreflight,
     records: Sequence[Mapping[str, Any]],
     generated_at: str,
+    attempt_ledger: Sequence[Mapping[str, Any]] = (),
 ) -> dict[str, Any]:
     """Build a hash-bound batch result without raw session content."""
 
@@ -791,15 +1024,24 @@ def build_results(
     _nonempty_string(generated_at, "generated_at")
     if len(records) > MAXIMUM_ATTEMPTS:
         raise RepresentativeRetrialError("record count exceeds the 42-attempt ceiling")
-    if preflight.status != "comparable" and records:
+    model_bound = preflight.status in {"comparable", "model_bound"}
+    product_bound = preflight.status in {"product_bound", "declared_model_unverified"}
+    if not model_bound and records:
         raise RepresentativeRetrialError("failed preflight must stop before attempt one")
+    if protocol["schema_version"] == PROTOCOL_SCHEMA_VERSION_V1 and attempt_ledger:
+        raise RepresentativeRetrialError("v1 results cannot carry a v2 attempt ledger")
+    validate_attempt_ledger(attempt_ledger, protocol)
+    if product_bound and not attempt_ledger:
+        # Product-bound execution is allowed, but an empty ledger is not
+        # rewritten as a model-identity stop.
+        pass
     for record in records:
         validate_session_record(record, protocol)
     attempt_indices = [record["attempt_index"] for record in records]
     if len(attempt_indices) != len(set(attempt_indices)):
         raise RepresentativeRetrialError("attempt_index must be unique")
 
-    exclusions = [
+    exclusions: list[dict[str, Any]] = [
         {
             "attempt_index": record["attempt_index"],
             "task_id": record["task_id"],
@@ -808,7 +1050,36 @@ def build_results(
         for record in records
         if not record["retained"]
     ]
-    if preflight.status != "comparable":
+    if product_bound:
+        exclusions = [
+            {
+                "attempt_index": entry["attempt_index"],
+                "task_id": entry["task_id"],
+                "reason": entry["exclusion_reason"],
+            }
+            for entry in attempt_ledger
+        ]
+        family_results = []
+        for family in FAMILIES:
+            attempted = sum(entry["family"] == family for entry in attempt_ledger)
+            family_results.append(
+                {
+                    "family": family,
+                    "status": "model_unverified",
+                    "reason": (
+                        "fixed_model_comparability_unavailable"
+                        if attempted
+                        else "not_yet_executed"
+                    ),
+                    "attempted_sessions": attempted,
+                    "retained_sessions": 0,
+                    "complete_frames": 0,
+                    "positive_frames": None,
+                    "median_frame_burden_points": None,
+                    "bootstrap_median_ci_95": None,
+                }
+            )
+    elif not model_bound:
         exclusions.insert(
             0,
             {
@@ -846,21 +1117,31 @@ def build_results(
     )
     result_payload = {
         "batch_status": (
-            "not_comparable"
-            if preflight.status != "comparable"
+            "model_unverified"
+            if product_bound
+            else "not_comparable"
+            if not model_bound
             else "complete"
             if retained_count == EXPECTED_SCHEDULE_COUNT and complete_family_set
             else "partial"
         ),
         "claim_boundary": protocol["design"]["claim_boundary"],
         "preflight": preflight.payload(),
-        "attempt_count": len(records),
+        "attempt_count": len(attempt_ledger) if product_bound else len(records),
         "retained_session_count": retained_count,
         "maximum_attempts": MAXIMUM_ATTEMPTS,
         "exclusion_ledger": exclusions,
         "family_results": family_results,
         "unavailable_semantics": {
             "host_received": "unavailable",
+            "fixed_model_identity": (
+                "unverified" if product_bound else "available" if model_bound else "unavailable"
+            ),
+            "fixed_model_comparability": (
+                "prohibited" if product_bound else "available" if model_bound else "unavailable"
+            ),
+            "operation_residual": "not_scored" if product_bound else "scored_if_complete",
+            "go_no_go": "prohibited" if product_bound else "available_if_complete",
             "causal_effect": "not_measured",
             "business_benefit": "not_measured",
             "raw_session_content": "not_retained",
@@ -872,8 +1153,16 @@ def build_results(
             "record_hashes": [_canonical_sha256(record) for record in records],
         },
     }
+    if protocol["schema_version"] == PROTOCOL_SCHEMA_VERSION_V2:
+        result_payload["attempt_ledger"] = [dict(entry) for entry in attempt_ledger]
+        result_payload["identity_scope"] = preflight.identity_scope
+        result_payload["identity_disclosures"] = list(preflight.disclosures)
     artifact = {
-        "schema_version": RESULTS_SCHEMA_VERSION,
+        "schema_version": (
+            RESULTS_SCHEMA_VERSION_V2
+            if protocol["schema_version"] == PROTOCOL_SCHEMA_VERSION_V2
+            else RESULTS_SCHEMA_VERSION_V1
+        ),
         "protocol_sha256": protocol_sha256(protocol),
         "generated_at": generated_at,
         "result": result_payload,
@@ -893,7 +1182,12 @@ def validate_results(results: Mapping[str, Any], protocol: Mapping[str, Any]) ->
         "results_payload_sha256",
     }
     _require_exact_fields(results, expected, "results")
-    if results["schema_version"] != RESULTS_SCHEMA_VERSION:
+    expected_schema = (
+        RESULTS_SCHEMA_VERSION_V2
+        if protocol["schema_version"] == PROTOCOL_SCHEMA_VERSION_V2
+        else RESULTS_SCHEMA_VERSION_V1
+    )
+    if results["schema_version"] != expected_schema:
         raise RepresentativeRetrialError("unrecognized results schema version")
     if results["protocol_sha256"] != protocol_sha256(protocol):
         raise RepresentativeRetrialError("results protocol hash mismatch")
@@ -910,7 +1204,11 @@ def render_report(
     _sha256_string(results_file_sha256, "results_file_sha256")
     payload = results["result"]
     lines = [
-        "# Representative Helper task retrial v1",
+        (
+            "# Representative Helper task retrial v2"
+            if protocol["schema_version"] == PROTOCOL_SCHEMA_VERSION_V2
+            else "# Representative Helper task retrial v1"
+        ),
         "",
         "## Decision boundary",
         "",
@@ -956,11 +1254,38 @@ def render_report(
             "- Host-received delivery is unavailable; causal effect and business benefit were not measured.",
             "- Raw session content was not retained in version-controlled artifacts.",
             "",
-            "## Interpretation",
-            "",
         ]
     )
-    if payload["batch_status"] == "not_comparable":
+    if payload["batch_status"] == "model_unverified":
+        lines.extend(
+            [
+                f"- Identity scope: `{payload['identity_scope']}`",
+                "- Identity disclosures: "
+                f"`{', '.join(payload['identity_disclosures']) or 'none'}`",
+                "",
+                "## Attempt ledger",
+                "",
+                "| Attempt | Slot | Task | Family | Status | Target reached | Retained | "
+                "Exclusion | Evidence unavailable |",
+                "|---:|---:|---|---|---|---|---|---|---|",
+            ]
+        )
+        for attempt in payload["attempt_ledger"]:
+            lines.append(
+                "| {attempt_index} | {scheduled_session_slot} | {task_id} | {family} | "
+                "{status} | {target_reached} | {retained} | {exclusion_reason} | {unavailable} |".format(
+                    **attempt,
+                    unavailable=", ".join(attempt["evidence_unavailable"]),
+                )
+            )
+    lines.extend(["", "## Interpretation", ""])
+    if payload["batch_status"] == "model_unverified":
+        lines.append(
+            "Product identity was available, so bounded attempts were allowed and recorded. Model identity "
+            "remained unavailable; every attempt is descriptive and model-unverified, and no fixed-model "
+            "comparison, operation residual, confidence interval, or go/no-go decision was produced."
+        )
+    elif payload["batch_status"] == "not_comparable":
         lines.append(
             "The fixed execution carrier could not be established from the pre-registered auditable source, "
             "so no trial was attempted and no operation-level residual was scored."

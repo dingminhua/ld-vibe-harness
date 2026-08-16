@@ -20,6 +20,7 @@ from ldvh.testing.representative_task_retrial import (
     protocol_sha256,
     render_report,
     task_package_hash,
+    validate_attempt_ledger,
     validate_protocol,
     validate_results,
     write_new_json_artifact,
@@ -28,11 +29,17 @@ from ldvh.testing.representative_task_retrial import (
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 PROTOCOL_PATH = PROJECT_ROOT / "docs/metrics/representative-task-retrial-protocol-v1.json"
+PROTOCOL_V2_PATH = PROJECT_ROOT / "docs/metrics/representative-task-retrial-protocol-v2.json"
 PROTOCOL_SHA256 = "c597455d20cbb894f42c2571959ddc23ad375b6cd7360ba697d858f158b3db37"
+PROTOCOL_V2_SHA256 = "42a8e371b652d89938021084afc96ed232adbc6f47a6f1708e1251e7791c207d"
 
 
 def _protocol() -> dict[str, object]:
     return load_protocol(PROTOCOL_PATH)
+
+
+def _protocol_v2() -> dict[str, object]:
+    return load_protocol(PROTOCOL_V2_PATH)
 
 
 def _observation(**changes: object) -> dict[str, object]:
@@ -94,6 +101,43 @@ def _metrics(*, burden: bool = True) -> dict[str, object]:
     }
 
 
+def _attempt_entry(
+    protocol: dict[str, object],
+    *,
+    attempt_index: int = 1,
+    status: str = "completed",
+    exclusion_reason: str = "model_identity_unavailable",
+    facts_after: str | None = None,
+    replacement_for_attempt_index: int | None = None,
+) -> dict[str, object]:
+    schedule = protocol["schedule"][attempt_index - 1]  # type: ignore[index]
+    frame = next(
+        frame
+        for frame in protocol["task_frames"]  # type: ignore[union-attr]
+        if frame["task_id"] == schedule["task_id"]
+    )
+    facts_before = "a" * 64
+    return {
+        "attempt_index": attempt_index,
+        "scheduled_session_slot": attempt_index,
+        "task_id": schedule["task_id"],
+        "replicate": schedule["replicate"],
+        "family": frame["family"],
+        "status": status,
+        "target_reached": status == "completed",
+        "started_at": "2026-08-16T15:40:00Z",
+        "completed_at": "2026-08-16T15:40:01Z",
+        "retained": False,
+        "exclusion_reason": exclusion_reason,
+        "evidence_unavailable": ["fixed_model_identity", "raw_session_trace"],
+        "runner_receipt_sha256": "b" * 64,
+        "facts_fingerprint_before": facts_before,
+        "facts_fingerprint_after": facts_before if facts_after is None else facts_after,
+        "state_change_guard_passed": True,
+        "replacement_for_attempt_index": replacement_for_attempt_index,
+    }
+
+
 def _record(
     protocol: dict[str, object],
     *,
@@ -132,6 +176,10 @@ def test_frozen_protocol_is_closed_and_hash_bound() -> None:
     assert len(protocol["task_frames"]) == 18  # type: ignore[arg-type]
     assert len(protocol["schedule"]) == EXPECTED_SCHEDULE_COUNT  # type: ignore[arg-type]
 
+    protocol_v2 = _protocol_v2()
+    assert protocol_sha256(protocol_v2) == PROTOCOL_V2_SHA256
+    assert protocol_v2["runner_binding"]["controller_declared_product_name"] == "Cindy"  # type: ignore[index]
+
 
 @pytest.mark.parametrize("mutation", ["missing_frame", "read_state_change"])
 def test_protocol_rejects_sample_or_legality_drift(mutation: str) -> None:
@@ -164,6 +212,32 @@ def test_runner_preflight_binds_complete_carrier() -> None:
     assert first.reasons == ()
     assert first.carrier_fingerprint == second.carrier_fingerprint
     assert first.carrier_fingerprint is not None
+
+
+def test_v2_runner_preflight_allows_product_bound_when_only_model_is_unavailable() -> None:
+    preflight = assess_runner_preflight(
+        _protocol_v2(),
+        _observation(provider=None, model=None, identity_source=None),
+    )
+    assert preflight.status == "product_bound"
+    assert preflight.identity_scope == "product_bound"
+    assert preflight.product_name == "Cindy"
+    assert preflight.reasons == ()
+    assert "fixed_model_comparability_unavailable" in preflight.disclosures
+    assert preflight.carrier_fingerprint is not None
+
+
+def test_v2_runner_preflight_stops_only_when_product_and_model_are_both_unavailable() -> None:
+    protocol = _protocol_v2()
+    protocol["runner_binding"]["controller_declared_product_name"] = None  # type: ignore[index]
+    protocol["runner_binding"]["controller_declared_model_name"] = None  # type: ignore[index]
+    preflight = assess_runner_preflight(
+        protocol,
+        _observation(provider=None, model=None, identity_source=None),
+    )
+    assert preflight.status == "not_comparable"
+    assert preflight.reasons[0] == "controller_identity_unavailable"
+    assert preflight.carrier_fingerprint is None
 
 
 def test_isolated_root_and_current_fact_guards_fail_closed(tmp_path: Path) -> None:
@@ -240,6 +314,57 @@ def test_failed_preflight_produces_zero_attempt_not_comparable_results() -> None
     )
     assert "no trial was attempted" in report
     assert PROTOCOL_SHA256 in report
+
+
+def test_v2_product_bound_attempts_are_descriptive_and_never_scored() -> None:
+    protocol = _protocol_v2()
+    preflight = assess_runner_preflight(
+        protocol,
+        _observation(provider=None, model=None, identity_source=None),
+    )
+    ledger = [_attempt_entry(protocol)]
+    results = build_results(
+        protocol=protocol,
+        preflight=preflight,
+        records=[],
+        attempt_ledger=ledger,
+        generated_at="2026-08-16T15:41:00Z",
+    )
+    validate_results(results, protocol)
+    assert results["result"]["batch_status"] == "model_unverified"
+    assert results["result"]["attempt_count"] == 1
+    assert results["result"]["retained_session_count"] == 0
+    assert results["result"]["unavailable_semantics"]["go_no_go"] == "prohibited"
+    for family in results["result"]["family_results"]:
+        assert family["status"] == "model_unverified"
+        assert family["positive_frames"] is None
+        assert family["median_frame_burden_points"] is None
+        assert family["bootstrap_median_ci_95"] is None
+    report = render_report(
+        protocol=protocol,
+        results=results,
+        results_file_sha256="1" * 64,
+    )
+    assert "no fixed-model comparison" in report
+    assert "no trial was attempted" not in report
+    assert "## Attempt ledger" in report
+    assert "| 1 | 1 | read-01 | read | completed | True | False |" in report
+    assert "model_identity_unavailable" in report
+    assert "fixed_model_identity" in report
+
+
+def test_v2_attempt_ledger_rejects_fact_drift_and_invalid_replacement() -> None:
+    protocol = _protocol_v2()
+    with pytest.raises(RepresentativeRetrialError, match="fingerprint changed"):
+        validate_attempt_ledger([_attempt_entry(protocol, facts_after="c" * 64)], protocol)
+
+    invalid_replacement = _attempt_entry(
+        protocol,
+        attempt_index=1,
+        replacement_for_attempt_index=1,
+    )
+    with pytest.raises(RepresentativeRetrialError, match="replacement must point"):
+        validate_attempt_ledger([invalid_replacement], protocol)
 
 
 def test_complete_schedule_aggregates_only_operation_level_go() -> None:

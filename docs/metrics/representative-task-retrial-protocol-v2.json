@@ -1,0 +1,886 @@
+{
+  "schema_version": "ldvh-representative-task-retrial-protocol/2",
+  "protocol_id": "representative-helper-task-retrial-v2-product-bound-model-unverified",
+  "frozen_at": "2026-08-16T15:35:00Z",
+  "design": {
+    "design_kind": "single-arm-gold-legal-trace",
+    "claim_boundary": "本协议允许在产品名称可得而模型名称不可得时执行有界、可审计的描述性 attempts；所有此类证据均为 product-bound/model-unverified，不得形成 fixed-model 可比性、operation residual、统计区间、go/no-go、因果/业务收益或 Helper 整体质量结论。",
+    "representativeness_boundary": "18 个任务框覆盖当前公开操作的三类实际使用形状，但不是从未知任务总体随机抽样；结论不得外推到未覆盖任务。",
+    "families": [
+      "read",
+      "ordinary_fact_update",
+      "workcase_non_item_update"
+    ],
+    "frames_per_family": 6,
+    "replicates_per_frame": 2,
+    "planned_retained_sessions": 36,
+    "maximum_technical_replacements": 6,
+    "maximum_attempts": 42,
+    "counterbalance": "replicate 1 按 read→ordinary→workcase 交错正序；replicate 2 按 workcase→ordinary→read 交错反序。",
+    "scoring_blindness": "runner 只收到 task_prompt 与 fixture；scorer 先以 blind_task_key 锁定指标和 frame 方向，再揭示 family/operation 映射。"
+  },
+  "source_binding": {
+    "git_head": "586ae8e601a141cf82fd2c7ee71a2eb4c59e9f78",
+    "helper_capabilities_sha256": "2827e0af62586dc9ebe99dc64d858c597915183f4273956c4bbb96232cd954fb",
+    "target_spark_object_uid": "019ffb52-ebb5-74ea-a2f9-9f309e85d013",
+    "target_spark_content_fingerprint": "dfe17e9794756bd79aa10f4216a9bb60cd2e7f53cc6742f52c1908457c1795a1",
+    "workcase_object_uid": "01a00a74-d556-7ef5-a2d9-f2a2675f2f6a",
+    "source_view": "current-working-tree-at-freeze"
+  },
+  "runner_binding": {
+    "entrypoint": "Cindy collaboration spawn_agent with inherited configuration",
+    "controller_declared_product_name": "Cindy",
+    "controller_declared_model_name": null,
+    "controller_declared_agent_runtime_name": "codex",
+    "identity_availability_stop_rule": "stop only when controller_declared_product_name and controller_declared_model_name are both null",
+    "model_identity_source": "harness-request-header",
+    "model_unavailable_policy": "allow product_bound descriptive attempts; prohibit fixed_model scoring and all go/no-go",
+    "fixed_fields_model_bound": [
+      "entrypoint",
+      "runner_identity",
+      "tool_entry",
+      "provider",
+      "model",
+      "permission_profile",
+      "prompt_layout"
+    ],
+    "fixed_fields_product_bound": [
+      "product_name",
+      "entrypoint",
+      "runner_identity",
+      "tool_entry",
+      "permission_profile",
+      "prompt_layout"
+    ]
+  },
+  "task_frames": [
+    {
+      "task_id": "read-01",
+      "family": "read",
+      "operation_under_test": "find-fact-object-candidates",
+      "task_prompt": "在隔离任务包中按标题片段找到唯一 open Spark，并返回稳定引用。",
+      "fixture_kind": "read-only-current-snapshot",
+      "source_selection": "一个已知唯一标题片段和完整候选集合",
+      "gold_legal_trace": [
+        {
+          "operation": "find-fact-object-candidates",
+          "purpose": "以 F2 text_match 定位唯一候选",
+          "state_changing": false
+        }
+      ],
+      "gold_assertions": [
+        "首次目标请求合法",
+        "返回唯一稳定 fact_ref",
+        "不读取候选正文以外的原始内容"
+      ],
+      "replicates": 2
+    },
+    {
+      "task_id": "read-02",
+      "family": "read",
+      "operation_under_test": "read-fact-objects",
+      "task_prompt": "用给定 object_uid 精确读取当前事实对象并返回 content_fingerprint。",
+      "fixture_kind": "read-only-current-snapshot",
+      "source_selection": "一个机械有效的 UID-native Spark 引用",
+      "gold_legal_trace": [
+        {
+          "operation": "read-fact-objects",
+          "purpose": "按 object_uid 精确回读完整对象",
+          "state_changing": false
+        }
+      ],
+      "gold_assertions": [
+        "首次目标请求合法",
+        "返回完整当前对象与非空 content_fingerprint"
+      ],
+      "replicates": 2
+    },
+    {
+      "task_id": "read-03",
+      "family": "read",
+      "operation_under_test": "read-specification-content",
+      "task_prompt": "精确读取指定规范 H2/H3 的 L3 内容，并披露未证明范围。",
+      "fixture_kind": "read-only-current-snapshot",
+      "source_selection": "一个当前 active responsibility_key 与唯一 heading_path",
+      "gold_legal_trace": [
+        {
+          "operation": "read-specification-content",
+          "purpose": "以 responsibility_key、heading_path、L3 精确读取",
+          "state_changing": false
+        }
+      ],
+      "gold_assertions": [
+        "首次目标请求合法",
+        "scope.not_completed 为空",
+        "不把 qualification gap 隐藏为已证明"
+      ],
+      "replicates": 2
+    },
+    {
+      "task_id": "read-04",
+      "family": "read",
+      "operation_under_test": "read-action-template-content",
+      "task_prompt": "按稳定 template_key 读取一个行动模板定义与 Stop Conditions。",
+      "fixture_kind": "read-only-current-snapshot",
+      "source_selection": "一个当前 action template key",
+      "gold_legal_trace": [
+        {
+          "operation": "read-action-template-content",
+          "purpose": "按 template_key 精确读取模板",
+          "state_changing": false
+        }
+      ],
+      "gold_assertions": [
+        "首次目标请求合法",
+        "返回唯一模板及来源范围"
+      ],
+      "replicates": 2
+    },
+    {
+      "task_id": "read-05",
+      "family": "read",
+      "operation_under_test": "capabilities",
+      "task_prompt": "获取指定 Helper operation 的 source-bound 请求骨架。",
+      "fixture_kind": "read-only-current-snapshot",
+      "source_selection": "一个当前公开 operation_key",
+      "gold_legal_trace": [
+        {
+          "operation": "capabilities",
+          "purpose": "读取 operation 的 request example",
+          "state_changing": false
+        }
+      ],
+      "gold_assertions": [
+        "首次目标请求合法",
+        "不把 example 当作授权或可执行证明"
+      ],
+      "replicates": 2
+    },
+    {
+      "task_id": "read-06",
+      "family": "read",
+      "operation_under_test": "check-workcase-handoff",
+      "task_prompt": "对给定 WorkCase 当前快照形成只读 handoff 判定。",
+      "fixture_kind": "read-only-current-snapshot",
+      "source_selection": "一个机械有效活动 WorkCase 与精确指纹",
+      "gold_legal_trace": [
+        {
+          "operation": "check-workcase-handoff",
+          "purpose": "形成 current snapshot projection 与 handoff 判定",
+          "state_changing": false
+        }
+      ],
+      "gold_assertions": [
+        "首次目标请求合法",
+        "不写 WorkCase、不推进 phase、不选择 item"
+      ],
+      "replicates": 2
+    },
+    {
+      "task_id": "fact-update-01",
+      "family": "ordinary_fact_update",
+      "operation_under_test": "update-fact-object",
+      "task_prompt": "更新隔离 Spark 的当前摘要，status 保持 open。",
+      "fixture_kind": "isolated-governed-fixture",
+      "source_selection": "新建临时根中一个机械有效 spark fixture；不引用当前 Working Tree 事实",
+      "gold_legal_trace": [
+        {
+          "operation": "prepare-fact-object-update",
+          "purpose": "只读取得当前完整 before、指纹和目标 operation",
+          "state_changing": false
+        },
+        {
+          "operation": "update-fact-object",
+          "purpose": "提交完整非托管 after 与新鲜三字段签名",
+          "state_changing": true
+        },
+        {
+          "operation": "read-fact-objects",
+          "purpose": "公开精确回读 fixture after 与 content_fingerprint",
+          "state_changing": false
+        }
+      ],
+      "gold_assertions": [
+        "全部写入只发生在本次隔离 fixture",
+        "change_log 恰追加一条且签名三键完整",
+        "当前 Working Tree 事实字节不变",
+        "写后完整回读成立"
+      ],
+      "replicates": 2
+    },
+    {
+      "task_id": "fact-update-02",
+      "family": "ordinary_fact_update",
+      "operation_under_test": "update-fact-object",
+      "task_prompt": "更新隔离 Spark 的 priority，status 保持 open。",
+      "fixture_kind": "isolated-governed-fixture",
+      "source_selection": "新建临时根中一个机械有效 spark fixture；不引用当前 Working Tree 事实",
+      "gold_legal_trace": [
+        {
+          "operation": "prepare-fact-object-update",
+          "purpose": "只读取得当前完整 before、指纹和目标 operation",
+          "state_changing": false
+        },
+        {
+          "operation": "update-fact-object",
+          "purpose": "提交完整非托管 after 与新鲜三字段签名",
+          "state_changing": true
+        },
+        {
+          "operation": "read-fact-objects",
+          "purpose": "公开精确回读 fixture after 与 content_fingerprint",
+          "state_changing": false
+        }
+      ],
+      "gold_assertions": [
+        "全部写入只发生在本次隔离 fixture",
+        "change_log 恰追加一条且签名三键完整",
+        "当前 Working Tree 事实字节不变",
+        "写后完整回读成立"
+      ],
+      "replicates": 2
+    },
+    {
+      "task_id": "fact-update-03",
+      "family": "ordinary_fact_update",
+      "operation_under_test": "update-fact-object",
+      "task_prompt": "更正隔离 active ADR 的 scope 摘要且身份不变。",
+      "fixture_kind": "isolated-governed-fixture",
+      "source_selection": "新建临时根中一个机械有效 adr fixture；不引用当前 Working Tree 事实",
+      "gold_legal_trace": [
+        {
+          "operation": "prepare-fact-object-update",
+          "purpose": "只读取得当前完整 before、指纹和目标 operation",
+          "state_changing": false
+        },
+        {
+          "operation": "update-fact-object",
+          "purpose": "提交完整非托管 after 与新鲜三字段签名",
+          "state_changing": true
+        },
+        {
+          "operation": "read-fact-objects",
+          "purpose": "公开精确回读 fixture after 与 content_fingerprint",
+          "state_changing": false
+        }
+      ],
+      "gold_assertions": [
+        "全部写入只发生在本次隔离 fixture",
+        "change_log 恰追加一条且签名三键完整",
+        "当前 Working Tree 事实字节不变",
+        "写后完整回读成立"
+      ],
+      "replicates": 2
+    },
+    {
+      "task_id": "fact-update-04",
+      "family": "ordinary_fact_update",
+      "operation_under_test": "update-fact-object",
+      "task_prompt": "补充隔离 draft Pitfall 的可复现证据且保持 draft。",
+      "fixture_kind": "isolated-governed-fixture",
+      "source_selection": "新建临时根中一个机械有效 pitfall fixture；不引用当前 Working Tree 事实",
+      "gold_legal_trace": [
+        {
+          "operation": "prepare-fact-object-update",
+          "purpose": "只读取得当前完整 before、指纹和目标 operation",
+          "state_changing": false
+        },
+        {
+          "operation": "update-fact-object",
+          "purpose": "提交完整非托管 after 与新鲜三字段签名",
+          "state_changing": true
+        },
+        {
+          "operation": "read-fact-objects",
+          "purpose": "公开精确回读 fixture after 与 content_fingerprint",
+          "state_changing": false
+        }
+      ],
+      "gold_assertions": [
+        "全部写入只发生在本次隔离 fixture",
+        "change_log 恰追加一条且签名三键完整",
+        "当前 Working Tree 事实字节不变",
+        "写后完整回读成立"
+      ],
+      "replicates": 2
+    },
+    {
+      "task_id": "fact-update-05",
+      "family": "ordinary_fact_update",
+      "operation_under_test": "update-fact-object",
+      "task_prompt": "更新隔离 active Study 的结果摘要且保持 active。",
+      "fixture_kind": "isolated-governed-fixture",
+      "source_selection": "新建临时根中一个机械有效 study fixture；不引用当前 Working Tree 事实",
+      "gold_legal_trace": [
+        {
+          "operation": "prepare-fact-object-update",
+          "purpose": "只读取得当前完整 before、指纹和目标 operation",
+          "state_changing": false
+        },
+        {
+          "operation": "update-fact-object",
+          "purpose": "提交完整非托管 after 与新鲜三字段签名",
+          "state_changing": true
+        },
+        {
+          "operation": "read-fact-objects",
+          "purpose": "公开精确回读 fixture after 与 content_fingerprint",
+          "state_changing": false
+        }
+      ],
+      "gold_assertions": [
+        "全部写入只发生在本次隔离 fixture",
+        "change_log 恰追加一条且签名三键完整",
+        "当前 Working Tree 事实字节不变",
+        "写后完整回读成立"
+      ],
+      "replicates": 2
+    },
+    {
+      "task_id": "fact-update-06",
+      "family": "ordinary_fact_update",
+      "operation_under_test": "update-fact-object",
+      "task_prompt": "为隔离 open Spark 增加一个合法 related-to 关系且不改目标对象。",
+      "fixture_kind": "isolated-governed-fixture",
+      "source_selection": "新建临时根中一个机械有效 spark fixture；不引用当前 Working Tree 事实",
+      "gold_legal_trace": [
+        {
+          "operation": "prepare-fact-object-update",
+          "purpose": "只读取得当前完整 before、指纹和目标 operation",
+          "state_changing": false
+        },
+        {
+          "operation": "update-fact-object",
+          "purpose": "提交完整非托管 after 与新鲜三字段签名",
+          "state_changing": true
+        },
+        {
+          "operation": "read-fact-objects",
+          "purpose": "公开精确回读 fixture after 与 content_fingerprint",
+          "state_changing": false
+        }
+      ],
+      "gold_assertions": [
+        "全部写入只发生在本次隔离 fixture",
+        "change_log 恰追加一条且签名三键完整",
+        "当前 Working Tree 事实字节不变",
+        "写后完整回读成立"
+      ],
+      "replicates": 2
+    },
+    {
+      "task_id": "workcase-update-01",
+      "family": "workcase_non_item_update",
+      "operation_under_test": "update-workcase",
+      "task_prompt": "记录隔离 WorkCase 的 Gate 1 批准并进入 executing。",
+      "fixture_kind": "isolated-governed-fixture",
+      "source_selection": "新建临时根中一个满足 human_plan_confirming 前置条件的机械有效 WorkCase fixture",
+      "gold_legal_trace": [
+        {
+          "operation": "prepare-fact-object-update",
+          "purpose": "只读取得完整 WorkCase before、CAS 指纹与 update-workcase 路由",
+          "state_changing": false
+        },
+        {
+          "operation": "update-workcase",
+          "purpose": "提交排除托管字段的完整 non-item after",
+          "state_changing": true
+        },
+        {
+          "operation": "read-fact-objects",
+          "purpose": "公开精确回读 fixture after 与 content_fingerprint",
+          "state_changing": false
+        }
+      ],
+      "gold_assertions": [
+        "不使用 item_event",
+        "phase 只按来源允许边变化",
+        "Human/Reviewer 来源按实际条件出现",
+        "当前 Working Tree 事实字节不变",
+        "fixture after phase 为 executing"
+      ],
+      "replicates": 2
+    },
+    {
+      "task_id": "workcase-update-02",
+      "family": "workcase_non_item_update",
+      "operation_under_test": "update-workcase",
+      "task_prompt": "把隔离 executing WorkCase 标记为 blocked 并记录解除条件。",
+      "fixture_kind": "isolated-governed-fixture",
+      "source_selection": "新建临时根中一个满足 executing 前置条件的机械有效 WorkCase fixture",
+      "gold_legal_trace": [
+        {
+          "operation": "prepare-fact-object-update",
+          "purpose": "只读取得完整 WorkCase before、CAS 指纹与 update-workcase 路由",
+          "state_changing": false
+        },
+        {
+          "operation": "update-workcase",
+          "purpose": "提交排除托管字段的完整 non-item after",
+          "state_changing": true
+        },
+        {
+          "operation": "read-fact-objects",
+          "purpose": "公开精确回读 fixture after 与 content_fingerprint",
+          "state_changing": false
+        }
+      ],
+      "gold_assertions": [
+        "不使用 item_event",
+        "phase 只按来源允许边变化",
+        "Human/Reviewer 来源按实际条件出现",
+        "当前 Working Tree 事实字节不变",
+        "fixture after phase 为 executing"
+      ],
+      "replicates": 2
+    },
+    {
+      "task_id": "workcase-update-03",
+      "family": "workcase_non_item_update",
+      "operation_under_test": "update-workcase",
+      "task_prompt": "解除隔离 blocked WorkCase 的阻塞并恢复 open/executing。",
+      "fixture_kind": "isolated-governed-fixture",
+      "source_selection": "新建临时根中一个满足 executing 前置条件的机械有效 WorkCase fixture",
+      "gold_legal_trace": [
+        {
+          "operation": "prepare-fact-object-update",
+          "purpose": "只读取得完整 WorkCase before、CAS 指纹与 update-workcase 路由",
+          "state_changing": false
+        },
+        {
+          "operation": "update-workcase",
+          "purpose": "提交排除托管字段的完整 non-item after",
+          "state_changing": true
+        },
+        {
+          "operation": "read-fact-objects",
+          "purpose": "公开精确回读 fixture after 与 content_fingerprint",
+          "state_changing": false
+        }
+      ],
+      "gold_assertions": [
+        "不使用 item_event",
+        "phase 只按来源允许边变化",
+        "Human/Reviewer 来源按实际条件出现",
+        "当前 Working Tree 事实字节不变",
+        "fixture after phase 为 executing"
+      ],
+      "replicates": 2
+    },
+    {
+      "task_id": "workcase-update-04",
+      "family": "workcase_non_item_update",
+      "operation_under_test": "update-workcase",
+      "task_prompt": "在全部 items terminal 后把隔离 WorkCase 推进到 controller_checking。",
+      "fixture_kind": "isolated-governed-fixture",
+      "source_selection": "新建临时根中一个满足 executing 前置条件的机械有效 WorkCase fixture",
+      "gold_legal_trace": [
+        {
+          "operation": "prepare-fact-object-update",
+          "purpose": "只读取得完整 WorkCase before、CAS 指纹与 update-workcase 路由",
+          "state_changing": false
+        },
+        {
+          "operation": "update-workcase",
+          "purpose": "提交排除托管字段的完整 non-item after",
+          "state_changing": true
+        },
+        {
+          "operation": "read-fact-objects",
+          "purpose": "公开精确回读 fixture after 与 content_fingerprint",
+          "state_changing": false
+        }
+      ],
+      "gold_assertions": [
+        "不使用 item_event",
+        "phase 只按来源允许边变化",
+        "Human/Reviewer 来源按实际条件出现",
+        "当前 Working Tree 事实字节不变",
+        "fixture after phase 为 controller_checking"
+      ],
+      "replicates": 2
+    },
+    {
+      "task_id": "workcase-update-05",
+      "family": "workcase_non_item_update",
+      "operation_under_test": "update-workcase",
+      "task_prompt": "在隔离 WorkCase controller_checking 形成完整 canonical result projection。",
+      "fixture_kind": "isolated-governed-fixture",
+      "source_selection": "新建临时根中一个满足 controller_checking 前置条件的机械有效 WorkCase fixture",
+      "gold_legal_trace": [
+        {
+          "operation": "prepare-fact-object-update",
+          "purpose": "只读取得完整 WorkCase before、CAS 指纹与 update-workcase 路由",
+          "state_changing": false
+        },
+        {
+          "operation": "update-workcase",
+          "purpose": "提交排除托管字段的完整 non-item after",
+          "state_changing": true
+        },
+        {
+          "operation": "read-fact-objects",
+          "purpose": "公开精确回读 fixture after 与 content_fingerprint",
+          "state_changing": false
+        }
+      ],
+      "gold_assertions": [
+        "不使用 item_event",
+        "phase 只按来源允许边变化",
+        "Human/Reviewer 来源按实际条件出现",
+        "当前 Working Tree 事实字节不变",
+        "fixture after phase 为 controller_checking"
+      ],
+      "replicates": 2
+    },
+    {
+      "task_id": "workcase-update-06",
+      "family": "workcase_non_item_update",
+      "operation_under_test": "update-workcase",
+      "task_prompt": "记录隔离 WorkCase 当前 result_version 的只读复核并进入 closure_preparing。",
+      "fixture_kind": "isolated-governed-fixture",
+      "source_selection": "新建临时根中一个满足 independent_reviewing 前置条件的机械有效 WorkCase fixture",
+      "gold_legal_trace": [
+        {
+          "operation": "prepare-fact-object-update",
+          "purpose": "只读取得完整 WorkCase before、CAS 指纹与 update-workcase 路由",
+          "state_changing": false
+        },
+        {
+          "operation": "update-workcase",
+          "purpose": "提交排除托管字段的完整 non-item after",
+          "state_changing": true
+        },
+        {
+          "operation": "read-fact-objects",
+          "purpose": "公开精确回读 fixture after 与 content_fingerprint",
+          "state_changing": false
+        }
+      ],
+      "gold_assertions": [
+        "不使用 item_event",
+        "phase 只按来源允许边变化",
+        "Human/Reviewer 来源按实际条件出现",
+        "当前 Working Tree 事实字节不变",
+        "fixture after phase 为 closure_preparing"
+      ],
+      "replicates": 2
+    }
+  ],
+  "schedule": [
+    {
+      "session_slot": 1,
+      "task_id": "read-01",
+      "replicate": 1,
+      "blind_task_key": "blind-01"
+    },
+    {
+      "session_slot": 2,
+      "task_id": "fact-update-01",
+      "replicate": 1,
+      "blind_task_key": "blind-02"
+    },
+    {
+      "session_slot": 3,
+      "task_id": "workcase-update-01",
+      "replicate": 1,
+      "blind_task_key": "blind-03"
+    },
+    {
+      "session_slot": 4,
+      "task_id": "read-02",
+      "replicate": 1,
+      "blind_task_key": "blind-04"
+    },
+    {
+      "session_slot": 5,
+      "task_id": "fact-update-02",
+      "replicate": 1,
+      "blind_task_key": "blind-05"
+    },
+    {
+      "session_slot": 6,
+      "task_id": "workcase-update-02",
+      "replicate": 1,
+      "blind_task_key": "blind-06"
+    },
+    {
+      "session_slot": 7,
+      "task_id": "read-03",
+      "replicate": 1,
+      "blind_task_key": "blind-07"
+    },
+    {
+      "session_slot": 8,
+      "task_id": "fact-update-03",
+      "replicate": 1,
+      "blind_task_key": "blind-08"
+    },
+    {
+      "session_slot": 9,
+      "task_id": "workcase-update-03",
+      "replicate": 1,
+      "blind_task_key": "blind-09"
+    },
+    {
+      "session_slot": 10,
+      "task_id": "read-04",
+      "replicate": 1,
+      "blind_task_key": "blind-10"
+    },
+    {
+      "session_slot": 11,
+      "task_id": "fact-update-04",
+      "replicate": 1,
+      "blind_task_key": "blind-11"
+    },
+    {
+      "session_slot": 12,
+      "task_id": "workcase-update-04",
+      "replicate": 1,
+      "blind_task_key": "blind-12"
+    },
+    {
+      "session_slot": 13,
+      "task_id": "read-05",
+      "replicate": 1,
+      "blind_task_key": "blind-13"
+    },
+    {
+      "session_slot": 14,
+      "task_id": "fact-update-05",
+      "replicate": 1,
+      "blind_task_key": "blind-14"
+    },
+    {
+      "session_slot": 15,
+      "task_id": "workcase-update-05",
+      "replicate": 1,
+      "blind_task_key": "blind-15"
+    },
+    {
+      "session_slot": 16,
+      "task_id": "read-06",
+      "replicate": 1,
+      "blind_task_key": "blind-16"
+    },
+    {
+      "session_slot": 17,
+      "task_id": "fact-update-06",
+      "replicate": 1,
+      "blind_task_key": "blind-17"
+    },
+    {
+      "session_slot": 18,
+      "task_id": "workcase-update-06",
+      "replicate": 1,
+      "blind_task_key": "blind-18"
+    },
+    {
+      "session_slot": 19,
+      "task_id": "workcase-update-06",
+      "replicate": 2,
+      "blind_task_key": "blind-19"
+    },
+    {
+      "session_slot": 20,
+      "task_id": "fact-update-06",
+      "replicate": 2,
+      "blind_task_key": "blind-20"
+    },
+    {
+      "session_slot": 21,
+      "task_id": "read-06",
+      "replicate": 2,
+      "blind_task_key": "blind-21"
+    },
+    {
+      "session_slot": 22,
+      "task_id": "workcase-update-05",
+      "replicate": 2,
+      "blind_task_key": "blind-22"
+    },
+    {
+      "session_slot": 23,
+      "task_id": "fact-update-05",
+      "replicate": 2,
+      "blind_task_key": "blind-23"
+    },
+    {
+      "session_slot": 24,
+      "task_id": "read-05",
+      "replicate": 2,
+      "blind_task_key": "blind-24"
+    },
+    {
+      "session_slot": 25,
+      "task_id": "workcase-update-04",
+      "replicate": 2,
+      "blind_task_key": "blind-25"
+    },
+    {
+      "session_slot": 26,
+      "task_id": "fact-update-04",
+      "replicate": 2,
+      "blind_task_key": "blind-26"
+    },
+    {
+      "session_slot": 27,
+      "task_id": "read-04",
+      "replicate": 2,
+      "blind_task_key": "blind-27"
+    },
+    {
+      "session_slot": 28,
+      "task_id": "workcase-update-03",
+      "replicate": 2,
+      "blind_task_key": "blind-28"
+    },
+    {
+      "session_slot": 29,
+      "task_id": "fact-update-03",
+      "replicate": 2,
+      "blind_task_key": "blind-29"
+    },
+    {
+      "session_slot": 30,
+      "task_id": "read-03",
+      "replicate": 2,
+      "blind_task_key": "blind-30"
+    },
+    {
+      "session_slot": 31,
+      "task_id": "workcase-update-02",
+      "replicate": 2,
+      "blind_task_key": "blind-31"
+    },
+    {
+      "session_slot": 32,
+      "task_id": "fact-update-02",
+      "replicate": 2,
+      "blind_task_key": "blind-32"
+    },
+    {
+      "session_slot": 33,
+      "task_id": "read-02",
+      "replicate": 2,
+      "blind_task_key": "blind-33"
+    },
+    {
+      "session_slot": 34,
+      "task_id": "workcase-update-01",
+      "replicate": 2,
+      "blind_task_key": "blind-34"
+    },
+    {
+      "session_slot": 35,
+      "task_id": "fact-update-01",
+      "replicate": 2,
+      "blind_task_key": "blind-35"
+    },
+    {
+      "session_slot": 36,
+      "task_id": "read-01",
+      "replicate": 2,
+      "blind_task_key": "blind-36"
+    }
+  ],
+  "measurements": {
+    "required_per_session": [
+      "helper_call_count",
+      "helper_request_chars",
+      "helper_request_bytes",
+      "helper_response_bytes",
+      "invalid_request_count",
+      "first_legal_action",
+      "extra_rule_reads",
+      "repair_count",
+      "fallback_count",
+      "duration_ms",
+      "cache_observation"
+    ],
+    "nullable_with_reason": [
+      "duration_ms",
+      "cache_observation"
+    ],
+    "never_coerce_unavailable_to_zero": true,
+    "event_source_boundary": [
+      "ldvh-prepared",
+      "harness-delivered",
+      "behavior-consistent"
+    ],
+    "unavailable_sources": [
+      "host-received",
+      "causal-effect"
+    ]
+  },
+  "thresholds": {
+    "burden_points_formula": {
+      "invalid_request_count": 4.0,
+      "repair_or_fallback_count": 3.0,
+      "extra_helper_calls": 2.0,
+      "extra_rule_reads": 1.0,
+      "extra_request_chars_per_500_capped_at_2": 1.0,
+      "extra_duration_ms_per_2000_capped_at_2": 1.0
+    },
+    "frame_positive_rule": "同一 frame 的两次 retained session burden_points 均 >= 2.0。",
+    "family_completeness_rule": "必须 6/6 frames 且每 frame 两次均 retained/comparable；缺任一记录则该 family=not_comparable。",
+    "stable_direction_rule": "完整 family 至少 5/6 frames 满足 frame_positive_rule。",
+    "practical_threshold_rule": "完整 family 的六个 frame 平均 burden_points 中位数 >= 2.0。",
+    "interval_rule": "按 task frame 重采样的预注册 10000 次 percentile bootstrap 95% CI 下界 > 0；seed=20260816。",
+    "go_rule": "仅当 family 完整、stable_direction、practical_threshold 与 interval_rule 全部满足，且所有关键成本指标可得时，operation 级 go-to-narrow-design-WC 才成立；它只表示存在值得单独设计验证的可移除任务负担代理。",
+    "no_go_rule": "完整可比但任一 go 条件不满足时为 no-go。",
+    "not_comparable_rule": "runner/model/entry/permission/fixture 身份、事件配对、frame 完整性或关键指标任一不成立时为 not-comparable，不评分不可比 session。"
+  },
+  "exclusions": {
+    "closed_reason_codes": [
+      "runner_model_identity_unavailable",
+      "runner_identity_drift",
+      "entrypoint_drift",
+      "permission_profile_drift",
+      "prompt_layout_drift",
+      "fixture_identity_drift",
+      "event_graph_pairing_incomplete",
+      "out_of_protocol_identity",
+      "missing_key_metric",
+      "technical_failure_before_target",
+      "privacy_boundary_violation",
+      "model_identity_unavailable",
+      "session_trace_unavailable",
+      "isolated_fixture_unavailable"
+    ],
+    "replacement_allowed_only_for": [
+      "technical_failure_before_target"
+    ],
+    "maximum_replacements": 6,
+    "exclusion_ledger_required": true
+  },
+  "privacy": {
+    "retained_fields": "任务/协议/runner/fixture hash、产品名、identity_scope、identity_disclosures、attempt 状态、结构回执 hash、当前事实前后指纹、operation 名、排除原因和聚合计数；不保留原始响应正文。",
+    "forbidden_fields": [
+      "raw user prompt beyond frozen synthetic fixture",
+      "assistant prose",
+      "reasoning content",
+      "raw tool result content",
+      "unredacted fact body",
+      "unrelated filesystem content"
+    ],
+    "transcript_handling": "原始 trial 内容只允许存在于身份绑定的本次临时根；版本控制工件只保留 hashes 与脱敏结构指标。"
+  },
+  "stopping_rules": [
+    "仅 controller_declared_product_name 与 controller_declared_model_name 同时为 null 时，因试验身份不可得在 attempt 1 前停止。",
+    "产品名可得而模型名不可得时允许 product-bound/model-unverified attempts，但固定模型评分、区间、operation residual 与 go/no-go 全部禁止。",
+    "隔离临时根身份、realpath 或当前事实零写入证明不成立时，在首个状态变化目标前中止受影响 attempt 并记录 isolated_fixture_unavailable。",
+    "runner receipt 或结构 session trace 不可审计时，不伪造 retained session；记录 session_trace_unavailable。",
+    "runner、entrypoint、permission 或 prompt layout 漂移时停止受影响 attempt；不可比记录不评分。",
+    "技术替换达到 6 次或总尝试达到 42 次即停止，不扩样本、不改口径。",
+    "发现协议 hash、gold、排除、隐私或证据口径在首个 attempt 后变化时，全批失效并停止。"
+  ],
+  "reproduction": {
+    "protocol_hash_algorithm": "sha256(canonical-json-full-protocol)",
+    "canonical_json": "UTF-8, object keys sorted, arrays preserved unless protocol explicitly defines sorting, separators without insignificant whitespace",
+    "bootstrap_seed": 20260816,
+    "expected_module": "ldvh.testing.representative_task_retrial",
+    "expected_test": "code/tests/testing/test_representative_task_retrial.py"
+  }
+}
