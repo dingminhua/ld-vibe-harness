@@ -8,7 +8,7 @@ success_criterion_definitions:
   statement: 05 §11.6.1 / §11.7 与 05.Att.01 的契约文本与实现一致：change_log 的 at 与 signature 由 Code 生成/覆盖，调用方无需手填；写入口机械校验与契约测试通过，写后精确回读 + check-fact-integrity complete。
 - criterion_id: criterion-success-signal
   statement: create-fact-object 与 update-fact-object 的成功结果按各自操作当前形状稳定返回机器可判定的显式写入成功信号（身份、指纹、created/updated 状态与回读 locator 的逐操作字段闭集）；契约文本与实现一致，写后精确回读 + check-fact-integrity complete。
-phase: controller_checking
+phase: human_closure_confirming
 plan_version: 1
 work_items:
 - item_id: item-ritual-audit
@@ -167,6 +167,30 @@ change_log:
     agent_runtime_name:
   at: '2026-08-16T21:55:04.598778Z'
   summary: controller_checking 修正结果投影：result_version→2、validation_summary 据实重写、清除旧 result_reviews。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+  at: '2026-08-16T21:55:57.644940Z'
+  summary: controller_checking→independent_reviewing，重新复核 result_version=2。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+  at: '2026-08-16T21:58:03.882386Z'
+  summary: 第二轮结果复核 pass：4 条反馈已全部同步修正，实现与 spec §11.6.1/§11.4 一致。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+  at: '2026-08-16T21:58:34.633483Z'
+  summary: independent_reviewing→closure_preparing，形成关闭提案（proposed_outcome=completed，无剩余责任）。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+  at: '2026-08-16T21:59:00.465082Z'
+  summary: closure_preparing→human_closure_confirming，等待 Human Gate 2 关闭决定。
 execution_approval:
   subject_version: 1
   approved_at: '2026-08-16T21:28:53Z'
@@ -185,8 +209,19 @@ success_criterion_results:
 result_summary: Helper 受控写入契约的两个摩擦已消除且实现与契约一致：① change_log 的 at 与 signature 由 Code 托管（specs/05 §11.6.1 fields=[summary]；fact_update_prepare_operation.py _completion_requirements().fields=[summary]；fact_update_operation.py 输入示例追加条目仅 summary）；② create-fact-object 成功结果显式返回 created=true 与 content_fingerprint（specs/05 §11.4 + fact_creation_operation.py + 契约测试断言同步）。update-fact-object 已返回 content_fingerprint 且 changes.status=updated。
 controller_check_summary: Controller 自检：首轮结果复核返回 changes_required（prepare 实现未同步、验证属定向子集），4 条反馈全部采纳并已处置——修正 fact_update_prepare_operation.py 的 fields、修正 fact_update_operation.py 输入示例、修正 test_fact_creation_operation.py 两处严格断言、修正 test_service.py 示例断言。相关测试 25 通过；helper 套件剩余失败均为环境性子进程测试（worktree 无本地 .venv）。check-fact-integrity complete。
 validation_summary: 验证：pytest code/tests/helper 运行 535 passed / 54 failed / 5 skipped；54 失败中 53 为环境性子进程测试（worktree 无本地 .venv 致 HELPER_EXECUTABLE=./ldvh 启动失败，非本次改动引入），1 为 test_service 输入示例断言（因 §11.6.1 fields 契约变更需同步，已修正并复跑通过）。本次改动直接相关的单元/契约测试全绿；create 冒烟测试确认 created=true 与 content_fingerprint；check-fact-integrity complete（276 对象 0 问题）。
+result_reviews:
+- reviewer: read-only-subagent
+  reviewed_at: '2026-08-16T21:56:00Z'
+  subject_version: 2
+  scope: 复核 result_version=2 修正后投影：prepare fields、输入示例、两处测试断言是否已同步到 §11.6.1 fields=[summary] 与 §11.4 created/content_fingerprint。
+  conclusion: pass
+  actual_method: subagent-read-only
+closure_proposal:
+  proposed_outcome: completed
+  proposed_disposition_summary: 写交互去仪式与写入成功信号显式化的两个候选均已落实：① change_log 的 at 与 signature 由 Code 托管，spec 与实现（prepare fields=[summary]、输入示例、测试断言）一致；② create-fact-object 成功结果显式返回 created=true 与 content_fingerprint。锁释放不确定性降噪不在本范围，由写交互优化 Spark 继续追踪。无剩余责任。
+waiting_on: Human Gate 2：对完整关闭提案作关闭决定
 object_uid: 01a00c74-6cb9-701f-b861-409778892395
 object_id: workcase-01M0678V5SE0FVGRA0JXW8J8WN
 fact_type_key: workcase
 created_at: '2026-08-16T21:22:30.735749Z'
-updated_at: '2026-08-16T21:55:04.598778Z'
+updated_at: '2026-08-16T21:59:00.465082Z'
