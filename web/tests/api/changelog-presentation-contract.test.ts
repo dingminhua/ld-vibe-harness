@@ -99,7 +99,14 @@ test('breaking and push-state badges use one presentation in list and detail ide
   assert.match(list, /entry\.isBreaking && \(\s*<CommitBreakingBadge className="ml-1\.5" \/>/);
   assert.match(list, /getOptionColor=\{\(value\) => CATEGORY_COLORS\[value\] \|\| CATEGORY_COLORS\.other\}/);
   assert.match(list, /style=\{getOptionColor \? \{ color: getOptionColor\(option\) \} : undefined\}/);
+  assert.match(list, /className="ldvh-meta flex min-w-0 flex-wrap items-center gap-1 text-current"/);
+  assert.match(list, /style=\{\{ color: typeColor \}\}/);
   assert.match(panel, /entry\?\.isBreaking && \(\s*<CommitBreakingBadge \/>/);
+  assert.match(panel, /const commitColor = entry\?\.category/);
+  assert.match(panel, /const categoryMeta = headerMetaItems\.length > 0/);
+  assert.match(panel, /<span>\{headerMetaItems\[0\]\}<\/span>/);
+  assert.match(panel, /showTypeBadge=\{false\}/);
+  assert.match(panel, /showActivityCount=\{false\}/);
   assert.doesNotMatch(list, /entry\.isBreaking[\s\S]{0,200}>\s*!\s*</);
   assert.doesNotMatch(panel, /entry\?\.isBreaking[\s\S]{0,200}>\s*!\s*</);
   assert.match(locales, /'changelog\.breakingChange': '不兼容变更'/);

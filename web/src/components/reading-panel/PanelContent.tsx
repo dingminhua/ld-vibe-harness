@@ -418,7 +418,9 @@ function CommitIdentitySection({
   labels: CommitDetailLabels;
   locale: string;
 }) {
-  const commitColor = CATEGORY_COLORS.other;
+  const commitColor = entry?.category
+    ? (CATEGORY_COLORS[entry.category] || CATEGORY_COLORS.other)
+    : CATEGORY_COLORS.other;
   const commitValue = entry?.shortHash || parsed.commit || '—';
   const copyValue = entry?.hash || commitValue;
   const timeText = entry?.date ? formatDateTime(entry.date) : parsed.date || '—';
@@ -432,6 +434,17 @@ function CommitIdentitySection({
     entry?.category ? getCommitTypeLabel(entry.category, locale) : '',
     entry?.scope ? getCommitScopeLabel(entry.scope, locale) : '',
   ].filter(Boolean);
+  const categoryMeta = headerMetaItems.length > 0 ? (
+    <span className="ldvh-meta inline-flex min-w-0 items-center gap-1 text-current" style={{ color: commitColor }}>
+      <span>{headerMetaItems[0]}</span>
+      {headerMetaItems[1] && (
+        <>
+          <span aria-hidden="true">·</span>
+          <span>{headerMetaItems[1]}</span>
+        </>
+      )}
+    </span>
+  ) : null;
 
   return (
     <ObjectIdentityHeader
@@ -445,12 +458,15 @@ function CommitIdentitySection({
       locale={locale}
       updated=""
       showDefaultDates={false}
+      showTypeBadge={false}
+      showActivityCount={false}
       titleMetaEntries={[{ label: labels.time, value: timeValue }]}
       titleMetaAlign="footerEnd"
       copyLabel={labels.copyHash}
       copiedLabel={labels.copiedHash}
       extraBadges={(
         <>
+          {categoryMeta}
           {entry?.isBreaking && (
             <CommitBreakingBadge />
           )}

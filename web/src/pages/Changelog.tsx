@@ -222,11 +222,14 @@ export default function Changelog() {
               onKeyDown={(event) => handleKeyboardOpen(event, () => openCommitPage(entry))}
             >
               <div className="flex min-w-0 items-center justify-between gap-2">
-                <div className="ldvh-meta-muted flex min-w-0 flex-wrap items-center gap-1.5">
+                <div
+                  className="ldvh-meta flex min-w-0 flex-wrap items-center gap-1 text-current"
+                  style={{ color: typeColor }}
+                >
                   <span>{getCommitTypeLabel(entry.category, locale)}</span>
                   {entry.scope && (
                     <>
-                      <span className="px-0.5" aria-hidden="true">·</span>
+                      <span className="px-0" aria-hidden="true">·</span>
                       <span>{getCommitScopeLabel(entry.scope, locale)}</span>
                     </>
                   )}
