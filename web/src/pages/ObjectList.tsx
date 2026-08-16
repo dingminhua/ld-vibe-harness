@@ -885,7 +885,7 @@ const CLOSURE_PROPOSAL_BODY_CLASS = 'text-amber-900/75 dark:text-amber-100/80';
 
 const PROPOSED_DISPOSITION_NOTICE_CLASS: Record<string, string> = {
   route_existing: 'border-emerald-400/25 border-l-emerald-400 bg-emerald-500/5',
-  suggest_spark: 'border-amber-400/25 border-l-amber-400 bg-amber-500/5',
+  suggest_spark: 'border-emerald-400/25 border-l-emerald-400 bg-emerald-500/5',
   accept_stop: 'border-cyan-400/25 border-l-cyan-400 bg-cyan-500/5',
 };
 
@@ -952,13 +952,13 @@ function WorkCaseOutcomeNotice({
 /** Plain text color for residual disposition labels (no chip frame). */
 const PROPOSED_DISPOSITION_TEXT_CLASS: Record<string, string> = {
   route_existing: 'text-emerald-700/85 dark:text-emerald-200/85',
-  suggest_spark: 'text-amber-700/85 dark:text-amber-200/85',
+  suggest_spark: 'text-emerald-700/85 dark:text-emerald-200/85',
   accept_stop: 'text-cyan-700/85 dark:text-cyan-200/85',
 };
 
 const PROPOSED_DISPOSITION_BODY_CLASS: Record<string, string> = {
   route_existing: 'text-emerald-950/70 dark:text-emerald-100/75',
-  suggest_spark: 'text-amber-950/70 dark:text-amber-100/75',
+  suggest_spark: 'text-emerald-950/70 dark:text-emerald-100/75',
   accept_stop: 'text-cyan-950/70 dark:text-cyan-100/75',
 };
 
@@ -968,20 +968,20 @@ function WorkCaseSparkSuggestions({ suggestions }: { suggestions: WorkCaseSparkS
   return (
     <ul className="grid min-w-0 gap-2">
       {suggestions.map((suggestion) => (
-        <li key={suggestion.suggestionId} className="min-w-0 rounded-md border border-amber-400/25 border-l-2 border-l-amber-400 bg-amber-500/5 px-3.5 py-3">
+        <li key={suggestion.suggestionId} className="min-w-0 rounded-md border border-emerald-400/25 border-l-2 border-l-emerald-400 bg-emerald-500/5 px-3.5 py-3">
           <div className="flex min-w-0 items-center gap-2">
-            <Lightbulb size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-amber-500 dark:text-amber-400" aria-hidden="true" />
-            <span className="ldvh-card-decision-title min-w-0 text-amber-700/85 dark:text-amber-200/85">
+            <Lightbulb size={WORKCASE_SECTION_ICON_SIZE} className="shrink-0 text-emerald-500 dark:text-emerald-400" aria-hidden="true" />
+            <span className="ldvh-card-decision-title min-w-0 text-emerald-700/85 dark:text-emerald-200/85">
               {getFieldValueLabel('proposed_disposition', 'suggest_spark', locale)}
             </span>
           </div>
           <div className={`${WORKCASE_CARD_TITLE_BODY_GAP_CLASS} min-w-0 break-words`}>
-            <SummaryText value={suggestion.summary} collapseThreshold={Number.MAX_SAFE_INTEGER} className="ldvh-card-decision-body [&_p]:my-0 text-amber-950/70 dark:text-amber-100/75" />
+            <SummaryText value={suggestion.summary} collapseThreshold={Number.MAX_SAFE_INTEGER} className="ldvh-card-decision-body [&_p]:my-0 text-emerald-950/70 dark:text-emerald-100/75" />
           </div>
-          {suggestion.restrictionReason && <div className="ldvh-caption mt-1 text-amber-950/65 dark:text-amber-100/70">{t('objectList.workcaseRestrictionReason')}: {suggestion.restrictionReason}</div>}
-          {suggestion.impactSummary && <div className="ldvh-caption mt-0.5 text-amber-950/65 dark:text-amber-100/70">{t('objectList.workcaseImpactSummary')}: {suggestion.impactSummary}</div>}
-          {suggestion.resumeCondition && <div className="ldvh-caption mt-0.5 text-amber-950/65 dark:text-amber-100/70">{t('objectList.workcaseResumeCondition')}: {suggestion.resumeCondition}</div>}
-          <div className="ldvh-caption mt-0.5 text-amber-950/65 dark:text-amber-100/70">{t('objectList.workcaseFollowUpSummary')}: {suggestion.followUpSummary}</div>
+          {suggestion.restrictionReason && <div className="ldvh-caption mt-1 text-emerald-950/65 dark:text-emerald-100/70">{t('objectList.workcaseRestrictionReason')}: {suggestion.restrictionReason}</div>}
+          {suggestion.impactSummary && <div className="ldvh-caption mt-0.5 text-emerald-950/65 dark:text-emerald-100/70">{t('objectList.workcaseImpactSummary')}: {suggestion.impactSummary}</div>}
+          {suggestion.resumeCondition && <div className="ldvh-caption mt-0.5 text-emerald-950/65 dark:text-emerald-100/70">{t('objectList.workcaseResumeCondition')}: {suggestion.resumeCondition}</div>}
+          <div className="ldvh-caption mt-0.5 text-emerald-950/65 dark:text-emerald-100/70">{t('objectList.workcaseFollowUpSummary')}: {suggestion.followUpSummary}</div>
         </li>
       ))}
     </ul>

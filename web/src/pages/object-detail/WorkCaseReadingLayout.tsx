@@ -2819,15 +2819,15 @@ function SparkSuggestionList({
         {items.map((item) => (
           <li
             key={detailString(item.suggestion_id)}
-            className="min-w-0 overflow-hidden rounded-lg border border-amber-400/25 bg-amber-500/[0.03]"
+            className="min-w-0 overflow-hidden rounded-lg border border-emerald-400/25 bg-emerald-500/[0.03]"
           >
-            <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-amber-400/20 px-3.5 py-2.5">
+            <div className="flex min-w-0 flex-wrap items-center gap-2 border-b border-emerald-400/20 px-3.5 py-2.5">
               <ObjectTypeIcon type="spark" size={16} className="shrink-0" style={{ color: CATEGORY_COLORS.spark }} />
-              <span className="ldvh-meta min-w-0 flex-1 break-all text-amber-800/75 dark:text-amber-100/75">
+              <span className="ldvh-meta min-w-0 flex-1 break-all text-emerald-800/75 dark:text-emerald-100/75">
                 {detailString(item.suggestion_id)}
               </span>
               {detailString(item.suggestion_kind) && (
-                <span className="ldvh-chip shrink-0 rounded-md border border-amber-400/30 bg-amber-500/10 px-2 py-0.5 text-amber-700 dark:text-amber-200">
+                <span className="ldvh-chip shrink-0 rounded-md border border-emerald-400/30 bg-emerald-500/10 px-2 py-0.5 text-emerald-700 dark:text-emerald-200">
                   {getFieldValueLabel("suggestion_kind", detailString(item.suggestion_kind), locale)}
                 </span>
               )}
@@ -2837,7 +2837,7 @@ function SparkSuggestionList({
                 <SummaryText
                   value={item.summary}
                   collapseThreshold={Number.MAX_SAFE_INTEGER}
-                  className="ldvh-detail-semantic-body font-medium !text-amber-950/72 dark:!text-amber-100/78"
+                  className="ldvh-detail-semantic-body font-medium !text-emerald-950/72 dark:!text-emerald-100/78"
                 />
               )}
               <SuggestionDetail fieldKey="restriction_reason" value={item.restriction_reason} locale={locale} variant="restriction" />
