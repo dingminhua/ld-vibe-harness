@@ -43,6 +43,7 @@ relations:
 - relation_key: informs
   target:
     object_uid: 019ffb52-ebb5-7ea7-8303-b58b6d99eccd
+action_relevance: 评估 WC 完成后的证据与事实库分流策略时，确认后续责任已按类型归口到正确对象，不遗留未承接的审计发现
 change_log:
 - signature:
     product_name: DeepSeek Harness
@@ -50,11 +51,17 @@ change_log:
     agent_runtime_name: deepseek-harness
   at: '2026-08-15T03:51:35.016614Z'
   summary: 受控创建本 internal_audit Study：完成 WC-A/B/C 后 35 Study、82 Spark 与 124 closed WorkCase residual 全库审计、查重与后续分流；经两轮 fresh native subagent creation review，修正 FileAsset 后继完成事实并补齐建议验收边界。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 object_uid: 01a0038b-e990-7648-a886-df98559d26cf
 object_id: study-01M01RQTCGES4AH1PZK1AST9PF
 fact_type_key: study
 created_at: '2026-08-15T03:51:35.016614Z'
-updated_at: '2026-08-15T03:51:35.016614Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 ---
 
 ## 研究问题

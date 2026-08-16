@@ -135,6 +135,7 @@ _F2_FIELDS = {
         "decision_question",
         "decision",
         "applicability",
+        "trigger_signal",
         "updated_at",
     ),
     "pitfall": (
@@ -144,6 +145,7 @@ _F2_FIELDS = {
         "status",
         "symptoms",
         "trigger_conditions",
+        "scope_of_impact",
         "applicability",
         "validation_summary",
         "updated_at",
@@ -157,6 +159,7 @@ _F2_FIELDS = {
         "abstract",
         "research_intent",
         "recommendation_summary",
+        "action_relevance",
         "relations",
         "updated_at",
     ),

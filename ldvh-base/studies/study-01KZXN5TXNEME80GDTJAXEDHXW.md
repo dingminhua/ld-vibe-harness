@@ -52,6 +52,7 @@ research_question: 当 AI 开发环境不提供可靠的 post-write 环境 Hook 
 abstract: 本报告于 2026-08-11 对照 Watchman、Node.js、Gradle、TypeScript、Chokidar、pre-commit、Git、GitHub 与 Bazel 的官方资料。行业主流不是把文件事件当成可靠写入证明，而是把 watcher 用作失效或调度信号，把显式检查绑定当前输入，并由 Git Hook 保留提交前最后门禁。根据 Human 后续方向，本研究首期采纳低成本、高频、一次性的显式 ldvh check：它读取当前规则源与当前实际 worktree 的完整管辖事实库，保留原始子结果和 gaps；watcher、receipt 与 ADR 不在首期实现。当前未实现 watcher 原型、性能基准或故障注入。
 research_intent: Human 希望 LDVH 约束最终结果而非 AI 的具体写入方式，并要求写完后尽早由 Code 检查；目标环境没有可用的 post-write 环境 Hook，但 Git Hook 仍须保留。本研究为显式检查的可信边界、与 Git Gate 的分工，以及 watcher 作为可选后续增强的条件提供可复读依据。
 recommendation_summary: 首期保留 common-dir 级 Git Hook 与 Git Gate，并交付显式、一次性、只读的 ldvh check。它固定检查当前源码 worktree 的完整规则源与由实际 cwd 解析出的受管辖 Git worktree 的完整事实库，逐项保留规则与事实子检查的原始结果、gaps 和未完成范围；普通业务代码、构建产物和临时文件不进入输入。事实子检查非 complete、任一子检查 partial/unavailable/error 或合同定义的阻断 gap 时不得返回 passed。该能力补充而不替代每次事实写后的精确回读和完整性审计，也不替代 Git Hook/Gate。watcher、范围级 receipt 和 ADR 仅在显式检查被证明不足且 Human 另行要求更低延迟自动反馈时再研究。
+action_relevance: 设计或评估无环境 Hook 条件下的持续校验方案时，确认 Git Gate 分层方案已覆盖事实完整性终闸
 change_log:
 - signature:
     model_id: gpt-5
@@ -95,6 +96,12 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 relations:
 - relation_key: informs
   target:
@@ -103,7 +110,7 @@ object_id: study-01KZXN5TXNEME80GDTJAXEDHXW
 object_uid: 019ffb52-ebb5-751c-8041-ba92bae6c7bc
 fact_type_key: study
 created_at: '2026-08-10T23:54:37.152370Z'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 ---
 
 ## 研究问题

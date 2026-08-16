@@ -5,11 +5,12 @@ decision: 决定 AI 在中文工作中始终以中文语义理解并执行 Human
 applicability: 适用于 LDVH 中 AI 处理 Human 的中文目标、反馈、约束和验收要求，以及形成、修改、审核或消费面向 Human 的中文交付、事实源和规范源时。它不改变代码标识、路径、命令、外部原文或机器字段的精确写法；需要保留这些精确标识时，应在中文语义中正确理解和说明其当前作用。Human 明确指定其它语言、原文优先或特定表达方式时，按该当次要求执行，同时不得误解其中文约束。
 rationale: 中文表面字词与实际意图、范围和约束并不总能由英文术语、字段名或既有模板无损替代。若没有持续的中文语义视角，AI 即使形式上完成读取、结构校验或技术执行，也可能把 Human 的决策、事实边界或规范要求理解错误。只有在原本需要审核的场景加入独立核对，才能发现形成者沿用自身解释所遗漏的中文语义偏移，同时不把所有普通工作膨胀为审核流程。
 consequences: 采用本决定后，AI 在中文工作中会在行动前后主动检查中文原意是否被保留，必要时以中文重新表述其理解和边界；这会增加少量判断与表达成本。在既有审核场景中，审核结论需要单独说明中文语义是否准确、哪些范围仍不确定或需交还，不得以格式正确、测试通过或复述形成者说明替代独立核对。本决定不取代事实验证、机械校验、正式 Specs 或 Human 授权，也不把普通工作自动变成需要独立审核的工作。
+trigger_signal: 处理 Human 的中文目标、反馈、约束或验收要求；审核中文交付内容
 object_id: adr-01KZXN5TXNFVH9P6ZFCFMQ9ECA
 object_uid: 019ffb52-ebb5-7ee2-9b1b-ef63e974b98a
 fact_type_key: adr
 created_at: '2026-07-25T00:11:49+08:00'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 change_log:
 - signature:
     product_name: Cindy
@@ -23,3 +24,10 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+
+- summary: 补 trigger_signal 字段值（规范修订：22/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:40:24.215096Z

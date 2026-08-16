@@ -57,12 +57,18 @@ change_log:
     agent_runtime_name: claude-code
   at: '2026-08-15T19:08:19.740703Z'
   summary: v2 局部编辑运行证据边界评估已完成；当前不追加 trial、不产品化长期遥测，未来仅在明确触发条件出现时重开专项.
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 disposition_summary: v2 局部编辑运行证据边界评估已完成；当前不追加 trial、不产品化长期遥测，未来仅在明确触发条件出现时重开专项.
 object_uid: 019ffb52-ebb5-7aaf-8091-950ed178c6f1
 object_id: study-01KZXN5TXNFAQR14CN1V8QHHQH
 fact_type_key: study
 created_at: '2026-08-13T08:25:56.260249Z'
-updated_at: '2026-08-15T19:08:19.740703Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 ---
 
 ## 研究问题

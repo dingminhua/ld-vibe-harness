@@ -116,6 +116,7 @@ AI 负责判断失败是否实际发生、根因判断与解决说明是否同�
 | `pitfall-root-cause` | required | `inherit` |
 | `pitfall-resolution` | required | `inherit` |
 | `pitfall-avoidance` | required | `inherit` |
+| `pitfall-scope-of-impact` | required | `inherit` |
 
 ### 类型专属字段定义
 
@@ -126,6 +127,7 @@ AI 负责判断失败是否实际发生、根因判断与解决说明是否同�
 | `pitfall-root-cause` | `root_cause` | string | 在当前经验范围内能够解释症状与触发的根因判断 | 不表示相关现象、未经说明的普遍因果、ADR 选择理由、来源或验证摘要 | 必填非空；必须与 symptoms、trigger_conditions 和 validation_summary 相容；必要时区分已观察事实、当前根因判断和仍未知的机制环节；不能只凭单次相关性成立；根因判断实质变化通常形成新 Pitfall |
 | `pitfall-resolution` | `resolution` | string | 已经实际采用以解决该失败机制的处理方式及其必要边界 | 不表示提案、WorkCase 目标、实施 todo、规避建议或规则正文 | 必填非空；必须已实际采用；说明适用前提、处理对象或动作及可观察成功信号，且在适用前提不成立或成功信号未出现时不把处理宣称为通用修复；validation_summary 据实说明观察到的结果、覆盖与未知范围；不相容修复形成新对象 |
 | `pitfall-avoidance` | `avoidance` | string | 后续识别、预防或安全复用该经验的方式 | 不表示强制规则、行动授权、已执行修复或通用最佳实践 | 必填非空；说明复用前应核对的关键条件、处理后的确认信号，以及不相容时应继续调查、重新验证或转入正确对象的边界；只在 applicability 内成立；需要强制时转正确规则来源，不在本字段使用 MUST 冒充权威 |
+| `pitfall-scope-of-impact` | `scope_of_impact` | string | 该失败机制在哪些当前活动类型、工具交互或技术栈组合中具有潜在影响；即当前任务可能落入该经验影响范围的位置 | 不表示触发失败的前置条件（那是 trigger_conditions）、经验适用范围（那是 applicability） | 必填非空；必须使用活动/工具/交互类型的描述，而非历史症状 |
 
 ### Schema 与对象载体
 
@@ -175,7 +177,7 @@ Pitfall 不定义 relation_key。新旧 Pitfall 之间的替代或覆盖关系�
 
 ### 主动召回与消费时机
 
-Pitfall 在当前出现可能相似的失败症状、进入已知触发条件、准备采用曾有失败风险的方案，或正在调查、修复、验证一项故障时产生召回机会。F2 Pitfall 候选卡直接投影条件出现的 `object_uid`、以及 `object_id`、`title`、`status`、`symptoms`、`trigger_conditions`、`applicability`、`validation_summary` 和 `updated_at`；可以在允许字段中进行可回指到 field path 与实际文本的精确字面检索，但不生成或写回标签、关键词权重或语义分数。该类型化投影提供当前所需的快速检索；`tags` 不进入事实字段或第二分类权威。
+Pitfall 在当前出现可能相似的失败症状、进入已知触发条件、准备采用曾有失败风险的方案，或正在调查、修复、验证一项故障时产生召回机会。F2 Pitfall 候选卡直接投影条件出现的 `object_uid`、以及 `object_id`、`title`、`status`、`symptoms`、`trigger_conditions`、`scope_of_impact`、`applicability`、`validation_summary` 和 `updated_at`；可以在允许字段中进行可回指到 field path 与实际文本的精确字面检索，但不生成或写回标签、关键词权重或语义分数。该类型化投影提供当前所需的快速检索；`tags` 不进入事实字段或第二分类权威。
 
 默认候选只包含症状、触发条件、环境、版本或 applicability 与当前情形可能相容的 `active` Pitfall；`draft` 和 `discarded` 不进入普通经验召回，也不得被当作已确认规避经验。draft 审核只能由精确引用或来源定义的关系导航定位，不能因标题或文本命中形成批量审核队列。不得因标题、错误文本或某个工具名相同就自动采用规避结论。上下文压缩后必须对当次已经语义选中且仍影响行动的 Pitfall 重新回读 F3，并重新核对当前环境、版本和 applicability；不在会话开始时全量展开全部 Pitfall。
 

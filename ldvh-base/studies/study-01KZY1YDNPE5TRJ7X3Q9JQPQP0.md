@@ -29,6 +29,7 @@ relations:
 - relation_key: inspired-by
   target:
     object_uid: 019ffbfb-5be6-7a5f-9aa0-7125159435c6
+action_relevance: 设计或评估规则精确读取方法时，按上下文合同三变体判断读取边界，确保 L3 切片不遗漏强制要求
 change_log:
 - signature:
     product_name: Cindy
@@ -36,11 +37,17 @@ change_log:
     agent_runtime_name: claude-code
   at: '2026-08-13T17:15:30.864608Z'
   summary: 受控创建 technical_assessment：保存 WFPQDZ 三任务九单元方法试跑的聚合结果、证据层级、限制和后续分流；不保存 raw 交互。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 object_uid: 019ffc1f-36b6-7175-891f-a3ba657b5ec0
 object_id: study-01KZY1YDNPE5TRJ7X3Q9JQPQP0
 fact_type_key: study
 created_at: '2026-08-13T17:15:30.864608Z'
-updated_at: '2026-08-13T17:15:30.864608Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 ---
 
 ## 研究问题

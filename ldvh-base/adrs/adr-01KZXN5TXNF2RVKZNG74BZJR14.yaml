@@ -48,9 +48,16 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- summary: 补 trigger_signal 字段值（规范修订：22/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:40:24.215096Z
 disposition_summary: Human 于 2026-08-04 明确撤回 adr-0006 作为当前决定。原 ADR 不再以 ADR 身份约束后续设计；其中哪些要求继续适用，以后续经 Human 批准并生效的 Specs 为准。Human 已明确仍须保留的薄 Skill、过程机械检查与 Git Hook/Git Gate 最终闸门，应由相应 Specs 直接定义。在相应 Specs 修改生效前，本退役不表示新的下载、接入、配置、部署或覆盖范围已经成立。
+trigger_signal: 决定 LDVH 交付形态、接入方案；评估是否采用 MCP 或环境 Hook 等替代载体
 object_id: adr-01KZXN5TXNF2RVKZNG74BZJR14
 object_uid: 019ffb52-ebb5-78b1-b9fe-b03917f96024
 fact_type_key: adr
 created_at: '2026-07-30T14:24:13.172669+08:00'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-16T21:42:45.620720Z'

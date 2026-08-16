@@ -758,6 +758,7 @@ applicability: Only the observed runtime conditions.
 validation_summary: The bounded handling was verified; other environments remain unknown.
 symptoms: The declared operation did not run.
 trigger_conditions: The required runtime input was absent.
+scope_of_impact: Runtime input validation across all environments.
 root_cause: The runtime could not locate its required input.
 resolution: Restore the required input and rerun the operation.
 avoidance: Check the required input before relying on the operation.

@@ -7,11 +7,12 @@ root_cause: workspace_root 的语义是精确选择本次唯一工作区根；�
 resolution: 在本项目中已改用不传 workspace_root 的自动发现方式；Helper 从当前工作对象向上发现父工作区配置，并返回 config_status=valid、scope_status=governed_single、governed_project_id=ldvh。需要显式选择时，将父工作区根而非项目 worktree 根作为 workspace_root。
 avoidance: 调用前区分项目实际 Git worktree 与存放 LDVH-GOVERNED-PROJECTS.yaml 的工作区根。除非需要固定选择配置根，否则省略 workspace_root 并传入实际 work object locator；若显式传入，先确认目标目录直接包含配置文件。出现 missing 时先检查实际选择路径和配置位置，再判断配置是否真的缺失。
 validation_summary: 2026-07-30 在 ld-vibe-harness-v4 实际验证：1) 显式 workspace_root=/Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4 时，Helper 返回 config_status=missing；2) 该目录的父目录实际存在 LDVH-GOVERNED-PROJECTS.yaml，并登记 ldvh 项目指向当前 worktree；3) 不传 workspace_root、仅提供当前 worktree locator 后，Helper 自动发现父目录配置并返回 config_status=valid、scope_status=governed_single。验证覆盖当前配置位置与当前 Helper 版本；不证明所有安装布局或未来配置发现实现都具有相同行为。
+scope_of_impact: LDVH 环境接入时检查或配置 worktree 定位、workspace_root 传递
 object_id: pitfall-01KZXN5TXNEXXSKX2M6CCC0FY1
 object_uid: 019ffb52-ebb5-777b-99f4-543318c03fc1
 fact_type_key: pitfall
 created_at: '2026-07-30T01:10:30.964641+08:00'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 change_log:
 - signature:
     product_name: Cindy
@@ -25,3 +26,10 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+
+- summary: 补 scope_of_impact 字段值（规范修订：23/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:40:24.215096Z

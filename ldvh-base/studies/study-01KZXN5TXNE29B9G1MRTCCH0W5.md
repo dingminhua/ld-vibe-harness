@@ -19,7 +19,8 @@ object_id: study-01KZXN5TXNE29B9G1MRTCCH0W5
 object_uid: 019ffb52-ebb5-7092-b4c0-34c698c88385
 fact_type_key: study
 created_at: '2026-07-23T20:14:44.651335+08:00'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
+action_relevance: 设计或评估并行执行策略时，每项并行任务必须有明确输出、汇总人和不修改范围；共享写入保留单一所有者
 change_log:
 - signature:
     product_name: Cindy
@@ -33,6 +34,12 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 ---
 
 ## 研究问题

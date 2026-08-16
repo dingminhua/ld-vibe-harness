@@ -279,6 +279,7 @@ def _write_existing_workcase(
                 "applicability": "Single-object V4 fact creation.",
                 "rationale": "A shared allocator avoids same-repository identity collisions.",
                 "consequences": "Draft candidate identities are explicitly non-reserved.",
+                "trigger_signal": "Creating or modifying fact objects using the controlled creation flow.",
             },
         ),
         (
@@ -290,6 +291,7 @@ def _write_existing_workcase(
                 "validation_summary": "Two drafts can safely receive different final identities.",
                 "symptoms": "Concurrent drafts expect the same final ID.",
                 "trigger_conditions": "A candidate ID is mistaken for a reservation.",
+                "scope_of_impact": "Concurrent fact creation when multiple writers share the same identity allocator.",
                 "root_cause": "Identity was allocated before entering a shared critical section.",
                 "resolution": "Allocate the final ID only during controlled creation.",
                 "avoidance": "Treat prepare results as non-reserved draft bases.",

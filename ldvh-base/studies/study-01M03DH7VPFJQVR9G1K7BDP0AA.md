@@ -50,6 +50,7 @@ relations:
 - relation_key: informs
   target:
     object_uid: 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc
+action_relevance: 设计知识预检或消费机制时，采用双层模型（L0 公共必读 + L1 类型差异触发），按边界/症状建模而非任务类型平铺
 change_log:
 - summary: 受控创建：行业实践调研（知识预热、ADR/Pitfall/Study 消费时机）支撑 spark-0040 双层消费模型收敛。
   signature:
@@ -57,11 +58,17 @@ change_log:
     model_name: glm-5.2
     agent_runtime_name:
   at: '2026-08-15T19:14:14.014271Z'
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 object_uid: 01a006d8-9f76-7caf-bc26-0199d6db014a
 object_id: study-01M03DH7VPFJQVR9G1K7BDP0AA
 fact_type_key: study
 created_at: '2026-08-15T19:14:14.014271Z'
-updated_at: '2026-08-15T19:14:14.014271Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 ---
 
 # 知识对象的使用与触发时机：决策、经验与资料的行业实践调研

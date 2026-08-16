@@ -6,11 +6,12 @@ applicability: 适用于 LDVH 发行物的交付形态、全部目标 AI 环境�
 rationale: 信息投递层的本质内容是劝告性规则引导——劝告内容走劝告通道（Skill）成本比例才正确；环境 Hook 买到的是同一段劝告的到达必然性与执行痕迹，但需逐环境开发、信任、cold-start 验证，pitfall-0001 实证其可静默失效，成本与价值错配。可逆性不对称：Skill 先行近乎零成本且随时可加插件，插件先行则每个环境形成沉没成本，故默认项选可逆方向。七个环境（Codex Desktop、ZCode、TRAE、Claude Code、Codex-Cindy、WorkBuddy、Kimi Work）的接入分析一致确认技能机制全部可用并推荐 Skill 默认，本决定获得实证支持。约束层 Skill 原理上无法阻断任何行动（直写绕过已在 orientation 在场时实际发生），真阻断只能位于模型之外：git Gate 是 LDVH 完全可控的唯一环境外阻断点；PreToolUse deny 各环境覆盖不完整，且 Codex 的 deny 能力存在报告间矛盾，复核前不对其作假设。MCP 无生命周期语义、与 shell 直调 CLI 等价，不能承载启动注入。未选'插件为默认接入'：逐环境成本与劝告性价值错配；未选'全环境统一形态'：各环境机制禀赋与既有部署不同，分环境答案是设计而非摇摆。
 consequences: 正面：默认接入简化为'装包、放一个 Skill、受管项目装 git hook'；规则权威保持单一，无第二副本；默认路径的安装/部署/接入/验证四层塌缩为 Skill 递达证据一个问题；分环境答案可以共存。负面与限制：启动注入的到达必然性让渡给模型自觉，drift 窗口由行动模板检查、事实完整性校验与读取路径报警压缩而非消除；schema 合法但语义造假的事实为各方案共同残留风险；Skill 递达的长期行为稳定性未验证。后续义务：git Gate 事实机械校验与 fact_integrity 一等化（spark-0039 第 1、2 项，本决定成立的前置义务）；共享 SKILL.md 环境中性化与分发方式落地（静态写死路径或 Helper 生成式渲染，未决）；README 与 33 行动模板按'降级不删除'原则清理环境 Hook 描述；Codex PreToolUse deny 能力的报告矛盾待以当前官方资料复核；WorkBuddy V3 残留插件清理与 stdin 陷阱的 Pitfall 评估。本 ADR 被规范、Code 或行动模板吸收后不自动退休，退出需 Human 另行授权。
 disposition_summary: 决定范围由 adr-0006 整体覆盖：Human 于 2026-07-30 撤回插件可选加固与环境 Hook 知识降级保留，确立单一薄 Skill 为唯一接入载体、过程机械检查必须、git Gate 终局把关，本对象不再约束当前选择。
+trigger_signal: 决定 LDVH 默认接入形态、机械防线分配；评估是否增设环境插件
 object_id: adr-01KZXN5TXNFTTTV570WJYDCTW6
 object_uid: 019ffb52-ebb5-7eb5-ad94-e0e4bcd66b86
 fact_type_key: adr
 created_at: '2026-07-30T13:33:03.425655+08:00'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 change_log:
 - signature:
     product_name: Cindy
@@ -24,3 +25,10 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+
+- summary: 补 trigger_signal 字段值（规范修订：22/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:40:24.215096Z

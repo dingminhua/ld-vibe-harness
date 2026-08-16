@@ -71,6 +71,7 @@ relations:
 - relation_key: informs
   target:
     object_uid: 019ffb52-ebb5-79a1-9fed-fa91fab7f6fc
+action_relevance: 设计或审核授权边界时，确保授权决策外部化（人类在环、最小权限凭据）而非依赖 AI 自检
 change_log:
 - signature:
     agent_id: hy3
@@ -108,11 +109,17 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 object_id: study-01KZXN5TXNE2587DFT7EHXMGJW
 object_uid: 019ffb52-ebb5-708a-83b5-fa3ba3da425c
 fact_type_key: study
 created_at: '2026-08-09T00:34:04.998975+08:00'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 ---
 
 ## 研究问题

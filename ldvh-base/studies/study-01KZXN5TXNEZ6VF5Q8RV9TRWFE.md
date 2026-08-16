@@ -52,7 +52,8 @@ object_id: study-01KZXN5TXNEZ6VF5Q8RV9TRWFE
 object_uid: 019ffb52-ebb5-77cd-b796-e8c6d3ac71ee
 fact_type_key: study
 created_at: '2026-07-24T13:30:00+08:00'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
+action_relevance: 评估 LDVH 增强方向时，区分 Vibe Coding 从 Demo 到产品级的不同阶段需求，不对应完整 Harness 结构
 change_log:
 - signature:
     product_name: Cindy
@@ -66,6 +67,12 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 ---
 
 ## 研究问题

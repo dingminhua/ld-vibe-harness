@@ -8,11 +8,12 @@ root_cause: 已观察事实是日志没有可见执行记录；当前根因判�
 resolution: 处理时将说明拆为已观察记录、当前有界判断和未知机制；只有存在直接运行时信息时才声明具体执行阶段。成功信号是读者能够从对象文本区分三者，不再把无日志当作未执行。若已有直接追踪信息，则按该信息继续调查，不套用本经验。
 avoidance: 复用前先核对日志、追踪和错误码实际覆盖的范围。缺少可见记录时只写“未观察到可见执行记录”，并保留调用阶段未知；处理后检查根因和症状没有越过观察范围。需要形成强制表达规则时进入正式规范，而不把本经验当作授权。
 disposition_summary: 该观察已由 Pitfall 类型规范的根因边界和最小处理闭环直接承接；不再需要作为 active 的独立经验。仍有效的表达边界由 specs/23-Pitfall-踩坑经验.md 承接；没有未处置的后续责任。
+scope_of_impact: 检查 Hook 执行记录、判断运行时 Hook 状态；环境技能部署验证
 object_id: pitfall-01KZXN5TXNEN3VKMEVPPM21XT6
 object_uid: 019ffb52-ebb5-7547-b9d1-dbb5a820f746
 fact_type_key: pitfall
 created_at: '2026-07-24T22:38:00+08:00'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 change_log:
 - signature:
     product_name: Cindy
@@ -26,3 +27,10 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+
+- summary: 补 scope_of_impact 字段值（规范修订：23/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:40:24.215096Z
