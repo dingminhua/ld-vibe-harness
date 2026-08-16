@@ -1,7 +1,7 @@
 title: LDVH 面向 AI 的服务质量评估与持续改进
+status: implemented
 intent: 建立一套能够持续评估和改进 LDVH 面向 AI 的服务能力与服务水平的机制，判断 LDVH 是否在正确时机向 AI 提供了正确、充分、最新、不过量且可直接行动的规则、事实、模板、能力与状态，并区分准备、可证明交付、宿主递达、行为一致性和因果效益等不同证据层级。若不跨行动保留这一目标，后续对规则读取、事实召回、渐进披露、Helper 能力与恢复机制的优化仍会主要依赖主观判断，难以定位服务缺口发生在哪一层，也难以确认调整是否真正改善 AI 的执行结果。
-status: open
-priority: P1
+summary: "## 统一目标\n\n本 Spark 作为 LDVH 面向 AI 服务优化的唯一上位入口，统一承载两类相互依赖的问题：一是规则、事实、模板、状态与能力是否以正确、新鲜、不过量且可行动的方式交付；二是 Helper 读写交互候选是否在真实任务中产生足以支持继续改造的净价值。原「Helper 只读交互优化」和「受控写入优化」中已经明确的具体问题均已落实并收口；未来新的读写优化不再以两个常驻兜底 Spark 跟踪，而先由本 Spark 的证据门槛判断是否值得形成窄 WorkCase。\n\n## 已交付基础\n\n### 评估与证据\n\n- 最小执行证据协议和 DSH 会话可比性三值判定已经交付；评分前可以区分 comparable、not_comparable 与 inconclusive，但 host-received 在没有 provider 回执时仍为 unavailable。\n- 40 个固定模型会话的 Phase 1/Phase 2 对照已经完成：Phase 1 将只读任务中的 invalid-request 命中从 22 降到 0，但直接 Helper 调用数未下降，命令字符平均增加 151.1；WorkCase strict item_event 将窄任务 raw request 平均减少 1935.75 bytes，尚无显著请求有效率改善证据。\n- 12 对固定模型知识预检实验已经完成：冻结样本中 combined source-identity-plus-content package 的 selection_correct nominal difference 为 +0.666667，但来源身份、内容和指令不可分，六项质量指标未做 multiplicity adjustment，records-only source-complete reproduction 未满足，因此结果只到当前语料的 behavior-consistent 层级。\n\n### Helper 只读交互\n\n- invalid_request 结构化修正提示、行动模板成功响应去重以及 CLI --request、--example、--fields 已交付。\n- 当前没有证据支持对全部只读响应统一删减或继续增加孤立 flags；只有具体 operation 在可比较真实任务中出现稳定过量、额外回读或修复成本时，才形成范围匹配的候选。\n\n### 受控写入交互\n\n- WorkCase 关闭候选契约、read→update 最小桥接、行动模板 activation_hint、三字段署名/Git trailer 骨架和 WorkCase strict item_event 已交付。\n- prepare-fact-object-update 已正式成为 read-only、caller-completion-required 的 public operation：返回当前对象、fingerprint、排除 Code 托管字段的 whole-object after skeleton，并保持语义变化、fresh signature、完整校验、CAS、原子替换、精确回读和完整性审计由正式写入口承担。\n- Helper 是否应从同一 observed_context.signature 形成最新 change_log.signature，以及其它类型专属辅助，仍只是证据门槛后的候选；不得降低逐次重新观察、不可跨角色推导和 Git message 显式 footer 边界。\n\n## 已完成使命与收口说明\n\n本 Spark 的统一评估与证据门槛入口责任已结束：已收集的 40 会话对照、12 对知识预检、DSH 可比性判定和最小执行证据协议作为已交付基础保留；后续读/写交互优化分别由两个新 Spark 独立承接，不再经本入口统一证据门槛判断。\n\n本 Spark 收口不表示跨模型/宿主可比性、因果效应或 Helper 整体质量已建立。"
 relations:
 - relation_key: related-to
   target:
@@ -21,22 +21,7 @@ relations:
 - relation_key: related-to
   target:
     object_uid: 019ffb52-ebb5-7706-ba55-38e7bc9b1cc9
-summary: "## 统一目标\n\n本 Spark 作为 LDVH 面向 AI 服务优化的唯一上位入口，统一承载两类相互依赖的问题：一是规则、事实、模板、状态与能力是否以正确、新鲜、不过量且可行动的方式交付；二是 Helper 读写交互候选是否在真实任务中产生足以支持继续改造的净价值。原“Helper 只读交互优化”和“受控写入优化”中已经明确的具体问题均已落实并收口；未来新的读写优化不再以两个常驻兜底 Spark 跟踪，而先由本 Spark 的证据门槛判断是否值得形成窄 WorkCase。\n\n## 已交付基础\n\n### 评估与证据\n\n- 最小执行证据协议和 DSH 会话可比性三值判定已经交付；评分前可以区分 `comparable`、`not_comparable` 与 `inconclusive`，但 `host-received` 在没有 provider 回执时仍为 `unavailable`。\n- 40 个固定模型会话的 Phase 1/Phase 2 对照已经完成：Phase 1 将只读任务中的 invalid-request 命中从 22 降到 0，但直接 Helper 调用数未下降，命令字符平均增加 151.1；WorkCase strict `item_event` 将窄任务 raw request 平均减少 1935.75 bytes，尚无显著请求有效率改善证据。\n- 12 对固定模型知识预检实验已经完成：冻结样本中 combined source-identity-plus-content package 的 `selection_correct` nominal difference 为 +0.666667，但来源身份、内容和指令不可分，六项质量指标未做 multiplicity adjustment，records-only source-complete reproduction 未满足，因此结果只到当前语料的 `behavior-consistent` 层级。\n\n### Helper 只读交互\n\n- `invalid_request` 结构化修正提示、行动模板成功响应去重以及 CLI `--request`、`--example`、`--fields` 已交付。\n- 当前没有证据支持对全部只读响应统一删减或继续增加孤立 flags；只有具体 operation 在可比较真实任务中出现稳定过量、额外回读或修复成本时，才形成范围匹配的候选。\n\n### 受控写入交互\n\n- WorkCase 关闭候选契约、read→update 最小桥接、行动模板 `activation_hint`、三字段署名/Git trailer 骨架和 WorkCase strict `item_event` 已交付。\n- `prepare-fact-object-update` 已正式成为 read-only、caller-completion-required 的 public operation：返回当前对象、fingerprint、排除 Code 托管字段的 whole-object after skeleton，并保持语义变化、fresh signature、完整校验、CAS、原子替换、精确回读和完整性审计由正式写入口承担。\n- Helper 是否应从同一 `observed_context.signature` 形成最新 `change_log.signature`，以及其它类型专属辅助，仍只是证据门槛后的候选；不得降低逐次重新观察、不可跨角色推导和 Git message 显式 footer 边界。\n\n## 下一验证顺序\n\n1. 以代表性真实任务预注册 read、普通事实 update 和 WorkCase 非 item update 任务族，固定模型、入口、runner 与排除条件；先通过执行可比性门槛。\n2. 分别记录 Helper calls、command chars、invalid request、request/response payload、首次合法行动、额外规则回读、修复/回退以及可观察的 latency/cache；不可观察指标不估算。\n3. 只有具体 operation 的稳定残差达到预先定义的实际幅度，才创建窄 WorkCase；无改善或成本高于收益时保留现状。\n4. 在代表性实测前不把现有结果推导为 broad causal-effect，也不启动 Phase 3、MCP 或 09 新接入层。\n\n## 边界与保持 open 的原因\n\n- 本 Spark 只统一服务质量与读写交互优化的证据判断，不吸收 WorkCase 语义重复创建、多项目聚合、周期价值审计或普通代码质量债等已有独立边界。\n- 原两个 P2 Spark 的入口责任因具体问题已落实而结束；它们与本 Spark 的 `related-to` 只用于追溯共同线索，不表示责任路由或下游完成。\n- 代表性真实任务复验、跨模型/宿主推广边界和具体残差归位仍未完成，因此本 Spark 保持 `open / P1`。"
-evolution:
-- at: '2026-08-02T09:20:55.139466Z'
-  summary: 议题起点是用行为事件、外部状态和执行上下文形成可回放判断，以减少失败定位、复核与恢复对聊天回放和手工推断的依赖。
-- at: '2026-08-13T08:55:02Z'
-  summary: v2 运行证据试跑与独立评估表明可观测性只能作为底层诊断设施，问题焦点因此上移为评估并持续改进 LDVH 对 AI 的服务质量，健康投影不再作为上位目标。
-- at: '2026-08-13T09:20:23Z'
-  summary: 诊断修正信息议题不再单独跟踪；其当前有效缺口、adr-0008 已有决策和未实现边界纳入本 Spark 的可行动性与诊断性评价分支。
-- at: '2026-08-13T21:18:54.244248Z'
-  summary: 规则精确读取首轮试跑使下一验证方向从继续扩大上下文任务族，收敛为先建立执行可比性证据；外部 tracing 仅作为观察机制参考，不成为 LDVH 产品目标或既定依赖。
-- at: '2026-08-13T21:38:23.000000Z'
-  summary: 确认 DeepSeek Harness 轨迹（Trajectory）与持久化会话事件日志作为当前执行载体可直接机器观察的执行事件来源：模型/工具入口、approval/permission、事件图完整性均可在评分前以机器证据判定可比性；只加强 harness-delivered，不替代 host-received。
-- at: '2026-08-13T22:37:49Z'
-  summary: DSH 会话执行可比性审计模块（session_comparability）已交付并通过真实会话验证：执行载体可比性三值判断（comparable/not_comparable/inconclusive）可在评分前以机器证据完成，为最小执行证据协议与等价复验提供机器化前置门槛。
-- at: '2026-08-16T10:59:45Z'
-  summary: Human 选择把读写交互优化收敛到现有 P1 服务质量 Spark：原两个 P2 入口按已落实范围结束，未来具体候选统一先过可比较真实任务与证据幅度门槛。
+disposition_summary: 统一评估与证据门槛的入口责任已结束。原 Spark 已收集的 40 会话对照、12 对知识预检、DSH 可比性判定和最小执行证据协议作为已交付基础保留在 summary 中；后续读/写交互优化分别由两个新 P2 Spark（spark-01M05X08QQE09TVT8EVXAP6ZMM 读交互优化、spark-01M05X1DZKECG8C6221RJ19WVM 写交互优化）独立承接，不再经统一证据门槛判断。本 Spark 收口不表示跨模型/宿主可比性、因果效应或 Helper 整体质量已建立。
 change_log:
 - signature:
     model_id: glm-5.2
@@ -110,8 +95,20 @@ change_log:
     product_name: Cindy
     model_name:
     agent_runtime_name: codex
+- at: '2026-08-16T18:25:35.005369Z'
+  summary: single_object_lifecycle：统一评估与证据门槛的入口责任已结束；读/写交互优化分别由两个新 P2 Spark 独立承接，本 Spark 收口为 implemented。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T18:37:58.363864Z'
+  summary: content_update：修复 relations 为原始值（恢复因收口操作意外丢失的两个 related-to 目标并移除误添加的第三个目标）。
 object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
 object_id: spark-01KZXN5TXNEKNA5YCZ62F8BM0K
 fact_type_key: spark
 created_at: '2026-08-02T17:20:55.139466+08:00'
-updated_at: '2026-08-16T10:59:45.732946Z'
+updated_at: '2026-08-16T18:37:58.363864Z'
