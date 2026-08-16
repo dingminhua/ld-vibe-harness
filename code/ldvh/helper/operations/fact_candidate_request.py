@@ -167,6 +167,7 @@ _F2_ONLY_FIELDS = frozenset(
         "relation_keys",
         "locator_text",
         "text_match",
+        "fields",
     }
 )
 

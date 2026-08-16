@@ -1965,3 +1965,17 @@ def test_f2_fields_workcase_rejects_non_projection_fields(tmp_path: Path) -> Non
 
     assert response["outcome"] == "invalid_request"
     assert any("arguments.fields" in gap["summary"] for gap in response["gaps"])
+
+
+def test_f1_rejects_fields_as_f2_only_filter(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    _create(workspace, project, "adr", _adr())
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F1", fields=["title"]),
+    ).response
+
+    assert response["outcome"] == "invalid_request"
+    assert any("F1 不接受 F2 过滤字段" in gap["summary"] and "fields" in gap["summary"] for gap in response["gaps"])
