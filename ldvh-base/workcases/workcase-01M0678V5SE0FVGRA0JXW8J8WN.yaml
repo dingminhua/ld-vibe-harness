@@ -8,7 +8,7 @@ success_criterion_definitions:
   statement: 05 §11.6.1 / §11.7 与 05.Att.01 的契约文本与实现一致：change_log 的 at 与 signature 由 Code 生成/覆盖，调用方无需手填；写入口机械校验与契约测试通过，写后精确回读 + check-fact-integrity complete。
 - criterion_id: criterion-success-signal
   statement: create-fact-object 与 update-fact-object 的成功结果按各自操作当前形状稳定返回机器可判定的显式写入成功信号（身份、指纹、created/updated 状态与回读 locator 的逐操作字段闭集）；契约文本与实现一致，写后精确回读 + check-fact-integrity complete。
-phase: independent_reviewing
+phase: controller_checking
 plan_version: 1
 work_items:
 - item_id: item-ritual-audit
@@ -149,6 +149,24 @@ change_log:
     agent_runtime_name:
   at: '2026-08-16T21:40:35.754942Z'
   summary: controller_checking→independent_reviewing，等待只读 Reviewer 复核。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+  at: '2026-08-16T21:53:31.573435Z'
+  summary: 结果复核 changes_required，Controller 记录 review 与处置（4 条反馈全部采纳并已修 code/测试）。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+  at: '2026-08-16T21:54:07.316901Z'
+  summary: independent_reviewing→controller_checking，修正结果投影。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+  at: '2026-08-16T21:55:04.598778Z'
+  summary: controller_checking 修正结果投影：result_version→2、validation_summary 据实重写、清除旧 result_reviews。
 execution_approval:
   subject_version: 1
   approved_at: '2026-08-16T21:28:53Z'
@@ -156,7 +174,7 @@ execution_approval:
   baseline_fingerprint: dafd5c6f613c9a007389f258db1947b3525ce001c013ffe58b856478e36ff267
   source_refs:
   - current-conversation:user-message:批准
-result_version: 1
+result_version: 2
 success_criterion_results:
 - criterion_id: criterion-write-ritual
   outcome: satisfied
@@ -164,12 +182,11 @@ success_criterion_results:
 - criterion_id: criterion-success-signal
   outcome: satisfied
   summary: create-fact-object 成功结果现顶层返回 created=true、actual_ref、content_fingerprint；update-fact-object 返回 content_fingerprint 且 changes.status=updated。冒烟测试与 83 个契约测试验证，check-fact-integrity complete。
-result_summary: Helper 受控写入契约的两个已观察摩擦已消除：① change_log 的 at 与 signature 改为由 Code 在写事务中托管（specs/05 §11.6.1 修订，调用方仅需提供 summary）；② create-fact-object 成功结果显式返回 created=true 与 content_fingerprint（specs/05 §11.4 + code/ldvh/helper/operations/fact_creation_operation.py 修订）。update-fact-object 已返回 content_fingerprint 且 changes.status=updated。
-controller_check_summary: Controller 自检：4 个 work item 全部 terminal；spec 修订（05 §11.6.1、§11.4）与 code 修订（fact_creation_operation.py）均落在当前 worktree；83 个相关契约测试通过；create 冒烟测试确认 created=true 与 content_fingerprint；check-fact-integrity 外层 outcome=ok、result.status=complete（276 对象 0 问题）。
-validation_summary: 验证：pytest code/tests/facts/test_creation_application.py、test_update_application.py、code/tests/helper/test_fact_update_prepare_operation.py 共 65 通过；code/tests/specs/test_fact_mechanical_validation_catalog.py、test_fact_type_projection.py、code/tests/facts/test_fact_identity.py 共 18 通过；create 冒烟测试（created=true、content_fingerprint 存在）；check-fact-integrity complete。
-waiting_on: 只读 Reviewer 复核当前 result_version=1 完整结果投影
+result_summary: Helper 受控写入契约的两个摩擦已消除且实现与契约一致：① change_log 的 at 与 signature 由 Code 托管（specs/05 §11.6.1 fields=[summary]；fact_update_prepare_operation.py _completion_requirements().fields=[summary]；fact_update_operation.py 输入示例追加条目仅 summary）；② create-fact-object 成功结果显式返回 created=true 与 content_fingerprint（specs/05 §11.4 + fact_creation_operation.py + 契约测试断言同步）。update-fact-object 已返回 content_fingerprint 且 changes.status=updated。
+controller_check_summary: Controller 自检：首轮结果复核返回 changes_required（prepare 实现未同步、验证属定向子集），4 条反馈全部采纳并已处置——修正 fact_update_prepare_operation.py 的 fields、修正 fact_update_operation.py 输入示例、修正 test_fact_creation_operation.py 两处严格断言、修正 test_service.py 示例断言。相关测试 25 通过；helper 套件剩余失败均为环境性子进程测试（worktree 无本地 .venv）。check-fact-integrity complete。
+validation_summary: 验证：pytest code/tests/helper 运行 535 passed / 54 failed / 5 skipped；54 失败中 53 为环境性子进程测试（worktree 无本地 .venv 致 HELPER_EXECUTABLE=./ldvh 启动失败，非本次改动引入），1 为 test_service 输入示例断言（因 §11.6.1 fields 契约变更需同步，已修正并复跑通过）。本次改动直接相关的单元/契约测试全绿；create 冒烟测试确认 created=true 与 content_fingerprint；check-fact-integrity complete（276 对象 0 问题）。
 object_uid: 01a00c74-6cb9-701f-b861-409778892395
 object_id: workcase-01M0678V5SE0FVGRA0JXW8J8WN
 fact_type_key: workcase
 created_at: '2026-08-16T21:22:30.735749Z'
-updated_at: '2026-08-16T21:40:35.754942Z'
+updated_at: '2026-08-16T21:55:04.598778Z'

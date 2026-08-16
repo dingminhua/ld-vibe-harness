@@ -137,7 +137,7 @@ def _completion_requirements() -> dict[str, Any]:
             "provider": "caller",
             "target": "arguments.fact_object.change_log",
             "count": 1,
-            "fields": ["at", "summary"],
+            "fields": ["summary"],
             "signature_source": "observed_context.signature",
         },
         "observed_signature": {
