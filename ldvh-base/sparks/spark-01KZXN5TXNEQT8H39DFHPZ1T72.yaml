@@ -1,8 +1,7 @@
 title: Helper 只读交互优化
-status: open
-priority: P2
+status: implemented
 intent: 承接 spark-0019 路由的模板内容重复传输问题（read-action-template-content 同时返回 content 与 source_content），以及更广泛的 Helper 只读操作（read-action-template-candidates、read-fact-objects、find-fact-object-candidates 等）的窄输出、自解释性和 AI 可消费性优化。后续需判断哪些只读操作的输出可以收缩为正常路径最窄定义、完整来源按需展开，以及失败诊断能否给出结构化修正提示。
-summary: "## 来源与原始范围\n\n- 本议题承接行动模板内容重复传输，以及更广泛 Helper 只读操作的正常路径输出、自解释性与 AI 可消费性问题。\n- 相关 Study 对局部读取、候选 diff、范围保持证据和 stale 反馈的建议仍只作为相邻输入，不扩大本 Spark 为规则源或事实源编辑能力。\n\n## 已完成承接\n\n- **失败诊断结构化提示**已由 workcase-01KZYRQF21F9V87EFJKQZA8P0Z 完成：只读操作 `invalid_request` 响应能够提供结构化修正提示；该结果不代表其它失败类别或成功路径均已优化。\n- **行动模板成功响应去重**已由 workcase-01KZZV6XHTE3YBEF25F0SZJKV0 完成：`read-action-template-content` 不再返回完整 `source_content`，正常路径保留包含行动步骤、Human Gate 与 Stop Conditions 的最小执行包；需要完整同源规范时复用 `read-specification-content` L4，并以来源路径和摘要核对。该 WorkCase 已 closed/completed，但不表示所有 Helper 只读操作均已收缩。\n\n## 当前剩余范围\n\n- 对 `read-fact-objects`、`find-fact-object-candidates` 等其它只读操作，先以真实任务证据识别具体的过量、重复或不可消费字段；没有实证缺口时不做统一删减。\n- 每个候选改动应分别回答：当前行动必需字段是什么、完整内容如何按需取得、来源身份如何核对、失败时如何继续，以及是否保持当前语义与机械验证边界。\n- 使用已建立的最小执行证据与可比性门槛复验响应体积、工具往返和首次合法行动率；没有受控对照与重复样本时，只报告链路可用性，不宣称因果改善。\n\n## 边界与保持 open 的原因\n\n- 不改变写操作、事实 Schema、Git 流程，不引入缓存、第二权威或仅为缩短响应而删除当前行动必需语义。\n- 行动模板去重这一具体子项已经完成，但更广泛只读操作尚无逐操作的稳定承接位置与证据化候选，因此本 Spark 保持 `open`。"
+summary: "## 已落实范围\n\n- 只读 `invalid_request` 响应已能给出缺失/无效字段与允许输入闭集等结构化修正提示，降低了依赖自然语言猜参的失败成本。\n- `read-action-template-content` 已移除 `content` 与完整 `source_content` 的重复传输；正常路径保留行动步骤、Human Gate 与 Stop Conditions，完整同源规范继续按需经 `read-specification-content` L4 展开。\n- CLI 已交付 `--request`、`--example` 与 `--fields`，为请求文件化、来源绑定骨架和调用方结果投影提供机械辅助。\n- 40 会话固定模型对照显示 Phase 1 将目标只读任务中的 invalid-request 命中从 22 降到 0，但直接 Helper 调用数未下降，命令字符平均增加 151.1；该结果不支持继续对全部只读响应统一删减或增加孤立 flags。\n\n## 收口边界\n\n本 Spark 创建时明确提出的失败诊断、行动模板重复传输和只读交互机械辅助已由聚焦 WorkCase 直接落实，因此入口责任结束。未来若某个具体只读 operation 在可比较真实任务中出现稳定过量、额外规则回读或修复成本，将由“LDVH 面向 AI 的服务质量评估与持续改进”先判断证据幅度，再决定是否形成新的窄 WorkCase；普通 `related-to` 只用于追溯共同线索，不表示责任路由或该 P1 Spark 已完成。"
 relations:
 - relation_key: related-to
   target:
@@ -10,6 +9,9 @@ relations:
 - relation_key: related-to
   target:
     object_uid: 019ffb52-ebb5-7ed1-a1aa-f90dd9655d0b
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
 change_log:
 - signature:
     product_name: Claude Code
@@ -41,13 +43,22 @@ change_log:
     agent_runtime_name: deepseek-harness
   at: '2026-08-14T21:55:58.382994Z'
   summary: content_update：归并已完成的失败诊断与行动模板成功响应去重承接，明确剩余范围为有实证缺口的其它只读操作逐项判断，并保持 Spark open。
+- at: '2026-08-16T11:00:23.893555Z'
+  summary: single_object_lifecycle：按 Human 收敛决定更新已落实范围、证据边界与处置说明，关联唯一 P1 优化入口并将本 Spark 从 open 收口为 implemented。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
 evolution:
 - at: '2026-08-14T08:17:37.600000Z'
   summary: 本 Spark 的失败诊断结构化提示子问题已由 WorkCase workcase-01KZYRQF21F9V87EFJKQZA8P0Z承接并完成（invalid_request 类 hints 已交付），本 Spark 保持 open 的焦点收敛为剩余未承接部分：read-action-template-content 等成功路径 source_content 与 content 去重、窄输出契约收缩（06 §9.6 变更）。
 - at: '2026-08-14T21:55:58.174286Z'
   summary: 行动模板成功响应去重已由专门 WorkCase 完成，议题焦点由该具体重复传输问题收敛为：仅对有真实任务证据的其它只读操作逐项判断窄输出，不再把全部只读响应视为同一未完成改造。
+- at: '2026-08-16T11:00:23Z'
+  summary: Human 选择把读写优化收敛到现有 P1 服务质量 Spark；本议题的具体问题已经直接落实，未证实的逐 operation 候选改由统一证据门槛判断，因此入口转为 implemented。
+disposition_summary: 原议题中的结构化失败提示、行动模板成功响应去重和 CLI 请求/示例/结果投影已经直接落实；没有证据支持继续维持一个覆盖全部只读操作的常驻优化入口。后续具体候选统一进入 P1 服务质量证据门槛，本 Spark 标记 implemented 只表示当前入口责任结束。
 object_uid: 019ffb52-ebb5-75f4-888d-2d7c6df0e8e2
 object_id: spark-01KZXN5TXNEQT8H39DFHPZ1T72
 fact_type_key: spark
 created_at: '2026-08-12T20:24:37.099438Z'
-updated_at: '2026-08-14T21:55:58.382994Z'
+updated_at: '2026-08-16T11:00:23.893555Z'
