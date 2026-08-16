@@ -16,6 +16,95 @@ from ldvh.facts.schema import FactSchema
 from ldvh.facts.workcase_validation import validate_workcase_snapshot
 from ldvh.signature import parse_signature
 
+_CHINESE_PRIMARY_NATURAL_FIELD_NAMES = frozenset(
+    {
+        "abstract", "action_ceiling", "allowed_adjustments", "applicability", "avoidance",
+        "blocking_summary", "cleanup_summary", "consequences", "controller_check_summary",
+        "controller_resolution", "current_summary", "decision", "decision_question",
+        "disposition_summary", "effect_scope", "expected_result", "feedback", "goal",
+        "impact_summary", "intent", "not_meaning", "observation_summary",
+        "out_of_bounds_handling", "rationale", "reason", "recommendation_summary",
+        "research_intent", "research_question", "resolution", "result_summary", "resume_from",
+        "risk_summary", "rollback_summary", "root_cause", "scope", "statement",
+        "summary", "symptoms", "target_scope", "title", "trigger_conditions",
+        "validation_summary", "verification_and_rollback", "waiting_on",
+    }
+)
+_CJK_CHARACTER = re.compile(r"[\u3400-\u4dbf\u4e00-\u9fff]")
+
+
+def validate_chinese_primary_changes(
+    fields: Mapping[str, Any],
+    *,
+    before: Mapping[str, Any] | None = None,
+) -> tuple[FactIssue, ...]:
+    """Reject changed natural-language strings that contain no Han character.
+
+    This is deliberately a minimum mechanical guard: it does not decide whether
+    prose is Chinese-primary.  The optional ``before`` confines updates to the
+    controlled write's changed values, preserving legacy reads and untouched
+    English fields.  Arrays of members that carry a stable identity key
+    (``item_id`` / ``criterion_id`` / ``action_id``…) are matched by that key so
+    that reordering the array does not re-baseline untouched members against a
+    different sibling; new members without a matching identity are treated as
+    this-write's changes.
+    """
+    issues: list[FactIssue] = []
+
+    # 稳定身份候选键：数组成员里携带这些键之一时，用它做跨 before/after 的身份对照。
+    _IDENTITY_KEYS = ("item_id", "criterion_id", "action_id", "limitation_id", "gate_id", "reviewed_at")
+
+    def _member_identity(member: Mapping[str, Any]) -> tuple[str | None, Any]:
+        for key in _IDENTITY_KEYS:
+            if key in member:
+                return key, member[key]
+        return None, None
+
+    def visit(value: Any, previous: Any, path: str, key: str | None) -> None:
+        if isinstance(value, Mapping):
+            prior = previous if isinstance(previous, Mapping) else {}
+            for member_key, member in value.items():
+                next_path = f"{path}.{member_key}" if path else str(member_key)
+                visit(member, prior.get(member_key), next_path, str(member_key))
+        elif isinstance(value, list):
+            prior = previous if isinstance(previous, list) else []
+            if all(isinstance(item, Mapping) for item in value):
+                # 所有列表成员都是 object：优先按稳定身份键对照。
+                prior_by_identity: dict[Any, Mapping[str, Any]] = {}
+                for prior_member in prior:
+                    if isinstance(prior_member, Mapping):
+                        identity_key, identity_value = _member_identity(prior_member)
+                        if identity_key is not None and identity_value is not None:
+                            prior_by_identity[identity_value] = prior_member
+                for index, member in enumerate(value):
+                    identity_key, identity_value = _member_identity(member)
+                    prior_member = None
+                    if identity_key is not None and identity_value is not None:
+                        prior_member = prior_by_identity.get(identity_value)
+                        if prior_member is None:
+                            prior_member = (
+                                prior[index] if index < len(prior) else None
+                            )
+                    else:
+                        # 没有可识别身份键：退化为按位置对照。
+                        prior_member = prior[index] if index < len(prior) else None
+                    visit(member, prior_member, f"{path}[{index}]", key)
+            else:
+                prior = previous if isinstance(previous, list) else []
+                for index, member in enumerate(value):
+                    prior_member = prior[index] if index < len(prior) else None
+                    visit(member, prior_member, f"{path}[{index}]", key)
+        elif (
+            key in _CHINESE_PRIMARY_NATURAL_FIELD_NAMES
+            and isinstance(value, str)
+            and value != previous
+            and not _CJK_CHARACTER.search(value)
+        ):
+            issues.append(FactIssue("language", "受约束自然语言字段至少必须包含一个汉字", path))
+
+    visit(fields, before, "", None)
+    return tuple(issues)
+
 
 @dataclass(slots=True)
 class _Node:

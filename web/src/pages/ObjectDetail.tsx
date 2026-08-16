@@ -541,6 +541,8 @@ export function ObjectIdentityHeader({
   titleMetaAlign = 'content',
   showDefaultDates = true,
   showCopyAction = true,
+  showTypeBadge = true,
+  showActivityCount = true,
   compact = false,
 }: {
   title: string;
@@ -564,6 +566,8 @@ export function ObjectIdentityHeader({
   titleMetaAlign?: 'content' | 'actions' | 'footerEnd';
   showDefaultDates?: boolean;
   showCopyAction?: boolean;
+  showTypeBadge?: boolean;
+  showActivityCount?: boolean;
   compact?: boolean;
 }) {
   const { t } = useI18n();
@@ -588,21 +592,25 @@ export function ObjectIdentityHeader({
       <div className="min-w-0">
         <div className="min-w-0">
           <div className="mb-1.5 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
-            <span
-              className="ldvh-chip inline-flex h-[18px] shrink-0 items-center justify-center rounded-md border px-1.5 text-[10px] font-medium leading-3"
-              style={{ backgroundColor: `${typeColor}18`, borderColor: `${typeColor}55`, color: typeColor }}
-            >
-              {typeLabel}
-            </span>
+            {showTypeBadge && (
+              <span
+                className="ldvh-chip inline-flex h-[18px] shrink-0 items-center justify-center rounded-md border px-1.5 text-[10px] font-medium leading-3"
+                style={{ backgroundColor: `${typeColor}18`, borderColor: `${typeColor}55`, color: typeColor }}
+              >
+                {typeLabel}
+              </span>
+            )}
             {extraBadges}
             <PriorityIcon source={source} type={objectType} locale={locale} size="xs" />
-            <span
-              className="ldvh-chip inline-flex h-[18px] shrink-0 items-center justify-center gap-1 rounded-md border border-ldvh-accent/25 bg-ldvh-accent/5 px-[5px] text-[10px] font-medium leading-3 text-ldvh-accent"
-              title={t('cognition.recent.activityCount', { count: String(activityCount) })}
-            >
-              <History size={12} aria-hidden="true" />
-              <span>{activityCount}</span>
-            </span>
+            {showActivityCount && (
+              <span
+                className="ldvh-chip inline-flex h-[18px] shrink-0 items-center justify-center gap-1 rounded-md border border-ldvh-accent/25 bg-ldvh-accent/5 px-[5px] text-[10px] font-medium leading-3 text-ldvh-accent"
+                title={t('cognition.recent.activityCount', { count: String(activityCount) })}
+              >
+                <History size={12} aria-hidden="true" />
+                <span>{activityCount}</span>
+              </span>
+            )}
             {(capabilityStatusBadge || status || actionBadges || showCopyAction) && (
               <div className="ml-auto shrink-0">
                 <ObjectIdentityActions

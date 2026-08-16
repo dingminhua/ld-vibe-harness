@@ -761,6 +761,7 @@ def _execute(
                 body=body,
                 event_at=context.event_at,
                 allow_legacy_routed_spark_migration=allow_legacy_routed_spark_migration,
+                enforce_chinese_primary=True,
             )
         )
     except FactCoordinationUnavailable as error:

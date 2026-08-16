@@ -42,11 +42,11 @@ def _fixture(tmp_path: Path) -> tuple[Path, Path, Path]:
     fact.write_text(
         """object_id: spark-0001
 fact_type_key: spark
-title: Exact update
+title: 精确更新
 created_at: 2026-07-14T09:00:00+08:00
 updated_at: 2026-07-14T10:00:00+08:00
 status: open
-summary: Before update
+summary: 更新前摘要
 priority: P2
 change_log:
   - signature:
@@ -54,7 +54,7 @@ change_log:
       agent_workbench: test
     session_id: test-session
     at: 2026-07-14T09:00:00+08:00
-    summary: Create test fact
+    summary: 创建测试事实对象
 """,
         encoding="utf-8",
     )
@@ -214,9 +214,24 @@ def _append_update_log(fields: dict[str, object]) -> None:
                 "agent_runtime_name": "pytest",
             },
             "at": "2000-01-01T00:00:00Z",
-            "summary": "Update test fact",
+            "summary": "更新测试事实对象。",
         }
     )
+
+
+def _chinese_primary_update_payload(fact_object: dict[str, object]) -> dict[str, object]:
+    """Keep historical values intact while making this fixture's written prose Chinese."""
+    supplied = deepcopy(fact_object)
+    for key in {"summary"}:
+        value = supplied.get(key)
+        if isinstance(value, str) and not any("\u3400" <= char <= "\u9fff" for char in value):
+            supplied[key] = f"中文 {value}"
+    change_log = supplied.get("change_log")
+    if isinstance(change_log, list) and change_log and isinstance(change_log[-1], dict):
+        summary = change_log[-1].get("summary")
+        if isinstance(summary, str) and not any("\u3400" <= char <= "\u9fff" for char in summary):
+            change_log[-1]["summary"] = f"中文 {summary}"
+    return supplied
 
 
 def _update_payload(
@@ -233,7 +248,7 @@ def _update_payload(
                 "workspace_root": str(workspace),
                 "fact_ref": fact_ref or _ref(),
                 "expected_content_fingerprint": fingerprint,
-                "fact_object": fact_object,
+                "fact_object": _chinese_primary_update_payload(fact_object),
             },
             "observed_context": {
                 "signature": {
@@ -326,7 +341,7 @@ def test_update_replaces_full_target_and_preserves_managed_identity(tmp_path: Pa
     assert response["result"]["previous_content_fingerprint"] == before["content_fingerprint"]
     assert response["result"]["content_fingerprint"] != before["content_fingerprint"]
     after_fields = response["result"]["fact_object"]
-    assert after_fields["summary"] == "After update"
+    assert after_fields["summary"] == "中文 After update"
     assert after_fields["object_id"] == before_fields["object_id"]
     assert after_fields["fact_type_key"] == before_fields["fact_type_key"]
     assert after_fields["created_at"] == before_fields["created_at"]
@@ -887,7 +902,7 @@ def test_stale_fingerprint_rejects_without_writing(tmp_path: Path) -> None:
     before = _read(workspace, project)
     target = _mutable(before)
     target["summary"] = "Requested update"
-    fact.write_text(fact.read_text(encoding="utf-8").replace("Before update", "Manual change"), encoding="utf-8")
+    fact.write_text(fact.read_text(encoding="utf-8").replace("更新前摘要", "手工变更"), encoding="utf-8")
     manually_changed = fact.read_bytes()
 
     response = handle_request(
@@ -1108,7 +1123,7 @@ def test_concurrent_updates_with_one_fingerprint_have_one_winner(tmp_path: Path)
 
     assert sorted(response["outcome"] for response in responses) == ["ok", "rejected"]
     final = _read(workspace, project)
-    assert final["fact_object"]["summary"] in {"First contender", "Second contender"}
+    assert final["fact_object"]["summary"] in {"中文 First contender", "中文 Second contender"}
 
 
 def test_update_reports_committed_namespace_when_directory_sync_fails(
@@ -1246,7 +1261,7 @@ def test_independent_process_updates_with_one_fingerprint_have_one_winner(tmp_pa
     assert all(item.stderr == "" for item in completed)
     assert sorted(json.loads(item.stdout)["outcome"] for item in completed) == ["ok", "rejected"]
     final = _read(workspace, project)
-    assert final["fact_object"]["summary"] in {"First process", "Second process"}
+    assert final["fact_object"]["summary"] in {"中文 First process", "中文 Second process"}
 
 
 def test_update_rejects_managed_fields_and_terminal_reopen(tmp_path: Path) -> None:
@@ -1265,7 +1280,7 @@ def test_update_rejects_managed_fields_and_terminal_reopen(tmp_path: Path) -> No
     terminal = _mutable(before)
     terminal["status"] = "discarded"
     _append_update_log(terminal)
-    terminal["disposition_summary"] = "Human chose to stop tracking this Spark"
+    terminal["disposition_summary"] = "Human 决定停止追踪该 Spark"
     terminal.pop("priority")
     response = handle_request(
         "call",
@@ -1315,7 +1330,7 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
     ).response["result"]
     study = {
         "frontmatter": {
-            "title": "Study update",
+            "title": "研究报告更新",
             "status": "active",
             "change_log": [
                 {
@@ -1325,23 +1340,23 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
                         "agent_runtime_name": "pytest",
                     },
                     "at": "2000-01-01T00:00:00Z",
-                    "summary": "Create Study test fact.",
+                    "summary": "创建 Study 测试事实对象。",
                 }
             ],
             "report_kind": "external_research",
             "urls": [
                 {
                     "ref": "https://example.invalid/study-update",
-                    "title": "Study update evidence",
-                    "summary": "External material used by the test Study.",
+                    "title": "Study 更新证据",
+                    "summary": "测试 Study 使用的外部资料。",
                 }
             ],
-            "research_question": "Does update preserve the submitted Markdown body boundary?",
-            "abstract": "The full target body remains stable across serialization.",
+            "research_question": "更新是否保留提交的 Markdown 正文边界？",
+            "abstract": "完整目标正文在序列化后保持稳定。",
             "research_intent": (
-                "Confirm that a controlled update retains the project reason for this external research."
+                "确认受控更新保留此项外部研究的项目原因。"
             ),
-            "recommendation_summary": "Use the complete target boundary when updating a Study report.",
+            "recommendation_summary": "更新 Study 报告时使用完整目标边界。",
         },
         "body": """
 ## 研究问题
@@ -1445,7 +1460,7 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
                 "agent_runtime_name": "pytest",
             },
             "at": "2000-01-01T00:00:00Z",
-            "summary": "Update Study test fact.",
+            "summary": "更新 Study 测试事实对象。",
         }
     )
 
@@ -1567,7 +1582,7 @@ def test_first_log_generic_update_succeeds_when_head_lacks_log(tmp_path: Path) -
     assert_common_response(response)
     assert response["outcome"] == "ok"
     after_fields = response["result"]["fact_object"]
-    assert after_fields["summary"] == "First real update"
+    assert after_fields["summary"] == "中文 First real update"
     assert after_fields["status"] == "open"
     change_log = after_fields["change_log"]
     assert len(change_log) == 1

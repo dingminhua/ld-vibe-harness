@@ -327,11 +327,11 @@ def _managed_draft(fact_object: dict[str, Any], carrier: str) -> dict[str, Any]:
 
 def _semantic_fields(fact_type_key: str) -> tuple[str, str]:
     return {
-        "spark": ("summary", "After fixture update."),
-        "study": ("abstract", "After fixture update."),
-        "adr": ("rationale", "After fixture update."),
-        "pitfall": ("validation_summary", "After fixture update."),
-        "workcase": ("title", "Updated isolated WorkCase fixture"),
+        "spark": ("summary", "完成隔离 fixture 更新"),
+        "study": ("abstract", "完成隔离 fixture 更新"),
+        "adr": ("rationale", "完成隔离 fixture 更新"),
+        "pitfall": ("validation_summary", "完成隔离 fixture 更新"),
+        "workcase": ("title", "完成更新的隔离 WorkCase fixture"),
     }[fact_type_key]
 
 
@@ -342,7 +342,7 @@ def _mutate_request(request: dict[str, Any], fact_type_key: str, branch: str) ->
         field, value = _semantic_fields(fact_type_key)
         fields[field] = value
         fields["change_log"].append(
-            {"at": "2000-01-01T00:00:00Z", "summary": "Apply isolated replay update."}
+            {"at": "2000-01-01T00:00:00Z", "summary": "应用隔离 replay 更新"}
         )
     if branch != "invalid-signature":
         request["observed_context"]["signature"] = deepcopy(_SIGNATURE)

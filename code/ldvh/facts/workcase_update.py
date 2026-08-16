@@ -38,6 +38,7 @@ from ldvh.facts.validation import (
     parse_rfc3339,
     timestamp_appended_change_log,
     validate_change_log_transition,
+    validate_chinese_primary_changes,
     validate_fact_object,
 )
 from ldvh.filesystem import AtomicWriteResult, native_atomic_fact_writes_supported
@@ -62,6 +63,7 @@ class WorkCaseWriteCommand:
     authorization_reference: tuple[Mapping[str, Any], ...] = ()
     route_target_fingerprints: tuple[WorkCaseRouteTargetSnapshot, ...] = ()
     independent_review_reference: Mapping[str, Any] | None = None
+    enforce_chinese_primary: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -727,6 +729,8 @@ def _candidate(
     if parsed.fields is not None:
         snapshot_issues = validate_fact_object("workcase", parsed.fields, command.schema)
         issues.extend(snapshot_issues)
+        if command.enforce_chinese_primary:
+            issues.extend(validate_chinese_primary_changes(parsed.fields, before=before))
         if not snapshot_issues and command.mode != "recover":
             issues.extend(
                 validate_workcase_transition(
