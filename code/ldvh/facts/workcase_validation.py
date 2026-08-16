@@ -15,6 +15,7 @@ from ldvh.facts.workcase_projection import (
     result_projection_complete,
     safe_convergence_shape,
 )
+from ldvh.time import canonical_utc_timestamp
 
 ACTIVE_PHASES = frozenset(
     {
@@ -30,23 +31,11 @@ ACTIVE_PHASES = frozenset(
 )
 ITEM_STATUSES = frozenset({"pending", "in_progress", "blocked", "completed", "cancelled"})
 REVIEW_CONCLUSIONS = frozenset({"pass", "pass_with_followups", "changes_required", "blocked"})
-REVIEW_METHODS = frozenset(
-    {
-        "subagent-read-only",
-        "collaboration-worker-read-only",
-        "same-ai-switched-role-read-only",
-    }
-)
+REVIEW_METHODS = frozenset({"subagent-read-only", "same-ai-switched-role-read-only"})
 SAME_AI_REVIEW_METHOD = "same-ai-switched-role-read-only"
 SUBAGENT_REVIEW_METHOD = "subagent-read-only"
-COLLABORATION_REVIEW_METHOD = "collaboration-worker-read-only"
-CAPABILITY_LIMITATION_CAPABILITY = "independent-subagent-review"
-CAPABILITY_LIMITATION_AVAILABILITY = "unavailable"
-CAPABILITY_LIMITATION_FALLBACK_POLICY = SAME_AI_REVIEW_METHOD
-REVIEW_CATEGORIES = frozenset({"creation_review", "plan_delta_review", "result_review"})
 REQUIRED_QUALITY_GATE_ID = "independent-result-review"
 REQUIRED_REVIEWER_MODE = "independent-read-only"
-REVIEWER_PREFERRED_METHODS = frozenset(REVIEW_METHODS)
 CRITERION_OUTCOMES = frozenset({"satisfied", "not_satisfied", "not_verified"})
 CLOSURE_OUTCOMES = frozenset({"completed", "partial", "not-achieved", "cancelled"})
 
@@ -56,7 +45,6 @@ _RESIDUAL_ID = re.compile(r"residual-[a-z0-9][a-z0-9-]*\Z")
 _SUGGESTION_ID = re.compile(r"suggestion-[a-z0-9][a-z0-9-]*\Z")
 _WORKCASE_ID = LAYOUTS["workcase"].object_id_pattern
 _AUTHORIZATION_ID = re.compile(r"authorization-[a-z0-9][a-z0-9-]*\Z")
-_LIMITATION_ID = re.compile(r"limitation-[a-z0-9][a-z0-9-]*\Z")
 _SHA256 = re.compile(r"[0-9a-f]{64}\Z")
 _TERMINATION_QUALITY_STEP = re.compile(
     r"(independent_result_review|closure_proposal|gate_2):(not_reached|actual|skipped)\Z"
@@ -320,35 +308,6 @@ def _validate_items(fields: Mapping[str, object], issues: list[FactIssue]) -> No
         _issue(issues, "work item depends_on 有向图不得成环", "work_items")
 
 
-def _capability_limitations(fields: Mapping[str, object]) -> dict[str, Mapping[str, object]]:
-    authorization = fields.get("execution_authorization")
-    if not isinstance(authorization, Mapping):
-        return {}
-    values = authorization.get("capability_limitations")
-    if not isinstance(values, list):
-        return {}
-    return {
-        str(value["limitation_id"]): value
-        for value in values
-        if isinstance(value, Mapping) and _nonempty_string(value.get("limitation_id"))
-    }
-
-
-def _review_category(fields: Mapping[str, object], array_name: str) -> str:
-    if array_name == "result_reviews":
-        return "result_review"
-    approval = fields.get("execution_approval")
-    plan_version = fields.get("plan_version")
-    approved_version = approval.get("subject_version") if isinstance(approval, Mapping) else None
-    if (
-        _positive_integer(approved_version)
-        and _positive_integer(plan_version)
-        and int(plan_version) > int(approved_version)
-    ):
-        return "plan_delta_review"
-    return "creation_review"
-
-
 def _validate_review_method(
     fields: Mapping[str, object],
     review: Mapping[str, object],
@@ -357,104 +316,39 @@ def _validate_review_method(
     path: str,
     issues: list[FactIssue],
 ) -> None:
-    limitations = _capability_limitations(fields)
+    del fields, array_name
     method = review.get("actual_method")
     fallback_fields = {
-        "capability_limitation_id",
         "capability_evidence",
         "assurance_gap",
-        "stop_condition_assessment",
+        "human_disclosure_summary",
+        "human_disclosed_at",
     }
-    carrier_fields = {"actual_agent", "actual_model", "evidence"}
-    if method is None:
-        if limitations:
-            _issue(
-                issues,
-                "authorization 含 capability limitations 时 review 必须记录 actual_method",
-                f"{path}.actual_method",
-            )
-        for name in sorted(fallback_fields & set(review)):
-            _issue(issues, "fallback 披露字段要求 actual_method", f"{path}.{name}")
-        for name in sorted(carrier_fields & set(review)):
-            _issue(issues, "carrier 披露字段要求 actual_method", f"{path}.{name}")
-        return
+    retired_fields = {
+        "capability_limitation_id",
+        "stop_condition_assessment",
+        "actual_agent",
+        "actual_model",
+        "evidence",
+    }
+    for name in sorted(retired_fields & set(review)):
+        _issue(issues, "活动期 review 禁止历史路由字段", f"{path}.{name}")
     if method not in REVIEW_METHODS:
-        _issue(issues, "review actual_method 不在当前闭集中", f"{path}.actual_method")
+        _issue(issues, "review actual_method 必填且不在当前闭集中", f"{path}.actual_method")
         return
     if method == SAME_AI_REVIEW_METHOD:
         for name in sorted(fallback_fields - set(review)):
-            _issue(issues, "same-AI fallback review 缺少必填披露字段", f"{path}.{name}")
-        limitation_id = review.get("capability_limitation_id")
-        limitation = limitations.get(str(limitation_id)) if _nonempty_string(limitation_id) else None
-        if limitation is None:
-            _issue(
-                issues,
-                "same-AI fallback 必须精确引用当前 capability limitation",
-                f"{path}.capability_limitation_id",
-            )
-        else:
-            category = _review_category(fields, array_name)
-            categories = limitation.get("affected_review_categories")
-            if not isinstance(categories, list) or category not in categories:
-                _issue(
-                    issues,
-                    "capability limitation 未覆盖当前 review 类别",
-                    f"{path}.capability_limitation_id",
-                )
-            if limitation.get("fallback_policy") != SAME_AI_REVIEW_METHOD:
-                _issue(
-                    issues,
-                    "capability limitation fallback_policy 与实际方法不一致",
-                    f"{path}.capability_limitation_id",
-                )
-            if review.get("assurance_gap") != limitation.get("assurance_gap"):
-                _issue(
-                    issues,
-                    "review assurance_gap 必须与 capability limitation 精确一致",
-                    f"{path}.assurance_gap",
-                )
+            _issue(issues, "same-AI review 缺少 Controller 证据或 Human 披露字段", f"{path}.{name}")
         _validate_unique_strings(review.get("capability_evidence"), f"{path}.capability_evidence", issues)
-        if review.get("stop_condition_assessment") != "clear":
-            _issue(
-                issues,
-                "same-AI fallback 的 stop_condition_assessment 必须为 clear",
-                f"{path}.stop_condition_assessment",
-            )
-        for name in sorted(carrier_fields & set(review)):
-            _issue(issues, "same-AI review 禁止 carrier 披露字段", f"{path}.{name}")
+        for name in ("assurance_gap", "human_disclosure_summary", "human_disclosed_at"):
+            if not _nonempty_string(review.get(name)):
+                _issue(issues, "same-AI review 披露成员必须是非空 string", f"{path}.{name}")
+        disclosed_at = review.get("human_disclosed_at")
+        if _nonempty_string(disclosed_at) and canonical_utc_timestamp(disclosed_at) is None:
+            _issue(issues, "human_disclosed_at 必须是带时区 RFC 3339 date-time", f"{path}.human_disclosed_at")
         return
-
-    # subagent-read-only or collaboration-worker-read-only (non-fallback carriers)
     for name in sorted(fallback_fields & set(review)):
-        _issue(issues, "独立 review 禁止 fallback 披露字段", f"{path}.{name}")
-    if method == COLLABORATION_REVIEW_METHOD:
-        if not _nonempty_string(review.get("actual_agent")):
-            _issue(issues, "collaboration review 必须记录 actual_agent", f"{path}.actual_agent")
-        if not _nonempty_string(review.get("actual_model")):
-            _issue(issues, "collaboration review 必须记录 actual_model", f"{path}.actual_model")
-        _validate_unique_strings(review.get("evidence"), f"{path}.evidence", issues)
-        _validate_reviewer_policy_match(fields, review, path, issues)
-
-
-def _validate_reviewer_policy_match(
-    fields: Mapping[str, object],
-    review: Mapping[str, object],
-    path: str,
-    issues: list[FactIssue],
-) -> None:
-    """collaboration review 必须与冻结 reviewer policy 的模型/Agent 映射一致并满足每轮视角上限。"""
-    authorization = fields.get("execution_authorization")
-    if not isinstance(authorization, Mapping):
-        return
-    policy = authorization.get("reviewer_policy")
-    if not isinstance(policy, Mapping):
-        return
-    agent = policy.get("collaboration_agent")
-    model = policy.get("model")
-    if _nonempty_string(agent) and _nonempty_string(review.get("actual_agent")) and review.get("actual_agent") != agent:
-        _issue(issues, "collaboration review actual_agent 必须与冻结 reviewer policy 一致", f"{path}.actual_agent")
-    if _nonempty_string(model) and _nonempty_string(review.get("actual_model")) and review.get("actual_model") != model:
-        _issue(issues, "collaboration review actual_model 必须与冻结 reviewer policy 一致", f"{path}.actual_model")
+        _issue(issues, "Subagent review 禁止 same-AI 披露字段", f"{path}.{name}")
 
 
 def _validate_reviews(
@@ -598,120 +492,9 @@ def _validate_execution_authorization(fields: Mapping[str, object], issues: list
     for name in ("prohibited_actions", "human_prerequisites"):
         if name in value:
             _validate_unique_strings(value.get(name), f"execution_authorization.{name}", issues)
-    limitations = value.get("capability_limitations")
-    if limitations is not None:
-        path = "execution_authorization.capability_limitations"
-        if not isinstance(limitations, list) or not limitations:
-            _issue(issues, "capability_limitations 出现时必须是非空 array", path)
-        else:
-            limitation_ids: list[str] = []
-            required = {
-                "limitation_id",
-                "capability",
-                "availability",
-                "observation_summary",
-                "evidence",
-                "affected_review_categories",
-                "fallback_policy",
-                "assurance_gap",
-                "stop_conditions",
-            }
-            for index, limitation in enumerate(limitations):
-                item_path = f"{path}[{index}]"
-                if not isinstance(limitation, Mapping):
-                    _issue(issues, "capability limitation 必须是 object", item_path)
-                    continue
-                _require(limitation, required, issues, context="capability limitation ")
-                unknown = sorted(set(limitation) - required)
-                if unknown:
-                    _issue(issues, "capability limitation 包含未知成员", item_path)
-                limitation_id = limitation.get("limitation_id")
-                if _nonempty_string(limitation_id):
-                    limitation_ids.append(str(limitation_id))
-                    if _LIMITATION_ID.fullmatch(str(limitation_id)) is None:
-                        _issue(issues, "limitation_id 格式不符合当前闭集", f"{item_path}.limitation_id")
-                else:
-                    _issue(issues, "limitation_id 必须是非空 string", f"{item_path}.limitation_id")
-                if limitation.get("capability") != CAPABILITY_LIMITATION_CAPABILITY:
-                    _issue(issues, "capability 不在当前闭集中", f"{item_path}.capability")
-                if limitation.get("availability") != CAPABILITY_LIMITATION_AVAILABILITY:
-                    _issue(issues, "availability 必须明确为 unavailable", f"{item_path}.availability")
-                if not _nonempty_string(limitation.get("observation_summary")):
-                    _issue(issues, "observation_summary 必须是非空 string", f"{item_path}.observation_summary")
-                evidence = _validate_unique_strings(limitation.get("evidence"), f"{item_path}.evidence", issues)
-                categories = _validate_unique_strings(
-                    limitation.get("affected_review_categories"),
-                    f"{item_path}.affected_review_categories",
-                    issues,
-                )
-                for category_index, category in enumerate(categories):
-                    if category not in REVIEW_CATEGORIES:
-                        _issue(
-                            issues,
-                            "affected review category 不在当前闭集中",
-                            f"{item_path}.affected_review_categories[{category_index}]",
-                        )
-                if limitation.get("fallback_policy") != CAPABILITY_LIMITATION_FALLBACK_POLICY:
-                    _issue(issues, "fallback_policy 不在当前闭集中", f"{item_path}.fallback_policy")
-                if not _nonempty_string(limitation.get("assurance_gap")):
-                    _issue(issues, "assurance_gap 必须是非空 string", f"{item_path}.assurance_gap")
-                stop_conditions = _validate_unique_strings(
-                    limitation.get("stop_conditions"), f"{item_path}.stop_conditions", issues
-                )
-                if not evidence or not stop_conditions:
-                    continue
-            if len(limitation_ids) != len(set(limitation_ids)):
-                _issue(issues, "capability limitation_id 不得重复", path)
-
-    reviewer_policy = value.get("reviewer_policy")
-    if reviewer_policy is not None:
-        path = "execution_authorization.reviewer_policy"
-        if not isinstance(reviewer_policy, Mapping):
-            _issue(issues, "reviewer_policy 必须是 object", path)
-        else:
-            required = {
-                "model",
-                "collaboration_agent",
-                "effort",
-                "fast",
-                "preferred_method",
-                "fallback_order",
-                "max_perspectives",
-                "activation",
-                "same_ai_limit",
-            }
-            _require(reviewer_policy, required, issues, context="reviewer policy ")
-            for name in ("model", "collaboration_agent", "effort", "activation", "same_ai_limit"):
-                if not _nonempty_string(reviewer_policy.get(name)):
-                    _issue(issues, "reviewer policy 文本成员必须是非空 string", f"{path}.{name}")
-            if not isinstance(reviewer_policy.get("fast"), bool):
-                _issue(issues, "reviewer policy fast 必须是 boolean", f"{path}.fast")
-            preferred = reviewer_policy.get("preferred_method")
-            if preferred not in REVIEWER_PREFERRED_METHODS:
-                _issue(issues, "reviewer policy preferred_method 不在当前闭集中", f"{path}.preferred_method")
-            fallback_order = _validate_unique_strings(
-                reviewer_policy.get("fallback_order"), f"{path}.fallback_order", issues
-            )
-            for member in fallback_order:
-                if member not in REVIEWER_PREFERRED_METHODS:
-                    _issue(issues, "reviewer policy fallback_order 成员不在当前闭集中", f"{path}.fallback_order")
-            if preferred is not None:
-                if not fallback_order or fallback_order[0] != preferred:
-                    _issue(
-                        issues,
-                        "reviewer policy fallback_order 首项必须等于 preferred_method",
-                        f"{path}.fallback_order",
-                    )
-                if len(fallback_order) != len(set(fallback_order)):
-                    _issue(issues, "reviewer policy fallback_order 成员不得重复", f"{path}.fallback_order")
-            max_perspectives = reviewer_policy.get("max_perspectives")
-            if not _positive_integer(max_perspectives):
-                _issue(issues, "reviewer policy max_perspectives 必须是正整数", f"{path}.max_perspectives")
-            elif int(max_perspectives) > 2:
-                _issue(issues, "reviewer policy max_perspectives 不大于 2", f"{path}.max_perspectives")
-            unknown = sorted(set(reviewer_policy) - required)
-            if unknown:
-                _issue(issues, "reviewer policy 包含未知成员", path)
+    retired = sorted({"capability_limitations", "reviewer_policy"} & set(value))
+    for name in retired:
+        _issue(issues, "活动期 execution authorization 禁止历史 Reviewer 路由字段", f"execution_authorization.{name}")
 
 
 def required_quality_gate_issues(fields: Mapping[str, object]) -> tuple[FactIssue, ...]:

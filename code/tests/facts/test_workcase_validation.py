@@ -18,11 +18,13 @@ def _review(version: int = 1, *, feedback: bool = False) -> dict[str, object]:
         "subject_version": version,
         "scope": "The current bounded subject.",
         "conclusion": "pass",
+        "actual_method": "subagent-read-only",
     }
     if feedback:
         review.update(
             {
                 "conclusion": "pass_with_followups",
+                "actual_method": "subagent-read-only",
                 "feedback": ["Clarify the remaining boundary."],
                 "controller_resolution": "The boundary was clarified.",
             }
@@ -51,32 +53,17 @@ def _authorization() -> dict[str, object]:
     }
 
 
-def _capability_limitation(*categories: str) -> dict[str, object]:
-    return {
-        "limitation_id": "limitation-subagent-review",
-        "capability": "independent-subagent-review",
-        "availability": "unavailable",
-        "observation_summary": "The current environment exposes no subagent facility.",
-        "evidence": ["tool inventory reports no subagent capability"],
-        "affected_review_categories": list(categories),
-        "fallback_policy": "same-ai-switched-role-read-only",
-        "assurance_gap": "The Reviewer does not have execution-environment independence.",
-        "stop_conditions": [
-            "Capability evidence becomes uncertain",
-            "The review cannot remain read-only and perspective-separated",
-        ],
-    }
-
-
 def _same_ai_disclosure() -> dict[str, object]:
     return {
         "actual_method": "same-ai-switched-role-read-only",
-        "capability_limitation_id": "limitation-subagent-review",
-        "capability_evidence": ["current tool inventory still reports no subagent capability"],
+        "capability_evidence": [
+            "Controller discovered the complete current tool surface.",
+            "Controller attempted Subagent creation and received an unavailable result.",
+        ],
         "assurance_gap": "The Reviewer does not have execution-environment independence.",
-        "stop_condition_assessment": "clear",
+        "human_disclosure_summary": "Human was told that Subagent creation failed and same-AI review would run directly.",
+        "human_disclosed_at": "2026-07-26T10:09:00+08:00",
     }
-
 
 def _approval(fields: dict[str, object] | None = None) -> dict[str, object]:
     baseline = fields if fields is not None else _base("executing")
@@ -785,214 +772,60 @@ def test_completed_proposal_rejects_constrained_responsibility_suggestions() -> 
     )
 
 
-def test_creation_bootstrap_accepts_explicit_same_ai_low_assurance_review() -> None:
+def test_same_ai_review_accepts_controller_evidence_and_disclosure_without_new_gate() -> None:
     fields = _base("human_plan_confirming")
-    fields["execution_authorization"]["capability_limitations"] = [
-        _capability_limitation("creation_review", "plan_delta_review", "result_review")
-    ]
     fields["creation_reviews"][0].update(_same_ai_disclosure())
-    fields["waiting_on"] = "Human Gate1 decision on the disclosed low-assurance creation review."
+    fields["waiting_on"] = "Human Gate1 decision on the already disclosed creation review."
 
     assert validate_workcase_snapshot(fields) == ()
 
 
-def test_recorded_limitation_does_not_force_fallback_when_subagent_is_used() -> None:
+def test_active_authorization_rejects_retired_reviewer_routing_fields() -> None:
+    for retired_name in ("capability_limitations", "reviewer_policy"):
+        fields = _base("human_plan_confirming")
+        fields["execution_authorization"][retired_name] = {"historical": True}
+        issues = validate_workcase_snapshot(fields)
+        assert any(issue.field_path == f"execution_authorization.{retired_name}" for issue in issues)
+
+
+def test_retired_third_review_method_is_rejected_for_active_workcase() -> None:
     fields = _base("human_plan_confirming")
-    fields["execution_authorization"]["capability_limitations"] = [
-        _capability_limitation("creation_review", "plan_delta_review", "result_review")
-    ]
+    fields["creation_reviews"][0]["actual_method"] = "collaboration-worker-read-only"
+
+    issues = validate_workcase_snapshot(fields)
+
+    assert any(issue.field_path == "creation_reviews[0].actual_method" for issue in issues)
+
+
+def test_subagent_method_rejects_same_ai_disclosure_fields() -> None:
+    fields = _base("human_plan_confirming")
+    fields["creation_reviews"][0].update(_same_ai_disclosure())
     fields["creation_reviews"][0]["actual_method"] = "subagent-read-only"
-    fields["waiting_on"] = "Human Gate1 decision with an actual subagent review."
-
-    assert validate_workcase_snapshot(fields) == ()
-
-
-def _reviewer_policy(**overrides: object) -> dict[str, object]:
-    policy: dict[str, object] = {
-        "model": "gpt-5.6-luna",
-        "collaboration_agent": "codex-worker",
-        "effort": "medium",
-        "fast": True,
-        "preferred_method": "collaboration-worker-read-only",
-        "fallback_order": [
-            "collaboration-worker-read-only",
-            "subagent-read-only",
-            "same-ai-switched-role-read-only",
-        ],
-        "max_perspectives": 2,
-        "activation": "Luna Orca collaboration worker is explicitly unlocked by Human.",
-        "same_ai_limit": "Same-AI fallback only when both collaboration worker and subagent are unavailable.",
-    }
-    policy.update(overrides)
-    return policy
-
-
-def test_collaboration_review_requires_carrier_and_policy_consistency() -> None:
-    fields = _base("human_plan_confirming")
-    fields["execution_authorization"]["reviewer_policy"] = _reviewer_policy()
-    fields["creation_reviews"][0].update(
-        {
-            "actual_method": "collaboration-worker-read-only",
-            "actual_agent": "codex-worker",
-            "actual_model": "gpt-5.6-luna",
-            "evidence": ["Luna Orca worker p880kljkaiibv958x36ss897 reviewed the current candidate."],
-        }
-    )
-    # missing actual_agent / actual_model must be flagged
-    incomplete = deepcopy(fields)
-    incomplete["creation_reviews"][0].pop("actual_agent")
-    assert any(
-        issue.field_path == "creation_reviews[0].actual_agent" for issue in validate_workcase_snapshot(incomplete)
-    )
-
-    # mismatched model against frozen policy must be flagged
-    mismatched = deepcopy(fields)
-    mismatched["creation_reviews"][0]["actual_model"] = "different-model"
-    assert any(
-        issue.field_path == "creation_reviews[0].actual_model" for issue in validate_workcase_snapshot(mismatched)
-    )
-
-    # valid collaboration review with matching policy passes
-    fields["waiting_on"] = "Human Gate1 decision on the collaboration-worker creation review."
-    assert validate_workcase_snapshot(fields) == ()
-
-
-def test_collaboration_method_rejects_fallback_only_fields() -> None:
-    fields = _base("human_plan_confirming")
-    fields["execution_authorization"]["reviewer_policy"] = _reviewer_policy()
-    fields["creation_reviews"][0].update(
-        {
-            "actual_method": "collaboration-worker-read-only",
-            "actual_agent": "codex-worker",
-            "actual_model": "gpt-5.6-luna",
-            "evidence": ["Luna Orca worker reviewed the current candidate."],
-            **{key: value for key, value in _same_ai_disclosure().items() if key != "actual_method"},
-        }
-    )
-    issues = validate_workcase_snapshot(fields)
-    assert any(
-        "fallback" in issue.summary
-        and issue.field_path == "creation_reviews[0].capability_limitation_id"
-        for issue in issues
-    )
-
-
-def test_reviewer_policy_rejects_unknown_or_out_of_range_values() -> None:
-    fields = _base("executing")
-    fields["execution_authorization"]["reviewer_policy"] = _reviewer_policy(
-        preferred_method="not-a-method"
-    )
-    issues = validate_workcase_snapshot(fields)
-    assert any("preferred_method" in issue.field_path and "闭集" in issue.summary for issue in issues)
-
-    fields = _base("executing")
-    fields["execution_authorization"]["reviewer_policy"] = _reviewer_policy(max_perspectives=3)
-    issues = validate_workcase_snapshot(fields)
-    assert any("max_perspectives" in issue.field_path and "不大于" in issue.summary for issue in issues)
-
-    fields = _base("executing")
-    fields["execution_authorization"]["reviewer_policy"] = _reviewer_policy(
-        fallback_order=["subagent-read-only"]
-    )
-    issues = validate_workcase_snapshot(fields)
-    assert any("fallback_order" in issue.field_path and "首项" in issue.summary for issue in issues)
-
-    fields = _base("executing")
-    fields["execution_authorization"]["reviewer_policy"] = _reviewer_policy(fast="yes")
-    issues = validate_workcase_snapshot(fields)
-    assert any("fast" in issue.field_path and "boolean" in issue.summary for issue in issues)
-
-
-def test_subagent_method_rejects_fallback_only_assurance_fields() -> None:
-    fields = _base("human_plan_confirming")
-    fields["execution_authorization"]["capability_limitations"] = [_capability_limitation("creation_review")]
-    fields["creation_reviews"][0].update({"actual_method": "subagent-read-only", **_same_ai_disclosure()})
-    fields["creation_reviews"][0]["actual_method"] = "subagent-read-only"
-    fields["waiting_on"] = "Human Gate1 decision."
 
     issues = validate_workcase_snapshot(fields)
 
-    assert any(
-        issue.field_path == "creation_reviews[0].capability_limitation_id" and "fallback" in issue.summary
-        for issue in issues
-    )
+    assert any(issue.field_path == "creation_reviews[0].capability_evidence" for issue in issues)
 
 
 @pytest.mark.parametrize(
-    ("mutate", "expected_path"),
-    [
-        (
-            lambda fields: fields["execution_authorization"]["capability_limitations"][0].update(
-                {"availability": "unknown"}
-            ),
-            "execution_authorization.capability_limitations[0].availability",
-        ),
-        (
-            lambda fields: fields["creation_reviews"][0].pop("capability_evidence"),
-            "creation_reviews[0].capability_evidence",
-        ),
-        (
-            lambda fields: fields["execution_authorization"]["capability_limitations"][0].update(
-                {"evidence": []}
-            ),
-            "execution_authorization.capability_limitations[0].evidence",
-        ),
-        (
-            lambda fields: fields["creation_reviews"][0].update({"assurance_gap": "Hidden gap"}),
-            "creation_reviews[0].assurance_gap",
-        ),
-        (
-            lambda fields: fields["creation_reviews"][0].pop("actual_method"),
-            "creation_reviews[0].actual_method",
-        ),
-    ],
+    "missing_field",
+    ["actual_method", "capability_evidence", "assurance_gap", "human_disclosure_summary", "human_disclosed_at"],
 )
-def test_same_ai_review_rejects_unknown_or_incomplete_assurance_disclosure(
-    mutate: object,
-    expected_path: str,
-) -> None:
+def test_same_ai_review_requires_controller_evidence_and_human_disclosure(missing_field: str) -> None:
     fields = _base("human_plan_confirming")
-    fields["execution_authorization"]["capability_limitations"] = [_capability_limitation("creation_review")]
     fields["creation_reviews"][0].update(_same_ai_disclosure())
-    fields["waiting_on"] = "Human Gate1 decision."
-    mutate(fields)  # type: ignore[operator]
+    fields["creation_reviews"][0].pop(missing_field)
 
     issues = validate_workcase_snapshot(fields)
 
-    assert any(issue.field_path == expected_path for issue in issues)
+    assert any(issue.field_path == f"creation_reviews[0].{missing_field}" for issue in issues)
 
 
-def test_gate1_approved_fallback_must_cover_plan_delta_and_result_categories() -> None:
-    plan_delta = _base("executing")
-    plan_delta["plan_version"] = 2
-    plan_delta["creation_reviews"] = [{**_review(2), **_same_ai_disclosure()}]
-    plan_delta["execution_authorization"]["capability_limitations"] = [_capability_limitation("creation_review")]
-    plan_delta["execution_approval"] = _approval(plan_delta)
+def test_same_ai_review_requires_rfc3339_human_disclosure_time() -> None:
+    fields = _base("human_plan_confirming")
+    fields["creation_reviews"][0].update(_same_ai_disclosure())
+    fields["creation_reviews"][0]["human_disclosed_at"] = "not-a-timestamp"
 
-    issues = validate_workcase_snapshot(plan_delta)
-    assert any(
-        issue.field_path == "creation_reviews[0].capability_limitation_id" and "未覆盖" in issue.summary
-        for issue in issues
-    )
+    issues = validate_workcase_snapshot(fields)
 
-    plan_delta["execution_authorization"]["capability_limitations"][0]["affected_review_categories"] = [
-        "creation_review",
-        "plan_delta_review",
-        "result_review",
-    ]
-    plan_delta["execution_approval"] = _approval(plan_delta)
-    assert validate_workcase_snapshot(plan_delta) == ()
-
-    result = _complete_result("closure_preparing")
-    result["execution_authorization"]["capability_limitations"] = [
-        _capability_limitation("creation_review", "plan_delta_review")
-    ]
-    result["creation_reviews"][0]["actual_method"] = "subagent-read-only"
-    result["result_reviews"] = [{**_review(), **_same_ai_disclosure()}]
-    result["execution_approval"] = _approval(result)
-
-    issues = validate_workcase_snapshot(result)
-    assert any(
-        issue.field_path == "result_reviews[0].capability_limitation_id" and "未覆盖" in issue.summary
-        for issue in issues
-    )
+    assert any(issue.field_path == "creation_reviews[0].human_disclosed_at" for issue in issues)

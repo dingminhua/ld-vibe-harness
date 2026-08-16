@@ -78,6 +78,7 @@ def _review(version: int = 1) -> dict[str, Any]:
         "subject_version": version,
         "scope": "检查当前版本的完整性、边界和隐藏风险。",
         "conclusion": "pass",
+        "actual_method": "subagent-read-only",
     }
 
 

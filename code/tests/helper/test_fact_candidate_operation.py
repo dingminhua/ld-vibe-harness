@@ -161,6 +161,7 @@ def _workcase() -> dict[str, object]:
             "subject_version": 1,
             "scope": "Goal, scope, criteria, work items, method, validation and risks.",
             "conclusion": "pass",
+            "actual_method": "subagent-read-only",
             "covered_quality_gate_ids": ["independent-result-review"],
         }
     ]

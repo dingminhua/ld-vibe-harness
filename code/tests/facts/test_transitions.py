@@ -22,6 +22,7 @@ def _plan_review(version: int = 1) -> dict[str, object]:
         "subject_version": version,
         "scope": "Current plan and verification boundary",
         "conclusion": "pass",
+        "actual_method": "subagent-read-only",
         "covered_quality_gate_ids": ["independent-result-review"],
     }
 
@@ -33,6 +34,7 @@ def _result_review(version: int = 1, *, resolved: bool = True) -> dict[str, obje
         "subject_version": version,
         "scope": "Current result and validation boundary",
         "conclusion": "changes_required",
+        "actual_method": "subagent-read-only",
         "feedback": ["State the unverified boundary explicitly"],
     }
     if resolved:
@@ -1108,10 +1110,10 @@ def test_review_method_and_assurance_disclosures_are_reviewer_owned() -> None:
     corrected["result_reviews"][0]["actual_method"] = "same-ai-switched-role-read-only"
     corrected["result_reviews"][0].update(
         {
-            "capability_limitation_id": "limitation-subagent-review",
-            "capability_evidence": ["current capability probe is unsupported"],
+            "capability_evidence": ["Controller attempted Subagent creation and received unavailable."],
             "assurance_gap": "No execution-environment independence.",
-            "stop_condition_assessment": "clear",
+            "human_disclosure_summary": "Human was told that same-AI review would run directly.",
+            "human_disclosed_at": "2026-07-26T10:59:00+08:00",
         }
     )
     assert validate_workcase_transition(reviewing, corrected) == ()

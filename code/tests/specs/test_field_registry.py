@@ -16,8 +16,8 @@ def test_current_registry_is_complete_and_resolves_all_current_types(current_spe
     inspection = _inspection(current_specs_repository)
 
     assert inspection.complete is True
-    assert len(inspection.structures) == 24
-    assert len(inspection.registrations) == 192
+    assert len(inspection.structures) == 22
+    assert len(inspection.registrations) == 169
     assert {item.fact_type_key for item in inspection.fact_types} == {
         "spark",
         "workcase",
@@ -72,11 +72,9 @@ def test_workcase_current_structures_have_admission_records(
     assert workcase_structures == {
         "workcase-item",
         "workcase-execution-authorization",
-        "workcase-capability-limitation",
         "workcase-authorized-action",
         "workcase-quality-gate",
         "workcase-review",
-        "workcase-reviewer-policy",
         "workcase-human-approval",
         "workcase-success-criterion",
         "workcase-success-result",

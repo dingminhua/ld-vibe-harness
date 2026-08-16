@@ -277,22 +277,16 @@ def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Pat
     assert check_response["outcome"] == "ok"
     checked_operation = check_response["result"]["operations"][0]
     assert checked_operation["availability"] == "available_for_request"
-    assert len(checked_operation["available_scope"]) == 36
+    assert len(checked_operation["available_scope"]) == 33
     assert "working-tree-test-evidence-fields" in checked_operation["available_scope"]
     assert "web-api-reading-contract" in checked_operation["available_scope"]
-    assert "workbuddy-platform-facts" in checked_operation["available_scope"]
-    assert "cindy-platform-facts" in checked_operation["available_scope"]
-    assert "deepseek-harness-platform-facts" in checked_operation["available_scope"]
     assert checked_operation["unavailable_scope"] == []
 
     assert called.returncode == 0
     assert call_response["outcome"] == "ok"
-    assert len(call_response["result"]["items"]) == 36
+    assert len(call_response["result"]["items"]) == 33
     assert "working-tree-test-evidence-fields" in {item["key"] for item in call_response["result"]["items"]}
     assert "web-api-reading-contract" in {item["key"] for item in call_response["result"]["items"]}
-    assert "workbuddy-platform-facts" in {item["key"] for item in call_response["result"]["items"]}
-    assert "cindy-platform-facts" in {item["key"] for item in call_response["result"]["items"]}
-    assert "deepseek-harness-platform-facts" in {item["key"] for item in call_response["result"]["items"]}
     assert call_response["scope"]["requested"] == call_response["scope"]["completed"]
     assert call_response["scope"]["not_completed"] == []
     assert call_response["disclosure"]["requested"] is None

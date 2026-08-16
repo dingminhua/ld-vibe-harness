@@ -24,7 +24,7 @@
 >
 > 终止善后中的每个稳定检查点同样先写完整 after、CAS、回读与完整性审计。检查点必须区分 retained、discarded、unverified 与 relationship impacts，并据实更新 cleanup summary/status；未执行的删除、回滚、验证或复核不得写成已完成。complete 前还要再次核对入向 `depends-on`，并以 criterion results 决定实际 closure outcome，而不是以 Human 要求中止推定结果分类。
 >
-> 全部 item terminal 后，Controller 按 21/32 连续形成 Controller 检查、完整结果投影、实际结果复核、feedback 处置、关闭提案与 Human 关闭确认。结果复核按 Gate1 冻结的 reviewer policy 委派（默认顺序：协作 Worker → subagent → same-AI）；只有冻结限制、当前证据、审核类别和停止条件共同允许时才可使用并如实记录低保证 same-AI fallback。Reviewer pass 只是一项实际 review 输入，不等于 Gate 2：Controller 不得跳过其反馈处置责任，review 分歧在达到轮次上限后以 Controller（主控）意见为主收敛（轮次上限与复审规则见 21 §4.5）；需要修正或返工时按 21 返回 `controller_checking`，投影不变且 feedback 已处置时按 21 的合法边进入 `closure_preparing`。无论采用哪条 21 允许的边，都必须继续形成完整 after、CAS、精确回读与完整性审计，直至真实快照进入 Human 关闭确认；不能只输出聊天总结。
+> 全部 item terminal 后，Controller 连续形成自检、结果投影、结果复核、反馈处置、关闭提案与 Gate 2。结果复核先实际创建只读 Subagent；无法创建时，Controller 向 Human 披露保证差距后直接使用 same-AI 只读视角，并完整记录能力证据与披露。
 
 ### §5.5 恢复交还首段（修订前）
 

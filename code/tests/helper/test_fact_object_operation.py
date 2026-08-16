@@ -244,6 +244,7 @@ def test_fact_read_checks_relation_targets_and_reachable_dag(tmp_path: Path) -> 
                     "    subject_version: 1",
                     "    scope: Goal, scope, criteria, work items, method, validation and risks",
                     "    conclusion: pass",
+                    "    actual_method: subagent-read-only",
                     "execution_authorization:",
                     "  authorized_actions:",
                     "    - action_id: authorization-dependency-fixture",
@@ -530,6 +531,7 @@ creation_reviews:
     subject_version: 1
     scope: Goal, scope, criteria, work items, method, validation and risks
     conclusion: pass
+    actual_method: subagent-read-only
 execution_authorization:
   authorized_actions:
     - action_id: authorization-projection-fixture

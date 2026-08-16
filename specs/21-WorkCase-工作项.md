@@ -119,54 +119,42 @@ Code 不判断自然语言是否属于生命周期关口；Controller 与 Review
 
 受控创建必须一次形成完整目标、scope、成功标准定义、`plan_version=1`、非空 work items、完整 `execution_authorization`、至少一项实际方案复核、priority、`status=open`、`phase=human_plan_confirming` 和 Human waiting，并完成 Schema 校验、写入与回读。创建时全部 work item 必须为 `pending`。`execution_authorization` 必须把全部已知 Human Gate、目标与影响范围、风险、动作上限、禁止项、允许的调整与重试、验证/回滚和超界安全收敛一次呈现给 Human；只能由 Human 完成的前置动作必须在 Gate1 决定前完成或从本次运行范围明确排除。创建前的 Controller 与 Reviewer 必须逐项检查 work item 或 success criterion 是否错误吸收 §4.3 的生命周期关口或 Human Gate（含将受控提交、完整结果投影等收敛动作写成 item，或要求未来 result review 证明 criterion 自身的违例），并检查已知授权需求是否已进入基线；命中时当前候选计划不得提交 Human 批准或受控创建，必须先返修。创建前 Reviewer feedback 必须由 Controller 处置；新对象不得带 execution approval 或结果字段。
 
-默认情况下，创建复核使用只读 subagent。若当前环境明确不提供该能力，候选必须在创建时把限制、当前证据、受影响审核类别、低保证差距和停止条件登记到 `execution_authorization.capability_limitations`，并可由同一 AI 以只读 Reviewer 视角完成一次 `same-ai-switched-role-read-only` 创建复核。这个创建 bootstrap 发生在 Gate1 前，不依赖尚未存在的 Gate1 approval；它只形成供 Human 判断的低保证事实，不使 fallback 已获批准，也不得被描述为 subagent、环境独立或等价独立审核。Gate1 必须同时呈现实际创建复核方法、保证差距和拟用于 Gate1 后的 fallback policy；只有 Human 明确接受这份完整基线，WorkCase 才能进入执行。
+创建复核首先由 Controller 在自身当前会话完整发现工具面，并实际尝试创建只读 Subagent。Subagent 是唯一独立审核方式，具体模型由宿主选择，LDVH 不维护模型目录或选择规则。只有 Controller 自身的工具发现与实际创建结果能够判断是否无法创建；Subagent 对自身或 Controller 工具能力的陈述不得作为该判断证据。无法创建时，Controller 必须先向 Human 披露将改用同一 AI 切换只读 Reviewer 视角及其保证差距，然后直接执行 `same-ai-switched-role-read-only`，不增加确认、不等待接受，也不新增 Human Gate。创建 review 必须据实记录实际方法；same-AI 还必须记录 Controller 证据、披露摘要、披露时间和保证差距。
 
 ### 4.5 审核方法与保证边界
 
-WorkCase review 是 Reviewer 对计划版本或结果版本提供的只读第二视角。标准方法是独立 subagent；Reviewer 与 Controller 处于不同执行环境。当前环境提供协作 Worker 能力时，可委派只读协作 Worker 作为介于独立 subagent 与同一 AI fallback 之间的中间保证方法。只有当前环境明确缺少独立 subagent 和协作 Worker 能力、并满足本节低保证 fallback 约束时，才允许同一 AI 切换 Reviewer 视角。三档路由顺序为：collaboration Worker → native subagent → same-AI。后者仍是实际 review，但不是 subagent 审核、不是执行环境独立审核，也不与标准方法等价。
+WorkCase review 是 Reviewer 对计划版本或结果版本提供的只读第二视角。`subagent-read-only` 是唯一独立审核方法；`same-ai-switched-role-read-only` 只是无法创建 Subagent 时的低保证替代，不是独立审核，也不得显示为等价方法。不存在其它协作执行体、平台专用执行体、多层路由、Reviewer 模型选择或持久路由策略。
 
-瞬时入口 preflight（permission_required / not_authorized / unknown）与持久 reviewer policy / review event 是两组不同概念：preflight 回答当前入口是否具备调用协作 Worker 或 subagent 的权限，不决定执行期应使用的方法；persistent reviewer policy 由 Gate1 冻结 Human 选择，控制执行期全部 review 的实际方法选择与降级边界。`unavailable` 是能力缺失的持久判断，`permission_required` / `not_authorized` / `unknown` 是瞬时权限状态，不得用作能力 unavailable 的等价表述。能力解锁和模型询问均不成为第三个 Human Gate；方案侧（creation review / PlanΔ review）与结果侧（result review）两个固定位置允许 fresh review，但有轮次上限：创建方案复核最多 2 轮、结果复核最多 3 轮、PlanΔ 复核随基线内调整最多 2 轮。达到轮次上限后仍存在分歧时，以 Controller（主控）意见为主收敛，如实记录分歧与处置，不再追加轮次。
+#### 4.5.1 Controller 能力判断与直接 fallback
 
-#### 4.5.1 核心语义
+1. **Controller 自判**：每次需要 review 时，由 Controller 在自身当前会话完成可用工具的完整发现，并实际尝试创建只读 Subagent。仅凭入口列表缺失、未知权限、历史记录或推测，不得判定不可创建。
+2. **证据边界**：能力证据必须来自 Controller 自身上下文的工具发现和实际创建失败/不可用结果。Subagent 只能执行被委派的 review；其关于自身或 Controller 能力的结论不得用作不可创建证据。
+3. **只披露、不确认**：Controller 确认无法创建 Subagent 后，必须先告知 Human 将改用同一 AI 切换只读视角，并明确保证差距；告知后直接执行，不等待 Human 确认，不形成新的 Gate，也不暂停 Controller-owned 执行链。
+4. **最小记录**：每项 review 都必须记录 `actual_method`。same-AI review 还必须记录 Controller 的 `capability_evidence`、`assurance_gap`、`human_disclosure_summary` 和 `human_disclosed_at`；这些字段只证明已据实记录，不使该方法成为独立审核。
+5. **只读与职责分离**：Reviewer 不修改文件、事实对象或状态，不替 Controller 处置 feedback，也不替 Human 作 Gate 决定。checklist、Helper 检查和测试不能代替实际 review conclusion。
+6. **轮次边界**：创建方案复核最多 2 轮、结果复核最多 3 轮、PlanΔ 复核最多 2 轮；达到上限后由 Controller 如实记录分歧并收敛，不追加 Human Gate。
 
-1. **方法必须据实**：subagent review 的 Reviewer 与 Controller 处于不同执行环境；collaboration Worker review 的 Reviewer 与 Controller 处于同一执行环境但由不同模型/Agent 承载；同一 AI 切换视角只能记录为 `same-ai-switched-role-read-only`。三者不得互相冒充或隐去保证差距。
-2. **判断视角分离**：Reviewer 从第二视角审视计划或结果，不参与形成被审内容，不替 Controller 或 Human 推进状态或作决定。Code 只检查有限结构与引用，不能证明真实职责分离或证据正文。
-3. **只读原则**：所有 review 均为只读，Reviewer 不修改任何文件、不创建或更新事实对象、不改变任何状态。Reviewer 的输出仅限于 review 结构中的 Reviewer 自有字段，不写入被审内容。
-4. **能力限制先记录**：只有 `availability=unavailable` 且有当前证据时才能启用同一 AI fallback；能力未知、证据缺失、限制未覆盖当前审核类别或任一停止条件不清晰时必须停止，不得降级。
-5. **Gate1 分界**：创建 bootstrap 仅为形成 Gate1 可审材料；Gate1 不追认其为独立审核。Gate1 后的 PlanΔ 和 result review 只能使用 Human 已批准且已进入冻结 fingerprint 的 capability limitation/fallback policy，并必须记录当次当前证据与停止条件评估。
-6. **第 1 档判据来源**：collaboration Worker（可设模型）的可用性，AI 不得推断。判据来源闭集为 Human 明确确认或当次可观察/登记证据；二者都不可得时，该档状态只能是 `unknown`，不得记为 `unavailable`，也不得记为「可用」。
+#### 4.5.2 可接受执行方式（闭集）
 
-#### 4.5.2 可接受的执行方式（闭集）
-
-| 优先级 | 执行方式 | 适用场景 | 限制 |
-|--------|----------|----------|------|
-| 1 | **委派一个或多个只读 collaboration Worker 复核** | 环境提供协作 Worker 能力且 Human 已在 Gate1 冻结选择该模型映射 | 由不同模型/Agent 承载只读第二视角；每轮视角上限在 Gate1 冻结；`actual_method=collaboration-worker-read-only` |
-| 2 | **委派一个或多个只读 subagent 并行复核** | 环境提供 subagent 能力且协作 Worker 当前不可用或未冻结 | 标准且保证更高；subagent 数量由 Controller 按范围、复杂度和风险判断，所有 subagent 均为只读 |
-| 3 | **同一 AI 切换只读 Reviewer 视角** | 环境明确不提供协作 Worker 和 subagent；创建 bootstrap，或 Gate1 已批准的 PlanΔ/result fallback | 低保证方法；必须绑定 capability limitation、记录当前证据与 assurance gap，且停止条件评估为 `clear`；不得声称独立或等价 |
-
-checklist 与 Helper 只读检查只提供机械或标准化验证，不能单独形成 review conclusion，也不能替代上述实际 Reviewer 输出。
+| 执行方式 | 适用场景 | 记录与保证 |
+|---|---|---|
+| 委派一个或多个只读 Subagent | Controller 实际能够创建 Subagent | `actual_method=subagent-read-only`；这是唯一独立审核方法；Subagent 数量由 Controller 按当前任务需要决定，模型只由宿主选择，LDVH 不保存模型路由 |
+| 同一 AI 切换只读 Reviewer 视角 | Controller 完整发现工具并实际无法创建 Subagent，且已向 Human 披露 | `actual_method=same-ai-switched-role-read-only`；必须完整记录 Controller 证据、保证差距、披露摘要与时间；披露后直接执行 |
 
 #### 4.5.3 不可接受行为
 
-- 同一 AI 切换视角却自称 subagent、协作 Worker 或执行环境独立、等价审核
-- 把 collaboration Worker 冒充 native subagent，或混用两类模型目录
-- 冒充独立视角（如 Controller 以 Reviewer 身份自我批准而无实际 subagent/collaboration Worker 委派）
-- 虚假审核声明（如声称已委托 subagent 审核但未实际执行）
-- 没有可用的 subagent 能力时不登记限制、当前证据、保证差距和停止条件而直接降级
-- Gate1 后使用未被 Gate1 批准、未进入冻结 fingerprint 或未覆盖当前审核类别的 fallback
-- 没有可用的 subagent 能力时硬等不推进，或以 subagent 不可用为由跳过必要审核
-- 审核中修改被审内容或状态
-- 以命令成功、工具输出、测试通过代替审核结论
+- 把 same-AI 切换视角称为 Subagent、独立审核或等价审核
+- 使用其它协作执行体、平台专用执行体、模型目录或多层路由决定 WorkCase review
+- 让 Subagent 判断 Controller 是否具有创建 Subagent 的能力
+- 未完整发现 Controller 工具面并实际尝试创建就声称 Subagent 不可用
+- same-AI fallback 未先披露，或缺少 Controller 证据、保证差距、披露摘要、披露时间
+- 披露后新增确认、等待接受或创建第三个 Human Gate
+- 虚假声称已委派 Subagent，或以测试/工具成功代替 review conclusion
+- Reviewer 修改被审内容、事实或状态
 
 #### 4.5.4 适用范围
 
-本定义适用于所有 WorkCase 生命周期中的 review 场景，包括：
-- 受控创建前的方案复核（creation review）
-- 执行完成后的结果复核（result review）
-- 授权基线内 PlanΔ 的 fresh 方案复核
-- item 执行阶段的关键 item 局部独立审核（仅对关键 item 执行，每关键 item 审 1 次、主控吸收 1 次后继续推进，不循环）
-
-方案复核与结果复核各自遵循 §5 中 `workcase-review` 的字段定义和 §6 的版本绑定规则，不因实际方法而改变阶段归属或字段所有权。
+本定义适用于创建 review、PlanΔ fresh review、result review 与确有必要的关键 item 只读第二视角。方案与结果 review 仍按 §5 的 `workcase-review` 字段和 §6 的版本绑定推进，不因 same-AI fallback 改变 lifecycle phase 或字段所有权。
 
 ## 5. WorkCase 类型定义
 
@@ -245,7 +233,6 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | 保留 Reviewer 对当前计划或结果版本的实际只读第二视角、实际方法和低保证披露，并由 Controller 记录当前处置 | `workcase-review` | `reuse` | `workcase-review` | 当前需求仍是同一 review 结构；`subject_version` 绑定当前被审对象，`actual_method` 与条件字段据实区分 subagent 和同一 AI fallback；字段所有权、失效与出现条件由本章当前契约唯一定义 |
 | 保留 Human 对准确计划版本的执行批准，而不持久化关闭决定收据 | `workcase-human-approval` | `reuse` | `workcase-human-approval` | 结构仍只需承载 Human 批准范围、时间与绑定 plan version；关闭决定由专属事务消费，不与 execution approval 共用持久化结构，也不保留为关闭批准服务的旧成员、字段或使用方式 |
 | 在 Gate1 前一次呈现本次运行的已知授权动作、上限、禁止项、调整、风险、验证/回滚与超界收敛 | `workcase-human-approval,workcase-item` | `new` | `workcase-execution-authorization` | approval 只记录 Human 已作出的决定，item 只承载局部交付；两者都不能在 Gate1 前作为完整、可审阅且事后冻结的执行授权基线 |
-| 在 Gate1 前记录当前环境缺少独立 subagent review 能力、受影响审核类别、可接受的低保证方法与停止边界 | `workcase-execution-authorization,workcase-review` | `new` | `workcase-capability-limitation` | authorization 必须冻结未来 fallback 边界，review 只记录某次实际方法与当前证据；两者不能互相替代，Gate1 也不能把同一 AI review 追认为环境独立 |
 | 在授权基线内逐项界定一类动作的目标、影响、风险、回滚与来源规则 | `workcase-execution-authorization` | `new` | `workcase-authorized-action` | 顶层基线需要完整动作集，但不应以连续散文隐藏不同目标与副作用；结构化条目便于 Human 分别批准并便于 Code 检查形状与指纹，不让 Code 判断自然语言授权 |
 | 在 Gate1 前声明唯一必经的独立结果复核、其固定 Reviewer 模式和两项已授权 action 引用 | `workcase-execution-authorization,workcase-authorized-action,workcase-review` | `new` | `workcase-quality-gate` | action 条目本身不说明哪项是必经质量关口，review 也不说明计划复核覆盖了完整授权闭环；该有限声明只供 Code 校验枚举、引用、覆盖与冻结，不解释授权散文或证明真实独立性 |
 | 在 Human 主动中止后保留起始现场、善后分类、未验证边界、关系影响和实际质量步骤 | `workcase-closure-proposal,workcase-residual-responsibility,workcase-success-result` | `new` | `workcase-termination` | 正常关闭提案必须等待 Gate2，terminal residual 只保存已接受停止的单项责任，success result 只回答验收结果；三者都不能承载“一次指令立即停工、有限善后后无第二 Human Gate 关闭”的专属现场与保证降级 |
@@ -258,10 +245,8 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-review` | Reviewer 对当前计划版本或结果版本提供的实际只读第二视角、实际方法与条件性保证披露，以及 Controller 对反馈的当前处置 | 不表示 Reviewer 拥有流程决定权，也不把同一 AI 切换视角冒充 subagent 或环境独立审核 | container 决定审核对象；creation review 绑定 `plan_version`，result review 绑定当前 `result_version`；Reviewer 字段与 Controller resolution 分属不同所有者 |
 | `workcase-human-approval` | Human 对 Gate1 当时计划及完整 execution authorization baseline 作出的执行批准 | 不表示关闭批准、技术验证、基线外动作获批、风险自动消失或字段存在即可继续执行 | 只供 `execution_approval` 使用；subject version、baseline fingerprint、批准范围、时间和真实 Human 来源按成员字段记录；关闭决定不持久化 approval 收据 |
 | `workcase-execution-authorization` | Gate1 前形成、Gate1 后冻结的单次 WorkCase 执行授权基线 | 不表示工具白名单、通用授权 token、技术验证已成立、未知风险或范围外动作获准 | 只用于当前 WorkCase 单次运行；必须整体形成；Gate1 后与 goal/scope/criteria 共同经 baseline fingerprint 绑定并保持不变；closed 时移除 |
-| `workcase-capability-limitation` | Gate1 前登记的一项已知审核能力缺失、其证据、受影响类别、低保证 fallback 和停止条件 | 不表示能力永远缺失、fallback 已在 Gate1 前获批、同一 AI 已变成独立 subagent 或 Code 已验证证据真实性 | `limitation_id` 在 authorization 内唯一；仅允许当前明确 `unavailable` 的 `independent-subagent-review`；Gate1 后作为冻结 policy 供 PlanΔ/result review 精确引用 |
 | `workcase-authorized-action` | Gate1 基线中一项对象、效果、风险与回滚边界可分别审阅的授权动作 | 不表示命令步骤、工具名白名单、动作已执行或来源规则已满足 | 同一基线内 `action_id` 唯一；目标、效果、风险、回滚和规则回指全部非空；Human 对完整基线一次决定不使各条目丢失自身边界 |
 | `workcase-quality-gate` | 标准结果复核质量关口 | 不表示 Reviewer 已被实际委派、复核已完成 | 当前闭集精确为一个稳定兼容标识 `gate_id=independent-result-review`、`reviewer_mode=independent-read-only`；`delegation_action_id` 与 `result_review_action_id` 必须分别精确引用同一 authorization 内不同的 action_id |
-| `workcase-reviewer-policy` | Gate1 冻结的持久 Reviewer 选择、模型映射、视角上限与降级边界 | 不表示当次 review 已委派、实际方法已发生或 Human 已对每次 review 单独确认 | 成员闭集由本节字段定义；进入 canonical execution authorization 与 baseline fingerprint，Gate1 后冻结；只命名标准 policy，不覆盖 review 的 `actual_method` |
 | `workcase-success-criterion` | 一项具有稳定局部身份、可独立检查的成功标准定义 | 不表示执行步骤、结果、验证方法、数组序号，或形成/复核/接受结果的后置生命周期关口 | `criterion_id` 在对象内唯一稳定；statement 与 goal、scope 共同构成验收基线；服从 §4.3 的 criterion 边界 |
 | `workcase-success-result` | 对一项当前成功标准的实际结果判断与范围说明 | 不表示 Code 已证明正文、Reviewer 结论、Human 已验收或命令成功 | 必须按 `criterion_id` 精确覆盖全部当前定义；unknown 通过 `not_verified` 表达，不补猜 |
 | `workcase-closure-proposal` | Controller 提交 Human 判断的一份完整关闭方案 | 不表示 Human 已同意、终态已成立、结果主体或证明收据 | 只在关闭准备与关闭待确认期间出现；始终整体形成，不持久化半成品 |
@@ -316,16 +301,6 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-authorization-verification-and-rollback` | `verification_and_rollback` | string | 与授权动作相匹配的验证范围、失败恢复和不可回滚边界 | 不表示验证已运行、回滚一定可用或风险已消失 | 必填非空；必须据实包含已知不可回滚部分 |
 | `workcase-authorization-out-of-bounds-handling` | `out_of_bounds_handling` | string | 发现未授权动作、新风险或基线改变时的禁止执行、取消受影响 item 与自动结果收敛边界 | 不表示可在执行期索取新授权或把超界风险默认接受 | 必填非空；必须与 §6.5 的安全收敛一致 |
 | `workcase-authorization-human-prerequisites` | `human_prerequisites` | array | 只能由 Human 完成、且必须在 Gate1 最终决定前满足或排除的前置条件 | 不表示 Gate1 后可再要求 Human 中断执行 | 存在时为非空唯一 string 数组；Gate1 批准前必须已取得完成依据或从 authorized actions 排除 |
-| `workcase-authorization-capability-limitations` | `capability_limitations` | array | Gate1 前登记并提交 Human 判断的当前审核能力限制与 fallback policy 闭集 | 不表示任何限制默认存在、Gate1 前 fallback 已获批准或未来证据无需重检 | 可省略；存在时非空、按 `limitation_id` 唯一，每项使用 `workcase-capability-limitation`；进入 canonical authorization 与 fingerprint，Gate1 后冻结 |
-| `workcase-capability-limitation-id` | `limitation_id` | string | authorization 内一项审核能力限制的稳定局部身份 | 不表示对象身份、数组顺序或 review 事件 | 匹配 `limitation-[a-z0-9][a-z0-9-]*`；同一 authorization 内唯一 |
-| `workcase-capability-limitation-capability` | `capability` | string | 当前被确认缺失、可能触发低保证 fallback 的能力 | 不表示任意工具不可用或 Reviewer 结论 | 当前闭集精确为 `independent-subagent-review` |
-| `workcase-capability-limitation-availability` | `availability` | string | Gate1 材料形成时该能力的实际可用性判断 | 不表示永久状态、未知状态或 Code 已验证环境 | 当前闭集精确为 `unavailable`；未知或无法确认时不得建立 fallback |
-| `workcase-capability-limitation-observation-summary` | `observation_summary` | string | 当前环境能力缺失的可审阅事实摘要与观察边界 | 不表示证据本身、永久结论或 Human acceptance | 必填非空；只写当前已知事实 |
-| `workcase-capability-limitation-evidence` | `evidence` | array | Gate1 前支持该 availability 判断的当前证据引用或可回读描述 | 不表示 Code 已验证证据语义、未来 review 自动沿用或执行批准 | 非空唯一 string 数组 |
-| `workcase-capability-limitation-affected-review-categories` | `affected_review_categories` | array | 该限制与 fallback policy 实际覆盖的审核类别 | 不表示其它类别自动获准降级 | 非空唯一数组；成员闭集 `creation_review`、`plan_delta_review`、`result_review` |
-| `workcase-capability-limitation-fallback-policy` | `fallback_policy` | string | Human 在 Gate1 可接受或拒绝的低保证审核方法边界 | 不表示该方法具 subagent 独立性或 Gate1 前已获批准 | 当前闭集精确为 `same-ai-switched-role-read-only` |
-| `workcase-capability-limitation-assurance-gap` | `assurance_gap` | string | 相对独立 subagent review 明确存在的保证差距 | 不表示风险已消失、等价性或 Reviewer 结论 | 必填非空；同一 AI review 必须精确重复该值以供呈现和校验 |
-| `workcase-capability-limitation-stop-conditions` | `stop_conditions` | array | 不得启用或必须停止 fallback 的可判断边界 | 不表示普通风险列表或可忽略建议 | 非空唯一 string 数组；至少覆盖能力状态未知、当前证据不足、限制未覆盖当前类别或无法保持只读/视角分离 |
 | `workcase-authorized-action-id` | `action_id` | string | 授权动作在当前基线内的稳定局部身份 | 不表示执行顺序、工具名或 work item ID | 匹配 `authorization-[a-z0-9][a-z0-9-]*`；基线内唯一；Gate1 后不变 |
 | `workcase-authorized-action-summary` | `summary` | string | Human 能直接判断的动作及其目的 | 不表示命令清单、临时步骤或完成声明 | 必填非空 |
 | `workcase-authorized-action-target-scope` | `target_scope` | string | 该动作获准影响的对象、路径、环境、事实引用或外部目标范围 | 不表示目标当前存在、可写或来源适用 | 必填非空；不得使用“必要时其它对象”等无界表达 |
@@ -334,7 +309,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-authorized-action-rollback-summary` | `rollback_summary` | string | 该动作的安全退出、可回滚范围和已知不可逆部分 | 不表示回滚已验证或可以覆盖用户既有资产 | 必填非空 |
 | `workcase-authorized-action-rule-refs` | `rule_refs` | array | 该动作实际召回的 Human Gate、风险、验证或副作用规则回指 | 不表示规则已自动适用、技术条件已满足或 Human 决定来源 | 非空唯一 string 数组；Human 决定来源只记录在 `execution_approval.source_refs` |
 | `workcase-quality-gate-id` | `gate_id` | string | 必经标准质量关口的稳定兼容身份 | 不表示 work item、phase、Review 事件、当次实际方法或自由扩展类型 | 当前闭集精确为 `independent-result-review`；名称不构成实际独立性声明 |
-| `workcase-quality-gate-reviewer-mode` | `reviewer_mode` | string | 该关口默认且保证更高的标准 Reviewer policy 标识 | 不表示 Code 能证明实际独立性、任何具体执行者身份或当次 `actual_method` | 当前闭集精确为 `independent-read-only`；冻结 limitation 允许 fallback 时仍保持该标准 policy 标识，实际方法只由 review 据实记录 |
+| `workcase-quality-gate-reviewer-mode` | `reviewer_mode` | string | 该关口默认且保证更高的标准 Reviewer policy 标识 | 不表示 Code 能证明实际独立性、任何具体执行者身份或当次 `actual_method` | 当前闭集精确为 `independent-read-only`；same-AI fallback 时仍保持该标准 policy 标识，实际方法只由 review 据实记录 |
 | `workcase-quality-gate-delegation-action-id` | `delegation_action_id` | string | 授权基线中委派标准结果复核或调用已批准 fallback 的 action 引用 | 不表示已发生委派、实际方法为 subagent 或 action 顺序 | 必填，精确引用 `authorized_actions.action_id`，且不得与结果复核引用复用 |
 | `workcase-quality-gate-result-review-action-id` | `result_review_action_id` | string | 授权基线中执行实际结果复核的 action 引用 | 不表示复核结论、实际独立性、结果接受或 Human Gate | 必填，精确引用 `authorized_actions.action_id`，且不得与委派引用复用 |
 | `workcase-review-reviewer` | `reviewer` | string | 实际执行该次复核的稳定可识别执行者 | 不表示 Controller、Human 或自动独立性证明 | 必填非空；实际方法由 `actual_method` 据实区分，Code 只检查形状 |
@@ -345,24 +320,11 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-review-feedback` | `feedback` | array | Reviewer 实际发现的可行动问题或限制 | 不表示 Controller 处置、结果正文或历史发现 | `pass_with_followups`、`changes_required`、`blocked` 时必填非空；`pass` 时可省略；成员为非空唯一字符串 |
 | `workcase-review-controller-resolution` | `controller_resolution` | string | Controller 对该 review 全部 feedback 的当前处置 | 不表示 Reviewer 修改结论、结果正文或 Human 批准 | 只有实际 feedback 时出现；creation review 在创建前必须完成处置，result review 在进入关闭准备前必须完成处置 |
 | `workcase-creation-review-covered-quality-gate-ids` | `covered_quality_gate_ids` | array | creation review 对当前授权基线必经质量关口的结构化覆盖声明 | 不表示实际结果复核已经发生、Reviewer 独立性证明或 Controller 处置 | 当 authorization 声明 quality_gates 时，当前每项 creation review 必须精确覆盖该固定 gate_id 集合；存量缺失声明的 Gate1 前对象不要求补写，但不能通过新 Gate1 |
-| `workcase-review-actual-method` | `actual_method` | string | 当次 review 实际采用的执行方法 | 不表示 policy、保证等价或 Code 已证明真实执行方式 | 可省略以兼容既有合法对象；出现时闭集 `subagent-read-only`、`collaboration-worker-read-only`、`same-ai-switched-role-read-only`；authorization 含 capability limitations 时当前 reviews 必须出现 |
-| `workcase-review-capability-limitation-id` | `capability_limitation_id` | string | 同一 AI fallback 当次引用的冻结 capability limitation | 不表示新授权、自由文本理由或 subagent 身份 | 只随 `actual_method=same-ai-switched-role-read-only` 出现，并精确引用当前 authorization 中覆盖该审核类别的 `limitation_id` |
-| `workcase-review-capability-evidence` | `capability_evidence` | array | 当次 review 开始时支持能力仍不可用的当前证据 | 不表示沿用 Gate1 旧证据、Code 已验证语义或永久缺失 | 只随同一 AI fallback 出现；非空唯一 string 数组；必须由 Reviewer/Controller 据实更新 |
-| `workcase-review-assurance-gap` | `assurance_gap` | string | 当次同一 AI review 向 Human/Controller 明示的低保证差距 | 不表示可接受风险、独立性或等价保证 | 只随同一 AI fallback 出现；必须与所引用 limitation 的 `assurance_gap` 精确相同 |
-| `workcase-review-stop-condition-assessment` | `stop_condition_assessment` | string | 当次 review 对冻结停止条件均未命中的有限声明 | 不表示 Code 已验证证据正文或未来仍可继续 | 只随同一 AI fallback 出现；当前闭集精确为 `clear`；无法确认时不得形成 fallback review |
-| `workcase-review-actual-agent` | `actual_agent` | string | 当次 review 实际执行者承载的 Agent 稳定标识 | 不表示 policy、承担 Controller 或 Human 或自动独立性证明 | 只随 `actual_method=subagent-read-only` 或 `collaboration-worker-read-only` 出现；必须与冻结 reviewer policy 声明的映射一致，Code 只检查形状非空 |
-| `workcase-review-actual-model` | `actual_model` | string | 当次 review 实际执行者承载的模型稳定标识 | 不表示 Human 已确认或 Code 已验证模型身份 | 只随 `actual_method=subagent-read-only` 或 `collaboration-worker-read-only` 出现；必须与冻结 reviewer policy 声明的模型一致，Code 只检查形状非空 |
-| `workcase-review-actual-evidence` | `evidence` | array | 当次 review 实际执行者身份与承载范围的当前证据引用或可回读描述 | 不表示 Code 已验证证据语义或保证等价 | 只随 `actual_method=collaboration-worker-read-only` 出现；非空唯一 string 数组；由 Reviewer/Controller 据实更新 |
-| `workcase-authorization-reviewer-policy` | `reviewer_policy` | object | Gate1 冻结并进入 baseline fingerprint 的持久 Reviewer 选择与降级边界 | 不表示当次 review 已委派、实际方法已发生或 Human 已对每次 review 单独确认 | 只随 `actual_method` 相关字段出现时由 Gate1 冻结；进入 canonical execution authorization 与 baseline fingerprint，Gate1 后不变；成员组合见下 |
-| `workcase-reviewer-policy-model` | `model` | string | Human 在 Gate1 冻结选择的 Reviewer 默认模型 | 不表示实际每次 review 必为该模型或 Code 已验证模型身份 | 必填非空；Gate1 后冻结 |
-| `workcase-reviewer-policy-collaboration-agent` | `collaboration_agent` | string | Human 选择的协作 Worker/Agent 映射载体 | 不表示协作 Worker 当前可用、已委派或与 subagent 等价 | 必填非空；只命名协作 Worker 标准载体，不覆盖当次 `actual_method` |
-| `workcase-reviewer-policy-effort` | `effort` | string | Human 选择的 Reviewer 推理投入档位 | 不表示实际执行已按该档位运行或 Code 已验证 | 必填非空；Gate1 后冻结 |
-| `workcase-reviewer-policy-fast` | `fast` | boolean | Human 是否选择 fast 模式 | 不表示实际已启用 fast 或 Code 已验证 | 必填；Gate1 后冻结 |
-| `workcase-reviewer-policy-preferred-method` | `preferred_method` | string | Human 选择的优先实际 review 方法 | 不表示当次实际已使用该方法或保证等价 | 必填；Gate1 后冻结；闭集 `collaboration-worker-read-only`、`subagent-read-only`、`same-ai-switched-role-read-only` |
-| `workcase-reviewer-policy-fallback-order` | `fallback_order` | array | 实际方法按序降级边界 | 不表示任意降级已获准或能力限制已消失 | 非空唯一 string 数组；成员闭集与 `preferred_method` 相同；按序排列，成员不得重复 |
-| `workcase-reviewer-policy-max-perspectives` | `max_perspectives` | integer | 每轮 review 允许并行的最大视角数 | 不表示实际每轮都达上限或可无限制扩展 | 正整数且不大于 2；Gate1 后冻结 |
-| `workcase-reviewer-policy-activation` | `activation` | string | 协作 Worker 能力被显式解锁并使用的前置条件与当前边界 | 不表示能力恒可用、已解锁或 unknown/preflight 即等价 unavailable | 必填非空；必须以当前可判断条件说明解锁与恢复边界 |
-| `workcase-reviewer-policy-same-ai-limit` | `same_ai_limit` | string | 同一 AI fallback 只在协作 Worker 与 subagent 均不可用且满足 §4.5 约束时使用的边界 | 不表示同一 AI 与其它方法等价或可默认使用 | 必填非空；必须与 §4.5.1 第 4 点及冻结 capability limitation 一致 |
+| `workcase-review-actual-method` | `actual_method` | string | 当次 review 实际采用的方法 | 不表示 Code 已证明实际执行方式或两种方法保证等价 | 必填；活动期闭集 `subagent-read-only`、`same-ai-switched-role-read-only`；历史 closed 对象中的旧值只读兼容，不得用于新建或活动写入 |
+| `workcase-review-capability-evidence` | `capability_evidence` | array | Controller 自身工具发现与实际创建 Subagent 失败/不可用的当前证据 | 不表示 Subagent 能判断 Controller 能力或 Code 已验证证据语义 | 只随 same-AI 出现；非空唯一 string 数组；不得以 Subagent 结论作为证据 |
+| `workcase-review-assurance-gap` | `assurance_gap` | string | same-AI 相对 Subagent 独立审核的保证差距 | 不表示风险已消失、Human 已批准或等价独立 | 只随 same-AI 出现且必填非空 |
+| `workcase-review-human-disclosure-summary` | `human_disclosure_summary` | string | 切换前已向 Human 告知的方法与保证差距摘要 | 不表示请求确认、形成授权或新增 Human Gate | 只随 same-AI 出现且必填非空；披露后直接执行 |
+| `workcase-review-human-disclosed-at` | `human_disclosed_at` | string | 上述披露实际发生的时间 | 不表示批准时间或 review 完成时间 | 只随 same-AI 出现且必填带时区 RFC 3339 date-time |
 | `workcase-criterion-id` | `criterion_id` | string | 成功标准在本对象内稳定唯一的身份 | 不表示数组位置、优先级或 work item | 匹配 `criterion-[a-z0-9][a-z0-9-]*`；创建后稳定 |
 | `workcase-criterion-statement` | `statement` | string | 可在 canonical result projection 形成前独立检查的一项成功条件 | 不表示步骤、证据、测试命令、结果，或 Controller/Reviewer/Human 后置关口及其完成、通过或确认 | 必填非空；应能区分满足、未满足和未验证；服从 §4.3 的 criterion 边界 |
 | `workcase-result-criterion-id` | `criterion_id` | string | 当前结果所对应成功标准的稳定身份 | 不表示新标准或数组位置 | 必须精确引用当前定义且覆盖一次 |
@@ -496,7 +458,7 @@ Human 一次明确中止指令由 `begin-workcase-termination` 消费；它可�
 
 `result_reviews` 只能与完整 canonical result projection 同时存在。`plan_revising` 或 `controller_checking` 中的 version-only / 部分 projection 形状必须缺失 reviews；不得用孤立 review 冒充完整被审主体。
 
-新建候选与 `human_plan_confirming → executing` 的 Gate1 边还必须通过同一最小质量关口检查：`execution_authorization.quality_gates` 精确声明唯一标准 policy `independent-result-review / independent-read-only`，分别引用当前 `authorized_actions` 中不同的委派与结果复核 action；这两个值是稳定兼容的标准 policy 标识，不声明当次实际方法，页面和 Controller 不得据此显示“已经独立复核”。每项当前 `creation_reviews` 精确覆盖该 gate_id。不存在 capability limitation 时，review 可省略兼容字段或明确写 `actual_method=subagent-read-only`；存在 limitation 时，全部当前 review 必须写实际方法，同一 AI review 还必须精确引用覆盖当前类别的 limitation，并写当前 evidence、相同 assurance gap 与 `stop_condition_assessment=clear`。创建前同一 AI review 属于低保证 bootstrap；Gate1 后只有已冻结 policy 可用于 `plan_delta_review` 或 `result_review`。Code 只检查枚举、成员闭集、引用、类别覆盖、字段一致性与后续 fingerprint 冻结，不解释散文、证明证据真实性或把 fallback 追认为独立。缺失、未知模式、未知 action、重复复用、覆盖不足或 fallback 条件不完整时，创建和 Gate1 都零写入拒绝。既有合法对象不因缺少新增可选字段而失效；既有 Gate1 前 active 对象必须形成满足当前关口的 fresh current creation review 和完整当前材料，才可能通过新 Gate1，不得自动迁移或补写历史字段。既有 `SafeConvergenceShape` 与 Gate2/关闭链不要求历史声明或补写。
+新建候选与 `human_plan_confirming → executing` 的 Gate1 边还必须通过同一最小质量关口检查：`execution_authorization.quality_gates` 精确声明唯一标准 policy `independent-result-review / independent-read-only`，分别引用当前 `authorized_actions` 中不同的委派与结果复核 action；这些稳定标识不证明当次已经独立复核。每项当前 `creation_reviews` 精确覆盖该 gate_id，并必须记录活动期当前闭集中的 `actual_method`。same-AI review 必须同时具备 Controller 自身 `capability_evidence`、`assurance_gap`、`human_disclosure_summary` 与 `human_disclosed_at`。Code 只检查枚举、成员闭集、引用、版本与字段出现条件，不解释证据正文，也不把 fallback 追认为独立。历史 closed 对象保留旧文本、枚举、投影与附件引用的只读可读性，不回写历史；旧方法不得用于新建或活动 WorkCase。
 
 `plan_revising` 的四种结果形状还必须满足以下交叉约束：Gate1 前 approval 必须缺失，Gate1 后 approval 必须原样保留；只有 `result_version` 时，Gate1 后正常返工快照至少一项 item 非 terminal；部分或完整 projection 必须 `AllTerminal`；只有完整 projection 可同时冻结 result reviews。`SafeConvergenceShape` 不允许 `phase=plan_revising`。
 
@@ -617,17 +579,17 @@ canonical execution authorization baseline projection 由以下解析后结构�
 
 - `goal`、`scope`；
 - 按 `criterion_id` 排序的 `criterion_id + statement`；
-- 完整 `execution_authorization`：`authorized_actions` 按 `action_id` 排序，每项包含 `action_id`、`summary`、`target_scope`、`effect_scope`、`risk_summary`、`rollback_summary` 与排序去重后的 `rule_refs`；`quality_gates` 按 `gate_id` 排序，每项包含 `gate_id`、`reviewer_mode`、`delegation_action_id` 与 `result_review_action_id`；`reviewer_policy` 实际存在时按成员键排序，包含 `model`、`collaboration_agent`、`effort`、`fast`、`preferred_method`、排序去重后的 `fallback_order`、`max_perspectives`、`activation`、`same_ai_limit`；`capability_limitations` 实际存在时按 `limitation_id` 排序，每项包含 `limitation_id`、`capability`、`availability`、`observation_summary`、`fallback_policy`、`assurance_gap`，以及各自排序去重后的 `evidence`、`affected_review_categories`、`stop_conditions`；并包含 `action_ceiling`、排序去重后的 `prohibited_actions`、`allowed_adjustments`、`verification_and_rollback`、`out_of_bounds_handling`，以及实际存在时排序去重后的 `human_prerequisites`。
+- 完整 `execution_authorization`：`authorized_actions` 按 `action_id` 排序，每项包含 `action_id`、`summary`、`target_scope`、`effect_scope`、`risk_summary`、`rollback_summary` 与排序去重后的 `rule_refs`；`quality_gates` 按 `gate_id` 排序，每项包含 `gate_id`、`reviewer_mode`、`delegation_action_id` 与 `result_review_action_id`；并包含 `action_ceiling`、排序去重后的 `prohibited_actions`、`allowed_adjustments`、`verification_and_rollback`、`out_of_bounds_handling`，以及实际存在时排序去重后的 `human_prerequisites`。
 
 Code 必须把该结构编码为 UTF-8 canonical JSON：object keys 按 Unicode code point 升序，array 使用上文规定的稳定排序，string 使用 JSON 标准转义，不写无意义空白；对所得 bytes 计算 SHA-256，保存为 64 位小写十六进制 `baseline_fingerprint`。Code 只判断结构、规范化 bytes、fingerprint 与精确相等；授权条目是否语义覆盖实际动作、风险、目标、影响和回滚，仍由 Controller 与 Reviewer 判断。
 
 规则如下：
 
 1. 创建时 `plan_version=1`；`creation_reviews` 全部绑定该版本，并在正常活动形状的整个生命周期保存当前计划的实际方案复核；`SafeConvergenceShape` 不补造或保留无法成立的历史复核；
-2. Gate1 必须一次向 Human 呈现完整 plan projection、work items、creation reviews 与 execution authorization baseline；若存在 capability limitation，还必须明确区分实际 creation review 方法、低保证差距与 Gate1 后拟用 fallback policy。Human 的批准表示接受这份实际保证边界作为当前执行基础，不把既有 same-AI review 追认为独立。`human_plan_confirming → executing` 在同一事务写 `execution_approval`：`subject_version` 是 Gate1 当时呈现的 plan version，`baseline_fingerprint` 精确绑定 Human 所见基线，`source_refs` 必须回指真实 Human 输入；移除 Human waiting，不移除 creation reviews；
+2. Gate1 必须一次向 Human 呈现完整 plan projection、work items、creation reviews 与 execution authorization baseline；若 creation review 实际使用 same-AI，还必须呈现该次 Controller 证据、保证差距、披露摘要与披露时间，且不得把它追认为独立审核。Human 的批准表示接受当前计划与执行授权，不冻结未来复核方法，也不替代后续每次复核前由 Controller 重新完成工具发现和实际 Subagent 创建判断。`human_plan_confirming → executing` 在同一事务写 `execution_approval`：`subject_version` 是 Gate1 当时呈现的 plan version，`baseline_fingerprint` 精确绑定 Human 所见基线，`source_refs` 必须回指真实 Human 输入；移除 Human waiting，不移除 creation reviews；
 3. authorization 字段、fingerprint 或 AI 摘要都不等于 Human approval。没有真实可回指的 Gate1 决定时不得补造 approval/source refs，只能按 `SafeConvergenceShape` 收敛已有事实；
-4. Gate1 前可按 feedback 完整修改计划或授权基线、完成 fresh current creation review 并继续在 `human_plan_confirming` 取得一次最终决定；同一 AI bootstrap 只要求候选 limitation 覆盖 `creation_review`，不要求尚未存在的 approval。Gate1 完成后 goal、scope、criteria 与 execution authorization baseline 在本次运行中冻结，不再回到 `human_plan_confirming`；
-5. Gate1 后的 `PlanΔ` 只有同时满足以下条件才可自动推进：baseline projection 精确不变；新旧动作都处于 `authorized_actions`、`action_ceiling`、`allowed_adjustments` 范围且不命中 `prohibited_actions`；全部已有执行事实被无损保留；完整候选计划与 fresh creation review 已经形成。若实际方法为同一 AI fallback，冻结 limitation 必须覆盖 `plan_delta_review`，当次 evidence 非空、assurance gap 精确一致且 stop assessment 为 `clear`；否则必须使用 subagent 或停止。AI 负责语义与当前证据判断，Code 负责结构、引用与 fingerprint 检查；
+4. Gate1 前可按 feedback 完整修改计划或授权基线、完成 fresh current creation review 并继续在 `human_plan_confirming` 取得一次最终决定；若该 review 使用 same-AI，必须在该 review 自身完整记录 Controller 证据、保证差距、披露摘要和披露时间，不要求尚未存在的 approval。Gate1 完成后 goal、scope、criteria 与 execution authorization baseline 在本次运行中冻结，不再回到 `human_plan_confirming`；
+5. Gate1 后的 `PlanΔ` 只有同时满足以下条件才可自动推进：baseline projection 精确不变；新旧动作都处于 `authorized_actions`、`action_ceiling`、`allowed_adjustments` 范围且不命中 `prohibited_actions`；全部已有执行事实被无损保留；完整候选计划与 fresh creation review 已经形成。每次 fresh review 前由 Controller 在自身当前上下文完成完整工具发现并实际尝试创建只读 Subagent；实际无法创建时先向 Human 披露保证差距，再直接使用 same-AI 切换只读视角，并在该 review 记录 Controller 证据、保证差距、披露摘要与披露时间，不新增确认关口。AI 负责语义与当前证据判断，Code 负责结构、引用与 fingerprint 检查；
 6. 合法 `PlanΔ` 在 `plan_revising → executing` 的单一事务精确 `plan_version + 1`，完整替换 plan/work items，以 fresh `creation_reviews` 替换旧 reviews；`execution_approval` 的全部成员保持精确不变，不因当前 plan version 高于其 `subject_version` 而失效。projection 完全相同时禁止升版；
 7. `plan_revising` 不是 Human Gate：只能承载 Gate1 后的基线内自动调整，不能把 Human 写入 waiting；超过基线、命中禁止项、需要接受新风险或需要 Gate1 后新 Human 决定时，不改授权、不执行该动作、不请求第三次确认，而是据实取消受影响 item，全部 item terminal 后进入结果链；
 8. Gate1 后不得撤回、扩展或重建本次运行的 execution authorization/approval。Human 主动给出改变基线的新要求时，也先让当前运行按已有事实安全收敛；新要求只能在当前关闭后由新的 WorkCase/Gate1 承接；
@@ -659,7 +621,7 @@ canonical result projection 由以下完整结构组成：
 6. result version 的作用域是当前 plan version。只有 plan projection 实际变化并使 plan version 递增时，才删除旧 result version；新计划首次结果重新从 1 开始。同一 `plan_version` 下不得删除后复用既有结果版本号；
 7. 从结果阶段返回 `executing` 时，移除完整 projection 与 proposal，并重开实际返工 item。已有 result review 时必须先 result version +1 并删除全部 reviews；尚无 review 时必须保持原 result version，不得删除、递增或重置。executing 只保留该已分配版本身份，不保留旧 projection 或 reviews；
 8. `independent_reviewing → controller_checking` 可以保留仍绑定当前版本的 review 供 Controller 处置；一旦要改 projection，先按第 5 条升版清理；
-9. Reviewer conclusion 不自动推进或否决。进入 `closure_preparing` 前至少一项实际结果复核已经形成，全部 feedback 已有 Controller resolution，projection 仍完整；若实际方法为同一 AI fallback，冻结 limitation 必须覆盖 `result_review`，并满足当前 evidence、assurance gap 与 stop assessment 约束；
+9. Reviewer conclusion 不自动推进或否决。进入 `closure_preparing` 前至少一项实际结果复核已经形成，全部 feedback 已有 Controller resolution，projection 仍完整；结果复核的实际方法与条件性披露必须由该次 review 自身完整记录，不从 Gate1 授权或其它 review 继承；
 10. Reviewer 自有字段的获授权事实更正与 Controller resolution 更新不属于 result projection 变化，但必须遵守字段所有权、CAS 和同事件边界，不得借更正修改被审主体。
 
 ### 6.7 关闭提案、结果分类与原子关闭
@@ -1059,9 +1021,9 @@ Card 可以另外派生 item 五状态计数和当前活动 item，但不得把�
 | 验证对象 | 验证时机 | 成立条件 | 可接受依据 | 验证入口 | 可证明范围 | 未满足时的处理 |
 |---|---|---|---|---|---|---|
 | 类型定义与登记 | 新建或实质修改本文、05.Att.01 或派生 Schema 时 | 结构、字段、绑定、H2 引用与统一登记唯一一致，无悬空、遗漏或第二定义 | 00、01、05、05.Att.01 与本文当前 Working Tree | 规范仓库检查、字段登记检查和当前来源回读 | 当前来源的机械结构一致性；不证明自然语言设计正确 | 本文或附件不得进入当前规则源；先修正唯一来源 |
-| 准入与创建 | 建议建立、形成正式计划和受控创建前 | Human 工作意图、单一责任、scope、criteria、查重、净价值、完整计划与实际方案复核成立；若缺少 subagent，限制与低保证 bootstrap 已据实披露；Controller 与 Reviewer 已逐项确认没有 item 或 criterion 吸收生命周期关口或 Human Gate | Human 当前指令、当前来源、相邻事实回读、候选计划与 Reviewer 实际反馈 | AI 语义审核、逐 item / criterion 生命周期关口检查、事实召回、受控创建校验与创建后回读 | 当次候选的已读范围、实际方法、保证边界、语义审核和创建结果；Code 不证明证据语义或未来执行成功 | 不创建；先补齐限制/证据或返修误建模 item / criterion，或更新现有对象、留在当前行动、拆分或转 Spark |
+| 准入与创建 | 建议建立、形成正式计划和受控创建前 | Human 工作意图、单一责任、scope、criteria、查重、净价值、完整计划与实际方案复核成立；若 Controller 实际无法创建 Subagent，same-AI 的 Controller 证据、保证差距、披露摘要和披露时间已据实记录；Controller 与 Reviewer 已逐项确认没有 item 或 criterion 吸收生命周期关口或 Human Gate | Human 当前指令、当前来源、相邻事实回读、候选计划与 Reviewer 实际反馈 | AI 语义审核、逐 item / criterion 生命周期关口检查、事实召回、受控创建校验与创建后回读 | 当次候选的已读范围、实际方法、保证边界、语义审核和创建结果；Code 不证明证据语义或未来执行成功 | 不创建；先补齐 same-AI 披露记录或返修误建模 item / criterion，或更新现有对象、留在当前行动、拆分或转 Spark |
 | 活动形状与转换 | 每次读取、写回、phase/status 改变、计划返修或授权变化时 | status/phase/presence、item 组合、plan version、review/approval 绑定和允许转换成立 | 当前对象 before/after、Human 决定、Reviewer feedback 与本文 | Schema、CAS、projection 比较、转换校验和 after 回读 | 可机械检查的形状、版本与转换；不证明当前摘要真实 | 不消费为有效 WorkCase或拒绝转换；修正最小相关范围 |
-| 结果与复核 | 形成结果、发起复核、处置反馈或改变 projection 时 | projection 完整、criterion 全覆盖、版本冻结、实际 review 方法/保证边界与 Controller resolution 成立 | item 终值、当前结果与 validation、Reviewer 实际输出、当前 capability evidence | AI 结果审核、规范化 projection 比较、CAS、review/版本/limitation 检查 | 当次结果包结构、已读观察、实际方法和 review 绑定；不证明证据语义或技术结论天然正确 | 不进入关闭准备；补事实、升版、清旧 review、改用 subagent 或停止 fallback |
+| 结果与复核 | 形成结果、发起复核、处置反馈或改变 projection 时 | projection 完整、criterion 全覆盖、版本冻结、实际 review 方法/保证边界与 Controller resolution 成立 | item 终值、当前结果与 validation、Reviewer 实际输出、当次 review 的实际方法及条件性披露 | AI 结果审核、规范化 projection 比较、CAS、review/版本/条件字段检查 | 当次结果包结构、已读观察、实际方法和 review 绑定；不证明证据语义或技术结论天然正确 | 不进入关闭准备；补事实、升版、清旧 review，或重新完成当次 Subagent 创建判断与复核 |
 | 关闭提案与终态 | 形成 proposal、进入 Gate2、执行关闭或终态更正时 | proposal 完整、outcome 一致、target 重读、Human 决定、原子 close 与 closed 白名单成立 | 完整 source before、Human 当次决定、目标当前快照与 fingerprints | AI 责任处置审核、target 回读、CAS、专属关闭和 closed after 回读 | 当次停止边界、机械原子性和实际写入结果；不证明 target 已接受或技术事实无误 | Gate2 前不进入确认；Gate2 后失败则 source 保持冻结、不声明关闭且不自动重新请求 Human |
 | 关系 | 新增、移除、读取依赖、target 变更或任一对象终态前 | source/target 状态、同项目、唯一性、无自指、强边环、related-to 重叠、入向约束与责任边界成立 | source/target 当前对象、项目对象全集和本文关系语义 | 引用回读、强边图检查、AI 责任边界审核 | 稳定引用、状态与已检查图范围；不证明语义责任充分或目标接受 | 移除或修正关系；无法完成检查时交还 unavailable，暂停受影响关闭 |
 | 现场保留与后续建议 | WC 执行中出现经验、剩余责任或范围外机会时 | 除完整 draft Pitfall 外不创建新事实；draft 与写边分步回读；受限责任有明确原因、影响和恢复条件；范围外机会不伪造受限 | 当前工作事实、完整 Pitfall 候选、结果/验证与关闭 proposal | AI 语义审核、31 受控创建与回读、关系和 suggestion 机械检查 | 当次保存和结构映射；不证明未来 Spark 会建立 | 继续完成范围内责任，或据实阻塞/形成建议；不创建未获独立授权的其它对象 |

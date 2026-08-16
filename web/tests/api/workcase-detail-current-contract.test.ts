@@ -347,7 +347,7 @@ test('WorkCase detail defaults Human reading open except execution approval and 
   assert.match(layout, /<FieldProblem issue=\{issue\} \/>/);
 });
 
-test('WorkCase authorization detail follows the shared overview, object, and secondary-disclosure hierarchy', () => {
+test('WorkCase authorization detail exposes only current action boundaries', () => {
   const layout = fs.readFileSync(
     path.join(repositoryRoot, 'web/src/pages/object-detail/WorkCaseReadingLayout.tsx'),
     'utf8',
@@ -357,48 +357,18 @@ test('WorkCase authorization detail follows the shared overview, object, and sec
     layout.indexOf('function InlineStringArrayField'),
   );
 
-  assert.match(authorization, /useState<"actions" \| "prohibited" \| "prerequisites" \| "limitations" \| "reviewer_policy" \| null>\(null\)/);
+  assert.match(authorization, /'actions' \| 'prohibited' \| 'prerequisites' \| null/);
   assert.match(authorization, /workcaseAuthorizedActionCount/);
   assert.match(authorization, /workcaseProhibitedActionCount/);
   assert.match(authorization, /workcasePrerequisiteCount/);
-  assert.match(authorization, /workcaseCapabilityLimitationCount/);
-  assert.match(authorization, /aria-controls="workcase-authorization-actions"/);
-  assert.match(authorization, /aria-controls="workcase-authorization-prohibited"/);
-  assert.match(authorization, /aria-controls="workcase-authorization-prerequisites"/);
-  assert.match(authorization, /aria-controls="workcase-authorization-limitations"/);
-  assert.match(authorization, /aria-expanded=\{activeTab === "actions"\}/);
-  assert.match(authorization, /aria-expanded=\{activeTab === "prohibited"\}/);
-  assert.match(authorization, /aria-expanded=\{activeTab === "prerequisites"\}/);
-  assert.match(authorization, /aria-expanded=\{activeTab === "limitations"\}/);
-  assert.match(authorization, /function CapabilityLimitationList/);
-  const capabilityLimitations = authorization.slice(
-    authorization.indexOf('function CapabilityLimitationList'),
-    authorization.indexOf('function AuthorizationConstraints'),
-  );
-  assert.match(capabilityLimitations, /getFieldValueLabel\("capability", capability, locale\)/);
-  assert.match(capabilityLimitations, /getFieldValueLabel\("availability", availability, locale\)/);
-  assert.match(capabilityLimitations, /getFieldValueLabel\("fallback_policy", fallbackPolicy, locale\)/);
-  assert.match(capabilityLimitations, /CircleAlert size=\{16\}/);
-  assert.doesNotMatch(capabilityLimitations, /<li[^>]+className="flex/);
-  assert.doesNotMatch(capabilityLimitations, /assurance_gap|affected_review_categories|evidence|stop_conditions|ReviewDisclosureList/);
-  assert.match(authorization, /workcaseAuthorizationConstraints/);
   assert.match(authorization, /function AuthorizationActionsContent/);
-  assert.match(authorization, /<AuthorizationActionsContent[\s\S]*?authorization=\{authorization\}/);
-  assert.match(authorization, /<AuthorizationConstraints[\s\S]*?authorization=\{authorization\}/);
-  assert.match(authorization, /function AuthorizationConstraints[\s\S]*?workcaseAuthorizationConstraints/);
+  assert.match(authorization, /function AuthorizationConstraints/);
   assert.match(authorization, /<AuthorizationActionObject/);
-  assert.match(authorization, /function AuthorizationActionObject[\s\S]*?useState\(false\)/);
   assert.match(authorization, /fieldKey="target_scope"/);
   assert.match(authorization, /fieldKey="effect_scope"/);
   assert.match(authorization, /fieldKey="risk_summary"/);
   assert.match(authorization, /fieldKey="rollback_summary"/);
-  assert.match(authorization, /function AuthorizationDisclosure/);
-  assert.match(authorization, /function AuthorizationListDisclosure[\s\S]*?<StringChips items=\{items\} \/>/);
-  assert.match(authorization, /function AuthorizationStringList[\s\S]*?divide-y divide-emerald-500\/15/);
-  assert.match(authorization, /<AuthorizationStringList items=\{prerequisites\} tone="prerequisite" emptyIsValid \/>/);
-  assert.match(authorization, /return emptyIsValid \? null : <p className="ldvh-caption text-red-400">/);
-  assert.match(authorization, /AuthorizationStringList[\s\S]*?gap-2 py-1 first:pt-0 last:pb-0/);
-  assert.doesNotMatch(authorization, /\[\s*"action_id",\s*"summary"/);
+  assert.doesNotMatch(authorization, /reviewer_policy|capability_limitations|fallback_order|actual_model/);
 });
 
 test('narrative fields read as prose while structured records keep label rows', () => {
@@ -632,7 +602,9 @@ test('narrative fields read as prose while structured records keep label rows', 
     layout.indexOf('function reviewConclusionStyle'),
   );
   assert.match(reviewMethod, /const MethodIcon = fallback \? CircleAlert : CircleCheck/);
-  assert.match(reviewMethod, /ldvh-card-decision-body mt-2 min-w-0 break-words border-t/);
+  assert.match(reviewMethod, /human_disclosure_summary/);
+  assert.match(reviewMethod, /human_disclosed_at/);
+  assert.match(reviewMethod, /capability_evidence/);
   assert.match(reviewMethod, /function ReviewEvidenceDisclosure/);
   assert.match(reviewMethod, /useState\(false\)/);
   assert.match(reviewMethod, /aria-expanded=\{expanded\}/);

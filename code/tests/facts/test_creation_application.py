@@ -221,6 +221,7 @@ def _workcase_command(current_fact_schemas: Mapping[str, FactSchema], tmp_path: 
                 "subject_version": 1,
                 "scope": "Current initial plan",
                 "conclusion": "pass",
+                "actual_method": "subagent-read-only",
                 "covered_quality_gate_ids": ["independent-result-review"],
             }
         ],
@@ -409,41 +410,27 @@ def test_workcase_creation_requires_current_quality_gate_authorization(
     assert not (command.boundary.git_common_dir / "ldvh").exists()
 
 
-def test_workcase_creation_accepts_explicit_pre_gate_same_ai_bootstrap(
+def test_workcase_creation_accepts_disclosed_same_ai_review_without_policy_gate(
     current_fact_schemas: Mapping[str, FactSchema],
     tmp_path: Path,
 ) -> None:
     command = _workcase_command(current_fact_schemas, tmp_path)
-    command.supplied["execution_authorization"]["capability_limitations"] = [
-        {
-            "limitation_id": "limitation-subagent-review",
-            "capability": "independent-subagent-review",
-            "availability": "unavailable",
-            "observation_summary": "The current environment exposes no subagent facility.",
-            "evidence": ["tool inventory reports no subagent capability"],
-            "affected_review_categories": ["creation_review", "plan_delta_review", "result_review"],
-            "fallback_policy": "same-ai-switched-role-read-only",
-            "assurance_gap": "The Reviewer does not have execution-environment independence.",
-            "stop_conditions": [
-                "Capability evidence becomes uncertain",
-                "The review cannot remain read-only and perspective-separated",
-            ],
-        }
-    ]
     command.supplied["creation_reviews"][0].update(
         {
             "actual_method": "same-ai-switched-role-read-only",
-            "capability_limitation_id": "limitation-subagent-review",
-            "capability_evidence": ["current tool inventory still reports no subagent capability"],
+            "capability_evidence": [
+                "Controller discovered the complete current tool surface.",
+                "Controller attempted Subagent creation and received an unavailable result.",
+            ],
             "assurance_gap": "The Reviewer does not have execution-environment independence.",
-            "stop_condition_assessment": "clear",
+            "human_disclosure_summary": "Human was told that same-AI review would run directly.",
+            "human_disclosed_at": "2026-07-26T12:49:00+08:00",
         }
     )
 
     candidate = prepare_fact_creation(command, observed_at="2026-07-26T13:00:00+08:00")
 
     assert isinstance(candidate, PreparedFactCreation)
-
 
 def test_workcase_creation_rejects_a_locally_valid_target_with_a_missing_deep_dependency(
     current_fact_schemas: Mapping[str, FactSchema],

@@ -1,0 +1,221 @@
+status: closed
+title: 收敛 WorkCase 独立审核为 Subagent 与显式 same-AI 兜底
+goal: 将 LDVH 的 WorkCase 审核机制收敛为“Subagent 是唯一独立审核方式；仅当 Controller 在自身上下文完成工具发现并实际无法创建 Subagent 时，披露后直接使用 same-AI 切换只读视角”，并移除 Orca、collaboration Worker、三层路由、平台模型选择及 09.Att.03/04/05 平台卡。
+scope: 包含：修订与 WorkCase 审核相关的当前规范、行动模板、字段登记和环境接入附件；将 09.Att.03/04/05 退出当前规则源并清理当前引用；调整 Python Code/Helper 的 WorkCase Schema、校验、projection、兼容边界及测试；调整 Web API、类型、详情呈现与中英文文案；清理当前代码计划和文档中的 Orca/Worker 审核路由。明确由 Controller 基于自身完整工具面和实际 spawn 结果判断 Subagent 能力，不采用 Subagent 对 Controller 能力的结论。保留历史 closed WorkCase 的可读性与机械有效性，不回写历史对象。完成后由 Helper 更新源 Spark 为 implemented。排除：Git commit/push、发布、插件或环境部署、外部网络操作、修改无关事实对象、重写历史 closed WorkCase。
+success_criterion_definitions:
+- criterion_id: criterion-1
+  statement: 当前规则源一致规定 Subagent 是唯一独立审核方式；Controller 只能依据自身当前会话的完整工具发现与实际 spawn 结果判断能力，Subagent 对自身或 Controller 能力的结论不得作为不可创建证据；创建失败时只需向 Human 披露保证差距即可直接使用 same-ai-switched-role-read-only，不新增 Human Gate，并记录 actual_method、Controller 证据、披露内容与披露时点。
+- criterion_id: criterion-2
+  statement: 当前规则源与行动模板不再包含 collaboration Worker、Orca Worker、三层 Reviewer 路由、平台模型目录/选择/映射责任；09.Att.03、09.Att.04、09.Att.05 已按规范退出，全部当前引用已清理或改为平台无关边界。
+- criterion_id: criterion-3
+  statement: WorkCase 当前 Schema、字段登记、Code/Helper 校验与 canonical projection 只支持新建/活动对象使用 subagent-read-only 或满足披露条件的 same-ai-switched-role-read-only；same-AI 最小记录包含 actual_method、Controller 自身工具发现/实际创建失败证据、向 Human 披露的保证差距与披露时点；既有历史 closed WorkCase 的旧枚举、projection、引用可读性与机械有效性保持，相关正反测试覆盖 Controller/子上下文能力边界和 fallback 条件。
+- criterion_id: criterion-4
+  statement: Web API、共享类型、详情呈现和中英文文案不再展示或要求 Worker/Orca、模型选择、三层 preferred/fallback 路由；实际审核方法与 same-AI 保证差距仍能正确呈现。
+- criterion_id: criterion-5
+  statement: 范围匹配的规范、Python、Web 测试与 git diff --check 通过，且当前 worktree 的 LDVH 机械检查与事实完整性检查均达到各自完整成功状态。
+- criterion_id: criterion-6
+  statement: 源 Spark 01M03J02PGEST9HHF4YKW09M0V 在实现和验证完成后由 Helper 更新为 implemented，并准确记录最终职责边界；不回写或改写历史 closed WorkCase。
+success_criterion_results:
+- criterion_id: criterion-1
+  outcome: satisfied
+  summary: 当前规则明确 Subagent 是唯一独立审核方式；Controller 自行发现工具并实际尝试创建，失败时披露后直接 same-AI，记录要求完整。
+- criterion_id: criterion-2
+  outcome: satisfied
+  summary: 当前规则和行动模板已移除旧的多层审核、预冻结降级边界与平台模型责任；09.Att.03/04/05 已退出且当前引用清理完成。
+- criterion_id: criterion-3
+  outcome: satisfied
+  summary: Schema、字段登记、校验与 canonical projection 已支持两态新语义；完整历史事实库机械检查通过，既有 closed 对象保持可读有效。
+- criterion_id: criterion-4
+  outcome: satisfied
+  summary: Web API、共享类型、详情、列表与中英文文案已收敛，只呈现 Subagent 与 same-AI 披露边界。
+- criterion_id: criterion-5
+  outcome: satisfied
+  summary: 范围 Python 回归 517 项、TypeScript check、WorkCase Web 合约测试 50 项、git diff 检查、当前规则源检查和事实完整性检查均通过。
+- criterion_id: criterion-6
+  outcome: satisfied
+  summary: 源 Spark 已经 Helper CAS 更新并精确回读为 implemented，历史 closed WorkCase 未被回写。
+result_summary: 已把 LDVH 的 WorkCase 审核机制收敛为 Subagent 唯一独立审核与披露后 same-AI 兜底；Controller 自主判断工具能力，宿主负责模型选择；旧的多层审核、预冻结降级边界和三张平台卡已退出当前机制，Code 与 Web 同步完成。
+validation_summary: 修正后范围 Python 回归 518 项通过；TypeScript 构建检查通过；三组 WorkCase Web 合约测试共 60 项通过；git diff --check 通过；ldvh 当前规则源检查为 passed，完整事实库 265 个对象检查为 complete。未执行 Git commit/push、发布或外部网络验证，均在批准排除范围内。
+closure_outcome: completed
+disposition_summary: 获批范围内的规则、Code、Web、验证与源 Spark 处置均已完成；独立 Subagent 结果复核通过，没有需要路由或接受停止的剩余责任。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a00720-0ad0-7674-98c5-e4f4f804d01b
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-717b-b184-0886b218acb0
+change_log:
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T07:14:01.432811Z'
+  summary: 根据 Human 当前指令受控创建 WorkCase：承接源 Spark 与既有三层审核落地 WorkCase，计划将独立审核收敛为 Subagent 唯一标准及披露后 same-AI 兜底，并退出 Orca/Worker、三层路由和 09.Att.03/04/05。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T07:15:26.457656Z'
+  summary: 消费 Human Gate 1 批准：冻结 plan_version=1 与完整执行授权基线，进入 executing；尚未开始任何 work item。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T07:17:14.744550Z'
+  summary: 开始 item-rules：在批准范围内收敛独立审核规则并退出三张平台卡。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T07:50:50.305771Z'
+  summary: 完成 item-rules：统一审核职责边界并退出三张平台卡。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T07:51:06.070079Z'
+  summary: 开始 item-code：验证两态审核 Schema、projection 与历史兼容。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T07:51:21.491424Z'
+  summary: 完成 item-code：两态审核 Schema、校验、projection 与历史兼容验证通过。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T07:51:37.844236Z'
+  summary: 开始 item-web：验证 Web/API/类型与文案的新审核边界。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T07:51:54.672641Z'
+  summary: 完成 item-web：Web 类型、呈现、文案及目标合约测试已收敛并通过。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T07:52:09.904077Z'
+  summary: 开始 item-verify-spark：执行最终验证并收口源 Spark。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T07:54:00.774494Z'
+  summary: 完成最后工作项并同事务进入 controller_checking，形成 result_version=1 的完整结果投影。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T07:54:24.625388Z'
+  summary: 完整结果投影已回读，进入 independent_reviewing 并等待原生只读 Subagent 复核 result_version=1。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T07:56:36.026754Z'
+  summary: 记录 result_version=1 的只读 Subagent 复核为 changes_required，并返回 controller_checking 处理已确认的规范残留。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T07:56:53.999555Z'
+  summary: 保留 result_version=1 的 changes_required 复核并返回 controller_checking 处理反馈。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T07:58:14.351872Z'
+  summary: 处理独立复核反馈，删除旧 capability-limitation/fallback 冻结残留，重跑验证并将 canonical result projection 升为 version 2。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T07:58:35.720035Z'
+  summary: result_version=2 已回读，进入 independent_reviewing 等待新的只读 Subagent 复核。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T08:02:13.876989Z'
+  summary: 记录 result_version=2 的只读 Subagent 复核为 changes_required，并确认三项契约问题。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T08:02:30.334880Z'
+  summary: 保留 result_version=2 的 changes_required 复核并返回 controller_checking 完成修正验证。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T08:03:37.311468Z'
+  summary: 处理 result_version=2 三项反馈，新增披露时间 RFC 3339 校验与测试，重跑验证并将结果升为 version 3。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T08:03:57.671024Z'
+  summary: result_version=3 已回读，进入 independent_reviewing 等待新的只读 Subagent 复核。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T08:06:46.491213Z'
+  summary: 记录 result_version=3 的只读 Subagent 复核为 changes_required，并确认 Web 规范契约缺口。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T08:07:03.428211Z'
+  summary: 保留 result_version=3 的 changes_required 复核并返回 controller_checking。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T08:08:09.417820Z'
+  summary: 恢复仍有效的 Web Card 展示边界，重跑范围验证并将 canonical result projection 升为 version 4。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T08:08:29.023063Z'
+  summary: result_version=4 已回读，进入 independent_reviewing 等待新的只读 Subagent 复核。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T08:11:37.148355Z'
+  summary: 记录 result_version=4 的只读 Subagent 独立复核为 pass，无关闭阻断。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T08:11:54.665802Z'
+  summary: 独立结果复核通过，进入 closure_preparing 形成关闭提案。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T08:12:23.470720Z'
+  summary: 完成终态保留审查并形成 proposed_outcome=completed、无剩余责任的关闭提案。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T08:12:42.990382Z'
+  summary: 完整关闭提案已回读，进入 human_closure_confirming 等待 Human Gate2。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T08:14:34.617455Z'
+  summary: 消费 Human Gate2 批准，将 WorkCase 关闭为 completed。
+object_uid: 01a0096b-9d38-776f-ac34-9287effd47ff
+object_id: workcase-01M04PQ79REXQTRD4JGZQZTHZZ
+fact_type_key: workcase
+created_at: '2026-08-16T07:14:01.432811Z'
+updated_at: '2026-08-16T08:14:34.617455Z'

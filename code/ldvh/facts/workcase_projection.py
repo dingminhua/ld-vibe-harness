@@ -33,8 +33,6 @@ _AUTHORIZATION_ACTION_FIELDS = (
 _AUTHORIZATION_FIELDS = (
     "authorized_actions",
     "quality_gates",
-    "reviewer_policy",
-    "capability_limitations",
     "action_ceiling",
     "prohibited_actions",
     "allowed_adjustments",
@@ -47,28 +45,6 @@ _QUALITY_GATE_FIELDS = (
     "reviewer_mode",
     "delegation_action_id",
     "result_review_action_id",
-)
-_REVIEWER_POLICY_FIELDS = (
-    "model",
-    "collaboration_agent",
-    "effort",
-    "fast",
-    "preferred_method",
-    "fallback_order",
-    "max_perspectives",
-    "activation",
-    "same_ai_limit",
-)
-_CAPABILITY_LIMITATION_FIELDS = (
-    "limitation_id",
-    "capability",
-    "availability",
-    "observation_summary",
-    "evidence",
-    "affected_review_categories",
-    "fallback_policy",
-    "assurance_gap",
-    "stop_conditions",
 )
 _RESULT_ITEM_FIELDS = ("item_id", "status", "result_summary")
 _RESULT_MEMBER_FIELDS = (
@@ -176,29 +152,6 @@ def canonical_execution_authorization(value: object) -> dict[str, object]:
     quality_gates = value.get("quality_gates")
     if isinstance(quality_gates, Sequence) and not isinstance(quality_gates, (str, bytes, bytearray)):
         projected["quality_gates"] = _sorted_objects(quality_gates, "gate_id", _QUALITY_GATE_FIELDS)
-    reviewer_policy = value.get("reviewer_policy")
-    if isinstance(reviewer_policy, Mapping):
-        policy = _selected(reviewer_policy, _REVIEWER_POLICY_FIELDS)
-        raw_order = policy.get("fallback_order")
-        if isinstance(raw_order, Sequence) and not isinstance(raw_order, (str, bytes, bytearray)):
-            policy["fallback_order"] = _stable_unique(raw_order)
-        projected["reviewer_policy"] = policy
-    limitations = value.get("capability_limitations")
-    if isinstance(limitations, Sequence) and not isinstance(limitations, (str, bytes, bytearray)):
-        normalized_limitations: list[dict[str, object]] = []
-        for member in limitations:
-            if not isinstance(member, Mapping):
-                continue
-            limitation = _selected(member, _CAPABILITY_LIMITATION_FIELDS)
-            for key in ("evidence", "affected_review_categories", "stop_conditions"):
-                raw = limitation.get(key)
-                if isinstance(raw, Sequence) and not isinstance(raw, (str, bytes, bytearray)):
-                    limitation[key] = _stable_unique(raw)
-            normalized_limitations.append(limitation)
-        projected["capability_limitations"] = sorted(
-            normalized_limitations,
-            key=lambda member: (str(member.get("limitation_id", "")), _canonical_json(member)),
-        )
     for key in ("prohibited_actions", "human_prerequisites"):
         raw = projected.get(key)
         if isinstance(raw, Sequence) and not isinstance(raw, (str, bytes, bytearray)):

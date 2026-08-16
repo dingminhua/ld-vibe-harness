@@ -1538,76 +1538,62 @@ function ReviewMethodDisclosure({
   locale: string;
 }) {
   if (!actualMethod) return null;
-  const fallback = actualMethod === "same-ai-switched-role-read-only";
-  const collaboration = actualMethod === "collaboration-worker-read-only";
+  const fallback = actualMethod === 'same-ai-switched-role-read-only';
   const MethodIcon = fallback ? CircleAlert : CircleCheck;
-  const surfaceStyle = collaboration
-    ? "border-emerald-400/25 bg-emerald-500/[0.03]"
-    : fallback
-      ? "border-amber-400/30 bg-amber-500/[0.035]"
-      : "border-emerald-400/25 bg-emerald-500/[0.03]";
-  const textStyle = collaboration
-    ? "text-emerald-900/80 dark:text-emerald-100/85"
-    : fallback
-      ? "text-amber-950/80 dark:text-amber-100/85"
-      : "text-emerald-900/80 dark:text-emerald-100/85";
-  const iconStyle = fallback ? "text-amber-600 dark:text-amber-300" : "text-emerald-600 dark:text-emerald-300";
-  const limitationId = detailString(review.capability_limitation_id);
+  const surfaceStyle = fallback
+    ? 'border-amber-400/30 bg-amber-500/[0.035]'
+    : 'border-emerald-400/25 bg-emerald-500/[0.03]';
+  const textStyle = fallback
+    ? 'text-amber-950/80 dark:text-amber-100/85'
+    : 'text-emerald-900/80 dark:text-emerald-100/85';
+  const iconStyle = fallback
+    ? 'text-amber-600 dark:text-amber-300'
+    : 'text-emerald-600 dark:text-emerald-300';
   const assuranceGap = detailString(review.assurance_gap);
-  const stopAssessment = detailString(review.stop_condition_assessment);
+  const disclosureSummary = detailString(review.human_disclosure_summary);
+  const disclosedAt = detailString(review.human_disclosed_at);
   const evidence = detailStrings(review.capability_evidence);
-  const actualAgent = detailString(review.actual_agent);
-  const actualModel = detailString(review.actual_model);
   return (
-    <section className={`min-w-0 rounded-lg border px-3 py-2.5 ${surfaceStyle}`}>
+    <section
+      className={`min-w-0 rounded-lg border px-3 py-2.5 ${surfaceStyle}`}
+    >
       <div className="flex min-w-0 items-start gap-2.5">
-        <span className="flex h-5 shrink-0 items-center" aria-hidden="true">
-          <MethodIcon size={15} strokeWidth={1.9} className={iconStyle} />
-        </span>
+        <MethodIcon
+          size={15}
+          strokeWidth={1.9}
+          className={iconStyle}
+          aria-hidden="true"
+        />
         <div className="min-w-0 flex-1">
-          <p className="ldvh-meta text-ldvh-text-secondary/75">{getFieldLabel("actual_method", locale)}</p>
-          <p className={`ldvh-card-decision-title mt-0.5 min-w-0 break-words ${textStyle}`}>
-            {getFieldValueLabel("actual_method", actualMethod, locale)}
+          <p className="ldvh-meta text-ldvh-text-secondary/75">
+            {getFieldLabel('actual_method', locale)}
           </p>
-          {(actualAgent || actualModel) && (
-            <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-ldvh-text-secondary/70">
-              {actualAgent && (
-                <span className="ldvh-meta min-w-0 break-all">
-                  {getFieldLabel("actual_agent", locale)} · {actualAgent}
-                </span>
-              )}
-              {actualModel && (
-                <span className="ldvh-meta min-w-0 break-all">
-                  {getFieldLabel("actual_model", locale)} · {actualModel}
-                </span>
-              )}
-            </div>
-          )}
+          <p
+            className={`ldvh-card-decision-title mt-0.5 min-w-0 break-words ${textStyle}`}
+          >
+            {getFieldValueLabel('actual_method', actualMethod, locale)}
+          </p>
         </div>
       </div>
       {fallback && (
-        <>
+        <div className="mt-2 grid min-w-0 gap-2 border-t border-amber-400/20 pt-2">
           {assuranceGap && (
-            <p className="ldvh-card-decision-body mt-2 min-w-0 break-words border-t border-amber-400/20 pt-2 !text-amber-950/70 dark:!text-amber-100/75">
+            <p className="ldvh-card-decision-body break-words !text-amber-950/70 dark:!text-amber-100/75">
               {assuranceGap}
             </p>
           )}
-          {(limitationId || stopAssessment) && (
-            <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-amber-800/65 dark:text-amber-100/65">
-              {limitationId && (
-                <span className="ldvh-meta min-w-0 break-all">
-                  {getFieldLabel("capability_limitation_id", locale)} · {limitationId}
-                </span>
-              )}
-              {stopAssessment && (
-                <span className="ldvh-meta min-w-0 break-words">
-                  {getFieldLabel("stop_condition_assessment", locale)} · {getFieldValueLabel("stop_condition_assessment", stopAssessment, locale)}
-                </span>
-              )}
-            </div>
+          {disclosureSummary && (
+            <p className="ldvh-caption break-words text-amber-900/75 dark:text-amber-100/75">
+              {disclosureSummary}
+            </p>
+          )}
+          {disclosedAt && (
+            <p className="ldvh-meta text-amber-800/65 dark:text-amber-100/65">
+              {getFieldLabel('human_disclosed_at', locale)} · {disclosedAt}
+            </p>
           )}
           <ReviewEvidenceDisclosure items={evidence} locale={locale} />
-        </>
+        </div>
       )}
     </section>
   );
@@ -1873,128 +1859,74 @@ function ExecutionAuthorization({
   locale: string;
 }) {
   const actions = Array.isArray(authorization.authorized_actions)
-    ? authorization.authorized_actions.filter((value): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && !Array.isArray(value))
+    ? authorization.authorized_actions.filter(
+        (value): value is Record<string, unknown> =>
+          Boolean(value) && typeof value === 'object' && !Array.isArray(value),
+      )
     : [];
   const prohibitedActions = detailStrings(authorization.prohibited_actions);
   const prerequisites = detailStrings(authorization.human_prerequisites);
-  const limitations = Array.isArray(authorization.capability_limitations)
-    ? authorization.capability_limitations.filter((value): value is Record<string, unknown> => Boolean(value) && typeof value === "object" && !Array.isArray(value))
-    : [];
-  const reviewerPolicy = detailRecord(authorization.reviewer_policy);
   const { t } = useI18n();
-  const [activeTab, setActiveTab] = useState<"actions" | "prohibited" | "prerequisites" | "limitations" | "reviewer_policy" | null>(null);
-  const toggleTab = (tab: "actions" | "prohibited" | "prerequisites" | "limitations" | "reviewer_policy") => {
-    setActiveTab((current) => current === tab ? null : tab);
-  };
-  const hasReviewerPolicy = Boolean(reviewerPolicy);
-  const tabCount = 3 + (limitations.length > 0 ? 1 : 0) + (hasReviewerPolicy ? 1 : 0);
-  const tabStyles = {
-    actions: {
-      button: "border-emerald-400/35 text-emerald-800/85 hover:bg-emerald-500/[0.06] dark:text-emerald-100/85",
-      selected: "border-emerald-400/50 border-b-transparent bg-emerald-500/[0.08]",
-      panel: "border-emerald-400/35 bg-emerald-500/[0.035]",
-    },
-    prohibited: {
-      button: "border-rose-400/35 text-rose-700/85 hover:bg-rose-500/[0.06] dark:text-rose-200/85",
-      selected: "border-rose-400/50 border-b-transparent bg-rose-500/[0.08]",
-      panel: "border-rose-400/35 bg-rose-500/[0.035]",
-    },
-    prerequisites: {
-      button: "border-violet-400/35 text-violet-700/85 hover:bg-violet-500/[0.06] dark:text-violet-200/85",
-      selected: "border-violet-400/50 border-b-transparent bg-violet-500/[0.08]",
-      panel: "border-violet-400/35 bg-violet-500/[0.035]",
-    },
-    limitations: {
-      button: "border-amber-400/40 text-amber-800/85 hover:bg-amber-500/[0.07] dark:text-amber-100/85",
-      selected: "border-amber-400/55 border-b-transparent bg-amber-500/[0.09]",
-      panel: "border-amber-400/40 bg-amber-500/[0.045]",
-    },
-    reviewer_policy: {
-      button: "border-sky-400/35 text-sky-700/85 hover:bg-sky-500/[0.06] dark:text-sky-200/85",
-      selected: "border-sky-400/50 border-b-transparent bg-sky-500/[0.08]",
-      panel: "border-sky-400/35 bg-sky-500/[0.035]",
-    },
-  };
+  const [activeTab, setActiveTab] = useState<
+    'actions' | 'prohibited' | 'prerequisites' | null
+  >(null);
+  const toggleTab = (tab: 'actions' | 'prohibited' | 'prerequisites') =>
+    setActiveTab((current) => (current === tab ? null : tab));
   return (
     <section className="w-full min-w-0">
-      <div className={`grid w-full min-w-0 pt-3 ${tabCount === 5 ? "grid-cols-5" : tabCount === 4 ? "grid-cols-4" : "grid-cols-3"}`}>
+      <div className="grid w-full min-w-0 grid-cols-3 pt-3">
         <button
           type="button"
-          aria-controls="workcase-authorization-actions"
-          aria-expanded={activeTab === "actions"}
-          onClick={() => toggleTab("actions")}
-          className={`ldvh-caption-strong w-full min-w-0 border px-2 py-2 text-center transition-colors first:rounded-tl-lg ${tabStyles.actions.button} ${activeTab === "actions" ? `relative z-10 ${tabStyles.actions.selected}` : ""}`}
+          aria-expanded={activeTab === 'actions'}
+          onClick={() => toggleTab('actions')}
+          className="ldvh-caption-strong rounded-tl-lg border border-emerald-400/35 px-2 py-2 text-emerald-800/85 dark:text-emerald-100/85"
         >
-          {t("objectList.workcaseAuthorizedActionCount", { count: String(actions.length) })}
+          {t('objectList.workcaseAuthorizedActionCount', {
+            count: String(actions.length),
+          })}
         </button>
         <button
           type="button"
-          aria-controls="workcase-authorization-prohibited"
-          aria-expanded={activeTab === "prohibited"}
-          onClick={() => toggleTab("prohibited")}
-          className={`ldvh-caption-strong w-full min-w-0 border border-l-0 px-2 py-2 text-center transition-colors ${tabStyles.prohibited.button} ${activeTab === "prohibited" ? `relative z-10 ${tabStyles.prohibited.selected}` : ""}`}
+          aria-expanded={activeTab === 'prohibited'}
+          onClick={() => toggleTab('prohibited')}
+          className="ldvh-caption-strong border border-l-0 border-rose-400/35 px-2 py-2 text-rose-700/85 dark:text-rose-200/85"
         >
-          {t("objectList.workcaseProhibitedActionCount", { count: String(prohibitedActions.length) })}
+          {t('objectList.workcaseProhibitedActionCount', {
+            count: String(prohibitedActions.length),
+          })}
         </button>
         <button
           type="button"
-          aria-controls="workcase-authorization-prerequisites"
-          aria-expanded={activeTab === "prerequisites"}
-          onClick={() => toggleTab("prerequisites")}
-          className={`ldvh-caption-strong w-full min-w-0 border border-l-0 px-2 py-2 text-center transition-colors ${tabCount === 3 && limitations.length === 0 && !hasReviewerPolicy ? "rounded-tr-lg" : ""} ${tabStyles.prerequisites.button} ${activeTab === "prerequisites" ? `relative z-10 ${tabStyles.prerequisites.selected}` : ""}`}
+          aria-expanded={activeTab === 'prerequisites'}
+          onClick={() => toggleTab('prerequisites')}
+          className="ldvh-caption-strong rounded-tr-lg border border-l-0 border-violet-400/35 px-2 py-2 text-violet-700/85 dark:text-violet-200/85"
         >
-          {t("objectList.workcasePrerequisiteCount", { count: String(prerequisites.length) })}
+          {t('objectList.workcasePrerequisiteCount', {
+            count: String(prerequisites.length),
+          })}
         </button>
-        {limitations.length > 0 && (
-          <button
-            type="button"
-            aria-controls="workcase-authorization-limitations"
-            aria-expanded={activeTab === "limitations"}
-            onClick={() => toggleTab("limitations")}
-            className={`ldvh-caption-strong w-full min-w-0 border border-l-0 px-2 py-2 text-center transition-colors ${!hasReviewerPolicy ? "rounded-tr-lg" : ""} ${tabStyles.limitations.button} ${activeTab === "limitations" ? `relative z-10 ${tabStyles.limitations.selected}` : ""}`}
-          >
-            {t("objectList.workcaseCapabilityLimitationCount", { count: String(limitations.length) })}
-          </button>
-        )}
-        {hasReviewerPolicy && (
-          <button
-            type="button"
-            aria-controls="workcase-authorization-reviewer-policy"
-            aria-expanded={activeTab === "reviewer_policy"}
-            onClick={() => toggleTab("reviewer_policy")}
-            className={`ldvh-caption-strong w-full min-w-0 rounded-tr-lg border border-l-0 px-2 py-2 text-center transition-colors ${tabStyles.reviewer_policy.button} ${activeTab === "reviewer_policy" ? `relative z-10 ${tabStyles.reviewer_policy.selected}` : ""}`}
-          >
-            {t("objectDetail.reviewPolicy")}
-          </button>
-        )}
       </div>
-      {activeTab === "actions" && (
-        <div id="workcase-authorization-actions" className={`-mt-px grid min-w-0 gap-3 rounded-b-lg border px-3 py-3 ${tabStyles.actions.panel}`}>
-          {actions.length > 0 ? (
-            <AuthorizationActionsContent actions={actions} authorization={authorization} locale={locale} />
-          ) : (
-            <p className="ldvh-caption text-red-400">{t("objectDetail.workcaseGateFieldMissingOrMalformed")}</p>
-          )}
+      {activeTab === 'actions' && (
+        <div className="-mt-px grid gap-3 rounded-b-lg border border-emerald-400/35 px-3 py-3">
+          <AuthorizationActionsContent
+            actions={actions}
+            authorization={authorization}
+            locale={locale}
+          />
         </div>
       )}
-      {activeTab === "prohibited" && (
-        <div id="workcase-authorization-prohibited" className={`-mt-px min-w-0 rounded-b-lg border px-3 py-1 ${tabStyles.prohibited.panel}`}>
+      {activeTab === 'prohibited' && (
+        <div className="-mt-px rounded-b-lg border border-rose-400/35 px-3 py-1">
           <AuthorizationStringList items={prohibitedActions} tone="warning" />
         </div>
       )}
-      {activeTab === "prerequisites" && (
-        <div id="workcase-authorization-prerequisites" className={`-mt-px min-w-0 rounded-b-lg border px-3 py-1 ${tabStyles.prerequisites.panel}`}>
-          <AuthorizationStringList items={prerequisites} tone="prerequisite" emptyIsValid />
-        </div>
-      )}
-      {activeTab === "limitations" && (
-        <div id="workcase-authorization-limitations" className={`-mt-px min-w-0 rounded-b-lg border px-3 py-3 ${tabStyles.limitations.panel}`}>
-          <CapabilityLimitationList limitations={limitations} locale={locale} />
-        </div>
-      )}
-      {activeTab === "reviewer_policy" && reviewerPolicy && (
-        <div id="workcase-authorization-reviewer-policy" className={`-mt-px min-w-0 rounded-b-lg border px-3 py-3 ${tabStyles.reviewer_policy.panel}`}>
-          <ReviewerPolicyDetail policy={reviewerPolicy} locale={locale} />
+      {activeTab === 'prerequisites' && (
+        <div className="-mt-px rounded-b-lg border border-violet-400/35 px-3 py-1">
+          <AuthorizationStringList
+            items={prerequisites}
+            tone="prerequisite"
+            emptyIsValid
+          />
         </div>
       )}
     </section>
@@ -2014,160 +1946,14 @@ function AuthorizationActionsContent({
     <div className="grid min-w-0 gap-3">
       <ul className="grid min-w-0 gap-3">
         {actions.map((action, index) => (
-          <AuthorizationActionObject key={`${detailString(action.action_id)}-${index}`} action={action} locale={locale} />
+          <AuthorizationActionObject
+            key={`${detailString(action.action_id)}-${index}`}
+            action={action}
+            locale={locale}
+          />
         ))}
       </ul>
       <AuthorizationConstraints authorization={authorization} locale={locale} />
-    </div>
-  );
-}
-
-function CapabilityLimitationList({
-  limitations,
-  locale,
-}: {
-  limitations: Array<Record<string, unknown>>;
-  locale: string;
-}) {
-  return (
-    <ul className="grid min-w-0 gap-2">
-      {limitations.map((limitation, index) => {
-        const limitationId = detailString(limitation.limitation_id);
-        const capability = detailString(limitation.capability);
-        const availability = detailString(limitation.availability);
-        const observation = detailString(limitation.observation_summary);
-        const fallbackPolicy = detailString(limitation.fallback_policy);
-        return (
-          <li key={`${limitationId}-${index}`} className="min-w-0 rounded-lg border border-amber-400/30 bg-amber-500/[0.035] px-3 py-2.5">
-            <div className="flex min-w-0 flex-wrap items-center gap-2">
-              <CircleAlert size={16} strokeWidth={1.9} className="shrink-0 text-amber-600 dark:text-amber-300" aria-hidden="true" />
-              <p className="ldvh-card-decision-title min-w-0 text-amber-950/80 dark:text-amber-100/85">
-                {getFieldValueLabel("capability", capability, locale)}
-              </p>
-              {availability && (
-                <span className="ldvh-chip shrink-0 rounded border border-amber-400/35 bg-amber-500/[0.07] px-2 py-0.5 text-amber-800 dark:text-amber-100">
-                  {getFieldValueLabel("availability", availability, locale)}
-                </span>
-              )}
-            </div>
-            {observation && (
-              <p className="ldvh-caption mt-1 min-w-0 break-words text-ldvh-text-secondary">
-                {observation}
-              </p>
-            )}
-            {fallbackPolicy && (
-              <p className="ldvh-meta mt-1.5 min-w-0 break-words text-amber-800/70 dark:text-amber-100/70">
-                <span>{getFieldLabel("fallback_policy", locale)}</span>
-                <span className="mx-1" aria-hidden="true">·</span>
-                <span>{getFieldValueLabel("fallback_policy", fallbackPolicy, locale)}</span>
-              </p>
-            )}
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-function ReviewerPolicyDetail({
-  policy,
-  locale,
-}: {
-  policy: Record<string, unknown>;
-  locale: string;
-}) {
-  const model = detailString(policy.model);
-  const collaborationAgent = detailString(policy.collaboration_agent);
-  const preferredMethod = detailString(policy.preferred_method);
-  const effort = detailString(policy.effort);
-  const fast = policy.fast === true ? "true" : policy.fast === false ? "false" : "";
-  const fallbackOrder = detailStrings(policy.fallback_order);
-  const perRoundPerspectiveLimit = detailNumber(policy.per_round_perspective_limit);
-  const activation = detailString(policy.activation);
-  const sameAiBoundary = detailString(policy.same_ai_boundary);
-  return (
-    <div className="grid min-w-0 gap-3">
-      <div className="flex min-w-0 items-center gap-2 text-sky-700/85 dark:text-sky-200/85">
-        <CircleCheck size={16} strokeWidth={1.9} className="shrink-0 text-sky-600 dark:text-sky-300" aria-hidden="true" />
-        <span className="ldvh-detail-semantic-title min-w-0 text-current">
-          {getFieldLabel("reviewer_policy", locale)}
-        </span>
-      </div>
-      <div className="grid min-w-0 gap-2 rounded-lg border border-sky-400/25 bg-sky-500/[0.025] px-3 py-3">
-        {(model || collaborationAgent) && (
-          <div className="grid min-w-0 grid-cols-2 gap-3">
-            {model && (
-              <ReviewerPolicyField label={getFieldLabel("model", locale)} value={model} />
-            )}
-            {collaborationAgent && (
-              <ReviewerPolicyField label={getFieldLabel("collaboration_agent", locale)} value={collaborationAgent} />
-            )}
-          </div>
-        )}
-        {preferredMethod && (
-          <ReviewerPolicyField
-            label={getFieldLabel("preferred_method", locale)}
-            value={getFieldValueLabel("preferred_method", preferredMethod, locale)}
-          />
-        )}
-        {(effort || fast) && (
-          <div className="flex min-w-0 flex-wrap items-center gap-3">
-            {effort && (
-              <span className="ldvh-meta text-sky-800/70 dark:text-sky-100/70">
-                {getFieldLabel("effort", locale)} · {effort}
-              </span>
-            )}
-            {fast && (
-              <span className="ldvh-chip rounded border border-sky-400/25 bg-sky-500/[0.06] px-2 py-0.5 text-sky-700 dark:text-sky-200">
-                {getFieldLabel("fast", locale)} · {fast}
-              </span>
-            )}
-          </div>
-        )}
-        {fallbackOrder.length > 0 && (
-          <div className="min-w-0">
-            <p className="ldvh-meta mb-1.5 text-sky-800/70 dark:text-sky-100/70">
-              {getFieldLabel("fallback_order", locale)}
-            </p>
-            <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-              {fallbackOrder.map((item, index) => (
-                <span key={item} className="ldvh-chip rounded-md border border-sky-400/25 bg-sky-500/[0.06] px-2 py-0.5 text-sky-700 dark:text-sky-200">
-                  {index + 1}. {getFieldValueLabel("actual_method", item, locale)}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-        {perRoundPerspectiveLimit !== null && (
-          <ReviewerPolicyField
-            label={getFieldLabel("per_round_perspective_limit", locale)}
-            value={String(perRoundPerspectiveLimit)}
-          />
-        )}
-        {activation && (
-          <ReviewerPolicyField
-            label={getFieldLabel("activation", locale)}
-            value={activation}
-          />
-        )}
-        {sameAiBoundary && (
-          <ReviewerPolicyField
-            label={getFieldLabel("same_ai_boundary", locale)}
-            value={sameAiBoundary}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function ReviewerPolicyField({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0 rounded-md border border-sky-400/15 bg-sky-500/[0.02] px-3 py-2">
-      <p className="ldvh-meta text-sky-800/60 dark:text-sky-100/60">{label}</p>
-      <p className="ldvh-card-decision-title mt-1 min-w-0 break-words text-sky-900/80 dark:text-sky-100/85">
-        {value}
-      </p>
     </div>
   );
 }
@@ -2184,20 +1970,48 @@ function AuthorizationConstraints({
   return (
     <section className="grid min-w-0 gap-3 rounded-lg border border-emerald-400/25 bg-emerald-500/[0.025] px-3 py-3">
       <div className="flex min-w-0 items-center gap-2 text-ldvh-text-secondary">
-        <CircleAlert size={16} strokeWidth={1.9} className="shrink-0 text-emerald-600 dark:text-emerald-300" aria-hidden="true" />
-        <h3 className="ldvh-card-decision-title min-w-0">{t("objectDetail.workcaseAuthorizationConstraints")}</h3>
+        <CircleAlert
+          size={16}
+          strokeWidth={1.9}
+          className="shrink-0 text-emerald-600 dark:text-emerald-300"
+          aria-hidden="true"
+        />
+        <h3 className="ldvh-card-decision-title min-w-0">
+          {t('objectDetail.workcaseAuthorizationConstraints')}
+        </h3>
       </div>
       <div className="min-w-0 border-l-2 border-emerald-400/55 pl-3">
         {actionCeiling ? (
-          <SummaryText value={actionCeiling} collapseThreshold={Number.MAX_SAFE_INTEGER} className="ldvh-card-decision-body !text-emerald-950/72 dark:!text-emerald-100/78" />
+          <SummaryText
+            value={actionCeiling}
+            collapseThreshold={Number.MAX_SAFE_INTEGER}
+            className="ldvh-card-decision-body !text-emerald-950/72 dark:!text-emerald-100/78"
+          />
         ) : (
-          <p className="ldvh-caption mt-1 text-red-400">{t("objectDetail.workcaseGateFieldMissingOrMalformed")}</p>
+          <p className="ldvh-caption mt-1 text-red-400">
+            {t('objectDetail.workcaseGateFieldMissingOrMalformed')}
+          </p>
         )}
       </div>
       <div className="grid min-w-0 divide-y divide-ldvh-border/60 border-t border-ldvh-border/60 pt-1">
-        <AuthorizationDisclosure fieldKey="allowed_adjustments" value={authorization.allowed_adjustments} locale={locale} tone="neutral" />
-        <AuthorizationDisclosure fieldKey="verification_and_rollback" value={authorization.verification_and_rollback} locale={locale} tone="neutral" />
-        <AuthorizationDisclosure fieldKey="out_of_bounds_handling" value={authorization.out_of_bounds_handling} locale={locale} tone="warning" />
+        <AuthorizationDisclosure
+          fieldKey="allowed_adjustments"
+          value={authorization.allowed_adjustments}
+          locale={locale}
+          tone="neutral"
+        />
+        <AuthorizationDisclosure
+          fieldKey="verification_and_rollback"
+          value={authorization.verification_and_rollback}
+          locale={locale}
+          tone="neutral"
+        />
+        <AuthorizationDisclosure
+          fieldKey="out_of_bounds_handling"
+          value={authorization.out_of_bounds_handling}
+          locale={locale}
+          tone="warning"
+        />
       </div>
     </section>
   );

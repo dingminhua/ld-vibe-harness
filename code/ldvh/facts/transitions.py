@@ -102,13 +102,10 @@ _REVIEWER_FIELDS = (
     "conclusion",
     "feedback",
     "actual_method",
-    "actual_agent",
-    "actual_model",
-    "evidence",
-    "capability_limitation_id",
     "capability_evidence",
     "assurance_gap",
-    "stop_condition_assessment",
+    "human_disclosure_summary",
+    "human_disclosed_at",
 )
 # ``change_log`` is not a second lifecycle mutation: the shared write core
 # appends its one Code-timestamped trace entry to every accepted transaction.

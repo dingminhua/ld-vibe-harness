@@ -1,7 +1,7 @@
 title: Subagent 模型选择由宿主平台负责，LDVH 保持模型无关
 intent: 明确 LDVH 与宿主平台在 subagent 模型选择上的职责边界：后续需要判断的是 LDVH 是否只描述协作能力与调用约束、把具体模型配置交给各平台；若把平台级模型选择继续写进 LDVH，会增加跨平台定位、重复分析、分流和规则维护负担。
-status: open
-summary: "## 当前判断\n- subagent 使用哪个模型属于各自宿主平台的配置与能力范围。\n- LDVH 不负责规定、选择或维护 subagent 模型。\n\n## 待判断\n- LDVH 的相关规范、行动模板或记录中是否仍有平台模型选择内容，需要删减为平台无关的职责边界。\n- 后续只保留 LDVH 自身必须表达的协作语义、授权与验证要求。\n\n## 边界\n- 不因 LDVH 需要协作能力，就新增统一模型清单、模型推荐或跨平台适配责任。"
+status: implemented
+summary: "## 已成立边界\n- Subagent 使用哪个模型由宿主平台负责；LDVH 不维护模型目录、推荐、选择或跨平台映射。\n- LDVH 只定义审核语义与记录边界：Subagent 是唯一独立审核方式。\n- Controller 必须依据自身当前上下文的完整工具发现与实际创建结果判断 Subagent 能力，不能采用 Subagent 对该能力的结论。\n- 只有 Controller 实际无法创建 Subagent 时，才向 Human 披露保证差距并直接使用 same-AI 切换只读视角，不新增确认关口；WorkCase 记录实际方法、Controller 证据、保证差距、披露摘要和时间。\n- 旧平台卡 09.Att.03/04/05 已退出当前规则源；旧的多层审核路由与平台特定 Worker 概念不再属于当前机制。\n\n## 未验证边界\n- 宿主平台能否创建 Subagent 仍须每次由 Controller 在自身当前会话实际发现和尝试，LDVH 不从静态平台资料推断。"
 change_log:
 - signature:
     product_name: Cindy
@@ -9,9 +9,18 @@ change_log:
     agent_runtime_name: claude-code
   at: '2026-08-15T20:32:14.467293Z'
   summary: 根据 Human 当前指令创建 Spark，记录将 subagent 模型选择责任留给各宿主平台、简化 LDVH 的方向。
-priority: P2
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T07:52:43.054321Z'
+  summary: 落实宿主模型职责与两态审核边界，将 Spark 更新为 implemented。
+evolution:
+- at: '2026-08-16T07:52:42.826971Z'
+  summary: 该议题从“是否移除平台模型选择”收敛为已落实的职责边界，并进一步明确 Controller 独立判断 Subagent 能力及披露后 same-AI 兜底。
+disposition_summary: 已直接落实到 LDVH 当前规范、Code 与 Web：宿主负责 Subagent 模型，LDVH 只保留 Subagent 独立审核与披露后 same-AI 兜底边界；这仅表示本 Spark 入口已落实，不代表承接 WorkCase 或其它下游责任已经关闭。
 object_uid: 01a00720-0ad0-7674-98c5-e4f4f804d01b
 object_id: spark-01M03J02PGEST9HHF4YKW09M0V
 fact_type_key: spark
 created_at: '2026-08-15T20:32:14.467293Z'
-updated_at: '2026-08-15T20:32:14.467293Z'
+updated_at: '2026-08-16T07:52:43.054321Z'
