@@ -13,6 +13,12 @@ import {
 } from '../../shared/workcaseStatus.js'
 import { hasUnavailableIndependentSubagentReview } from '../../shared/workcaseCapability.js'
 import { FACT_LIST_FIELD_NAMES } from './factFieldContract.js'
+import {
+  getWorktreeInfos,
+  collectFingerprints,
+  calculateMergeMeta,
+  type CrossWorktreeMeta,
+} from './crossWorktreeMerger.js'
 
 export const ACTIVE_OBJECT_TYPES = ['workcase', 'adr', 'pitfall', 'spark', 'study'] as const
 export const OBJECT_TYPES = ACTIVE_OBJECT_TYPES
@@ -537,6 +543,35 @@ export async function listObjects(type: ObjectType, _baseDir?: string, status?: 
     const projectedItems = await Promise.all(
       listed.items.map((item) => projectListItemWithAssociations(type, item, resolvedScope, uidTargets)),
     )
+    // 跨 worktree 合并：当前 worktree 缺的对象补充进来；带分支元数据
+    const mergeMeta = await buildCrossWorktreeMeta(type, resolvedScope)
+    if (mergeMeta.ok) {
+      const { itemsByWorktree, meta } = mergeMeta
+      for (const item of projectedItems) {
+        const metaForItem = meta.get(String(item.id))
+        if (metaForItem) Object.assign(item, metaForItem)
+      }
+      const presentIds = new Set(projectedItems.map((item) => String(item.id)))
+      const extraProjects: Array<Promise<Record<string, unknown>>> = []
+      for (const fps of itemsByWorktree) {
+        for (const item of fps.items) {
+          const objectId = item.object_ref.object_id
+          if (presentIds.has(objectId)) continue
+          // 非当前 worktree 的对象，用其所在 worktree 读取（避免占用当前 worktree uid index）
+          const foreignScope: LocalFactScope = {
+            worktreeLocator: fps.path,
+            governedProjectId: fps.governedProjectId,
+          }
+          const projected = projectListItemWithAssociations(type, item, foreignScope, uidTargets)
+          const m = meta.get(objectId)
+          if (m) Object.assign(await projected, m)
+          presentIds.add(objectId)
+          extraProjects.push(projected)
+        }
+      }
+      const extras = await Promise.all(extraProjects)
+      projectedItems.push(...extras)
+    }
     const items = projectedItems.filter((item) => !status || item.status === status)
     const response = result('list', type, { items, coverage_status: 'complete', collection_issues: listed.issues })
     response.issues = [
@@ -552,6 +587,32 @@ export async function listObjects(type: ObjectType, _baseDir?: string, status?: 
     return response
   } catch (caught) {
     return error(caught)
+  }
+}
+
+/** 跨 worktree 合并的元数据构建（列表流程内部使用）。 */
+async function buildCrossWorktreeMeta(
+  type: ObjectType,
+  resolvedScope: LocalFactScope,
+): Promise<{ ok: true; itemsByWorktree: Array<{ path: string; governedProjectId: string; items: LocalFactItem[] }>; meta: Map<string, CrossWorktreeMeta> } | { ok: false }> {
+  try {
+    const worktreeInfos = await getWorktreeInfos(resolvedScope.worktreeLocator)
+    if (worktreeInfos.length <= 1) return { ok: false }
+    const { fingerprints, itemsByWorktree } = await collectFingerprints(
+      worktreeInfos,
+      resolvedScope.governedProjectId,
+      type,
+    )
+    const meta = calculateMergeMeta(
+      fingerprints,
+      worktreeInfos,
+      resolvedScope.worktreeLocator,
+      worktreeInfos[0].path, // 主工作区 = 第一条
+    )
+    return { ok: true, itemsByWorktree: Array.from(itemsByWorktree.entries()).map(([path, items]) => ({ path, governedProjectId: resolvedScope.governedProjectId, items })), meta }
+  } catch {
+    // 合并失败不阻断主流程（当前 worktree 数据始终可用）
+    return { ok: false }
   }
 }
 

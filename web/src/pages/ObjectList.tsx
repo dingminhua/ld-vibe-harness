@@ -1274,6 +1274,16 @@ export function ObjectCardFrame({
             <History size={12} aria-hidden="true" />
             <span>{activityCount}</span>
           </span>
+          {obj.sourceBranch && (
+            <span className="ldvh-chip inline-flex h-[18px] shrink-0 items-center justify-center gap-1 rounded-md border border-amber-500/30 bg-amber-500/10 px-[5px] text-[10px] font-medium leading-3 text-amber-600 dark:text-amber-400">
+              {t('objectList.sourceBranch', { branch: obj.sourceBranch })}
+            </span>
+          )}
+          {obj.mainWorktreeDiffers && (
+            <span className="ldvh-chip inline-flex h-[18px] shrink-0 items-center justify-center gap-1 rounded-md border border-sky-500/30 bg-sky-500/10 px-[5px] text-[10px] font-medium leading-3 text-sky-600 dark:text-sky-400">
+              {t('objectList.mainWorktreeDiffers')}
+            </span>
+          )}
         </div>
         {/* List cards expose a stable object identity, not an exact-read source path. */}
         <ObjectIdentityActions

@@ -26,8 +26,14 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- signature:
+    product_name: Cindy
+    model_name: glm-5
+    agent_runtime_name: cindy
+  at: '2026-08-17T02:00:00Z'
+  summary: 实现跨 worktree 事实对象合并：在 objects 列表流程中自动扫描同一 git 仓库所有 worktree 的事实文件，比对 sha256 指纹，对当前 worktree 缺失的对象从其他 worktree 补充显示并标记来源分支，对主工作区内容有差异的对象标记"主工作区有差异"，无需额外操作。
 object_id: spark-01KZXN5TXNF3Q93ENWZBB5GHHY
 object_uid: 019ffb52-ebb5-78ee-91ba-bcfad658463e
 fact_type_key: spark
 created_at: '2026-08-13T07:48:54.968245Z'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-17T02:00:00Z'
