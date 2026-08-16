@@ -352,6 +352,193 @@ def test_workcase_create_follow_up_requires_public_exact_read_before_gate_1(tmp_
     ]
 
 
+def test_workcase_create_rejects_exact_active_title_retry_with_stable_refs(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    first_basis = _prepare(workspace, project, "workcase")
+    first = handle_request(
+        "call",
+        "create-fact-object",
+        _create_payload(workspace, project, first_basis, _workcase()),
+    ).response
+    assert first["outcome"] == "ok"
+
+    retry_basis = _prepare(workspace, project, "workcase")
+    retry = handle_request(
+        "call",
+        "create-fact-object",
+        _create_payload(workspace, project, retry_basis, _workcase()),
+    ).response
+
+    assert retry["outcome"] == "rejected"
+    assert retry["scope"]["completed"] == []
+    assert retry["scope"]["not_completed"] == retry["scope"]["requested"]
+    assert retry["gaps"][0]["code"] == "active_workcase_title_conflict"
+    assert retry["result"]["existing_refs"] == [first["result"]["actual_ref"]]
+    assert retry["result"]["ambiguous"] is False
+    assert retry["result"]["target_namespace"]["create_namespace_state"] == "not_attempted"
+    assert [change["status"] for change in retry["changes"]] == ["target-not-attempted"]
+    assert len(tuple((project / "ldvh-base" / "workcases").glob("*.yaml"))) == 1
+
+
+def test_workcase_create_fails_closed_when_active_title_scan_is_incomplete(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    workcases = project / "ldvh-base" / "workcases"
+    workcases.mkdir(parents=True)
+    (workcases / "workcase-0001.yaml").write_text("title: 无法完整解析\nstatus: open\n", encoding="utf-8")
+    basis = _prepare(workspace, project, "workcase")
+
+    response = handle_request(
+        "call",
+        "create-fact-object",
+        _create_payload(workspace, project, basis, _workcase()),
+    ).response
+
+    assert response["outcome"] == "unavailable"
+    assert response["scope"]["completed"] == []
+    assert response["scope"]["not_completed"] == response["scope"]["requested"]
+    assert response["result"]["target_namespace"]["create_namespace_state"] == "not_attempted"
+    assert [change["status"] for change in response["changes"]] == ["target-not-attempted"]
+    assert len(tuple(workcases.glob("*.yaml"))) == 1
+
+
+def test_workcase_create_fails_closed_when_title_directory_cannot_be_listed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace, project = _fixture(tmp_path)
+    (project / "ldvh-base" / "workcases").mkdir(parents=True)
+    basis = _prepare(workspace, project, "workcase")
+    monkeypatch.setattr(
+        creation_application,
+        "safe_list_directory",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(PermissionError("denied")),
+    )
+
+    response = handle_request(
+        "call",
+        "create-fact-object",
+        _create_payload(workspace, project, basis, _workcase()),
+    ).response
+
+    assert response["outcome"] == "unavailable"
+    assert response["result"]["target_namespace"]["create_namespace_state"] == "not_attempted"
+    assert len(tuple((project / "ldvh-base" / "workcases").glob("*.yaml"))) == 0
+
+
+@pytest.mark.parametrize(
+    ("existing_status", "existing_title"),
+    [("closed", "中文 Controlled WorkCase"), ("open", "中文 Controlled WorkCase ")],
+)
+def test_workcase_active_title_guard_does_not_normalize_or_block_closed(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    existing_status: str,
+    existing_title: str,
+) -> None:
+    workspace, project = _fixture(tmp_path)
+    (project / "ldvh-base" / "workcases").mkdir(parents=True)
+    basis = _prepare(workspace, project, "workcase")
+    observed = FactReadResult(
+        Path("ldvh-base/workcases/workcase-0001.yaml"),
+        "yaml",
+        "mechanically_valid",
+        {
+            "object_uid": "0198f1c7-8a2b-7c3d-9e4f-123456789abc",
+            "object_id": "workcase-0001",
+            "fact_type_key": "workcase",
+            "status": existing_status,
+            "title": existing_title,
+        },
+        None,
+        (),
+    )
+    monkeypatch.setattr(
+        creation_application.ProjectFactIndex,
+        "scan_valid_objects",
+        lambda *_args, **_kwargs: ((observed,), True),
+    )
+
+    response = handle_request(
+        "call",
+        "create-fact-object",
+        _create_payload(workspace, project, basis, _workcase()),
+    ).response
+
+    assert response["outcome"] == "ok"
+
+
+def test_workcase_active_title_conflict_returns_all_refs_in_stable_order(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    workspace, project = _fixture(tmp_path)
+    (project / "ldvh-base" / "workcases").mkdir(parents=True)
+    basis = _prepare(workspace, project, "workcase")
+    reads = tuple(
+        FactReadResult(
+            Path(f"ldvh-base/workcases/workcase-{index}.yaml"),
+            "yaml",
+            "mechanically_valid",
+            {
+                "object_uid": uid,
+                "object_id": f"workcase-{index}",
+                "fact_type_key": "workcase",
+                "status": status,
+                "title": "中文 Controlled WorkCase",
+            },
+            None,
+            (),
+        )
+        for index, uid, status in (
+            (2, "0198f1c7-8a2b-7c3d-9e4f-123456789abd", "blocked"),
+            (1, "0198f1c7-8a2b-7c3d-9e4f-123456789abc", "open"),
+        )
+    )
+    monkeypatch.setattr(
+        creation_application.ProjectFactIndex,
+        "scan_valid_objects",
+        lambda *_args, **_kwargs: (reads, True),
+    )
+
+    response = handle_request(
+        "call",
+        "create-fact-object",
+        _create_payload(workspace, project, basis, _workcase()),
+    ).response
+
+    assert response["outcome"] == "rejected"
+    assert response["result"]["existing_refs"] == [
+        {"object_uid": "0198f1c7-8a2b-7c3d-9e4f-123456789abc"},
+        {"object_uid": "0198f1c7-8a2b-7c3d-9e4f-123456789abd"},
+    ]
+    assert response["result"]["ambiguous"] is True
+
+
+def test_real_processes_same_workcase_title_create_at_most_one_file(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    bases = (_prepare(workspace, project, "workcase"), _prepare(workspace, project, "workcase"))
+    payloads = tuple(_create_payload(workspace, project, basis, _workcase()) for basis in bases)
+
+    def run(payload: str) -> dict[str, object]:
+        completed = subprocess.run(
+            [str(HELPER_EXECUTABLE), "call", "create-fact-object"],
+            cwd=project,
+            input=payload,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        return json.loads(completed.stdout)
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        responses = tuple(executor.map(run, payloads))
+
+    assert sorted(response["outcome"] for response in responses) == ["ok", "rejected"]
+    rejected = next(response for response in responses if response["outcome"] == "rejected")
+    assert rejected["gaps"][0]["code"] == "active_workcase_title_conflict"
+    assert len(tuple((project / "ldvh-base" / "workcases").glob("*.yaml"))) == 1
+
+
 def test_non_workcase_create_success_keeps_generic_follow_up(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     basis = _prepare(workspace, project, "spark")

@@ -12,7 +12,7 @@ from typing import Any, Literal
 from ldvh.facts.carriers.study_markdown import parse_study_markdown
 from ldvh.facts.carriers.yaml_object import parse_yaml_object
 from ldvh.facts.configuration_index import ConfigurationFactIndex
-from ldvh.facts.contracts import LAYOUTS
+from ldvh.facts.contracts import ACTIVE_STATUSES, LAYOUTS
 from ldvh.facts.creation import (
     CreationBoundary,
     atomic_create_text,
@@ -34,7 +34,7 @@ from ldvh.facts.validation import (
     validate_fact_object,
 )
 from ldvh.facts.workcase_validation import required_quality_gate_issues
-from ldvh.filesystem import AtomicWriteResult, native_atomic_fact_writes_supported
+from ldvh.filesystem import AtomicWriteResult, native_atomic_fact_writes_supported, safe_list_directory
 from ldvh.time import canonical_utc_timestamp, canonicalize_new_timestamp_fields, utc_now_iso
 
 CreationStatus = Literal[
@@ -43,6 +43,8 @@ CreationStatus = Literal[
     "durability_unavailable",
     "final_rejected",
     "final_unavailable",
+    "active_workcase_title_conflict",
+    "active_workcase_title_scan_unavailable",
     "creation_conflict",
     "creation_unavailable",
     "readback_failed",
@@ -74,6 +76,8 @@ class FactCreationResult:
     residual_readback: FactReadResult | None = None
     coordination_release_uncertain: bool = False
     attempted_object_uid: str | None = None
+    existing_refs: tuple[dict[str, str], ...] = ()
+    ambiguous: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -198,6 +202,56 @@ def _project_read(command: FactCreationCommand, object_id: str) -> FactReadResul
             issues=(*read.issues, *relation_issues),
         )
     return read
+
+
+def _active_workcase_title_matches(
+    command: FactCreationCommand,
+    candidate_title: object,
+) -> tuple[tuple[dict[str, str], ...], tuple[FactIssue, ...], bool]:
+    """Scan the current actual worktree for exact active WorkCase title matches.
+
+    The caller holds the project/type write lock.  Any incomplete directory,
+    carrier, or status observation makes the guard unavailable rather than
+    allowing a create from a partial view.
+    """
+
+    if command.fact_type_key != "workcase":
+        return (), (), False
+    if not isinstance(candidate_title, str):
+        return (), (FactIssue("schema", "WorkCase title 必须是 string", "title"),), False
+
+    layout = LAYOUTS["workcase"]
+    try:
+        safe_list_directory(command.boundary.worktree_root, layout.directory)
+    except FileNotFoundError:
+        return (), (), False
+    except OSError:
+        return (), (FactIssue("resource", "活跃 WorkCase title 或 status 全扫描未能完整判定", "title"),), True
+    index = ProjectFactIndex(
+        command.boundary.worktree_root,
+        command.boundary.governed_project_id,
+        dict(command.schemas),
+        command.boundary.git_common_dir,
+    )
+    reads, complete = index.scan_valid_objects("workcase", require_all_canonical_valid=True)
+    if not complete:
+        return (), (FactIssue("resource", "活跃 WorkCase title 或 status 全扫描未能完整判定", "title"),), True
+    matches: list[dict[str, str]] = []
+    for read in reads:
+        assert read.fields is not None
+        if read.fields.get("status") in ACTIVE_STATUSES and read.fields.get("title") == candidate_title:
+            object_uid = read.fields.get("object_uid")
+            if isinstance(object_uid, str):
+                matches.append({"object_uid": object_uid})
+            else:
+                matches.append({
+                    "governed_project_id": command.boundary.governed_project_id,
+                    "fact_type_key": "workcase",
+                    "object_id": str(read.fields["object_id"]),
+                })
+    reference_fields = ("object_uid", "governed_project_id", "fact_type_key", "object_id")
+    matches.sort(key=lambda ref: tuple(ref.get(name, "") for name in reference_fields))
+    return tuple(matches), (), False
 
 
 def _preflight(
@@ -374,6 +428,29 @@ def create_fact_object_locked(prepared: PreparedFactCreation) -> FactCreationRes
             actual_id=actual_id,
             actual_fields=actual_fields,
             actual_text=actual_text,
+        )
+
+    existing_refs, title_scan_issues, title_scan_unavailable = _active_workcase_title_matches(
+        command,
+        actual_fields.get("title"),
+    )
+    if title_scan_unavailable:
+        return FactCreationResult(
+            "active_workcase_title_scan_unavailable",
+            issues=title_scan_issues,
+            actual_id=actual_id,
+            actual_fields=actual_fields,
+            actual_text=actual_text,
+        )
+    if existing_refs:
+        return FactCreationResult(
+            "active_workcase_title_conflict",
+            issues=(FactIssue("conflict", "同一实际 Git Working Tree 已存在严格同标题的活跃 WorkCase", "title"),),
+            actual_id=actual_id,
+            actual_fields=actual_fields,
+            actual_text=actual_text,
+            existing_refs=existing_refs,
+            ambiguous=len(existing_refs) > 1,
         )
 
     creation_result = atomic_create_text(command.boundary.worktree_root, layout, actual_id, actual_text)

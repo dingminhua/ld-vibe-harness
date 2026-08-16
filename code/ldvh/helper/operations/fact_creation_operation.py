@@ -474,6 +474,13 @@ def _creation_domain_result(
             "final_observation": final_observation,
         },
     }
+    if creation.status == "active_workcase_title_conflict":
+        result.update(
+            {
+                "existing_refs": [dict(reference) for reference in creation.existing_refs],
+                "ambiguous": creation.ambiguous,
+            }
+        )
     if create_namespace_state == "created" and post_create_readback == "passed":
         read = creation.read
         assert read is not None and read.fields is not None
@@ -872,6 +879,59 @@ def _create_execute(
                     },
                 ),
                 gaps=(_issue_gap(creation.issues, requested[0]),),
+            )
+        )
+    if creation.status == "active_workcase_title_scan_unavailable":
+        assert creation.actual_id is not None
+        assert domain_result is not None
+        return finalized(
+            OperationExecution(
+                outcome="unavailable",
+                summary="活跃 WorkCase title 全扫描未能完整形成，目标创建未尝试",
+                result=domain_result,
+                requested_scope=requested,
+                not_completed_scope=requested,
+                governance_resolution=run.result.to_json() if run.result else None,
+                sources=request_sources,
+                changes=(
+                    {
+                        "summary": "活跃 WorkCase title 或 status 判定不完整，目标原子创建未开始",
+                        "status": "target-not-attempted",
+                        "target": layout.canonical_path(creation.actual_id),
+                        "source_refs": change_sources,
+                    },
+                ),
+                gaps=(_issue_gap(creation.issues, requested[0]),),
+            )
+        )
+    if creation.status == "active_workcase_title_conflict":
+        assert creation.actual_id is not None
+        assert domain_result is not None
+        return finalized(
+            OperationExecution(
+                outcome="rejected",
+                summary="同一实际 Git Working Tree 已存在严格同标题的活跃 WorkCase",
+                result=domain_result,
+                requested_scope=requested,
+                not_completed_scope=requested,
+                governance_resolution=run.result.to_json() if run.result else None,
+                sources=request_sources,
+                changes=(
+                    {
+                        "summary": "命中活跃 WorkCase title 冲突，目标原子创建未开始",
+                        "status": "target-not-attempted",
+                        "target": layout.canonical_path(creation.actual_id),
+                        "source_refs": change_sources,
+                    },
+                ),
+                gaps=(
+                    {
+                        "code": "active_workcase_title_conflict",
+                        "summary": "活跃 WorkCase title 严格相等冲突",
+                        "scope": list(requested),
+                        "source_refs": [_CREATE_CONTRACT],
+                    },
+                ),
             )
         )
     if creation.status in {"creation_conflict", "creation_unavailable"}:
