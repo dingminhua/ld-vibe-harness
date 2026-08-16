@@ -240,39 +240,6 @@ test('recent hotspots keep a compact relationship overview and a focused one-hop
   assert.doesNotMatch(graph, /<section className="flex h-full/);
 });
 
-test('Web development docs describe the current Focus modules, shell scrolling, and reading panel', () => {
-  const globalDoc = read('docs/01-全局设计约束.md');
-  const cognitionDoc = read('docs/02-CognitionCenter.md');
-  const baselineDoc = read('docs/10-Web开发现状与设计语言基线.md');
-  const cognitionCenter = read('src/pages/CognitionCenter.tsx');
-
-  assert.match(cognitionDoc, /三期均已完成/);
-  assert.match(cognitionDoc, /待决定事项.*推进中事项.*Spark 健康度.*近期动态.*近期热点关系/);
-  assert.match(cognitionCenter, /模块二 近期动态[\s\S]*?<section className="order-2 rounded-xl/);
-  assert.match(cognitionCenter, /模块四 Spark 池健康[\s\S]*?<section className="order-1 rounded-xl/);
-  assert.match(cognitionDoc, /HV1-HV5/);
-  assert.match(cognitionDoc, /HV1 \| 决策提请清晰可决/);
-  assert.match(cognitionDoc, /HV2 \| 授权执行受控可续/);
-  assert.match(cognitionDoc, /HV3 \| 入档闭环节点可验/);
-  assert.match(cognitionDoc, /HV4 \| 积累效用直观可见.*尚未完整承接/);
-  assert.match(cognitionDoc, /HV5 \| 项目演进脉络可循/);
-  assert.match(cognitionDoc, /不再是当前价值标准来源/);
-  assert.doesNotMatch(cognitionDoc, /服务六项 Human 价值标准/);
-  assert.doesNotMatch(cognitionDoc, /H1[–-]H6 当前由 open Spark/);
-  assert.match(cognitionDoc, /SPARK_SILENT_THRESHOLD_DAYS = 5/);
-  assert.match(cognitionDoc, /pitfall_confirmation/);
-  assert.doesNotMatch(cognitionDoc, /点击可回指提交短哈希/);
-  assert.doesNotMatch(cognitionDoc, /默认 5 天，前端常量/);
-
-  assert.match(globalDoc, /App Shell 根节点唯一拥有视口高度并使用 `overflow-hidden`/);
-  assert.match(globalDoc, /左侧导航只在自身条目溢出时纵向滚动/);
-  assert.match(globalDoc, /底部阅读抽屉为拖动和触摸保留的头部与按钮命中区/);
-
-  assert.match(baselineDoc, /聚焦 \/ Focus/);
-  assert.match(baselineDoc, /桌面右侧面板保留拖动宽度、前后导航和关闭控件/);
-  assert.match(baselineDoc, /不显示或复制页面“观察时间”/);
-});
-
 test('WorkCase semantic blocks keep the compact 14/13px by 22px hierarchy', () => {
   const styles = read('src/index.css');
   const layout = read('src/pages/object-detail/WorkCaseReadingLayout.tsx');

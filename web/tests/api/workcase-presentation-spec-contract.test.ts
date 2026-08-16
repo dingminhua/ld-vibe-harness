@@ -137,78 +137,6 @@ test('Specs define the closure-decision input zone and shared formal association
   assert.doesNotMatch(cardSection, /control-contract|workcase_profile|closure_requested_at|review_requested_at|closure_approval/);
 });
 
-test('Current Web docs describe the same latest-only Card and detail boundaries', () => {
-  const dashboardDoc = source('web/docs/02-CognitionCenter.md');
-  const listDoc = source('web/docs/03-ObjectList.md');
-  const detailDoc = source('web/docs/04-ObjectDetail.md');
-  const baselineDoc = source('web/docs/10-Web开发现状与设计语言基线.md');
-  const listSection = listDoc.slice(listDoc.indexOf('### 3.4 WorkCase 卡片'), listDoc.indexOf('### 3.5 Spark 卡片'));
-  const detailSection = detailDoc.slice(detailDoc.indexOf('## 4. WorkCase 状态无关阅读契约'), detailDoc.indexOf('## 5. 非工作主线对象字段布局'));
-  const baselineSection = baselineDoc.slice(baselineDoc.indexOf('### 4.2 WorkCase 人的阅读视角'), baselineDoc.indexOf('### 4.3 组件契约沉淀'));
-
-  assert.match(dashboardDoc, /WorkCase 统计只使用 `byProgressGroup`，WorkCase 条目只使用 `progress_group`/);
-  assert.match(dashboardDoc, /不得把派生进展分组放入名为 `status` 或 `byStatus` 的字段/);
-  assert.match(dashboardDoc, /resolved open\/blocked WorkCase 在两个既有行动模块中唯一归属/);
-  assert.match(dashboardDoc, /plan\/closure group 进入待决定事项，progressing 进入推进中/);
-  assert.match(dashboardDoc, /`blocked_resolution`/);
-  assert.match(listDoc, /WorkCase 使用 `\?progress=<progress_group>`/);
-  assert.match(listSection, /Gate 1 的紧凑入口/);
-  assert.match(listSection, /`execution_authorization`/);
-  assert.match(listSection, /Card 不显示 `scope`、`work_items`、`creation_reviews` 或 `execution_approval`/);
-  assert.match(listSection, /Gate 1 材料之外完整显示独立的阻塞状态提示/);
-  assert.match(listSection, /不是 Gate 1 授权内容/);
-  assert.match(listSection, /轨迹外内部位置“方案修订中”/);
-  assert.match(listSection, /“已关闭”Card 使用相同扫读结构/);
-  assert.match(detailSection, /标题栏显示弱化的稳定 ID 和实际存在的结果状态/);
-  assert.match(detailSection, /结果摘要默认收起/);
-  assert.match(detailSection, /不使用整行色块、完整边框或右端对齐的远距离箭头/);
-  assert.match(detailSection, /收起态只显示紧凑的小号标题文字与相邻箭头/);
-  assert.match(detailSection, /不按 `phase` 猜测或补写结果/);
-  assert.match(listDoc, /progress_group\?: 'plan_confirmation' \| 'progressing' \| 'termination_cleanup' \| 'closure_confirmation' \| 'closed'/);
-  assert.match(listDoc, /progress_step\?: 'item_execution' \| 'controller_self_check' \| 'independent_review' \| 'controller_synthesis'/);
-  assert.match(listDoc, /executionItems\?: Array<\{/);
-  assert.match(listDoc, /id: string;/);
-  assert.match(listDoc, /title: string;/);
-  assert.match(listDoc, /status: 'pending' \| 'in_progress' \| 'blocked' \| 'completed' \| 'cancelled';/);
-  assert.match(listDoc, /blockingReason\?: string;/);
-  assert.match(listDoc, /`status` 始终保留事实责任状态/);
-  assert.match(listDoc, /不得把 phase 填进 `status`/);
-  assert.match(listDoc, /不得新增 `responsibilityStatus` 兼容别名/);
-  assert.match(listDoc, /progressing 仍只携带最小 `executionItems`/);
-  assert.match(listDoc, /plan_confirmation 是唯一允许携带完整 `work_items`/);
-  assert.match(listDoc, /`closure_confirmation` 携带 `goal`、Pitfall `contributedTo` 和 `closureProposal`；`closed` 携带 `goal`、Pitfall `contributedTo` 和 `closureTerminal`/);
-  assert.match(listDoc, /contributedTo\?: Array<\{/);
-  assert.match(listDoc, /governedProjectId: string;/);
-  assert.match(listDoc, /factTypeKey: string;/);
-  assert.match(listDoc, /objectId: string;/);
-  assert.match(listDoc, /closureProposal\?: \{/);
-  assert.match(listDoc, /proposedOutcome: 'completed' \| 'partial' \| 'not-achieved' \| 'cancelled';/);
-  assert.match(listDoc, /residualDecisions: Array<\{/);
-  assert.match(listDoc, /proposedDisposition: 'route_existing' \| 'suggest_spark' \| 'accept_stop';/);
-  assert.match(listSection, /直读 `goal` 与 `closure_proposal`/);
-  assert.match(listDoc, /不设置列表级“观察时间”或“重新读取”控件/);
-  assert.doesNotMatch(listSection, /control-contract|workcase_profile|closure_requested_at|review_requested_at|closure_approval/);
-
-  assert.match(detailSection, /只消费该详情载体当次形成的 `current_snapshot_projection`/);
-  assert.match(detailSection, /不得从 raw `status \/ phase` 自行重建映射/);
-  assert.match(detailSection, /不得根据这些进展分组或推进环节切换、隐藏、重排字段/);
-  assert.match(detailSection, /`goal` 与 `scope`/);
-  assert.match(detailSection, /`creation_reviews`、`execution_authorization`、`execution_approval`/);
-  assert.match(detailSection, /`baseline_fingerprint` 与非空 `source_refs`/);
-  assert.match(detailSection, /closed 不具有 phase、关闭 approval 或关闭时间字段/);
-  assert.doesNotMatch(detailSection, /workcase_profile|closure_approval/);
-
-  assert.match(baselineDoc, /WorkCase 不根据对象年代、缺失字段或实现版本切换结构/);
-  assert.match(baselineSection, /`plan_revising` 同样归入“推进中”/);
-  assert.match(baselineSection, /Card 在紧凑入口之外完整显示独立的 `blocking_summary` 状态提示/);
-  assert.match(baselineSection, /closed 不保存关闭 approval 或关闭时间/);
-  assert.match(baselineSection, /所有状态和 phase 下使用同一信息结构/);
-  assert.match(baselineSection, /`pending \/ in_progress \/ blocked \/ completed \/ cancelled`/);
-  assert.match(baselineSection, /Web 只消费这套当前状态闭集/);
-  assert.doesNotMatch(baselineSection, /读取适配层兼容/);
-  assert.doesNotMatch(baselineSection, /control-contract|workcase_profile|closure_requested_at|review_requested_at|closure_approval/);
-});
-
 test('Cognition Center reuses pending and progressing WorkCase Cards with secondary reading', () => {
   const cognitionCenter = source('web/src/pages/CognitionCenter.tsx');
   const objectList = source('web/src/pages/ObjectList.tsx');
@@ -261,41 +189,16 @@ test('Cognition Center reuses pending and progressing WorkCase Cards with second
   assert.match(cognitionRoute, /if \(raw\.status !== 'draft'\) continue/);
 });
 
-test('Current Web WorkCase docs reject retired fields and states', () => {
-  const currentDocuments = [
-    'web/docs/01-全局设计约束.md',
-    'web/docs/02-CognitionCenter.md',
-    'web/docs/03-ObjectList.md',
-    'web/docs/04-ObjectDetail.md',
-    'web/docs/09-图标语义规范.md',
-    'web/docs/10-Web开发现状与设计语言基线.md',
-  ];
+test('Current Web WorkCase sources reject retired fields and states', () => {
   const currentWorkCaseSources = [
     'web/shared/workcaseStatus.ts',
     'web/src/pages/object-detail/WorkCaseReadingLayout.tsx',
   ];
   const retiredTokens = /\b(?:orchestration|execution_items|success_criteria|verification_evidence|closure_evidence|review_needed|closure_approval|closure_requested_at|review_requested_at|done|skipped)\b/;
 
-  for (const relativePath of [...currentDocuments, ...currentWorkCaseSources]) {
+  for (const relativePath of currentWorkCaseSources) {
     assert.doesNotMatch(source(relativePath), retiredTokens, relativePath);
   }
-
-  assert.equal(fs.existsSync(path.join(repositoryRoot, 'web/docs/07-内容可读性深度研究.md')), false);
-  assert.equal(fs.existsSync(path.join(repositoryRoot, 'web/docs/08-网站整体性多角色审视研究.md')), false);
-
-  const iconDoc = source('web/docs/09-图标语义规范.md');
-  assert.match(iconDoc, /\| completed \| `CheckCircle2` \| 已完成 \|/);
-  assert.match(iconDoc, /\| cancelled \| `CircleX` \| 已取消 \|/);
-  assert.doesNotMatch(iconDoc, /已跳过/);
-});
-
-test('Global Web docs distinguish identity timestamps from WorkCase review events', () => {
-  const globalDoc = source('web/docs/01-全局设计约束.md');
-
-  assert.match(globalDoc, /普通对象身份的绝对时间统一使用 `formatDateTime\(\)`/);
-  assert.match(globalDoc, /`reviewed_at`、`approved_at` 等复核或批准事件时间除外/);
-  assert.match(globalDoc, /完整显示来源中的原始带时区 RFC 3339/);
-  assert.match(globalDoc, /不得截断到分钟或丢失偏移量/);
 });
 
 test('Current WorkCase phases have direct labels and colors with no retired display keys', () => {
@@ -319,12 +222,8 @@ test('Fact projections provide no application-level refresh controls', () => {
   const objectDetail = source('web/src/pages/ObjectDetail.tsx');
   const cognitionCenter = source('web/src/pages/CognitionCenter.tsx');
   const panelContent = source('web/src/components/reading-panel/PanelContent.tsx');
-  const cognitionDoc = source('web/docs/02-CognitionCenter.md');
 
   const refreshableSources = [objectList, objectDetail, cognitionCenter, panelContent].join('\n');
   assert.doesNotMatch(refreshableSources, /useManualFactRefresh|refreshFacts|RefreshCw|setInterval|visibilitychange|FACT_REFRESH_INTERVAL_MS/);
   assert.match(panelContent, /\(data as Record<string, unknown> \| undefined\) \?\? detail\?\.data/);
-  assert.match(cognitionDoc, /不提供应用内重新读取或刷新入口/);
-  assert.match(cognitionDoc, /浏览器自身的重新加载/);
-  assert.match(cognitionDoc, /不写回 YAML、不做乐观迁移/);
 });

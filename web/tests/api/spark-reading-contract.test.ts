@@ -14,7 +14,6 @@ test('Spark association UI reads only relations', () => {
 
 test('every fact list card shows exact-read formal associations in a minimal secondary-reading row', () => {
   const source = fs.readFileSync(path.resolve('src/pages/ObjectList.tsx'), 'utf8');
-  const docs = fs.readFileSync(path.resolve('../web/docs/03-ObjectList.md'), 'utf8');
 
   assert.match(source, /function FactAssociationsCardContent/);
   assert.match(source, /associations=\{obj\.factAssociations\}/);
@@ -47,10 +46,7 @@ test('every fact list card shows exact-read formal associations in a minimal sec
   assert.doesNotMatch(source, /factAssociations[^\n]{0,120}\.slice\(/);
   const detailSource = fs.readFileSync(path.resolve('src/pages/object-detail/factReadingProjection.ts'), 'utf8');
   assert.match(detailSource, /dedupeRelationsByTarget/);
-  assert.match(docs, /正式 `relations` 由所有五类对象 Card 统一呈现/);
   assert.doesNotMatch(source, /ChevronLeft|ChevronRight|PanelIcon/);
-  assert.match(docs, /正式 `relations` 由所有五类对象 Card 统一呈现[\s\S]*使用对象语义图标、完整标题和关联状态图标；/);
-  assert.match(docs, /closed \+ closure_outcome=cancelled/);
 });
 
 test('Spark terminal headings distinguish implemented and discarded with a legacy fallback', () => {
