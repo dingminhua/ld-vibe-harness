@@ -107,7 +107,7 @@
   }
 
   .ldvh-segmented-control {
-    @apply inline-flex h-7 overflow-hidden rounded-md border border-ldvh-border bg-white;
+    @apply inline-flex h-7 overflow-hidden rounded-md border border-ldvh-border bg-ldvh-panel;
   }
 
   .ldvh-segmented-control-button {
