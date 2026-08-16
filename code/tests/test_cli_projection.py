@@ -236,7 +236,7 @@ def test_project_fields_distinguishes_missing_from_null_and_array_traversal() ->
         "request_kind": "capabilities",
         "operation_key": None,
         "outcome": "ok",
-        "result": {"null_value": None, "items": [{"id": 1}]},
+        "result": {"null_value": None, "items": [{"id": 1}, {"id": 2}]},
         "scope": {"not_completed": []},
         "gaps": [],
     }
@@ -247,8 +247,69 @@ def test_project_fields_distinguishes_missing_from_null_and_array_traversal() ->
         0,
     )
 
-    assert projection["response"]["result"] == {"null_value": None}
-    assert projection["projection"]["missing"] == ["result.absent", "result.items.id"]
+    assert projection["response"]["result"] == {"null_value": None, "items": [{"id": 1}, {"id": 2}]}
+    assert projection["projection"]["missing"] == ["result.absent"]
+
+
+def test_project_fields_selects_into_array_members() -> None:
+    response = {
+        "contract": "ldvh-helper-cli/2",
+        "request_kind": "call",
+        "operation_key": "read-fact-objects",
+        "outcome": "ok",
+        "result": {
+            "items": [
+                {"fact_object": {"title": "alpha", "status": "open"}},
+                {"fact_object": {"title": "beta", "status": "open"}},
+            ]
+        },
+        "scope": {"not_completed": []},
+        "gaps": [],
+    }
+
+    projection = project_response_fields(response, ("result.items.fact_object.title",), 0)
+
+    assert projection["projection"]["missing"] == []
+    assert projection["response"]["result"] == {
+        "items": [
+            {"fact_object": {"title": "alpha"}},
+            {"fact_object": {"title": "beta"}},
+        ]
+    }
+
+
+def test_project_fields_empty_array_present_subpath_reports_present() -> None:
+    response = {
+        "contract": "ldvh-helper-cli/2",
+        "request_kind": "call",
+        "operation_key": "sample",
+        "outcome": "ok",
+        "result": {"items": []},
+        "scope": {"not_completed": []},
+        "gaps": [],
+    }
+
+    projection = project_response_fields(response, ("result.items.fact_object.title",), 0)
+
+    assert projection["projection"]["missing"] == []
+    assert projection["response"]["result"] == {"items": []}
+
+
+def test_project_fields_array_path_missing_everywhere_reports_missing() -> None:
+    response = {
+        "contract": "ldvh-helper-cli/2",
+        "request_kind": "call",
+        "operation_key": "sample",
+        "outcome": "ok",
+        "result": {"items": [{"id": 1}, {"id": 2}]},
+        "scope": {"not_completed": []},
+        "gaps": [],
+    }
+
+    projection = project_response_fields(response, ("result.items.fact_object",), 0)
+
+    assert projection["projection"]["missing"] == ["result.items.fact_object"]
+    assert "result" not in projection["response"] or "items" not in projection["response"]["result"]
 
 
 @pytest.mark.parametrize("case", ["contract", "scope", "gaps"])

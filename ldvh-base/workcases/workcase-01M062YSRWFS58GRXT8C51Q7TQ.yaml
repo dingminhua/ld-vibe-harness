@@ -1,0 +1,183 @@
+status: closed
+title: 实现 --fields 数组内字段选择，降低只读响应 payload
+goal: 扩展 Helper CLI --fields 投影，使调用方能在不改变完整性语义与公共契约字段的前提下选择数组内字段（如 result.items[].fact_object.title），从而避免日常只读查询被迫读回完整对象；保持现有 object-only 点号导航行为不变，仅新增数组导航能力（既有断言中明确涉及数组路径的部分按新语义更新，其余全部保持），并产出可复核的 payload 降幅证据。
+scope: 仅修改 code/ldvh/cli_projection.py 的字段选择与投影实现（parse_field_selectors / _lookup_object_path / _assign_object_path / project_response_fields）及其直接测试（code/tests/test_cli_projection.py、code/tests/helper/test_cli_process.py）。不改动 Helper 请求/响应公共契约字段、事实 Schema、其它 Code 模块、Web、specs、ldvh-base 事实对象，也不新增任何文档文件；不做批量读、条件过滤、compact profile 或统一删减等超出数组内字段选择的改动；不依赖固定模型统计对比；本地 commit 仅在 Human Gate 1 批准且逐项授权后执行。
+success_criterion_definitions:
+- criterion_id: criterion-array-field-selection
+  statement: --fields 支持数组内字段选择：对 read-fact-objects 使用形如 result.items.fact_object.title 的 selector 时，返回所选字段值而不再报 missing；数组元素索引/映射语法按实现确定且与现有 selector 语法兼容。
+- criterion_id: criterion-backward-compat
+  statement: 现有 object-only 投影行为不变：outcome、result.items 等既有 selector 的投影结果、mandatory paths 与 missing 报告语义与改动前一致；test_cli_projection.py 与 test_cli_process.py 中除明确从数组路径 missing 改为数组导航语义的断言外，全部保持通过。
+- criterion_id: criterion-evidence
+  statement: 以 read-fact-objects 读取大对象为样例，实测记录数组内字段选择的响应体积与完整响应、fact_object 全量三者的字节数与降幅，形成可复核的 payload 证据，不声称 fixed-model 可比性或统一收益。
+- criterion_id: criterion-quality
+  statement: 目标与直接测试通过，修改文件通过 ruff 与 git diff --check；实现不绕过 Helper 写入、不直接修改 ldvh-base、不改变公共契约字段。
+success_criterion_results:
+- criterion_id: criterion-array-field-selection
+  outcome: satisfied
+  summary: --fields 现支持数组内字段选择：_lookup_object_path/_project_path 对 dict 按键、对 list 逐元素投影；真实 read-fact-objects 用 result.items.fact_object.title,result.items.fact_object.status 返回所选字段且 missing=[]；新增单测 test_project_fields_selects_into_array_members 与进程级 test_fields_selects_into_array_members_via_cli 均通过。
+- criterion_id: criterion-backward-compat
+  outcome: satisfied
+  summary: 现有 object-only 投影行为不变：outcome/result.items 等既有 selector、mandatory paths、祖先/后代冲突检查保持原语义；test_cli_projection.py 与 test_cli_process.py 中除明确改为数组导航的断言外全部保持通过（93 passed：43+50）。
+- criterion_id: criterion-evidence
+  outcome: satisfied
+  summary: 四类只读操作实测（全部 missing=[]）：read-fact-objects 完整响应 27322B→字段选择 477B（-98.3%），其中 fact_object 全量本体 10104B，选择 title+status 仅 477B（相对本体 -95.3%）；capabilities 70995→5769B（-91.9%）；read-action-template-candidates 14999→1651B（-89.0%）；read-specification-candidates 24525→2959B（-87.9%）。完整响应与字段选择为同一次真实调用的两个时点输出，fact_object 全量字节数取自同一对象（父 Spark）当前读取。证据可复核，不声称固定模型可比性。
+- criterion_id: criterion-quality
+  outcome: satisfied
+  summary: 目标与直接测试通过（test_cli_projection 43、test_cli_process 51）；ruff 对三个修改文件 All checks passed；git diff --check 通过；未绕过 Helper 写入 ldvh-base、未改公共契约字段、未改其它模块。
+result_summary: Helper CLI --fields 已支持数组内字段选择：_lookup_object_path 改为结构保持的 _project_path（dict 按键、list 逐元素投影），_assign_object_path 改为 _deep_merge 深合并（list 按索引合并，支持多 selector 穿过同一数组）。真实 worktree 实测四类只读操作选择少量字段即可降低 payload 87.9%-98.3%（read-fact-objects 另在实现期测得 23510B→449B 的同一机制先行验证，两次为不同时点实测）；现有 object-only 投影、mandatory paths、冲突检查全部保持。不声称固定模型可比性或统一收益。
+validation_summary: test_cli_projection.py 43 passed（含 3 个新增数组测试）、test_cli_process.py 51 passed（含 1 个新增进程级数组测试）、聚焦回归 133 passed；ruff 三文件 All checks passed；git diff --check 通过；端到端真实 read-fact-objects --fields 数组选择返回正确且 missing=[]。全量非目标测试未作为本结果完成依据。
+closure_outcome: completed
+disposition_summary: 按 completed 关闭：--fields 数组内字段选择已实现并验证，四类只读操作 payload 降幅 87.9%-98.3%，现有 object-only 投影与公共契约保持，4 条成功标准全部 satisfied，独立结果复核通过且全部 feedback 已处置，原 scope 内无剩余责任。
+spark_suggestions:
+- suggestion_id: suggestion-array-nav-edge-cases
+  suggestion_kind: follow_up_opportunity
+  summary: 数组导航的两个边角语义（空数组子路径由 missing 变为 present-[]；异质数组多 selector 时 _deep_merge 长度不等会整体替换）已由空数组边角测试覆盖其一，异质数组长度不等语义尚未文档化。
+  follow_up_summary: 该增强不是本次成功标准的剩余责任；由 Human 在本 WorkCase Gate 2 之后独立决定是否另建 Spark 或 WorkCase，当前不自动创建、不执行。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a00bd0-22f7-7013-ade9-0edf55637e94
+change_log:
+- at: '2026-08-16T20:07:07.433688Z'
+  summary: 受控创建窄 WorkCase 候选：承接 Helper 读交互优化 Spark，实现 --fields 数组内字段选择；当前 open/human_plan_confirming，等待 Human Gate 1。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T20:10:08.240602Z'
+  summary: 记录 Human Gate 1 明确批准（plan_version=1 与完整授权包），baseline_fingerprint 绑定当前指纹，进入 executing。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-16T20:10:29.829524Z'
+  summary: 开始 item-design：确定数组内字段选择语法与导航语义。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-16T20:10:49.352561Z'
+  summary: 完成 item-design：确定数组内字段选择的映射式导航语义。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-16T20:10:59.615608Z'
+  summary: 开始 item-implement：实现数组内字段选择。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-16T20:16:47.624363Z'
+  summary: 完成 item-implement：实现数组内字段选择，端到端降幅 98.1%。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-16T20:16:58.434256Z'
+  summary: 开始 item-tests：更新并新增数组导航测试。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-16T20:18:46.387305Z'
+  summary: 完成 item-tests：数组导航测试更新与新增全部通过，ruff 与 diff check 通过。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-16T20:18:57.064518Z'
+  summary: 开始 item-measure：实测数组字段选择 payload 降幅。
+- at: '2026-08-16T20:20:56.419376Z'
+  summary: 全部 4 项 work item terminal；进入 controller_checking，result_version=1，开始形成当前完整结果投影。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T20:21:17.221773Z'
+  summary: 形成完整 canonical result projection：4 条成功标准全部 satisfied，result_summary/controller_check_summary/validation_summary 已写，绑定 result_version=1；待进入独立结果复核。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T20:21:30.831730Z'
+  summary: 完整 result projection 已形成并回读；进入 independent_reviewing，开始实际创建只读 Subagent 做独立结果复核。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T20:27:25.228472Z'
+  summary: 独立结果复核 pass_with_followups；返回 controller_checking 处置 feedback，被审 projection 原样冻结。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T20:27:47.087784Z'
+  summary: Controller 处置独立复核 5 项 feedback 修订 projection（criterion-evidence 补 fact_object 第三量、result_summary 归并测量基线、work_items 按 item_id 排序、更名陈旧测试、补空数组边角测试）；尚无首条 review，result_version 保持 1；待 fresh 独立结果复核。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T20:28:00.300305Z'
+  summary: feedback 处置后的修订 projection 已回读；进入 independent_reviewing，发起 fresh 独立结果复核。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T20:34:57.894682Z'
+  summary: fresh 独立结果复核 pass_with_followups（2 项 follow-up：测试计数偏差、round-1 review 轨迹说明）；返回 controller_checking 处置，projection 原样冻结。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T20:35:12.321677Z'
+  summary: 处置 fresh 复核 2 项 follow-up：修正测试计数（test_cli_projection 42→43、组合 92→93、新增数组测试 2→3）；说明 round-1 独立结果复核结论（pass_with_followups，5 项 feedback）在录入 result_reviews 前已完成处置并修订 projection，按 §6.6 规则 3（尚无首条 review 时修改不升版）保持 result_version=1，本次 fresh 复核将作为首条 result review 录入并绑定 v1。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T20:36:04.982595Z'
+  summary: 完整 projection 已形成、校验并回读；进入 independent_reviewing，projection 冻结，随后在同 phase 录入首条 result review。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T20:36:19.733045Z'
+  summary: 录入首条 result review（fresh 独立结果复核，pass_with_followups，全部 feedback 已处置）绑定 result_version=1。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T20:36:38.965362Z'
+  summary: 独立结果复核完成且全部 feedback 已处置、projection 未变；进入 closure_preparing，开始形成完整 closure proposal。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T20:36:53.558663Z'
+  summary: 形成完整 closure proposal：proposed_outcome=completed（4 条标准全部 satisfied），proposed_disposition_summary 明确无剩余责任，含 1 项 follow_up_opportunity Spark suggestion（数组导航异质长度边角文档化）。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T20:37:08.259050Z'
+  summary: closure proposal 完整且无 depends-on，终态保留审查完成（结果/验证/建议已吸收到保留字段）；进入 human_closure_confirming，等待 Human Gate 2。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T20:40:18.722861Z'
+  summary: Human 批准 Gate 2；经 close-workcase 原子关闭：proposed_outcome=completed 成立，4 条成功标准全部 satisfied，原 scope 无剩余责任；spark_suggestions 保留 follow_up_opportunity（数组导航异质长度边角文档化）。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+object_uid: 01a00c2f-671c-7e4a-8863-ba430a1b9f57
+object_id: workcase-01M062YSRWFS58GRXT8C51Q7TQ
+fact_type_key: workcase
+created_at: '2026-08-16T20:07:07.433688Z'
+updated_at: '2026-08-16T20:40:18.722861Z'

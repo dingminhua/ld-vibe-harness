@@ -1004,7 +1004,7 @@ def test_check_shortcut_supports_fields_projection() -> None:
     assert projection["response"]["result"] == {"status": "passed"}
 
 
-def test_fields_combines_with_request_file_and_reports_missing_after_response(tmp_path: Path) -> None:
+def test_fields_combines_with_request_file_and_selects_into_array_members(tmp_path: Path) -> None:
     request_file = tmp_path / "request.json"
     request_file.write_text("{}", encoding="utf-8")
 
@@ -1020,8 +1020,25 @@ def test_fields_combines_with_request_file_and_reports_missing_after_response(tm
     assert completed.returncode == 0
     assert projection["projection"]["source_outcome"] == "ok"
     assert projection["projection"]["source_exit_code"] == 0
-    assert projection["projection"]["missing"] == ["result.operations.operation_key"]
+    assert projection["projection"]["missing"] == []
     assert projection["response"]["outcome"] == "ok"
+    assert "operation_key" in projection["response"]["result"]["operations"][0]
+
+
+def test_fields_selects_into_array_members_via_cli(tmp_path: Path) -> None:
+    completed, projection = _run_projection(
+        tmp_path,
+        "capabilities",
+        "--fields",
+        "result.operations.operation_key,result.operations.summary",
+    )
+
+    assert completed.returncode == 0
+    assert projection["projection"]["missing"] == []
+    operations = projection["response"]["result"]["operations"]
+    assert isinstance(operations, list) and operations
+    assert all("operation_key" in op and "summary" in op for op in operations)
+    assert all("sources" not in op for op in operations)
 
 
 def test_fields_preserves_invalid_request_exit_and_actual_null(tmp_path: Path) -> None:

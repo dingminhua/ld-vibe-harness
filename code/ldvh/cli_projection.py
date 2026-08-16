@@ -225,24 +225,72 @@ def _unique_source_refs(source_refs: list[dict[str, Any]]) -> list[dict[str, Any
 
 
 def _lookup_object_path(source: Mapping[str, Any], dotted_path: str) -> tuple[bool, Any]:
-    current: Any = source
-    for member in dotted_path.split("."):
-        if not isinstance(current, Mapping) or member not in current:
+    """Resolve a dotted path through dicts and lists.
+
+    Mapping members are resolved by key.  A list is traversed by projecting the
+    remaining members into every element, so the returned value keeps the source
+    array structure while only containing the selected members.  ``False`` is
+    returned only when the path is absent everywhere along the navigation.
+    """
+
+    members = dotted_path.split(".")
+    return _project_path(source, members)
+
+
+def _project_path(current: Any, members: list[str]) -> tuple[bool, Any]:
+    if not members:
+        return True, copy.deepcopy(current)
+    if isinstance(current, list):
+        if not current:
+            return True, []
+        projected: list[Any] = []
+        any_present = False
+        for element in current:
+            present, sub = _project_path(element, members)
+            if present:
+                projected.append(sub)
+                any_present = True
+        if not any_present:
             return False, None
-        current = current[member]
-    return True, current
+        return True, projected
+    if not isinstance(current, Mapping):
+        return False, None
+    member = members[0]
+    if member not in current:
+        return False, None
+    present, sub = _project_path(current[member], members[1:])
+    if not present:
+        return False, None
+    return True, {member: sub}
 
 
 def _assign_object_path(target: dict[str, Any], dotted_path: str, value: Any) -> None:
-    members = dotted_path.split(".")
-    current = target
-    for member in members[:-1]:
-        existing = current.get(member)
-        if not isinstance(existing, dict):
-            existing = {}
-            current[member] = existing
-        current = existing
-    current[members[-1]] = copy.deepcopy(value)
+    """Deep-merge a structure-preserving projection into ``target``.
+
+    ``value`` already mirrors the source structure along ``dotted_path`` (a
+    dict or list), so this only merges it at the path root.  The path is
+    accepted for call compatibility; nested members of ``value`` carry the
+    remaining structure.
+    """
+
+    _deep_merge(target, value)
+
+
+def _deep_merge(target: dict[str, Any], patch: Any) -> None:
+    if not isinstance(patch, Mapping) or not isinstance(target, dict):
+        return
+    for key, value in patch.items():
+        existing = target.get(key)
+        if isinstance(value, Mapping) and isinstance(existing, Mapping):
+            _deep_merge(existing, value)
+        elif isinstance(value, list) and isinstance(existing, list) and len(value) == len(existing):
+            for index, member in enumerate(value):
+                if isinstance(member, Mapping) and isinstance(existing[index], Mapping):
+                    _deep_merge(existing[index], member)
+                else:
+                    existing[index] = copy.deepcopy(member)
+        else:
+            target[key] = copy.deepcopy(value)
 
 
 def _validate_projectable_response(response: Mapping[str, Any]) -> None:
