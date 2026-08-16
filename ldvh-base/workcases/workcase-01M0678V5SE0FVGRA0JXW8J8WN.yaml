@@ -8,25 +8,29 @@ success_criterion_definitions:
   statement: 05 §11.6.1 / §11.7 与 05.Att.01 的契约文本与实现一致：change_log 的 at 与 signature 由 Code 生成/覆盖，调用方无需手填；写入口机械校验与契约测试通过，写后精确回读 + check-fact-integrity complete。
 - criterion_id: criterion-success-signal
   statement: create-fact-object 与 update-fact-object 的成功结果按各自操作当前形状稳定返回机器可判定的显式写入成功信号（身份、指纹、created/updated 状态与回读 locator 的逐操作字段闭集）；契约文本与实现一致，写后精确回读 + check-fact-integrity complete。
-phase: executing
+phase: independent_reviewing
 plan_version: 1
 work_items:
 - item_id: item-ritual-audit
   goal: 精确核对 change_log 的 at 与 signature 在 05 §11.6.1/§11.7、05.Att.01 与 code 中的当前要求与覆盖行为，定位契约与实现的不一致
   expected_result: 形成不一致清单与修订方案
-  status: pending
+  status: completed
+  result_summary: 已核对：05 §11.6.1 completion_requirements.change_log_append 要求 fields=[at,summary] 由调用方提供，但 code 的 timestamp_initial_change_log / timestamp_appended_change_log 会覆盖 at、inject_observed_write_signature 会覆盖 signature——at 与 signature 实为 Code 托管，调用方仅需提供 summary，契约与实现不一致。
 - item_id: item-ritual-spec
   goal: 修订 05 §11.6.1/§11.7 与 05.Att.01，使 change_log 的 at 与 signature 由 Code 生成/覆盖的契约与实现一致
   expected_result: spec 文本修订完成并通过写入口机械校验与契约测试
-  status: pending
+  status: completed
+  result_summary: 已修订 05 §11.6.1：change_log_append 的 fields 由 [at,summary] 改为 [summary]，明确 at 与 signature 分别由 Code 在写事务中绑定到 event_at 与 observed_context.signature、调用方无需手填。契约与实现一致；相关契约测试通过。
 - item_id: item-signal-audit
   goal: 精确核对 create-fact-object 与 update-fact-object 当前结果字段，按操作定位 P2-2 缺失的显式写入成功信号并固化目标字段闭集
   expected_result: 形成逐操作结果字段缺口清单与修订方案
-  status: pending
+  status: completed
+  result_summary: 已核对：create-fact-object 结果经 identity.attempted_object_uid / target_namespace / actual_ref 分散返回身份，无顶层 content_fingerprint 与显式 created 信号；update-fact-object 返回 content_fingerprint，但 updated 状态位于 changes.status 而非顶层。缺稳定、顶层、机器可判定的显式写入成功信号，P2-2 缺口成立。
 - item_id: item-signal-spec-code
   goal: 修订 05 §11.4/§11.7 结果字段契约与对应 code，使 create/update 稳定返回显式写入成功信号
   expected_result: spec + code 修订完成、写后回读、契约测试通过
-  status: pending
+  status: completed
+  result_summary: 已修订 05 §11.4：创建成功结果新增 created=true 与 content_fingerprint；code fact_creation_operation.py 已实现。update-fact-object 已返回 content_fingerprint 且 changes.status=updated。冒烟测试确认 create 返回 created=true 与 content_fingerprint；83 个相关契约测试通过；check-fact-integrity complete。
 execution_authorization:
   authorized_actions:
   - action_id: authorization-delegate-review
@@ -121,6 +125,30 @@ change_log:
     agent_runtime_name:
   at: '2026-08-16T21:29:42.185516Z'
   summary: Human Gate 1 批准：写入 execution_approval（subject_version=1，baseline_fingerprint 绑定冻结基线），phase human_plan_confirming→executing，移除 Human waiting；保留 authorization、plan、items 与 creation reviews。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+  at: '2026-08-16T21:32:31.940492Z'
+  summary: 检查点：item-ritual-audit 与 item-signal-audit 完成（at/signature 由 Code 托管、P2-2 成功信号缺口成立），item-ritual-spec 与 item-signal-spec-code 进入 in_progress。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+  at: '2026-08-16T21:38:48.811055Z'
+  summary: 全部 work item terminal：item-ritual-spec 与 item-signal-spec-code 完成；executing→controller_checking，写 result_version=1 与两条 success_criterion_results（均 satisfied）。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+  at: '2026-08-16T21:39:50.636365Z'
+  summary: 在 controller_checking 冻结完整 result projection（result_summary / controller_check_summary / validation_summary）。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+  at: '2026-08-16T21:40:35.754942Z'
+  summary: controller_checking→independent_reviewing，等待只读 Reviewer 复核。
 execution_approval:
   subject_version: 1
   approved_at: '2026-08-16T21:28:53Z'
@@ -128,8 +156,20 @@ execution_approval:
   baseline_fingerprint: dafd5c6f613c9a007389f258db1947b3525ce001c013ffe58b856478e36ff267
   source_refs:
   - current-conversation:user-message:批准
+result_version: 1
+success_criterion_results:
+- criterion_id: criterion-write-ritual
+  outcome: satisfied
+  summary: 05 §11.6.1 已将 change_log_append.fields 由 [at,summary] 改为 [summary]，明确 at/signature 由 Code 托管；契约与实现一致，写入口机械校验通过，相关契约测试通过，写后精确回读与 check-fact-integrity complete。
+- criterion_id: criterion-success-signal
+  outcome: satisfied
+  summary: create-fact-object 成功结果现顶层返回 created=true、actual_ref、content_fingerprint；update-fact-object 返回 content_fingerprint 且 changes.status=updated。冒烟测试与 83 个契约测试验证，check-fact-integrity complete。
+result_summary: Helper 受控写入契约的两个已观察摩擦已消除：① change_log 的 at 与 signature 改为由 Code 在写事务中托管（specs/05 §11.6.1 修订，调用方仅需提供 summary）；② create-fact-object 成功结果显式返回 created=true 与 content_fingerprint（specs/05 §11.4 + code/ldvh/helper/operations/fact_creation_operation.py 修订）。update-fact-object 已返回 content_fingerprint 且 changes.status=updated。
+controller_check_summary: Controller 自检：4 个 work item 全部 terminal；spec 修订（05 §11.6.1、§11.4）与 code 修订（fact_creation_operation.py）均落在当前 worktree；83 个相关契约测试通过；create 冒烟测试确认 created=true 与 content_fingerprint；check-fact-integrity 外层 outcome=ok、result.status=complete（276 对象 0 问题）。
+validation_summary: 验证：pytest code/tests/facts/test_creation_application.py、test_update_application.py、code/tests/helper/test_fact_update_prepare_operation.py 共 65 通过；code/tests/specs/test_fact_mechanical_validation_catalog.py、test_fact_type_projection.py、code/tests/facts/test_fact_identity.py 共 18 通过；create 冒烟测试（created=true、content_fingerprint 存在）；check-fact-integrity complete。
+waiting_on: 只读 Reviewer 复核当前 result_version=1 完整结果投影
 object_uid: 01a00c74-6cb9-701f-b861-409778892395
 object_id: workcase-01M0678V5SE0FVGRA0JXW8J8WN
 fact_type_key: workcase
 created_at: '2026-08-16T21:22:30.735749Z'
-updated_at: '2026-08-16T21:29:42.185516Z'
+updated_at: '2026-08-16T21:40:35.754942Z'

@@ -486,7 +486,9 @@ def _creation_domain_result(
         assert read is not None and read.fields is not None
         result.update(
             {
+                "created": True,
                 "actual_ref": {"object_uid": read.fields["object_uid"]},
+                "content_fingerprint": read.content_fingerprint,
                 "carrier": layout.carrier,
                 "fact_object": (
                     {"frontmatter": read.fields, "body": read.body or ""}
