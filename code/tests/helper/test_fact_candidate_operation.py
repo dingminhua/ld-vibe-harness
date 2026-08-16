@@ -1817,3 +1817,151 @@ def test_real_cli_returns_source_bound_f1_cards(tmp_path: Path) -> None:
     assert_common_response(response)
     assert response["result"]["coverage"]["total_matching"] == 1
     assert set(response["result"]["cards"][0]["fact_ref"]) == {"object_uid"}
+
+
+def test_f2_fields_projects_only_requested_card_fields(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    _create(workspace, project, "spark", _spark("Field selection spark"))
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["spark"], fields=["title", "status"]),
+    ).response
+
+    assert_common_response(response)
+    assert response["outcome"] == "ok"
+    cards = response["result"]["cards"]
+    assert len(cards) == 1
+    assert set(cards[0]["fields"].keys()) == {"title", "status"}
+    assert cards[0]["fields"]["title"] == "Field selection spark（测试）"
+    assert cards[0]["fields"]["status"] == "open"
+
+
+def test_f2_fields_preserves_requested_order_and_omits_absent(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    _create(workspace, project, "spark", _spark("Field selection spark"))
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["spark"], fields=["status", "title"]),
+    ).response
+
+    assert response["outcome"] == "ok"
+    cards = response["result"]["cards"]
+    assert list(cards[0]["fields"].keys()) == ["status", "title"]
+
+
+def test_f2_fields_default_keeps_full_projection(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    _create(workspace, project, "spark", _spark("Field selection spark"))
+
+    with_fields = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["spark"], fields=["title"]),
+    ).response
+    without_fields = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["spark"]),
+    ).response
+
+    assert with_fields["outcome"] == "ok"
+    assert without_fields["outcome"] == "ok"
+    assert set(with_fields["result"]["cards"][0]["fields"].keys()) == {"title"}
+    default_keys = set(without_fields["result"]["cards"][0]["fields"].keys())
+    assert {"title", "status", "priority", "object_id"} <= default_keys
+
+
+def test_f2_fields_rejects_field_outside_projection_closure(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    _create(workspace, project, "spark", _spark("Field selection spark"))
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["spark"], fields=["not_a_field"]),
+    ).response
+
+    assert response["outcome"] == "invalid_request"
+    assert any("arguments.fields" in gap["summary"] for gap in response["gaps"])
+
+
+def test_f2_fields_rejects_duplicates_and_overlong(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    _create(workspace, project, "spark", _spark("Field selection spark"))
+
+    duplicate = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["spark"], fields=["title", "title"]),
+    ).response
+    assert duplicate["outcome"] == "invalid_request"
+
+    overlong = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["spark"], fields=[f"f{i}" for i in range(17)]),
+    ).response
+    assert overlong["outcome"] == "invalid_request"
+
+
+def test_f2_fields_rejects_excerpt_source_fields_for_spark(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    _create(workspace, project, "spark", _spark("Excerpt source closure"))
+
+    for field in ("intent", "summary"):
+        response = handle_request(
+            "call",
+            "find-fact-object-candidates",
+            _payload(workspace, project, "F2", fact_type_keys=["spark"], fields=[field]),
+        ).response
+        assert response["outcome"] == "invalid_request"
+        assert any("arguments.fields" in gap["summary"] for gap in response["gaps"])
+
+
+def test_f2_fields_accepts_object_uid_for_spark(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    _create(workspace, project, "spark", _spark("UID projection"))
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["spark"], fields=["object_uid", "title"]),
+    ).response
+
+    assert response["outcome"] == "ok"
+    card = response["result"]["cards"][0]
+    assert set(card["fields"].keys()) == {"object_uid", "title"}
+
+
+def test_f2_fields_workcase_accepts_direct_projection_fields(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    _create(workspace, project, "workcase", _workcase())
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["workcase"], fields=["title", "status"]),
+    ).response
+
+    assert response["outcome"] == "ok"
+    card = response["result"]["cards"][0]
+    assert {"title", "status"} <= set(card["fields"].keys())
+    assert card["fields"]["title"] == "Recall contract implementation（测试）"
+
+
+def test_f2_fields_workcase_rejects_non_projection_fields(tmp_path: Path) -> None:
+    workspace, project = _fixture(tmp_path)
+    _create(workspace, project, "workcase", _workcase())
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["workcase"], fields=["validation_summary"]),
+    ).response
+
+    assert response["outcome"] == "invalid_request"
+    assert any("arguments.fields" in gap["summary"] for gap in response["gaps"])

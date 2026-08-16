@@ -698,7 +698,11 @@ def _card(
         )
     else:
         projection = _F1_FIELDS[fact_type_key] if domain.card_layer == "F1" else _F2_FIELDS[fact_type_key]
-    fields = {field: read.fields[field] for field in projection if field in read.fields}
+    if domain.card_layer == "F2" and domain.card_fields is not None:
+        projection = tuple(field for field in domain.card_fields if field in read.fields)
+    else:
+        projection = tuple(field for field in projection if field in read.fields)
+    fields = {field: read.fields[field] for field in projection}
     excerpts: list[dict[str, object]] = []
     if domain.card_layer == "F2" and fact_type_key == "spark":
         for field_path in ("intent", "summary"):

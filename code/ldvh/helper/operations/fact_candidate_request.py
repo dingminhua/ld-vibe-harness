@@ -27,6 +27,7 @@ OPTIONAL_INPUTS = (
     "arguments.selected_fact_refs",
     "arguments.locator_text",
     "arguments.text_match",
+    "arguments.fields",
     "arguments.page_size",
     "arguments.cursor",
 )
@@ -46,6 +47,7 @@ _ARGUMENT_FIELDS = frozenset(
         "selected_fact_refs",
         "locator_text",
         "text_match",
+        "fields",
         "page_size",
         "cursor",
     }
@@ -92,6 +94,69 @@ _F2_SEARCH_FIELDS = {
         }
     ),
 }
+# F2 卡片直接投影字段闭集（与 fact_candidate_operation 的 _F2_FIELDS 及
+# workcase active/closed 投影一致）；fields 参数只能选择这些直接投影字段。
+_F2_DIRECT_PROJECTION_FIELDS = {
+    "spark": frozenset({"object_uid", "object_id", "title", "status", "priority", "updated_at"}),
+    "adr": frozenset(
+        {
+            "object_uid",
+            "object_id",
+            "title",
+            "status",
+            "decision_question",
+            "decision",
+            "applicability",
+            "updated_at",
+        }
+    ),
+    "pitfall": frozenset(
+        {
+            "object_uid",
+            "object_id",
+            "title",
+            "status",
+            "symptoms",
+            "trigger_conditions",
+            "applicability",
+            "validation_summary",
+            "updated_at",
+        }
+    ),
+    "study": frozenset(
+        {
+            "object_uid",
+            "object_id",
+            "title",
+            "status",
+            "research_question",
+            "abstract",
+            "research_intent",
+            "recommendation_summary",
+            "relations",
+            "updated_at",
+        }
+    ),
+    "workcase": frozenset(
+        {
+            "object_uid",
+            "object_id",
+            "title",
+            "status",
+            "phase",
+            "goal",
+            "scope",
+            "summary",
+            "priority",
+            "blocking_summary",
+            "result_summary",
+            "closure_outcome",
+            "disposition_summary",
+            "spark_suggestions",
+            "updated_at",
+        }
+    ),
+}
 _F2_ONLY_FIELDS = frozenset(
     {
         "fact_type_keys",
@@ -128,6 +193,7 @@ class FactCandidateRequest:
     selected_fact_refs: tuple[StableFactReference, ...]
     locator_text: str | None
     text_match: TextMatch | None
+    card_fields: tuple[str, ...] | None
     page_size: int
     cursor: str | None
     base: Path
@@ -343,6 +409,26 @@ def parse_fact_candidate_request(
             if isinstance(text, str) and text and len(text) <= 512 and fields:
                 text_match = TextMatch(text, fields)
 
+    card_fields: tuple[str, ...] | None = None
+    if layer == "F2" and "fields" in request.arguments:
+        if not isinstance(request.arguments["fields"], list) or not 1 <= len(request.arguments["fields"]) <= 16:
+            problems.append("arguments.fields 必须是包含 1–16 项的 array")
+        else:
+            fields_value, fields_problems = _unique_strings(
+                request.arguments["fields"], "arguments.fields", minimum=1, maximum=16
+            )
+            problems.extend(fields_problems)
+            allowed_fields = set().union(
+                *(_F2_DIRECT_PROJECTION_FIELDS[key] for key in fact_type_keys if key in _F2_DIRECT_PROJECTION_FIELDS)
+            )
+            invalid_fields = sorted(set(fields_value) - allowed_fields)
+            if invalid_fields:
+                problems.append(
+                    "arguments.fields 包含所选类型 F2 直接投影之外的字段: " + ", ".join(invalid_fields)
+                )
+            if not problems or not any("arguments.fields" in p for p in problems):
+                card_fields = fields_value
+
     page_size = request.arguments.get("page_size", 100)
     if isinstance(page_size, bool) or not isinstance(page_size, int) or not 1 <= page_size <= 200:
         problems.append("arguments.page_size 必须是 1–200 的 integer")
@@ -377,6 +463,7 @@ def parse_fact_candidate_request(
             selected_fact_refs,
             locator_text,
             text_match,
+            card_fields,
             page_size,
             cursor,
             context.cwd,

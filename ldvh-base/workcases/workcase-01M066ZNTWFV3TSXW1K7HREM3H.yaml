@@ -1,0 +1,188 @@
+status: closed
+title: F2 候选卡片支持字段定制，降低盘点类查询 payload
+goal: 扩展 find-fact-object-candidates 的 F2 卡片投影，使调用方能在不改变候选/过滤/分页语义的前提下指定返回的直接字段子集（如只返回 title/status），从而避免盘点类查询（筛选→读对象两步）被迫接收固定全量卡片字段；保持 F0 恢复清单、coverage、摘录与关系导航契约不变，并产出可复核的 payload 降幅证据。
+scope: 仅修改 find-fact-object-candidates 的 F2 卡片字段投影输入与实现（specs/05 事实模型基础规范 §11.5-11.6 的 F2 直接投影字段定义、code/ldvh/facts/candidate_discovery.py、code/ldvh/helper/operations/fact_candidate_request.py 及直接测试），并新增可选字段定制参数（如 arguments.fields）。不改动 F0/F1、coverage、分页、过滤条件、摘录预算、关系导航语义、其它 Code 模块、Web、事实 Schema 或 ldvh-base 事实对象；不做条件过滤合并进 read-fact-objects、不改公共响应信封；本地 commit 仅在 Human Gate 1 批准且逐项授权后执行。
+success_criterion_definitions:
+- criterion_id: criterion-fields-param
+  statement: find-fact-object-candidates F2 接受可选 fields 参数（如 title,status），卡片 fields 只返回指定子集；未指定时行为与现状完全一致（固定直接投影）。
+- criterion_id: criterion-validity
+  statement: fields 值必须属于所选类型 F2 卡片当前直接投影字段闭集；未知/非法字段按现有 invalid_request 语义拒绝，不静默忽略、不改写候选或过滤结果。
+- criterion_id: criterion-backward-compat
+  statement: 未传 fields 的既有调用完全不变：F0 recovery_manifest、coverage、cards 结构、分页指纹与 missing/无效范围语义与改动前一致；相关既有测试全部保持通过。
+- criterion_id: criterion-evidence
+  statement: 以真实 find-fact-object-candidates 盘点 open sparks/workcases 为样例，实测记录字段定制前（固定卡片 20-42KB）后（仅 title/status）的字节数与降幅，形成可复核证据，不声称 fixed-model 可比性。
+- criterion_id: criterion-quality
+  statement: 目标与直接测试通过，修改文件通过 ruff 与 git diff --check；实现不绕过 Helper 写入、不直接修改 ldvh-base、不改变公共响应信封。
+success_criterion_results:
+- criterion_id: criterion-fields-param
+  outcome: satisfied
+  summary: find-fact-object-candidates F2 接受可选 arguments.fields（array 1-16 互异 string）；真实调用 fields=[title,status] 只返回这两字段、fields=[object_uid,title] 正确返回、workcase title/status 正确返回；未传时行为与现状完全一致。
+- criterion_id: criterion-validity
+  outcome: satisfied
+  summary: fields 值必须属于所选类型 F2 直接投影字段闭集（_F2_DIRECT_PROJECTION_FIELDS：spark 为 object_uid/object_id/title/status/priority/updated_at，不含 intent/summary；workcase 为 active/closed 投影并集）；intent/summary 拒绝、object_uid 接受、workcase validation_summary 拒绝（均有测试覆盖）；重复成员与超 16 项均 invalid_request。
+- criterion_id: criterion-backward-compat
+  outcome: satisfied
+  summary: 未传 fields 的既有调用完全不变：F0 recovery_manifest、coverage、cards 结构（含 excerpts/match_reasons/source_refs）、分页指纹语义与改动前一致；test_fact_candidate_operation.py 47 passed 含 9 个 fields 定制测试，聚焦回归通过。
+- criterion_id: criterion-evidence
+  outcome: satisfied
+  summary: 真实盘点实测：open sparks 默认 34424B→fields 33648B（-2.3%）；全部 sparks 34464B→33768B（-2.0%）。构成分析：单卡 3073B 中 excerpts 1973B（64%）、source_refs 647B（21%）、fields 仅 251B（8%）——字段定制只裁剪 fields 段，卡片大头是摘要摘录与溯源段，整体降幅有限；数据如实记录，不声称 fixed-model 可比性。
+- criterion_id: criterion-quality
+  outcome: satisfied
+  summary: 目标与直接测试通过（test_fact_candidate_operation 47 passed 含 9 个 fields 测试）；ruff 三文件 All checks passed（含 F841 修复）；git diff --check 通过；未绕过 Helper 写入、未直接修改 ldvh-base、未改变公共响应信封。
+result_summary: find-fact-object-candidates F2 已支持 arguments.fields 卡片字段定制：请求契约新增 fields 解析与闭集校验（1-16 互异、属于 _F2_DIRECT_PROJECTION_FIELDS 直接投影闭集、非法字段 invalid_request），_card() 按请求顺序投影指定字段，未传时保持现有完整投影。真实实测：fields 定制使卡片 fields 段缩到仅请求字段，整体响应降幅约 2%（单卡 3073B 中 fields 仅占 251B/8%，大头是摘要摘录 excerpts 64% 与溯源 source_refs 21%）。实现与测试通过（47 passed 含 9 个字段定制测试），不声称固定模型可比性或统一收益。
+validation_summary: test_fact_candidate_operation.py 47 passed（含 9 个 fields 定制测试）、聚焦回归 90 passed（+ test_cli_projection 43）；ruff 三文件 All checks passed；git diff --check 通过；端到端真实 find-fact-object-candidates --fields 返回正确、intent/summary 拒绝、非法字段拒绝。全量非目标测试未作为本结果完成依据。
+closure_outcome: completed
+disposition_summary: 按 completed 关闭：find-fact-object-candidates F2 已支持 arguments.fields 卡片字段定制（闭集校验、未传行为不变、specs/05 §11.5 契约更新），5 条成功标准全部 satisfied，独立结果复核（第 3 轮 pass）通过且前两轮 feedback 全部处置，原 scope 内无剩余责任。实测字段定制整体响应降幅约 2%（卡片大头为摘要摘录与溯源段，属 spec 设计决定）。
+spark_suggestions:
+- suggestion_id: suggestion-f1-fields-silently-ignored
+  suggestion_kind: follow_up_opportunity
+  summary: fields 参数在 F1 卡片层被静默忽略（_F2_ONLY_FIELDS 未含 fields，F1 分支不拒绝也不应用），与 F2 可选语义有灰色地带；另有 active workcase 卡片请求 fields 子集时仍恒含派生 work_item_counts。
+  follow_up_summary: 该边界澄清不是本次成功标准的剩余责任；由 Human 在本 WorkCase Gate 2 之后独立决定是否另建 Spark 或 WorkCase，当前不自动创建、不执行。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a00bd0-22f7-7013-ade9-0edf55637e94
+change_log:
+- at: '2026-08-16T21:17:30.405679Z'
+  summary: 受控创建窄 WorkCase 候选：承接 Helper 读交互优化 Spark B 方向，实现 F2 候选卡片字段定制；当前 open/human_plan_confirming，等待 Human Gate 1。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T21:19:47.096965Z'
+  summary: 记录 Human Gate 1 明确批准（plan_version=1 与完整授权包），baseline_fingerprint 绑定当前指纹，进入 executing。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-16T21:20:06.010439Z'
+  summary: 开始 item-design：确定 F2 字段定制设计。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-16T21:20:51.029703Z'
+  summary: 完成 item-design：确定 fields 参数、闭集、投影语义与指纹边界。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-16T21:21:05.042780Z'
+  summary: 开始 item-implement：实现 F2 卡片字段定制。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-16T21:21:59.699933Z'
+  summary: 完成 item-implement：实现 F2 卡片 fields 定制。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-16T21:22:11.108568Z'
+  summary: 开始 item-tests：新增 F2 fields 定制测试。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-16T21:23:44.716872Z'
+  summary: 完成 item-tests：fields 定制 5 个新测试 + 回归全部通过。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+  at: '2026-08-16T21:23:55.784107Z'
+  summary: 开始 item-measure：实测 F2 字段定制 payload 降幅。
+- at: '2026-08-16T21:24:30.987584Z'
+  summary: 全部 4 项 work item terminal；进入 controller_checking，result_version=1，开始形成当前完整结果投影。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T21:24:50.640684Z'
+  summary: 形成完整 canonical result projection：5 条成功标准全部 satisfied，result_summary/controller_check_summary/validation_summary 已写，绑定 result_version=1；待进入独立结果复核。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T21:25:30.210342Z'
+  summary: 补全 specs/05 §11.5 fields 契约行与 invalid_request 闭集更新（authorization-edit-spec 授权范围内）；修正 controller_check_summary。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T21:25:43.958003Z'
+  summary: 完整 result projection 已形成并回读；进入 independent_reviewing，发起独立结果复核。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T21:39:15.963210Z'
+  summary: 独立结果复核 changes_required（F1 闭集偏差等）；返回 controller_checking 处置 feedback，projection 原样冻结。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T21:39:44.984643Z'
+  summary: ResultΔ：处置独立复核 feedback——F1 fields 闭集改为 F2 直接投影闭集（intent/summary 拒绝、object_uid/workcase 字段接受）、补 4 个闭集边界测试（共 9 个 fields 测试、47 passed）、OPTIONAL_INPUTS 加 arguments.fields、修正 item-design §11.6 表述、如实记录授权文件列表偏差；尚无首条 review，result_version 保持 1。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T21:40:01.062177Z'
+  summary: feedback 处置后的修订 projection 已回读；进入 independent_reviewing，发起 fresh 独立结果复核。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T21:46:32.387131Z'
+  summary: fresh 独立结果复核 changes_required（F841 ruff 错误、item-implement 旧闭集表述、计数陈旧）；返回 controller_checking 处置，projection 冻结。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T21:46:57.349059Z'
+  summary: ResultΔ：处置 fresh 复核 3 项——修复测试 F841（ruff 通过）、item-implement 闭集表述改为 _F2_DIRECT_PROJECTION_FIELDS、计数统一为 47 passed/9 个 fields 测试/聚焦回归 90；尚无首条 review，result_version 保持 1。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T21:47:14.499229Z'
+  summary: 第 2 轮 fresh 复核 3 项返修已处置并回读；进入 independent_reviewing，发起第 3 轮 fresh 独立结果复核。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T21:52:22.345041Z'
+  summary: 录入首条 result review（第 3 轮 fresh 独立结果复核，pass，前两轮 feedback 全部处置）绑定 result_version=1。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T21:52:40.602499Z'
+  summary: 独立结果复核完成（pass）且全部 feedback 已处置、projection 未变；进入 closure_preparing，形成完整 closure proposal（completed，含 1 项 follow_up_opportunity）。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T21:52:57.511260Z'
+  summary: closure proposal 完整且无 depends-on，终态保留审查完成；进入 human_closure_confirming，等待 Human Gate 2。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+- at: '2026-08-16T21:55:56.615211Z'
+  summary: Human 批准 Gate 2；经 close-workcase 原子关闭：proposed_outcome=completed 成立，5 条成功标准全部 satisfied，原 scope 无剩余责任；spark_suggestions 保留 follow_up_opportunity（F1 层 fields 静默忽略与 active workcase 派生字段边界澄清）。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
+object_uid: 01a00c6f-d75c-7ec7-acf7-8199e3875071
+object_id: workcase-01M066ZNTWFV3TSXW1K7HREM3H
+fact_type_key: workcase
+created_at: '2026-08-16T21:17:30.405679Z'
+updated_at: '2026-08-16T21:55:56.615211Z'
