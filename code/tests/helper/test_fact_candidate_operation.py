@@ -152,9 +152,9 @@ def _create(workspace: Path, project: Path, fact_type_key: str, fields: dict[str
     return object_id
 
 
-def _workcase() -> dict[str, object]:
+def _workcase(title: str = "Recall contract implementation") -> dict[str, object]:
     fact_object: dict[str, object] = {
-        "title": "Recall contract implementation",
+        "title": title,
         "status": "open",
         "summary": "Waiting for Human execution approval.",
         "waiting_on": "Human execution approval.",
@@ -462,7 +462,7 @@ def test_f1_returns_complete_active_adr_and_open_workcase_baseline_with_paginati
 def test_f2_workcase_uses_distinct_current_active_and_closed_projections(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     active_id = _create(workspace, project, "workcase", _workcase())
-    closed_id = _create(workspace, project, "workcase", _workcase())
+    closed_id = _create(workspace, project, "workcase", _workcase("Recall contract closed projection"))
     _write_closed_workcase(project, closed_id)
 
     active = handle_request(
@@ -1103,7 +1103,7 @@ def test_f2_combines_relation_locator_and_field_filters_deterministically(tmp_pa
 def test_f2_relation_source_returns_one_hop_edges_with_single_edge_cursor(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     first_workcase = _create(workspace, project, "workcase", _workcase())
-    second_workcase = _create(workspace, project, "workcase", _workcase())
+    second_workcase = _create(workspace, project, "workcase", _workcase("Recall contract second target"))
     spark = _spark("Known source for direct navigation")
     spark["relations"] = [
         {
@@ -1386,6 +1386,7 @@ def test_f2_relation_source_applies_type_status_and_reverse_relation_filters_wit
     workspace, project = _fixture(tmp_path)
     dependency_id = _create(workspace, project, "workcase", _workcase())
     target = _workcase()
+    target["title"] = "Recall contract reverse relation target"
     target["relations"] = [
         {
             "relation_key": "depends-on",
@@ -1533,7 +1534,7 @@ def test_f2_relation_source_rejects_cross_project_duplicate_and_illegal_key_inpu
 def test_f2_relation_source_does_not_leak_later_failed_edge_gaps_before_its_page(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     first_workcase = _create(workspace, project, "workcase", _workcase())
-    second_workcase = _create(workspace, project, "workcase", _workcase())
+    second_workcase = _create(workspace, project, "workcase", _workcase("Recall contract later edge target"))
 
     def source_for(target_id: str, title: str) -> str:
         spark = _spark(title)
@@ -1592,7 +1593,7 @@ def test_f2_relation_source_does_not_leak_later_failed_edge_gaps_before_its_page
 def test_f2_relation_source_reports_each_missing_target_of_one_source_as_target_not_found(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     first_workcase = _create(workspace, project, "workcase", _workcase())
-    second_workcase = _create(workspace, project, "workcase", _workcase())
+    second_workcase = _create(workspace, project, "workcase", _workcase("Recall contract missing target source"))
     source = _spark("One source with two independently missing targets")
     source["relations"] = [
         {

@@ -119,6 +119,8 @@ Code 不判断自然语言是否属于生命周期关口；Controller 与 Review
 
 受控创建必须一次形成完整目标、scope、成功标准定义、`plan_version=1`、非空 work items、完整 `execution_authorization`、至少一项实际方案复核、priority、`status=open`、`phase=human_plan_confirming` 和 Human waiting，并完成 Schema 校验、写入与回读。创建时全部 work item 必须为 `pending`。`execution_authorization` 必须把全部已知 Human Gate、目标与影响范围、风险、动作上限、禁止项、允许的调整与重试、验证/回滚和超界安全收敛一次呈现给 Human；只能由 Human 完成的前置动作必须在 Gate1 决定前完成或从本次运行范围明确排除。创建前的 Controller 与 Reviewer 必须逐项检查 work item 或 success criterion 是否错误吸收 §4.3 的生命周期关口或 Human Gate（含将受控提交、完整结果投影等收敛动作写成 item，或要求未来 result review 证明 criterion 自身的违例），并检查已知授权需求是否已进入基线；命中时当前候选计划不得提交 Human 批准或受控创建，必须先返修。创建前 Reviewer feedback 必须由 Controller 处置；新对象不得带 execution approval 或结果字段。
 
+在不代替 Skill 创建前语义查重的前提下，WorkCase 受控创建还必须由 Code 在同一实际 Git Working Tree 内提供活跃标题精确冲突防线：在 WorkCase 类型锁内完整读取 canonical 集合，仅对机械有效对象将已解析顶层 `title` 作严格 string 相等比较，不作 trim、Unicode normalize、casefold 或空白折叠。严格同标题的 `open` / `blocked` 对象阻断，`closed` 不阻断；命中一项或多项时使用 `active_workcase_title_conflict` 拒绝且零写入，并按稳定引用顺序返回全部 `existing_refs` 与 `ambiguous`。扫描、载体、机械有效性或状态判定不完整时 fail closed，不得从部分视图继续创建。该防线不使用模糊或 LLM 语义判断，不清理已有重复，不声称 linked worktree 之间、不同 common-dir 或配置级的全局唯一。
+
 创建复核首先由 Controller 在自身当前会话完整发现工具面，并实际尝试创建只读 Subagent。Subagent 是唯一独立审核方式，具体模型由宿主选择，LDVH 不维护模型目录或选择规则。只有 Controller 自身的工具发现与实际创建结果能够判断是否无法创建；Subagent 对自身或 Controller 工具能力的陈述不得作为该判断证据。无法创建时，Controller 必须先向 Human 披露将改用同一 AI 切换只读 Reviewer 视角及其保证差距，然后直接执行 `same-ai-switched-role-read-only`，不增加确认、不等待接受，也不新增 Human Gate。创建 review 必须据实记录实际方法；same-AI 还必须记录 Controller 证据、披露摘要、披露时间和保证差距。
 
 ### 4.5 审核方法与保证边界
