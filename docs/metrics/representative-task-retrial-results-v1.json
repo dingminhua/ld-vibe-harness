@@ -1,0 +1,79 @@
+{
+  "schema_version": "ldvh-representative-task-retrial-results/1",
+  "protocol_sha256": "c597455d20cbb894f42c2571959ddc23ad375b6cd7360ba697d858f158b3db37",
+  "generated_at": "2026-08-16T14:29:22.736567Z",
+  "result": {
+    "batch_status": "not_comparable",
+    "claim_boundary": "只评估当前公开入口相对预注册 gold legal trace 的 operation/任务族级任务负担代理；不估计因果效果、业务收益、总体 Helper 质量或问题流行率。",
+    "preflight": {
+      "status": "not_comparable",
+      "reasons": [
+        "runner_model_identity_unavailable"
+      ],
+      "provider": null,
+      "model": null,
+      "runner_identity": "codex",
+      "tool_entry": "collaboration.spawn_agent",
+      "entrypoint": "Cindy collaboration spawn_agent with inherited configuration",
+      "permission_profile": "filesystem-unrestricted;approval-never",
+      "prompt_layout": "frozen-task-envelope-v1",
+      "identity_source": null,
+      "carrier_fingerprint": null
+    },
+    "attempt_count": 0,
+    "retained_session_count": 0,
+    "maximum_attempts": 42,
+    "exclusion_ledger": [
+      {
+        "attempt_index": null,
+        "task_id": null,
+        "reason": "runner_model_identity_unavailable"
+      }
+    ],
+    "family_results": [
+      {
+        "family": "read",
+        "status": "not_comparable",
+        "reason": "runner_model_identity_unavailable",
+        "retained_sessions": 0,
+        "complete_frames": 0,
+        "positive_frames": null,
+        "median_frame_burden_points": null,
+        "bootstrap_median_ci_95": null
+      },
+      {
+        "family": "ordinary_fact_update",
+        "status": "not_comparable",
+        "reason": "runner_model_identity_unavailable",
+        "retained_sessions": 0,
+        "complete_frames": 0,
+        "positive_frames": null,
+        "median_frame_burden_points": null,
+        "bootstrap_median_ci_95": null
+      },
+      {
+        "family": "workcase_non_item_update",
+        "status": "not_comparable",
+        "reason": "runner_model_identity_unavailable",
+        "retained_sessions": 0,
+        "complete_frames": 0,
+        "positive_frames": null,
+        "median_frame_burden_points": null,
+        "bootstrap_median_ci_95": null
+      }
+    ],
+    "unavailable_semantics": {
+      "host_received": "unavailable",
+      "causal_effect": "not_measured",
+      "business_benefit": "not_measured",
+      "raw_session_content": "not_retained"
+    },
+    "reproduction": {
+      "bootstrap_seed": 20260816,
+      "protocol_schema_version": "ldvh-representative-task-retrial-protocol/1",
+      "session_schema_version": "ldvh-representative-task-retrial-session/1",
+      "record_hashes": []
+    }
+  },
+  "results_payload_sha256": "308b730b3f0a61169db1dfb4c0e9922af1cf9948cdf196911fe900647c4243a4"
+}
