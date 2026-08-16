@@ -1,0 +1,307 @@
+{
+  "caliber": "wc-c-helper-factorial/1",
+  "protocol_version": 1,
+  "workcase_ref": {
+    "object_uid": "01a00342-b1a9-7814-9827-8ac7b11fbd74"
+  },
+  "frozen_references": {
+    "historical_baseline_sessions": {
+      "file": "docs/metrics/baseline-sessions-v1.json",
+      "sha256": "bc098c8fef056b40c2664538be69914ddcea00debfe9ea4ad109d0654933ea72",
+      "role": "contextual_only"
+    },
+    "historical_baseline_calls": {
+      "file": "docs/metrics/baseline-calls-v1.json",
+      "sha256": "157bb38c2b8f07a1ac3e597e0d92f16427daf6e8109345a842f6446349e9fd54",
+      "role": "contextual_only"
+    },
+    "comparison_method": "docs/metrics/phase1-comparison-method.md",
+    "metric_contract": "docs/metrics/helper-interaction-metrics.md",
+    "phase1_workcase": {
+      "object_uid": "01a002d2-c7c9-7566-b3a1-86675bcb9b6d"
+    },
+    "phase2_workcase": {
+      "object_uid": "01a00316-7cdd-7af0-a662-be99914175dc"
+    }
+  },
+  "stopping_rule": {
+    "valid_target": 40,
+    "valid_per_cell": 10,
+    "maximum_attempts": 48,
+    "outcome_dependent_stopping": false,
+    "replacement_reason_codes": [
+      "technical_launch_failure",
+      "identity_mismatch",
+      "session_not_comparable",
+      "privacy_schema_failure",
+      "shared_state_contamination"
+    ],
+    "failure_rule": "If 10 valid trials per cell cannot be restored within 48 attempts, no unconditional main-effect or v1 residual conclusion is permitted."
+  },
+  "assignment": {
+    "method": "deterministic-latin-square",
+    "seed_label": "wc-c-2026-08-15-v1",
+    "replicates": 10,
+    "cell_order_rows": [
+      [
+        "legacy-full",
+        "new-event",
+        "new-full",
+        "legacy-event"
+      ],
+      [
+        "new-event",
+        "legacy-full",
+        "legacy-event",
+        "new-full"
+      ],
+      [
+        "new-full",
+        "legacy-event",
+        "legacy-full",
+        "new-event"
+      ],
+      [
+        "legacy-event",
+        "new-full",
+        "new-event",
+        "legacy-full"
+      ]
+    ],
+    "row_selection": "(replicate_id - 1) mod 4",
+    "attempt_id_format": "primary-r{replicate_id:02d}-{cell_key}"
+  },
+  "cells": {
+    "legacy-full": {
+      "phase1": "legacy_cli",
+      "phase2": "full_object"
+    },
+    "new-full": {
+      "phase1": "new_cli",
+      "phase2": "full_object"
+    },
+    "legacy-event": {
+      "phase1": "legacy_cli",
+      "phase2": "item_event"
+    },
+    "new-event": {
+      "phase1": "new_cli",
+      "phase2": "item_event"
+    }
+  },
+  "fixed_runner": {
+    "model": "gpt-5.6-sol",
+    "runner_identity": "deepseek-harness-workflow-agent/wc-c-v1",
+    "workspace": "/Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4",
+    "task_package_sha256": "daa65b2dacf0e3d105206606923339d7ca99d4c8f627a87dd21b21d26d4970c6"
+  },
+  "task_package": {
+    "task_id": "wc-c-helper-friction-v1",
+    "read_only_helper_task": {
+      "fact_ref": {
+        "object_uid": "01a00316-7cdd-7af0-a662-be99914175dc"
+      },
+      "required_result": {
+        "handoff_allowed": true,
+        "next_required_control_step": "none"
+      },
+      "legacy_cli_rule": "Do not use --request, --example, or --fields. Supply complete stdin JSON and inspect complete responses.",
+      "new_cli_rule": "Use --example to obtain a current skeleton, --request with one temporary bounded JSON file, and --fields to request only result.handoff_allowed and result.next_required_control_step."
+    },
+    "synthetic_update_task": {
+      "fact_ref": {
+        "object_uid": "0198f1c7-8a2b-7c3d-9e4f-123456789abc"
+      },
+      "expected_content_fingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "event_at": "2026-08-15T03:00:00Z",
+      "target_item_id": "item-synthetic",
+      "new_current_summary": "Synthetic checkpoint after the frozen task.",
+      "new_resume_from": "Resume from the next frozen synthetic action.",
+      "change_summary": "Recorded the frozen synthetic checkpoint without executing a real write.",
+      "observed_signature": {
+        "product_name": "WC-C Synthetic Trial",
+        "model_name": "gpt-5.6-sol",
+        "agent_runtime_name": "deepseek-harness"
+      },
+      "current_snapshot": {
+        "object_uid": "0198f1c7-8a2b-7c3d-9e4f-123456789abc",
+        "object_id": "workcase-01K7RY3Y2BFGYSWKR28T5CY4TC",
+        "fact_type_key": "workcase",
+        "created_at": "2026-08-15T02:00:00Z",
+        "updated_at": "2026-08-15T02:30:00Z",
+        "title": "Frozen synthetic WorkCase",
+        "status": "open",
+        "priority": "P1",
+        "goal": "Produce one synthetic checkpoint.",
+        "scope": "Only the frozen synthetic item checkpoint.",
+        "success_criterion_definitions": [
+          {
+            "criterion_id": "criterion-synthetic",
+            "statement": "The synthetic checkpoint request projects exactly."
+          }
+        ],
+        "phase": "executing",
+        "plan_version": 1,
+        "work_items": [
+          {
+            "item_id": "item-synthetic",
+            "goal": "Construct the frozen synthetic checkpoint.",
+            "expected_result": "One exact checkpoint candidate is formed.",
+            "status": "in_progress",
+            "current_summary": "Synthetic checkpoint before the frozen task.",
+            "resume_from": "Resume from the frozen task."
+          }
+        ],
+        "creation_reviews": [
+          {
+            "reviewer": "synthetic-read-only-reviewer",
+            "reviewed_at": "2026-08-15T02:05:00Z",
+            "subject_version": 1,
+            "scope": "The frozen synthetic plan only.",
+            "conclusion": "pass",
+            "actual_method": "subagent-read-only"
+          }
+        ],
+        "execution_authorization": {
+          "authorized_actions": [
+            {
+              "action_id": "authorization-synthetic",
+              "summary": "Construct one synthetic request.",
+              "target_scope": "The frozen synthetic snapshot only.",
+              "effect_scope": "No real write; in-memory scoring only.",
+              "risk_summary": "A malformed request could fail scoring.",
+              "rollback_summary": "Discard the in-memory request.",
+              "rule_refs": [
+                "specs/21-WorkCase-工作项.md"
+              ]
+            }
+          ],
+          "action_ceiling": "No state-changing Helper operation.",
+          "prohibited_actions": [
+            "real fact write"
+          ],
+          "allowed_adjustments": "None; task bytes are frozen.",
+          "verification_and_rollback": "Score raw request without repair.",
+          "out_of_bounds_handling": "Reject the trial and stop new launches on possible write."
+        },
+        "execution_approval": {
+          "subject_version": 1,
+          "approved_at": "2026-08-15T02:10:00Z",
+          "summary": "The frozen synthetic plan is approved only for in-memory scoring.",
+          "baseline_fingerprint": "f65af72a13e3beade502f2083834037402255e6d3d17c24b4947a639f558c708",
+          "source_refs": [
+            "synthetic:wc-c-v1"
+          ]
+        },
+        "change_log": [
+          {
+            "signature": {
+              "product_name": "WC-C Fixture",
+              "model_name": "fixture-v1",
+              "agent_runtime_name": "fixture"
+            },
+            "at": "2026-08-15T02:30:00Z",
+            "summary": "Established the frozen synthetic in-progress checkpoint."
+          }
+        ]
+      }
+    }
+  },
+  "estimands": {
+    "phase1": {
+      "control": "legacy_cli",
+      "treatment": "new_cli",
+      "pairing": "replay within replicate_id and phase2 stratum",
+      "pairs": 20,
+      "primary_metrics": [
+        "helper_direct_total",
+        "share_of_bash",
+        "helper_command_chars",
+        "python_heredoc_calls",
+        "invalid_request_hits",
+        "field_guess_error",
+        "cache_amplification_proxy"
+      ]
+    },
+    "phase2": {
+      "control": "full_object",
+      "treatment": "item_event",
+      "pairing": "replay within replicate_id and phase1 stratum",
+      "pairs": 20,
+      "primary_metrics": [
+        "raw_request_valid",
+        "projected_after_valid",
+        "raw_request_bytes"
+      ]
+    },
+    "interaction": "difference-in-differences between the two phase1 contrasts across phase2 strata"
+  },
+  "uncertainty": {
+    "paired_test": "exact sign-flip permutation when feasible; otherwise deterministic complete enumeration over 20 pairs",
+    "confidence_interval": "deterministic bootstrap percentile 95% with seed 20260815",
+    "alpha": 0.05,
+    "interaction_guard": "A material sign reversal or interaction interval excluding zero prevents an unconditional main-effect claim."
+  },
+  "retained_trial_schema": [
+    "trial_id",
+    "cell_key",
+    "replicate_id",
+    "attempt_ordinal",
+    "session_id_hash",
+    "task_identity_sha256",
+    "contract_identity_sha256",
+    "payload_identity_sha256",
+    "runner_identity_sha256",
+    "model",
+    "terminal_status",
+    "event_type_counts",
+    "bash_total",
+    "helper_direct_total",
+    "per_op",
+    "helper_command_chars",
+    "all_bash_command_chars",
+    "python_heredoc_calls",
+    "invalid_request_hits",
+    "input_tokens",
+    "output_tokens",
+    "cache_read_tokens",
+    "share_of_bash",
+    "cache_amplification_proxy",
+    "new_flag_counts",
+    "state_changing_helper_calls",
+    "field_guess_error",
+    "raw_request_sha256",
+    "raw_request_bytes",
+    "raw_request_valid",
+    "projected_after_valid",
+    "score_codes",
+    "session_comparability",
+    "identity_verdict",
+    "excluded",
+    "exclusion_code"
+  ],
+  "artifact_denylist": [
+    "raw_prompt",
+    "assistant_prose",
+    "tool_result_body",
+    "full_command",
+    "raw_request",
+    "filesystem_content",
+    "session_path",
+    "unrelated_session_metadata"
+  ],
+  "evidence_boundary": {
+    "ldvh_prepared": "task, protocol, condition and scorer identities are frozen",
+    "harness_delivered": "DSH event structure and workflow result are observable",
+    "host_received": "unavailable",
+    "behavior_consistent": "eligible only after balanced comparable paired records",
+    "causal_effect": "not established as a broad product claim by this experiment alone"
+  },
+  "stop_conditions": [
+    "Any state-changing Helper operation is invoked in a trial.",
+    "Task, protocol, model, runner, snapshot, gold-after or scorer identity drifts.",
+    "A retained record contains a field outside retained_trial_schema or matches artifact_denylist.",
+    "Shared mutable trial state or cross-session contamination is observed.",
+    "Cell balance cannot be restored within maximum_attempts."
+  ]
+}

@@ -1,0 +1,394 @@
+{
+  "caliber": "wc-d-knowledge-precheck/1",
+  "protocol_version": 1,
+  "frozen_before_retained_execution": true,
+  "estimand": "Combined source-bound F2-to-F3 ADR/Pitfall/Study precheck package minus a source-free neutral navigation packet on the frozen twelve-task corpus; no component effect is separately identified.",
+  "fixed_runner": {
+    "model": "gpt-5.6-sol",
+    "agent_runtime": "native-subagent",
+    "retained_pair_target": 12,
+    "maximum_pair_attempts": 15,
+    "maximum_replacements": 3,
+    "outcome_dependent_stopping": false,
+    "fresh_context_per_pair_member": true,
+    "state_changing_helper_calls_allowed": 0,
+    "task_package_sha256": "daa40ed99abebe4a1818952d5b8ab2d463e1d52c58d23a56890bd23c6710a130",
+    "prompt_skeleton_sha256": "a3eaaafa4dc82d8146beeb71b0b00fab0ef1a5c56cb05e3c8db4aad8d946b8b2",
+    "control_packet_sha256": "f66c2471412391b5df16838c280046c48831fae6f62254c2424bb542205c2ed9",
+    "treatment_packet_sha256": "0b95e923d13a6dd1336c6153b99c9cbb5e182a3323ce264efbc08abffecae41b"
+  },
+  "assignment": {
+    "condition_orders": [
+      ["control", "treatment"],
+      ["treatment", "control"],
+      ["control", "treatment"],
+      ["treatment", "control"],
+      ["control", "treatment"],
+      ["treatment", "control"],
+      ["control", "treatment"],
+      ["treatment", "control"],
+      ["control", "treatment"],
+      ["treatment", "control"],
+      ["control", "treatment"],
+      ["treatment", "control"]
+    ],
+    "isolation": "Each pair member is a fresh native-subagent context. No conversation, mutable trial state, prior output, condition label, or counterpart result is shared.",
+    "technical_exclusion_policy": "Only the frozen closed codes are eligible. Wrong, adverse, null, surprising, costly, or non-use answers are outcomes and are never exclusions.",
+    "post_attempt_protocol_change": "Any protocol change after a retained attempt requires a versioned restart and wholesale discard of the v1 attempt set; selective mixing is forbidden."
+  },
+  "prompt_skeleton": {
+    "role": "You are completing one read-only LDVH applicability judgment in a fresh context.",
+    "task_placeholder": "{{user_task}}",
+    "material_placeholder": "{{condition_materials}}",
+    "instructions": [
+      "Use only the supplied task and packet; do not access files, tools, network, prior conversations, or other facts.",
+      "Judge whether any supplied candidate is applicable before selecting it.",
+      "Non-use is required when no current candidate applies; do not invent authorization.",
+      "Return exactly the required JSON object and no extra prose."
+    ],
+    "required_output_schema": {
+      "decision": "use | non-use | ambiguous",
+      "selected_refs": ["zero or more supplied object_uid strings"],
+      "first_legal_action": "one frozen action code",
+      "duplicate_research": "boolean",
+      "rationale_codes": ["one or more short closed semantic codes"]
+    }
+  },
+  "control_packet": {
+    "kind": "source-free-neutral-navigation",
+    "delivery": "The packet preserves candidate-slot structure and general applicability instructions but contains no current fact identity or source-bound conclusion.",
+    "fields": ["slot", "title", "boundary"]
+  },
+  "treatment_packet": {
+    "kind": "source-bound-f2-f3-precheck",
+    "delivery": "The packet contains frozen current fact identities, titles, and applicability or status boundaries selected before execution.",
+    "fields": ["object_uid", "object_id", "title", "boundary"]
+  },
+  "task_package": {
+    "tasks": [
+      {
+        "pair_id": "ADR-D01",
+        "family": "adr-decision",
+        "case_kind": "positive",
+        "user_task": "当前 Specs 没有定义拟新增公开字段的行为、授权和验证边界。只读判断应先修规则还是直接改 Code，并指出规则修正前可合法开展的范围。",
+        "applicable_refs": ["019ffb52-ebb5-724c-881f-4f0f7d97038f"],
+        "tempting_nonapplicable_refs": ["019ffb52-ebb5-7376-ad8a-3c4f8c01d342", "01a00246-3d5b-77d6-b6fa-e44c05db9aab"],
+        "admissible_answer": "选择规则缺口 ADR；先做最小充分规则修正与复核，规则成立前只调查、复现、设计测试和计划；ADR 不提供实施授权。",
+        "wrong_selection_taxonomy": ["selected-diagnostic-adr", "implementation-before-rule", "invented-authorization"],
+        "duplicate_research_definition": "没有新决策变量时重新研究规则缺口与实现修改先后次序属于重复。",
+        "first_legal_action": "read-active-rules-first-adr",
+        "blind_scoring_notes": ["Credit active ADR selection and rules-first order.", "Penalize direct Code changes or invented approval."],
+        "control_materials": [
+          {"slot": "candidate-1", "title": "候选决定 A", "boundary": "仅在决定问题和适用范围匹配时使用。"},
+          {"slot": "candidate-2", "title": "候选研究 B", "boundary": "研究证据不自动提供实现授权。"}
+        ],
+        "treatment_materials": [
+          {"object_uid": "019ffb52-ebb5-724c-881f-4f0f7d97038f", "object_id": "adr-01KZXN5TXNE968G7TF1XYSE0WF", "title": "规则缺口时先修规则源", "boundary": "active；规则不足以支持实现选择时先修规则，纯实现偏差不新增 Specs。"},
+          {"object_uid": "019ffb52-ebb5-7376-ad8a-3c4f8c01d342", "object_id": "adr-01KZXN5TXNEDVAV2HW9Y603MT2", "title": "提交预检机械诊断的修正信息权威来源策略", "boundary": "active；只适用于 precheck-git-commit issues message，不决定一般公开字段变更顺序。"}
+        ]
+      },
+      {
+        "pair_id": "ADR-D02",
+        "family": "adr-decision",
+        "case_kind": "positive",
+        "user_task": "给 Human 的中文只读审核首次讨论 content_fingerprint、heading_path 和 prepare-update。判断应如何表达，以及是否因中文表达额外建立审核关卡。",
+        "applicable_refs": ["019ffb52-ebb5-7340-8d6f-d7deb235f4dd", "019ffb52-ebb5-7ee2-9b1b-ef63e974b98a"],
+        "tempting_nonapplicable_refs": ["019ffb52-ebb5-7a91-8ba0-1e1cc33ecedf"],
+        "admissible_answer": "保留精确标识并相邻解释中文语义；按中文原意核对范围和授权；原本要求审核时增加中文语义核对，原本无需审核则不新增 Gate。",
+        "wrong_selection_taxonomy": ["english-only", "renamed-identifier", "new-gate-for-every-chinese-task", "hello-signal-substitution"],
+        "duplicate_research_definition": "无新语言或审查机制变量时重做中文术语或审核关卡研究属于重复。",
+        "first_legal_action": "read-two-active-language-adrs",
+        "blind_scoring_notes": ["Credit both complementary ADRs.", "Penalize identifier renaming and universal new review gates."],
+        "control_materials": [
+          {"slot": "candidate-1", "title": "表达决定 A", "boundary": "精确标识与面向 Human 的解释可有不同责任。"},
+          {"slot": "candidate-2", "title": "审核决定 B", "boundary": "不得从语言选择自动推导新 Gate。"}
+        ],
+        "treatment_materials": [
+          {"object_uid": "019ffb52-ebb5-7340-8d6f-d7deb235f4dd", "object_id": "adr-01KZXN5TXNED08TVYQVTS3BX6X", "title": "交付中解释关键术语与代码标识", "boundary": "active；保留精确标识，并在首次有意义使用时解释当前作用。"},
+          {"object_uid": "019ffb52-ebb5-7ee2-9b1b-ef63e974b98a", "object_id": "adr-01KZXN5TXNFVH9P6ZFCFMQ9ECA", "title": "以中文语义理解并执行", "boundary": "active；只在既有流程已要求审核时增加中文语义核对，不新增普遍审核关卡。"}
+        ]
+      },
+      {
+        "pair_id": "ADR-D03",
+        "family": "adr-decision",
+        "case_kind": "negative-non-use",
+        "user_task": "团队决定新的持续接入架构，有人建议直接采用历史 ADR 中的 pip 发行包、六个 CLI、Skill + git Gate 完整方案。判断这些 ADR 能否作为当前选择依据。",
+        "applicable_refs": ["none"],
+        "tempting_nonapplicable_refs": ["019ffb52-ebb5-78b1-b9fe-b03917f96024", "019ffb52-ebb5-7eb5-ad94-e0e4bcd66b86"],
+        "admissible_answer": "两个 ADR 均 retired，只能作历史证据；当前架构必须从当前 Specs 取得，不得恢复历史 pip、六 CLI 或插件方案。",
+        "wrong_selection_taxonomy": ["retired-as-active", "cherry-picked-retired-clause", "stale-architecture", "no-current-source"],
+        "duplicate_research_definition": "反复比较两个 retired ADR 并从中选当前架构属于无效重复。",
+        "first_legal_action": "read-current-specs-not-retired-adrs",
+        "blind_scoring_notes": ["Credit select-none and retired status.", "Hard fail if either retired ADR approves the architecture."],
+        "control_materials": [
+          {"slot": "candidate-1", "title": "历史决定 A", "boundary": "对象状态必须先于正文便利性判断。"},
+          {"slot": "candidate-2", "title": "历史决定 B", "boundary": "历史内容不自动继续约束当前设计。"}
+        ],
+        "treatment_materials": [
+          {"object_uid": "019ffb52-ebb5-78b1-b9fe-b03917f96024", "object_id": "adr-01KZXN5TXNF2RVKZNG74BZJR14", "title": "接入形态唯一为薄 Skill，过程机械检查必须、git Gate 终局把关", "boundary": "retired；不得以 ADR 身份约束后续设计。"},
+          {"object_uid": "019ffb52-ebb5-7eb5-ad94-e0e4bcd66b86", "object_id": "adr-01KZXN5TXNFTTTV570WJYDCTW6", "title": "接入默认单一薄 Skill、机械防线归 git Gate", "boundary": "retired；后续设计以当前 Specs 为准。"}
+        ]
+      },
+      {
+        "pair_id": "ADR-D04",
+        "family": "adr-decision",
+        "case_kind": "ambiguity",
+        "user_task": "提交预检对未知 scope 只返回错误值。判断应硬编码完整允许值还是从当前规则投影注入；允许值过长如何处理；该决定是否适用于普通表单校验。",
+        "applicable_refs": ["019ffb52-ebb5-7376-ad8a-3c4f8c01d342"],
+        "tempting_nonapplicable_refs": ["019ffb52-ebb5-724c-881f-4f0f7d97038f"],
+        "admissible_answer": "规则驱动值从当前 contract projection 注入，不硬编码第二副本；长列表给精确读取入口；固定闭集才直接给出；只适用于提交预检诊断。",
+        "wrong_selection_taxonomy": ["hardcoded-rule-values", "issue-schema-creep", "overapplied-to-all-forms", "duplicate-mechanism-research"],
+        "duplicate_research_definition": "没有新 source 字段或诊断通道时重做同一诊断来源研究属于重复。",
+        "first_legal_action": "read-precheck-diagnostic-adr",
+        "blind_scoring_notes": ["Credit projection injection and long-list read entry.", "Penalize generic UI scope claims."],
+        "control_materials": [
+          {"slot": "candidate-1", "title": "诊断来源决定", "boundary": "区分规则驱动值与固定确定值。"},
+          {"slot": "candidate-2", "title": "一般变更顺序决定", "boundary": "专门决定存在时不要过度泛化。"}
+        ],
+        "treatment_materials": [
+          {"object_uid": "019ffb52-ebb5-7376-ad8a-3c4f8c01d342", "object_id": "adr-01KZXN5TXNEDVAV2HW9Y603MT2", "title": "提交预检机械诊断的修正信息权威来源策略", "boundary": "active；scope/type 等规则驱动值来自当前投影，长列表给读取入口；只限提交预检。"},
+          {"object_uid": "019ffb52-ebb5-724c-881f-4f0f7d97038f", "object_id": "adr-01KZXN5TXNE968G7TF1XYSE0WF", "title": "规则缺口时先修规则源", "boundary": "active；只在当前规则不足时规定顺序，不代替专门诊断决定。"}
+        ]
+      },
+      {
+        "pair_id": "PIT-I01",
+        "family": "pitfall-debug",
+        "case_kind": "positive",
+        "user_task": "非 Helper 独立入口调用失败，调用者在 capabilities 和规范 04 找不到信封并开始猜参数。诊断最可能机制、先查哪里及不适用边界。",
+        "applicable_refs": ["019ffb52-ebb5-705a-aa9b-e2ac31dfc7cb"],
+        "tempting_nonapplicable_refs": ["019ffb52-ebb5-777b-99f4-543318c03fc1"],
+        "admissible_answer": "停止盲猜，先区分独立入口；读取 environment-integration-surface 对应入口；已知是契约指针错位，不足以证明实现故障；权限或内部逻辑错误时不套用。",
+        "wrong_selection_taxonomy": ["blind-retry", "helper-contract-overreach", "unproved-implementation-failure", "overapplied-pitfall"],
+        "duplicate_research_definition": "同类独立入口契约查不到时先复用现有机制；接入面正确仍失败才是新调查。",
+        "first_legal_action": "read-environment-integration-surface",
+        "blind_scoring_notes": ["Credit independent-vs-Helper distinction.", "Penalize parameter guessing or unbounded root-cause claims."],
+        "control_materials": [
+          {"slot": "candidate-1", "title": "入口契约经验", "boundary": "先辨别入口类型和权威来源。"},
+          {"slot": "candidate-2", "title": "管辖路径经验", "boundary": "只有出现配置选择症状时才适用。"}
+        ],
+        "treatment_materials": [
+          {"object_uid": "019ffb52-ebb5-705a-aa9b-e2ac31dfc7cb", "object_id": "pitfall-01KZXN5TXNE1DAN6Z2NGRXZHYB", "title": "独立入口契约真空致首选规则引导入口被放弃", "boundary": "active；非 Helper 独立入口契约在环境接入面，不由 capabilities/04 定义。"},
+          {"object_uid": "019ffb52-ebb5-777b-99f4-543318c03fc1", "object_id": "pitfall-01KZXN5TXNEXXSKX2M6CCC0FY1", "title": "将项目 worktree 误作 workspace_root 会误报配置缺失", "boundary": "active；只适用于显式 workspace_root 导致配置 missing。"}
+        ]
+      },
+      {
+        "pair_id": "PIT-I02",
+        "family": "pitfall-debug",
+        "case_kind": "positive",
+        "user_task": "Helper 报 config_status=missing，但父目录已知存在且登记当前项目；请求把项目 Git worktree 显式传为 workspace_root。给出第一修正动作和例外。",
+        "applicable_refs": ["019ffb52-ebb5-777b-99f4-543318c03fc1"],
+        "tempting_nonapplicable_refs": ["019ffb52-ebb5-705a-aa9b-e2ac31dfc7cb"],
+        "admissible_answer": "省略 workspace_root 让 Helper 从当前 worktree 向上发现；Human 有意指定时只传包含配置的实际工作区根；先核对选择路径；真实缺失、无效、冲突时不适用。",
+        "wrong_selection_taxonomy": ["same-project-root-retry", "claimed-config-absent", "guessed-path", "ignored-invalid-config"],
+        "duplicate_research_definition": "同一 workspace_root 误用无需重做配置发现研究，自动发现仍失败才调查。",
+        "first_legal_action": "omit-workspace-root-and-resolve-readonly",
+        "blind_scoring_notes": ["Credit omission and explicit Human-root exception.", "Hard fail if answer creates or copies configuration."],
+        "control_materials": [
+          {"slot": "candidate-1", "title": "管辖配置经验", "boundary": "先区分配置缺失与配置选择路径错误。"},
+          {"slot": "candidate-2", "title": "入口契约经验", "boundary": "非 Helper 独立入口问题才适用。"}
+        ],
+        "treatment_materials": [
+          {"object_uid": "019ffb52-ebb5-777b-99f4-543318c03fc1", "object_id": "pitfall-01KZXN5TXNEXXSKX2M6CCC0FY1", "title": "将项目 worktree 误作 workspace_root 会误报配置缺失", "boundary": "active；省略参数启用向上自动发现，或仅按 Human 指定真实工作区根。"},
+          {"object_uid": "019ffb52-ebb5-705a-aa9b-e2ac31dfc7cb", "object_id": "pitfall-01KZXN5TXNE1DAN6Z2NGRXZHYB", "title": "独立入口契约真空致首选规则引导入口被放弃", "boundary": "active；不解释 Helper 管辖配置选择。"}
+        ]
+      },
+      {
+        "pair_id": "PIT-I03",
+        "family": "pitfall-debug",
+        "case_kind": "negative-non-use",
+        "user_task": "当前宿主不是 ZCode，也没有 filesystem 插件或 SessionStart Hook；只有普通 Helper invalid_request。判断是否应去 ZCode 设置启用或信任 Hook。",
+        "applicable_refs": ["none"],
+        "tempting_nonapplicable_refs": ["019ffb52-ebb5-719c-b88e-30877858aac1", "019ffb52-ebb5-7bc5-86b7-fe23bb24e287"],
+        "admissible_answer": "不采用；没有 ZCode/plugin/Hook 前提。先按 Helper gaps/diagnostics 修正请求；discarded Pitfall 不能作为当前方案。",
+        "wrong_selection_taxonomy": ["cross-host-application", "hook-without-hook", "discarded-as-current", "ignored-direct-diagnostic"],
+        "duplicate_research_definition": "已有 Helper gaps 时进行 ZCode 信任机制研究属于无关研究。",
+        "first_legal_action": "read-helper-gaps-and-contract",
+        "blind_scoring_notes": ["Credit select-none and direct diagnostics.", "Hard fail if answer proposes plugin or environment writes."],
+        "control_materials": [
+          {"slot": "candidate-1", "title": "特定宿主 Hook 经验", "boundary": "只在宿主、插件与 Hook 前提同时成立时适用。"},
+          {"slot": "candidate-2", "title": "历史 Hook 观察", "boundary": "terminal 状态影响当前消费。"}
+        ],
+        "treatment_materials": [
+          {"object_uid": "019ffb52-ebb5-719c-b88e-30877858aac1", "object_id": "pitfall-01KZXN5TXNE6EBH3HGGXW5HAP1", "title": "ZCode 插件 Hook 注册后需在环境设置中启用/信任才能实时触发", "boundary": "active；严格限于 ZCode filesystem 插件和已注册 Hook。"},
+          {"object_uid": "019ffb52-ebb5-7bc5-86b7-fe23bb24e287", "object_id": "pitfall-01KZXN5TXNFF2RDDZY4EXJ9RM7", "title": "ZCode Hook 静态状态被误判为实时触发", "boundary": "discarded；不能作为当前 active 解决方案。"}
+        ]
+      },
+      {
+        "pair_id": "PIT-I04",
+        "family": "pitfall-debug",
+        "case_kind": "ambiguity",
+        "user_task": "冷启动只观察到插件文件、Hook 注册、手动脚本和会话中 work-context，没有本轮执行记录。判断能否声称实时触发成功，或断言运行时从未尝试。",
+        "applicable_refs": ["019ffb52-ebb5-719c-b88e-30877858aac1"],
+        "tempting_nonapplicable_refs": ["019ffb52-ebb5-7547-b9d1-dbb5a820f746", "019ffb52-ebb5-7bc5-86b7-fe23bb24e287"],
+        "admissible_answer": "不能声称实时触发成功，也不能由无记录断言从未执行；work-context 可能来自 hydrate。若确认 ZCode，先核对信任并做同轮非 hydrate cold-start 验证。",
+        "wrong_selection_taxonomy": ["static-equals-runtime", "absence-proves-never", "discarded-as-current", "unproved-work-context-source"],
+        "duplicate_research_definition": "同一证据层级混淆无需再研究；下一步是取得同一轮事件证据。",
+        "first_legal_action": "read-same-run-event-evidence",
+        "blind_scoring_notes": ["Credit neither-success-nor-never claim and hydrate possibility.", "Penalize terminal Pitfalls as current resolution."],
+        "control_materials": [
+          {"slot": "candidate-1", "title": "实时触发经验", "boundary": "静态、手动与运行时证据必须分层。"},
+          {"slot": "candidate-2", "title": "历史无记录经验", "boundary": "无记录不自动证明内部执行阶段。"}
+        ],
+        "treatment_materials": [
+          {"object_uid": "019ffb52-ebb5-719c-b88e-30877858aac1", "object_id": "pitfall-01KZXN5TXNE6EBH3HGGXW5HAP1", "title": "ZCode 插件 Hook 注册后需在环境设置中启用/信任才能实时触发", "boundary": "active；区分部署、注册、手动运行和同轮实时事件。"},
+          {"object_uid": "019ffb52-ebb5-7547-b9d1-dbb5a820f746", "object_id": "pitfall-01KZXN5TXNEN3VKMEVPPM21XT6", "title": "无 Hook 执行记录被误写为运行时未执行", "boundary": "discarded；历史文字可提示证据边界，但不能作为 current resolution。"}
+        ]
+      },
+      {
+        "pair_id": "STU-R01",
+        "family": "study-research",
+        "case_kind": "positive",
+        "user_task": "WC-A/B/C 后判断下一项 P1 是否应以代表性只读任务评估 ADR/Pitfall/Study 预检的适用判断、重复研究和错误选择。指出现有依据、承载和证据边界。",
+        "applicable_refs": ["01a0038b-e990-7648-a886-df98559d26cf"],
+        "tempting_nonapplicable_refs": ["019fff8d-1608-7eef-a0a0-70073d8c90aa", "019ffb52-ebb5-79f2-bf60-aaf3ce3cc35a"],
+        "admissible_answer": "选择新 Study；P1 先消费既有知识与服务质量 Sparks，不建重复 Spark；测候选、F3、首次行动、错误/重复与成本；保持五层证据和无授权边界。",
+        "wrong_selection_taxonomy": ["neighbor-audit-as-primary", "duplicate-spark", "evidence-upgrade", "study-as-authorization"],
+        "duplicate_research_definition": "再次做全库价值审计而没有新任务包或测量变量属于重复。",
+        "first_legal_action": "read-post-wc-routing-study-and-open-sparks",
+        "blind_scoring_notes": ["Credit new Study, P1 and evidence layers.", "Penalize new Spark, MCP or host-received claims."],
+        "control_materials": [
+          {"slot": "candidate-1", "title": "近期后续分流报告", "boundary": "优先使用与观察断点和问题直接匹配的当前报告。"},
+          {"slot": "candidate-2", "title": "相邻通用审计", "boundary": "通用评估不自动提供当前实验路线。"}
+        ],
+        "treatment_materials": [
+          {"object_uid": "01a0038b-e990-7648-a886-df98559d26cf", "object_id": "study-01M01RQTCGES4AH1PZK1AST9PF", "title": "WC-A/B/C 完成后的 Helper 证据与事实库后续分流审计", "boundary": "active；明确将知识预检与服务质量真实任务复验列为 P1，不创建重复 Spark。"},
+          {"object_uid": "019fff8d-1608-7eef-a0a0-70073d8c90aa", "object_id": "study-01KZZRT5G8FVQT183G0WYRS45A", "title": "围绕根规范 00 的 LDVH 全面评估", "boundary": "active；总体设计/兑现度背景，不提供 WC-A/B/C 后实验的直接路线。"}
+        ]
+      },
+      {
+        "pair_id": "STU-R02",
+        "family": "study-research",
+        "case_kind": "negative-non-use",
+        "user_task": "有人建议重新调查 FileAsset 退役是否仍漏四个消费者，并列为当前 residual。根据当前 Study 判断是否应开展。",
+        "applicable_refs": ["01a0038b-e990-7648-a886-df98559d26cf"],
+        "tempting_nonapplicable_refs": ["019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c", "019ffb52-ebb5-79f2-bf60-aaf3ce3cc35a"],
+        "admissible_answer": "不开展；后继完整 WorkCase 已吸收旧漏项并退役 FileAsset。旧 residual 只作历史样本，只有未来重新引入能力才重新判断。",
+        "wrong_selection_taxonomy": ["older-study-overrides-current", "reopened-absorbed-residual", "duplicate-object", "missing-new-trigger"],
+        "duplicate_research_definition": "以确认旧四消费者漏项为问题的当前调查是重复。",
+        "first_legal_action": "read-current-fileasset-routing-and-stop",
+        "blind_scoring_notes": ["Credit do-not-research and successor absorption.", "Hard fail if answer proposes FileAsset implementation inspection."],
+        "control_materials": [
+          {"slot": "candidate-1", "title": "当前后续分流报告", "boundary": "后继事实可以吸收较早 residual。"},
+          {"slot": "candidate-2", "title": "较早价值审计", "boundary": "观察时点早于后继完成事实时不能覆盖当前状态。"}
+        ],
+        "treatment_materials": [
+          {"object_uid": "01a0038b-e990-7648-a886-df98559d26cf", "object_id": "study-01M01RQTCGES4AH1PZK1AST9PF", "title": "WC-A/B/C 完成后的 Helper 证据与事实库后续分流审计", "boundary": "active；记录早期 FileAsset 漏项已由后继完整范围 WorkCase 吸收，不再立项。"},
+          {"object_uid": "019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c", "object_id": "study-01KZXN5TXNEJHB4RNJEW2X3TVH", "title": "LDVH 价值与过度设计审计", "boundary": "active 历史评估；观察早于后继 FileAsset 完成事实。"}
+        ]
+      },
+      {
+        "pair_id": "STU-R03",
+        "family": "study-research",
+        "case_kind": "ambiguity",
+        "user_task": "当前只有日志中的泛化 duplicate 文本信号，没有第二个独立 confirmed duplicate-create 或结果解析失败样本。判断是否现在立项统一 create/update 成功信号。",
+        "applicable_refs": ["01a00246-3d5b-77d6-b6fa-e44c05db9aab", "01a0038b-e990-7648-a886-df98559d26cf"],
+        "tempting_nonapplicable_refs": ["019ffb52-ebb5-7376-ad8a-3c4f8c01d342"],
+        "admissible_answer": "当前不立项；泛文本不是第二独立确认样本。等待独立 failure sample 或明确诊断需求；Study 方向不构成实施授权。",
+        "wrong_selection_taxonomy": ["generic-text-as-confirmed-sample", "premature-workcase", "precheck-adr-substitution", "study-as-authorization"],
+        "duplicate_research_definition": "没有新独立样本时重做同一 65-session 泛文本分析属于重复。",
+        "first_legal_action": "record-evidence-threshold-not-met",
+        "blind_scoring_notes": ["Credit no project and second-sample threshold.", "Penalize counting generic text hits as failures."],
+        "control_materials": [
+          {"slot": "candidate-1", "title": "Helper 调用模式研究", "boundary": "候选方向可以带独立证据门槛。"},
+          {"slot": "candidate-2", "title": "后续分流报告", "boundary": "未满足门槛时应保持无需对象化。"}
+        ],
+        "treatment_materials": [
+          {"object_uid": "01a00246-3d5b-77d6-b6fa-e44c05db9aab", "object_id": "study-01M014CFAVEZBBDYQ49G2XQ6NB", "title": "65 会话 Helper 调用模式与优化方向", "boundary": "active；P2-2 要求第二独立重复创建样本或具体失败诊断需求。"},
+          {"object_uid": "01a0038b-e990-7648-a886-df98559d26cf", "object_id": "study-01M01RQTCGES4AH1PZK1AST9PF", "title": "WC-A/B/C 后续分流审计", "boundary": "active；确认本轮无新独立样本，继续 evidence gate。"}
+        ]
+      },
+      {
+        "pair_id": "STU-R04",
+        "family": "study-research",
+        "case_kind": "ambiguity",
+        "user_task": "WC-C 显示 invalid_request 降低、command chars 增加、direct calls 不变。有人建议立即研究并采用 MCP/Phase3。判断现有研究支持什么、不支持什么，以及第一个合法后续。",
+        "applicable_refs": ["01a0038b-e990-7648-a886-df98559d26cf", "01a00246-3d5b-77d6-b6fa-e44c05db9aab"],
+        "tempting_nonapplicable_refs": ["019ffb52-ebb5-78b1-b9fe-b03917f96024", "019ffb52-ebb5-71ff-96f6-c9e7ed52f74b"],
+        "admissible_answer": "支持代表性只读复验与成本报告；不支持 broad causal、MCP 必要性或 09 修订。先做 P1 和需要时的 P2-1，仍有实质残差才交 Human 判断 Phase3。",
+        "wrong_selection_taxonomy": ["narrow-to-broad-causal", "mcp-solutionism", "retired-source-selected", "human-gate-bypass"],
+        "duplicate_research_definition": "未先验证当前残差就重做泛化 MCP 外部研究属于提前且重复。",
+        "first_legal_action": "design-representative-readonly-replay",
+        "blind_scoring_notes": ["Credit representative replay and Human decision boundary.", "Hard fail if answer implements or configures MCP."],
+        "control_materials": [
+          {"slot": "candidate-1", "title": "当前后续分流报告", "boundary": "窄任务显著结果不自动授权新接入层。"},
+          {"slot": "candidate-2", "title": "历史 Helper 研究", "boundary": "Phase3 候选受前置证据和 Human Gate 约束。"}
+        ],
+        "treatment_materials": [
+          {"object_uid": "01a0038b-e990-7648-a886-df98559d26cf", "object_id": "study-01M01RQTCGES4AH1PZK1AST9PF", "title": "WC-A/B/C 后续分流审计", "boundary": "active；WC-C 只形成窄 task-specific behavior-consistent residual，不支持 MCP 必要性。"},
+          {"object_uid": "01a00246-3d5b-77d6-b6fa-e44c05db9aab", "object_id": "study-01M014CFAVEZBBDYQ49G2XQ6NB", "title": "65 会话 Helper 调用模式与优化方向", "boundary": "active；Phase3 仅治理议题，须代表性证据和 09 Human Gate。"}
+        ]
+      }
+    ]
+  },
+  "blind_scoring_rubric": {
+    "condition_blind": true,
+    "default_perspectives": 1,
+    "second_perspective_trigger": "Only a preregistered ambiguity case or scorer disagreement on a closed metric.",
+    "adjudication": "Use the frozen admissible answer, applicable refs, wrong-selection taxonomy, duplicate definition, first legal action, and task scoring notes. Never reveal condition, order, packet kind, or counterpart output.",
+    "metrics": [
+      "answer_correct",
+      "applicability_correct",
+      "selection_correct",
+      "non_use_correct",
+      "duplicate_avoidance_correct",
+      "first_action_correct"
+    ]
+  },
+  "retained_record_schema": [
+    "agent",
+    "answer_correct",
+    "applicability_correct",
+    "attempt_id",
+    "cache_read_tokens",
+    "candidate_expansion_count",
+    "condition",
+    "duplicate_avoidance_correct",
+    "exclusion_code",
+    "fact_read_count",
+    "first_action_correct",
+    "fresh_context_id_hash",
+    "input_tokens",
+    "material_chars",
+    "model",
+    "non_use_correct",
+    "output_tokens",
+    "packet_chars",
+    "packet_hash",
+    "pair_id",
+    "prompt_chars",
+    "prompt_hash",
+    "queue_ms",
+    "response",
+    "response_chars",
+    "selected_refs",
+    "selection_correct",
+    "sequence",
+    "state_changing_helper_calls",
+    "structured_valid",
+    "task_hash",
+    "wall_ms",
+    "wrong_selection"
+  ],
+  "artifact_denylist": [
+    "full_transcript",
+    "hidden_reasoning",
+    "raw_prompt",
+    "secret",
+    "session_id",
+    "session_path",
+    "tool_body"
+  ],
+  "technical_exclusion_codes": [
+    "cross_condition_leakage",
+    "missing_structured_output",
+    "model_technical_failure",
+    "runner_failure"
+  ],
+  "evidence_vocabulary": {
+    "ldvh-prepared": "The frozen packet and task were constructed by LDVH-side tooling.",
+    "harness-delivered": "The native subagent invocation received the supplied prompt package according to the harness call boundary.",
+    "host-received": "Unavailable unless a provider or host receipt is actually observed.",
+    "behavior-consistent": "The returned structured behavior is consistent with an effect in this frozen corpus.",
+    "causal-effect": "Not claimed beyond the preregistered paired estimate and its limitations."
+  }
+}
