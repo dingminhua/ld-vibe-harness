@@ -180,7 +180,7 @@
       "strategy": "known-contract",
       "helper_calls": 2,
       "shell_invocations": 0,
-      "request_chars": 3495,
+      "request_chars": 3532,
       "caller_transformations": 5,
       "expected_outcome_met": true,
       "state_changed": true,
@@ -201,7 +201,7 @@
       "strategy": "prepare",
       "helper_calls": 2,
       "shell_invocations": 0,
-      "request_chars": 3492,
+      "request_chars": 3529,
       "caller_transformations": 3,
       "expected_outcome_met": true,
       "state_changed": true,
@@ -390,7 +390,7 @@
       "strategy": "known-contract",
       "helper_calls": 3,
       "shell_invocations": 0,
-      "request_chars": 3441,
+      "request_chars": 3478,
       "caller_transformations": 6,
       "expected_outcome_met": true,
       "state_changed": false,
@@ -411,7 +411,7 @@
       "strategy": "prepare",
       "helper_calls": 2,
       "shell_invocations": 0,
-      "request_chars": 3436,
+      "request_chars": 3473,
       "caller_transformations": 3,
       "expected_outcome_met": true,
       "state_changed": false,
@@ -533,7 +533,7 @@
           "helper_calls_total": 14,
           "helper_calls_per_task": 2.0,
           "shell_invocations_total": 0,
-          "request_chars_total": 12024,
+          "request_chars_total": 12061,
           "caller_transformations_total": 35
         },
         "prepare": {
@@ -541,7 +541,7 @@
           "helper_calls_total": 14,
           "helper_calls_per_task": 2.0,
           "shell_invocations_total": 0,
-          "request_chars_total": 12003,
+          "request_chars_total": 12040,
           "caller_transformations_total": 21
         }
       },
@@ -551,7 +551,7 @@
           "helper_calls_total": 15,
           "helper_calls_per_task": 3.0,
           "shell_invocations_total": 0,
-          "request_chars_total": 9263,
+          "request_chars_total": 9300,
           "caller_transformations_total": 30
         },
         "prepare": {
@@ -559,7 +559,7 @@
           "helper_calls_total": 10,
           "helper_calls_per_task": 2.0,
           "shell_invocations_total": 0,
-          "request_chars_total": 9238,
+          "request_chars_total": 9275,
           "caller_transformations_total": 15
         }
       }

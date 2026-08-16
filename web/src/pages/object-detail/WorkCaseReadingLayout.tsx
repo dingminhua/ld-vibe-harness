@@ -833,7 +833,7 @@ function SnapshotProseField({
       Icon: Clock3,
       surface: "border-amber-400/35 bg-amber-500/[0.055]",
       heading: "text-amber-700/85 dark:text-amber-200/85",
-      body: "!text-amber-950/65 dark:!text-amber-100/75",
+      body: "!text-amber-950/72 dark:!text-amber-100/78",
     },
     blocking_summary: {
       Icon: CircleAlert,
@@ -853,11 +853,19 @@ function SnapshotProseField({
         </span>
       </div>
       <div className="mt-2 min-w-0">
-        <SummaryText
-          value={value}
-          collapseThreshold={Number.MAX_SAFE_INTEGER}
-          className={`ldvh-detail-semantic-body ${styles.body}`}
-        />
+        {fieldKey === "waiting_on" ? (
+          <SummaryText
+            value={value}
+            collapseThreshold={Number.MAX_SAFE_INTEGER}
+            className="ldvh-detail-semantic-body font-medium !text-amber-950/72 dark:!text-amber-100/78"
+          />
+        ) : (
+          <SummaryText
+            value={value}
+            collapseThreshold={Number.MAX_SAFE_INTEGER}
+            className={`ldvh-detail-semantic-body ${styles.body}`}
+          />
+        )}
       </div>
     </section>
   );

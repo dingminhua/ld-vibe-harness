@@ -61,7 +61,9 @@ def _same_ai_disclosure() -> dict[str, object]:
             "Controller attempted Subagent creation and received an unavailable result.",
         ],
         "assurance_gap": "The Reviewer does not have execution-environment independence.",
-        "human_disclosure_summary": "Human was told that Subagent creation failed and same-AI review would run directly.",
+        "human_disclosure_summary": (
+            "Human was told that Subagent creation failed and same-AI review would run directly."
+        ),
         "human_disclosed_at": "2026-07-26T10:09:00+08:00",
     }
 

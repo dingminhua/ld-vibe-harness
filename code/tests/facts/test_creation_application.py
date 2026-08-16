@@ -27,7 +27,29 @@ from ldvh.facts.repository import FactReadResult
 from ldvh.facts.schema import FactSchema
 from ldvh.filesystem import AtomicWriteResult
 
+_NATURAL_LANGUAGE_KEYS = {
+    "abstract", "action_ceiling", "allowed_adjustments", "applicability", "avoidance",
+    "blocking_summary", "cleanup_summary", "consequences", "controller_check_summary",
+    "controller_resolution", "current_summary", "decision", "decision_question",
+    "disposition_summary", "effect_scope", "expected_result", "feedback", "goal",
+    "impact_summary", "intent", "not_meaning", "observation_summary", "out_of_bounds_handling",
+    "rationale", "reason", "recommendation_summary", "research_intent", "research_question",
+    "resolution", "result_summary", "resume_from", "risk_summary", "rollback_summary",
+    "root_cause", "scope", "statement", "summary", "symptoms", "target_scope", "title",
+    "trigger_conditions", "validation_summary", "verification_and_rollback", "waiting_on",
+}
 
+
+def _make_language_compliant(value: object, key: str | None = None) -> object:
+    if isinstance(value, dict):
+        return {member_key: _make_language_compliant(member, member_key) for member_key, member in value.items()}
+    if isinstance(value, list):
+        return [_make_language_compliant(member, key) for member in value]
+    if key in _NATURAL_LANGUAGE_KEYS and isinstance(value, str) and value and not any(
+        "\u3400" <= character <= "\u9fff" for character in value
+    ):
+        return f"{value}（测试）"
+    return value
 def _git(project: Path, *arguments: str) -> str:
     result = subprocess.run(
         ["git", "-C", str(project), *arguments],
@@ -49,7 +71,7 @@ def _command(current_fact_schemas: Mapping[str, FactSchema], tmp_path: Path) -> 
         fact_type_key="spark",
         schemas=schemas,
         schema=schemas["spark"],
-        supplied={
+        supplied=_make_language_compliant({
             "title": "Application boundary",
             "status": "open",
             "summary": "The application layer owns the complete creation transaction.",
@@ -62,7 +84,7 @@ def _command(current_fact_schemas: Mapping[str, FactSchema], tmp_path: Path) -> 
                     "summary": "Create the test fact.",
                 }
             ],
-        },
+        }),
         body=None,
     )
 
@@ -149,7 +171,7 @@ def test_prepare_stops_after_three_configuration_uid_collisions(
 
 def _workcase_command(current_fact_schemas: Mapping[str, FactSchema], tmp_path: Path) -> FactCreationCommand:
     base = _command(current_fact_schemas, tmp_path)
-    supplied = {
+    supplied = _make_language_compliant({
         "title": "Initial WorkCase boundary",
         "status": "open",
         "summary": "The plan is waiting for Human execution approval",
@@ -233,7 +255,7 @@ def _workcase_command(current_fact_schemas: Mapping[str, FactSchema], tmp_path: 
                 "summary": "Create the test WorkCase.",
             }
         ],
-    }
+    })
     return FactCreationCommand(
         boundary=base.boundary,
         fact_type_key="workcase",
@@ -470,7 +492,7 @@ def test_unrelated_invalid_workcase_chain_does_not_block_spark_creation(
         fact_type_key="spark",
         schemas=workcase.schemas,
         schema=workcase.schemas["spark"],
-        supplied={
+        supplied=_make_language_compliant({
             "title": "Independent Spark creation",
             "status": "open",
                 "summary": "The unrelated WorkCase chain does not govern this Spark.",
@@ -483,7 +505,7 @@ def test_unrelated_invalid_workcase_chain_does_not_block_spark_creation(
                         "summary": "Create the independent test Spark.",
                     }
                 ],
-            },
+        }),
         body=None,
     )
 
@@ -611,7 +633,7 @@ def test_prepared_creation_defensively_freezes_nested_supplied_values(
 
     assert result.status == "created"
     assert result.read is not None and result.read.fields is not None
-    assert result.read.fields["title"] == "Application boundary"
+    assert result.read.fields["title"] == "Application boundary（测试）"
     assert result.read.fields["urls"][0]["ref"] == "https://example.invalid/original"
 
 
@@ -853,7 +875,7 @@ def test_failed_creation_rollback_fresh_reads_the_actual_external_residual(
         return actual_project_read(application_command, object_id)
 
     def conflicting_rollback(root: Path, layout, object_id: str, expected_text: str) -> AtomicWriteResult:
-        external_text = expected_text.replace("Application boundary", "External occupant")
+        external_text = expected_text.replace("Application boundary（测试）", "External occupant（测试）")
         (root / layout.canonical_path(object_id)).write_text(external_text, encoding="utf-8")
         return AtomicWriteResult.not_committed("conflict")
 
@@ -870,7 +892,7 @@ def test_failed_creation_rollback_fresh_reads_the_actual_external_residual(
     assert result.residual_readback is not None
     assert result.residual_readback.check_status == "mechanically_valid"
     assert result.residual_readback.fields is not None
-    assert result.residual_readback.fields["title"] == "External occupant"
+    assert result.residual_readback.fields["title"] == "External occupant（测试）"
     assert result.residual_readback.raw_text != result.actual_text
 
 

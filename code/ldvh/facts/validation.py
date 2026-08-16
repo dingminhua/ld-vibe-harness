@@ -99,6 +99,7 @@ def validate_chinese_primary_changes(
             and isinstance(value, str)
             and value != previous
             and not _CJK_CHARACTER.search(value)
+            and not path.startswith(("change_log[", "urls["))
         ):
             issues.append(FactIssue("language", "受约束自然语言字段至少必须包含一个汉字", path))
 

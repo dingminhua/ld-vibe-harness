@@ -274,6 +274,7 @@ def _fact_fields(fact_type_key: str, object_uid: str) -> dict[str, Any]:
                     "subject_version": 1,
                     "scope": "Review the isolated fixture plan.",
                     "conclusion": "pass",
+                    "actual_method": "subagent-read-only",
                     "covered_quality_gate_ids": ["independent-result-review"],
                 }
             ],

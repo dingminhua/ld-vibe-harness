@@ -13,6 +13,30 @@ from ldvh.facts.creation import serialize_fact_object
 from ldvh.facts.identity import object_uid_from_locator
 from ldvh.helper.service import handle_request
 
+_NATURAL_LANGUAGE_KEYS = {
+    "abstract", "action_ceiling", "allowed_adjustments", "applicability", "avoidance",
+    "blocking_summary", "cleanup_summary", "consequences", "controller_check_summary",
+    "controller_resolution", "current_summary", "decision", "decision_question",
+    "disposition_summary", "effect_scope", "expected_result", "feedback", "goal",
+    "impact_summary", "intent", "not_meaning", "observation_summary", "out_of_bounds_handling",
+    "rationale", "reason", "recommendation_summary", "research_intent", "research_question",
+    "resolution", "result_summary", "resume_from", "risk_summary", "rollback_summary",
+    "root_cause", "scope", "statement", "summary", "symptoms", "target_scope", "title",
+    "trigger_conditions", "validation_summary", "verification_and_rollback", "waiting_on",
+}
+
+
+def _make_language_compliant(value: object, key: str | None = None) -> object:
+    if isinstance(value, dict):
+        return {member_key: _make_language_compliant(member, member_key) for member_key, member in value.items()}
+    if isinstance(value, list):
+        return [_make_language_compliant(member, key) for member in value]
+    if key in _NATURAL_LANGUAGE_KEYS and isinstance(value, str) and value and not any(
+        "\u3400" <= character <= "\u9fff" for character in value
+    ):
+        return f"{value}（测试）"
+    return value
+
 pytestmark = pytest.mark.usefixtures("use_current_rule_source_snapshot")
 
 
@@ -66,7 +90,7 @@ def _prepare(workspace: Path, project: Path, fact_type_key: str) -> dict[str, ob
 
 def _create(workspace: Path, project: Path, fact_type_key: str, fields: dict[str, object]) -> str:
     basis = _prepare(workspace, project, fact_type_key)
-    creation_fields = dict(fields)
+    creation_fields = _make_language_compliant(dict(fields))
     promote_after_create = fact_type_key == "pitfall" and creation_fields.get("status") == "active"
     if promote_after_create:
         creation_fields["status"] = "draft"
@@ -639,12 +663,12 @@ def test_f2_projects_study_frontmatter_without_injecting_report_body(tmp_path: P
         "relations",
         "updated_at",
     }
-    assert fields["research_question"] == "Can Study cards remain smaller than full reports?"
+    assert fields["research_question"] == "Can Study cards remain smaller than full reports?（测试）"
     assert fields["research_intent"] == (
-        "Preserve the project reason for studying a readable card without expanding the full report."
+        "Preserve the project reason for studying a readable card without expanding the full report.（测试）"
     )
     assert fields["recommendation_summary"] == (
-        "Show the study's core advice before a reader decides whether to open the full report."
+        "Show the study's core advice before a reader decides whether to open the full report.（测试）"
     )
     assert "body" not in fields
     assert response["result"]["cards"][0]["excerpts"] == []
