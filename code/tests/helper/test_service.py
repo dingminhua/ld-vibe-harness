@@ -167,11 +167,12 @@ def test_fact_update_publishes_a_source_bound_read_to_update_after_example() -> 
     assert set(fact_object).isdisjoint({"object_uid", "object_id", "fact_type_key", "created_at", "updated_at"})
     assert set(fragment) == {"fact_ref", "expected_content_fingerprint", "fact_object"}
     assert len(fact_object["change_log"]) == 2
-    assert fact_object["change_log"][-1]["signature"] == {
-        "product_name": None,
-        "model_name": None,
-        "agent_runtime_name": None,
+    assert fact_object["change_log"][0]["signature"] == {
+        "product_name": "existing-product",
+        "model_name": "existing-model",
+        "agent_runtime_name": "existing-runtime",
     }
+    assert set(fact_object["change_log"][-1]) == {"summary"}
     assert [source["locator"] for source in example["source_refs"]] == [
         "fact-model-foundation::11.2 事实对象读取结果字段",
         "fact-model-foundation::11.7 事实对象单对象 CAS 更新输入与结果",
