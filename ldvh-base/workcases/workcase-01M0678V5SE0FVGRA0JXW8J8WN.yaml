@@ -1,0 +1,123 @@
+title: 写交互去仪式与写入成功信号显式化
+status: open
+priority: P2
+goal: 在不降低 CAS、写后回读与完整性审计安全边界、不修改三字段署名 attestation 语义的前提下，消除 Helper 受控写入契约的两个已观察摩擦：① change_log 的 at 与 signature 由调用方手填的仪式（spec 仍要求、code 实际已由 Code 覆盖）；② create/update 结果缺少稳定、机器可判定的显式写入成功信号。
+scope: 仅限 Helper 受控写入契约的规范（specs/05-事实模型基础规范.md §11.4/§11.6.1/§11.7、specs/attachments/05.Att.01）与对应实现（code/ldvh/helper/operations/fact_creation_operation.py、fact_update_operation.py、code/ldvh/facts/validation.py 等受控写入链）。不改三字段署名 attestation 语义；不降 CAS/回读/完整性审计边界；不含只读交互与锁并发协调（锁释放不确定性降噪挂起）。
+success_criterion_definitions:
+- criterion_id: criterion-write-ritual
+  statement: 05 §11.6.1 / §11.7 与 05.Att.01 的契约文本与实现一致：change_log 的 at 与 signature 由 Code 生成/覆盖，调用方无需手填；写入口机械校验与契约测试通过，写后精确回读 + check-fact-integrity complete。
+- criterion_id: criterion-success-signal
+  statement: create-fact-object 与 update-fact-object 的成功结果按各自操作当前形状稳定返回机器可判定的显式写入成功信号（身份、指纹、created/updated 状态与回读 locator 的逐操作字段闭集）；契约文本与实现一致，写后精确回读 + check-fact-integrity complete。
+phase: human_plan_confirming
+plan_version: 1
+work_items:
+- item_id: item-ritual-audit
+  goal: 精确核对 change_log 的 at 与 signature 在 05 §11.6.1/§11.7、05.Att.01 与 code 中的当前要求与覆盖行为，定位契约与实现的不一致
+  expected_result: 形成不一致清单与修订方案
+  status: pending
+- item_id: item-ritual-spec
+  goal: 修订 05 §11.6.1/§11.7 与 05.Att.01，使 change_log 的 at 与 signature 由 Code 生成/覆盖的契约与实现一致
+  expected_result: spec 文本修订完成并通过写入口机械校验与契约测试
+  status: pending
+- item_id: item-signal-audit
+  goal: 精确核对 create-fact-object 与 update-fact-object 当前结果字段，按操作定位 P2-2 缺失的显式写入成功信号并固化目标字段闭集
+  expected_result: 形成逐操作结果字段缺口清单与修订方案
+  status: pending
+- item_id: item-signal-spec-code
+  goal: 修订 05 §11.4/§11.7 结果字段契约与对应 code，使 create/update 稳定返回显式写入成功信号
+  expected_result: spec + code 修订完成、写后回读、契约测试通过
+  status: pending
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-delegate-review
+    summary: 委派只读 Subagent 做独立结果复核（无法创建时按 21 §4.5 披露保证差距后改用 same-AI 只读视角）
+    target_scope: 被审的当前结果版本内容（只读）
+    effect_scope: 只读评审，无任何写入或状态变更
+    risk_summary: same-AI fallback 不具独立审核保证，需据实披露保证差距
+    rollback_summary: 只读无写入，无需回滚
+    rule_refs:
+    - 21 §4.5
+  - action_id: authorization-result-review
+    summary: 执行实际结果复核并形成咨询性结论
+    target_scope: 当前结果版本内容（只读）
+    effect_scope: 只读评审，无写入
+    risk_summary: 复核可能遗漏语义问题，不证明结果正确
+    rollback_summary: 只读无写入，无需回滚
+    rule_refs:
+    - 21 §4.5
+  - action_id: authorization-edit-specs
+    summary: 修订 05 §11.4/§11.6.1/§11.7 与 05.Att.01 的写契约文本
+    target_scope: specs/05-事实模型基础规范.md 与 specs/attachments/05.Att.01-事实对象统一字段登记.md
+    effect_scope: 工作树内规范文本修改（受控提交前不生效）
+    risk_summary: 规则源变更影响所有消费者，属 00 §10.1 第 12 项 Human Gate 事件，由本 WorkCase Gate 1 批准充当该授权
+    rollback_summary: 未提交时 git 回退工作树文件
+    rule_refs:
+    - 05 §11
+    - 00 §10.1
+    - 03 §9
+  - action_id: authorization-edit-code
+    summary: 修订 Helper 受控写入实现，使契约与实现一致并稳定返回显式成功信号
+    target_scope: code/ldvh/helper/operations/fact_creation_operation.py、fact_update_operation.py 与 code/ldvh/facts/validation.py 等受控写入链
+    effect_scope: 工作树内代码修改
+    risk_summary: 行为变更可能影响写入结果，需契约测试覆盖
+    rollback_summary: 未提交时 git 回退工作树文件
+    rule_refs:
+    - '07'
+  - action_id: authorization-commit
+    summary: 在唯一目标 worktree 形成本地新 commit
+    target_scope: 当前实际 worktree
+    effect_scope: 本地 commit（先 precheck-git-commit，再由 commit-msg Git Gate 触发）
+    risk_summary: 历史锚点不可回退，只能以新 commit 处置
+    rollback_summary: 不 amend/rebase/reset，已提交内容只以新 commit 处置
+    rule_refs:
+    - '30'
+    - 03 §9
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-delegate-review
+    result_review_action_id: authorization-result-review
+  action_ceiling: 单次运行只修改 specs/05、specs/attachments/05.Att.01 与 code/ldvh 下受控写入链文件，并在当前 worktree 形成本地 commit；不 push/发布/安装，不修改其它事实对象、配置或环境。
+  prohibited_actions:
+  - push、PR、发布或远端副作用
+  - amend、rebase、reset 等历史改写
+  - 降低 CAS/写后回读/完整性审计安全边界
+  - 修改三字段署名 attestation 语义或跨角色推导
+  - 绕过 Helper 直写 ldvh-base/
+  - 修改只读交互或锁并发协调（超出 scope）
+  allowed_adjustments: 在 action_ceiling 与 authorized_actions 范围内调整 spec/code 文本、重试被拒写入、替换等价实现；不改变 goal/scope/criteria，不接受新风险。
+  verification_and_rollback: 写后精确回读 + check-fact-integrity complete + 契约测试；未提交内容可 git 回退，已提交内容不可回滚、只能新 commit。
+  out_of_bounds_handling: 发现未授权动作、新风险或基线改变时零写入，据实取消受影响 item 并沿结果链收敛到 Gate2；不在执行期索取扩权。
+creation_reviews:
+- reviewer: read-only-subagent
+  reviewed_at: '2026-08-16T21:21:42Z'
+  subject_version: 1
+  scope: 复核 work_items 与 success_criterion_definitions 是否吸收 21 §4.3 生命周期关口/Human Gate；execution_authorization 是否覆盖计划全部动作、quality_gates 是否精确声明唯一独立结果复核关口且双 action_id 引用正确；goal/scope/风险/禁止项是否有缺口。
+  conclusion: pass_with_followups
+  feedback:
+  - authorization-edit-specs 的 rule_refs 中「01 §10」不管辖规范修订，应为 00 §10.1 第 12 项与 03 §9
+  - criterion-success-signal 将 create 与 update 的不同结果形状并列，应在 item-signal-audit 中按操作固化字段闭集
+  controller_resolution: 反馈1 已采纳——authorization-edit-specs.rule_refs 修正为 00 §10.1/03 §9，并在 risk_summary 明确 05 契约修订属 00 §10.1 Human Gate 事件、由 Gate 1 批准充当授权。反馈2 已采纳——criterion-success-signal 改为按操作固化字段闭集，item-signal-audit 负责逐操作定位缺口。
+  covered_quality_gate_ids:
+  - independent-result-review
+  actual_method: subagent-read-only
+waiting_on: Human Gate 1：批准当前计划与 execution_authorization 基线
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a00bd0-b7f3-7320-8618-420e2414f374
+- relation_key: related-to
+  target:
+    object_uid: 01a00246-3d5b-77d6-b6fa-e44c05db9aab
+change_log:
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+  at: '2026-08-16T21:22:30.735749Z'
+  summary: 受控创建「写交互去仪式与写入成功信号显式化」WorkCase：承接写交互优化 Spark 的 P2-2 与 change_log 去仪式两个候选；当前 open / human_plan_confirming，等待 Gate 1。
+object_uid: 01a00c74-6cb9-701f-b861-409778892395
+object_id: workcase-01M0678V5SE0FVGRA0JXW8J8WN
+fact_type_key: workcase
+created_at: '2026-08-16T21:22:30.735749Z'
+updated_at: '2026-08-16T21:22:30.735749Z'
