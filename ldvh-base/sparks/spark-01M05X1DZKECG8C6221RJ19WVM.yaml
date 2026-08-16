@@ -2,7 +2,7 @@ title: Helper 写交互优化
 status: open
 priority: P2
 intent: 保留 Helper 受控写入操作在真实任务中是否存在步骤过多（read→prepare→补签名→补change_log→CAS写→回读→锁释放）、coordination lock release 不确定性噪音、签名要求严格但模型名常不可得导致的额外摩擦，以及是否可以通过简化 caller-completion 要求、减少往返或缩小 after 提交范围来降低写入成本，而不依赖固定模型统计对比或大规模测试框架。
-summary: "## 当前状态\n\nHelper 受控写入操作（update-fact-object、prepare-fact-object-update 等）当前要求调用方完成完整 after 编排、逐次观察三字段署名、处理 coordination lock release 不确定性，每一步都需要一次完整往返。写入一个字段的更改需要 read→prepare→补签名→补 change_log→CAS write→回读 约 3 次往返，token 开销显著。\n\n## 待判断问题\n\n- 写操作的步骤简化是否能在不降低完整性语义的前提下减少往返次数；\n- caller-completion 要求是否存在可降低的额外负担（如签名自动形成、锁噪音消除）；\n- 变化的边际成本与收益是否支持实际实施。\n\n## 边界\n\n- 不依赖固定模型可比性、统计区间或 go/no-go 判断；\n- 不修改生产 Helper 公共契约或降低 CAS/回读/完整性审计的安全边界（除非经窄 WorkCase 批准）；\n- 与读交互优化独立，仅通过 related-to 关联追溯共同线索。"
+summary: "## 当前状态\n\nHelper 受控写入（update-fact-object 等）要求调用方完成完整 after 编排、逐次观察三字段署名、处理 coordination lock release 不确定性。最小桥接已交付：read-fact-objects 一次返回完整对象与 content_fingerprint，随后 update-fact-object 一次完成 CAS + 写后回读 + 同核完整性审计，单字段更新为约 2 次调用（走 prepare-fact-object-update 桥接为 3 次）。\n\n## 待判断问题\n\n- 写操作的步骤简化是否能在不降低完整性语义的前提下减少往返次数（最小桥接已到 2 次，剩余空间有限）；\n- caller-completion 要求是否存在可降低的额外负担（如 change_log 的 at 改由 Code 生成、锁释放不确定性降噪）；\n- 变化的边际成本与收益是否支持实际实施。\n\n签名相关摩擦已分流：原「签名自动形成 / 模型名不可得」措辞不准确——真正根因是三字段署名可观察性不均 + AI 从历史 change_log 跨角色推导，已由独立 Spark（spark-01M064X95QEATV171W720V4A4J）承接；Helper 自动补全签名会把错误推导制度化，不在本 Spark 范围内处理。\n\n## 边界\n\n- 不依赖固定模型可比性、统计区间或 go/no-go 判断；\n- 不修改生产 Helper 公共契约或降低 CAS/回读/完整性审计的安全边界（除非经窄 WorkCase 批准）；\n- 与读交互优化独立，仅通过 related-to 关联追溯共同线索。"
 change_log:
 - signature:
     product_name: Cindy
@@ -10,6 +10,12 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-16T18:23:42.069024Z'
   summary: 受控创建 Helper 写交互优化 Spark：承接原 P1 服务质量入口中受控写入优化候选的独立出口，关联原 P1 保留追溯线索；当前 open/P2。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+  at: '2026-08-16T20:42:31.613598Z'
+  summary: content_update：修正当前摘要——把「约 3 次往返」更正为最小桥接已到 2 次；将签名摩擦根因从「签名自动形成 / 模型名不可得」纠正为「三字段署名可观察性不均 + AI 跨角色推导」，并分流至独立 Spark spark-01M064X95QEATV171W720V4A4J。
 relations:
 - relation_key: related-to
   target:
@@ -18,4 +24,4 @@ object_uid: 01a00bd0-b7f3-7320-8618-420e2414f374
 object_id: spark-01M05X1DZKECG8C6221RJ19WVM
 fact_type_key: spark
 created_at: '2026-08-16T18:23:42.069024Z'
-updated_at: '2026-08-16T18:23:42.069024Z'
+updated_at: '2026-08-16T20:42:31.613598Z'
