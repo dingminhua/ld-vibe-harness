@@ -1,0 +1,27 @@
+title: 子代理指定模型但未指定 provider 时继承宿主路由导致启动失败
+status: active
+symptoms: '在 DeepSeek Harness Web 会话中执行"用 subagent_deepseek_v4_pro 委派一个子代理报告它的模型身份"，工具调用直接返回 Error: subagent run failed；会话代理改调 subagent_with_model 只传 model=deepseek-v4-pro 时同样失败。识别信号：父会话运行在 openai-codex/gpt-5.6-terra 路由上时子代理必然无法启动；自定义工具名（subagent_deepseek_v4_pro）在工具目录中时有时无——曾出现在自定义 preset 会话（04:39）中，随后在默认 preset 会话（04:47、04:53）中消失，profile 补丁写入后新会话仍看不到。'
+trigger_conditions: 前置条件组合：(1) 使用 DeepSeek Harness（dsh web profile，含 @aaravarr/dsh-subagent-max 0.1.1 bundle）；(2) 父会话运行在无法服务目标模型的 provider 路由上（如 openai-codex 只服务 codex 系模型），settings.yaml 默认模型为 openai-codex/gpt-5.6-terra；(3) 调用 subagent_with_model 时只指定 model、省略 provider，或把"注册指定模型专用工具"寄托在 profile 层 cordis.patch.yml 上。已观察条件：上述路由组合的会话中必然命中；dsh web profile 下 profile 补丁无法向 agent preset 合成层插入工具行。未知条件：其它宿主（Cindy/Trae 等）或其它 profile 组合是否同样命中，未逐一验证。
+root_cause: '根因分两层：(a) subagent_with_model 的调用契约是"省略 provider 时继承父会话 provider"；父会话路由为 openai-codex 时，子代理以 provider=openai-codex + model=deepseek-v4-pro 发起请求，codex 路由无法服务该模型，子代理首次 LLM 请求失败、整个运行以 stopReason=error 结束，外层只呈现 subagent run failed。(b) 想用专用工具名（subagent_deepseek_v4_pro）注册时，dsh 的组合层语义决定了 profile 补丁（cordis.patch.yml）只作用于 root 组合树，而 agent preset（standard 等）的 delegation 组在独立 PresetTree（mountPreset 只带 path、不带 profile 补丁列表）中按会话挂载，因此对 delegation 的 insert 补丁启动期即被跳过（patch insert: entry delegation not found），写入后新会话也看不到工具；唯一曾生效的路径是自定义 preset（standard-pro）直接承载工具行。已观察事实：失败会话工具调用参数只含 model 无 provider；离线组合 4 bundle+profile 补丁的 root 树实证无 delegation 组、无自定义工具；e6fc3ba2 会话（自定义 preset）调用成功且子代理自报 deepseek-v4-pro。当前判断：不是工具实现故障，而是调用契约与组合层语义未对齐。仍未知环节：其它宿主对 provider 继承与 preset 挂载的等价行为。'
+resolution: 已实际采用的处理：(1) 委派指定模型子代理时显式同时传 provider 与 model：subagent_with_model(provider="deepseek-official", model="deepseek-v4-pro", run_in_background=false)。验证方式：让子代理从自身会话权威日志（DSH_SESSION_JSONL 的 request/header config）确认路由，实测为 {"provider":"deepseek-official","model":"deepseek-v4-pro","maxTokens":256000,"reasoningEffort":"high"}，子代理自报 DeepSeek V4 Pro。(2) 放弃在 profile 层 cordis.patch.yml 注册 preset 内工具的做法（补丁改回注释+空列表，避免每次启动告警）；如需独立工具名，改为在 ~/.dsh/.agent-presets/<preset>/agent.cordis.yml 自定义预设中直接写工具行并经 agent-presets 选择该预设。处理对象：~/.dsh/profiles/web/cordis.patch.yml、settings.yaml（agent-default-model）、会话调用参数。可观察成功信号：显式 provider+model 的委派一次成功，子代理给出权威路由证据并自报 deepseek-v4-pro。适用前提：dsh web profile 当前组合（含 dsh-subagent-max）；组合变化时需重新核对路由与工具注册层。
+avoidance: 复用前应核对的关键条件：(1) 使用支持 model 覆盖的子代理工具时，先核对父会话 provider 是否就是目标模型所属 provider；若不是，必须同时显式传 provider，不能默认"指定了 model 就够"；(2) 需要自定义指定模型工具名时，工具行只能放进 agent preset 合成层（自定义 preset 或预设文件），profile 层补丁只作用于 root 组合树、对 preset 内组（如 delegation）的 insert 无效；(3) 排查"工具时有时无"或"补丁写了不生效"时，先核对工具注册层（root 树 vs preset 树）与 HMR/重启生效边界，再核对调用参数，不反复盲试补丁写法或模型名。处理后的确认信号：委派调用一次成功，且子代理能给出自身会话权威日志中的实际路由（provider+model）。不相容边界：本经验只覆盖"provider 继承与组合层注册"这一类机制，不覆盖 provider 本身不可用、鉴权失败、模型 id 不存在等路由之外的原因；那些情形应继续调查、重新验证或转入相应对象。
+applicability: 适用边界：DeepSeek Harness（dsh web profile）及使用 dsh-subagent-max 类"可选 provider/model"子代理工具的宿主环境中为子代理指定模型路由的场景；以及任何"想通过 profile/patch 层给 agent preset 增加工具行"的场景。观察环境：DeepSeek Harness Web GUI（dsh web）、settings.yaml 默认 openai-codex/gpt-5.6-terra、dsh-subagent-max 0.1.1、2026-08-16。不适用：目标模型与父会话同 provider 的委派（无需改 provider）；preset 层自身的内容质量问题。
+validation_summary: 已观察结果：(1) 修复前对照：04:47 与 04:53 两个失败会话中代理调用 subagent_with_model 仅带 model=deepseek-v4-pro，均返回 subagent run failed；两会话工具目录均无 subagent_deepseek_v4_pro；(2) 修复后验证：同一环境显式 provider=deepseek-official + model=deepseek-v4-pro 委派两次均成功，子代理自报 deepseek-v4-pro，并自读 DSH_SESSION_JSONL 确认 request/header config 为 provider=deepseek-official、model=deepseek-v4-pro；(3) 组合层实证：4 个 bundle 补丁 + profile 补丁按序组合出的 root 树不含 delegation 组与自定义工具，insert 补丁不生效并产生启动告警。覆盖：同一 dsh web 环境、同一宿主路由、同一目标模型的修复前后对照，以及 root 组合树的离线实证。未覆盖范围：其它宿主环境（Cindy/Trae）的 provider 继承与 preset 挂载行为；父会话 provider 恰为 deepseek-official 时省略 provider 也能成功（本经验仍建议显式化以消除路由歧义）。
+change_log:
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T21:09:05.194064Z'
+  summary: 创建 Pitfall 初始草案：记录 dsh 子代理指定模型路由的失败机制（省略 provider 继承宿主路由、profile 补丁无法注册 preset 工具）与正确做法（显式 provider+model、自定义 preset）。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-15T21:12:15.770716Z'
+  summary: Human 已确认最终 draft 快照，Pitfall 由 draft 提升为 active（promote 仅变更 status，正文与验证逐值保留）。
+object_uid: 01a00741-c69b-7b14-b640-af1394cd39af
+object_id: pitfall-01M03M3HMVFCABCG5F2EACTEDF
+fact_type_key: pitfall
+created_at: '2026-08-15T21:09:05.194064Z'
+updated_at: '2026-08-15T21:12:15.770716Z'

@@ -1,0 +1,144 @@
+title: 阻断 WorkCase 活跃标题重复受控创建
+status: open
+phase: human_plan_confirming
+plan_version: 1
+priority: P1
+goal: 在不把 Code 提升为通用语义判断器的前提下，为同一实际 Git Working Tree 的 create-fact-object(workcase) 建立确定性的活跃标题精确冲突防线，使顺序重试、同工作树并发、创建成功但响应丢失后的重试不再产生不同 UID 的同标题 open/blocked WorkCase；保留 Skill 创建前候选检索作为更宽的 AI 语义层防线，并准确交还跨 linked worktree 与不同 common-dir 的事实视图限制。
+scope: 允许修改 specs/05-事实模型基础规范.md、specs/21-WorkCase-工作项.md 中与 WorkCase 受控创建重复冲突直接相关的契约，code/ldvh/facts/creation_application.py、code/ldvh/helper/operations/fact_creation_operation.py 及直接测试；如实现复用 ProjectFactIndex，允许对 code/ldvh/facts/relations.py 或 code/ldvh/facts/configuration_index.py 作窄调整并补直接测试。允许本地代码、规范、测试与只读检查，以及全部 work item terminal 后由受控 Git 流程创建仅含本 WorkCase 文件的本地 commit。明确排除 UID 协调重构、配置级或跨 worktree 全局唯一保证、历史重复清理、已有事实改写、候选检索语义变化、模糊或 LLM 语义匹配、Web/API、依赖、网络与 push；不得覆盖、混入或回退当前其它 WorkCase 的未提交内容，重叠不能精确隔离时停止。
+success_criterion_definitions:
+- criterion_id: criterion-contract
+  statement: 当前来源明确：冲突范围是同一实际 Git Working Tree 的 canonical WorkCase 集合；比较机械有效对象顶层 title 的已解析字符串并使用严格相等，不 trim、不 Unicode normalize、不 casefold、不折叠空白；仅 open/blocked 阻断，closed 不阻断；多个匹配按稳定引用有序返回，任何扫描或状态判定不完整时 fail closed；不声称跨 linked worktree 或 common-dir 全局唯一。
+- criterion_id: criterion-atomic-active-title
+  statement: 活跃标题完整扫描与目标 atomic create 位于同一项目与事实类型写锁的串行化边界内；同一实际 Working Tree 中同标题并发最多一个创建成功和一个新文件，其余请求零写入并返回相同的已有稳定引用集合。
+- criterion_id: criterion-helper-conflict
+  statement: Helper 对活跃标题冲突使用独立稳定原因 active_workcase_title_conflict、外层 rejected、not_completed_scope 与 target-not-attempted 变化说明，领域结果携带有序 existing_refs 和 ambiguous；不得退化为 atomic target creation_conflict。
+- criterion_id: criterion-retry-and-concurrency
+  statement: 顺序重试、创建成功但响应异常后的重试、真实多进程并发、单匹配、多匹配和扫描不可用均有可复查测试，且冲突或不可用路径不残留第二个 WorkCase 文件。
+- criterion_id: criterion-boundaries
+  statement: closed 同标题与非 WorkCase 创建不受活跃标题防线阻断；同 UID 目标路径 no-overwrite 的既有防线保持有效；测试明确区分 UID collision 与不同 UID 同标题重复，并固定 linked worktree 与不同 common-dir 只属于事实视图限制。
+- criterion_id: criterion-validation
+  statement: 相关契约测试、聚焦创建测试、真实并发测试、受影响全量测试和 ./ldvh check 取得实际结果；当前其它 WorkCase 未提交改动导致的无关失败与本 WorkCase 新增回归分开报告。
+work_items:
+- item_id: item-contract
+  goal: 冻结活跃标题精确冲突与实际 worktree 边界契约。
+  expected_result: 05/21 及契约测试明确 exact、status、同 actual worktree、单/多冲突投影、fail-closed、UID 非根因和跨 worktree 限制。
+  status: pending
+- item_id: item-implementation
+  goal: 在现有项目与事实类型写锁内实现 WorkCase 活跃标题完整扫描和结构化冲突返回。
+  expected_result: 单个或多个已有匹配均以有序稳定引用 rejected 且零写入，非 WorkCase、closed 与 UID no-overwrite 行为保持。
+  status: pending
+  depends_on:
+  - item-contract
+- item_id: item-concurrency-regression
+  goal: 建立重试、真实并发、不可用和边界回归证据。
+  expected_result: 顺序与响应异常重试、真实多进程、单/多匹配、不可用扫描、closed/non-WorkCase、UID collision 和跨 worktree 限制均由测试与实际检查覆盖。
+  status: pending
+  depends_on:
+  - item-implementation
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-contract
+    summary: 修改受控创建与活跃 WorkCase 标题冲突的窄契约和契约测试。
+    target_scope: specs/05、specs/21 及直接规范测试中的本 WorkCase 规则。
+    effect_scope: 仅本地规范与测试改动，不改写事实对象。
+    risk_summary: 冲突边界定义过宽可能误拒合法创建，过窄则保留重复窗口。
+    rollback_summary: 仅按本 WorkCase 候选 diff 精确反向恢复，不覆盖无关改动。
+    rule_refs:
+    - specs/05-事实模型基础规范.md
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-implementation
+    summary: 实现锁内活跃标题扫描、fail-closed 与结构化 Helper 冲突投影。
+    target_scope: creation_application.py、fact_creation_operation.py；仅在复用索引所需时窄调 relations.py 或 configuration_index.py，并修改直接测试。
+    effect_scope: 本地代码和测试改动；不清理或改写已有事实。
+    risk_summary: 扫描不完整、锁域错误或投影不兼容可能导致误写、误拒或调用方失配。
+    rollback_summary: 停止受影响写入，只反向恢复本 WorkCase 的候选补丁并重跑聚焦测试。
+    rule_refs:
+    - specs/05-事实模型基础规范.md
+    - specs/21-WorkCase-工作项.md
+    - specs/07-Code 实践与测试规范.md
+  - action_id: authorization-validation
+    summary: 运行契约、聚焦、真实并发、受影响全量测试和当前 LDVH 检查。
+    target_scope: 本 WorkCase 涉及的 specs、facts、helper 测试与 ./ldvh check。
+    effect_scope: 只读执行与临时测试目录；如实保留现有无关失败。
+    risk_summary: 并发测试可能暴露时序问题，现有未提交改动可能污染全量结果解释。
+    rollback_summary: 测试不写受管事实；失败时停止并保存实际输出。
+    rule_refs:
+    - specs/07-Code 实践与测试规范.md
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-delegate-result-review
+    summary: 委派只读独立结果复核。
+    target_scope: 本 WorkCase 的结果投影、实现 diff 与验证证据。
+    effect_scope: 只读 Reviewer，不修改实现或事实。
+    risk_summary: Reviewer 结论不替代技术验证、Controller 处置或 Human Gate。
+    rollback_summary: 不产生实现副作用；结果变化时按生命周期重新复核。
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-record-result-review
+    summary: 经 WorkCase 专属受控入口记录独立结果复核。
+    target_scope: 本 WorkCase 生命周期对象。
+    effect_scope: 仅 WorkCase 受控事实写入。
+    risk_summary: 复核记录不等于关闭决定。
+    rollback_summary: 结果变化后形成新结果版本并重新复核，不直接编辑事实载体。
+    rule_refs:
+    - specs/21-WorkCase-工作项.md
+  - action_id: authorization-local-commit
+    summary: 全部 work item terminal 后由受控 Git 提交流程创建本地提交。
+    target_scope: 仅本 WorkCase 规范、实现和测试文件，不包含 WorkCase 事实载体或其它未提交改动。
+    effect_scope: 本地 Git 历史，不 push。
+    risk_summary: 工作树重叠可能误纳入其它 WorkCase 改动。
+    rollback_summary: 提交前以 Index 和完整 diff 证明隔离；无法隔离则不提交并交还 Human。
+    rule_refs:
+    - specs/30-Git提交行动模板.md
+    - specs/21-WorkCase-工作项.md
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-delegate-result-review
+    result_review_action_id: authorization-record-result-review
+  action_ceiling: 仅限活跃 WorkCase 标题精确冲突契约、同 actual worktree 锁内实现、Helper 投影、直接测试与只读验证，以及全部 item terminal 后的受控本地提交和本 WorkCase 生命周期。
+  prohibited_actions:
+  - 清理或改写历史重复 WorkCase
+  - 直接写入 ldvh-base 或修改现有事实对象
+  - 实现模糊、归一化或 LLM 语义去重
+  - 声称配置级、linked worktree 或跨 common-dir 全局唯一
+  - 修改候选检索语义
+  - 覆盖、混入或回退其它 WorkCase 的未提交改动
+  - 修改 Web/API 或依赖
+  - 网络、push 或外部发布
+  allowed_adjustments: 允许在列明代码与直接测试内选择复用 ProjectFactIndex 或等价现有扫描能力，并为稳定 existing_refs 投影作必要窄调整；不得扩大到 UID 协调重构、跨 worktree 唯一或模糊语义。发现重叠无法精确隔离、新风险或来源方向变化时停止。
+  verification_and_rollback: 运行契约测试、聚焦 facts/helper 创建测试、真实多进程并发、受影响全量测试与 ./ldvh check，分别记录本 WC 回归和现有无关失败。失败时停止，以本 WorkCase 候选 diff 精确回退，不使用文件级 checkout 覆盖无关未提交内容。
+  out_of_bounds_handling: 停止受影响工作，保留实际 diff、测试结果、冲突引用和未验证范围，交还 Human 决定；不得在执行期先扩权或继续写入。
+creation_reviews:
+- reviewer: native-subagent-general-purpose
+  reviewed_at: '2026-08-16T05:57:12Z'
+  subject_version: 1
+  scope: 问题归因、active title exact 契约、同 actual worktree 锁域、单/多冲突 Helper 投影、fail-closed、并发与重试测试、跨 worktree 限制、授权范围和生命周期关口。
+  conclusion: pass
+  feedback:
+  - 首轮指出配置级 UID 竞态误归因、exact 未定义、多匹配歧义、Helper 投影、fail-closed 与并发测试不足；Controller 删除虚假 UID 闭环并补齐全部边界。
+  - 第二轮确认修订版正确区分 UID no-overwrite 与不同 UID 同标题重复，明确 raw parsed title 严格相等、同 actual worktree 范围、有序 existing_refs、独立 rejected 投影及完整并发矩阵；实现必须在锁内重新形成当前视图。
+  controller_resolution: 已吸收首轮全部反馈并通过第二轮复核：范围收敛为同一实际 Working Tree 的 open/blocked title 严格相等防线；不承诺跨 linked worktree/common-dir 或配置级全局唯一；多匹配稳定有序返回，扫描不完整零写入，Helper 使用 active_workcase_title_conflict。三项 item 与六项 criterion 均为结果投影前可完成的规范、实现与验证状态，未吸收 Controller 自检、独立结果复核、受控提交、Gate1/Gate2 或关闭决定。
+  covered_quality_gate_ids:
+  - independent-result-review
+  actual_method: subagent-read-only
+  actual_agent: general-purpose
+  actual_model: chatgpt/gpt-5.6-sol
+  evidence:
+  - 本会话经 Human 明确允许后，使用一次性 native subagent 完成两轮只读创建方案复核；首轮 revise，修订后第二轮 pass。
+waiting_on: 等待 Human 对 plan_version=1 的完整计划、风险、授权边界与 Reviewer 处置作 Gate 1 执行决定。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a00769-0149-76a6-afd0-d66b715a7dd1
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-16T05:58:07.840746Z'
+  summary: 依据 Human 对目标 Spark 的分析与 WorkCase 创建要求，在验证重复问题真实可复现并完成两轮只读方案复核后，受控创建完整 Gate 1 候选；尚未执行实现、提交或历史事实清理。
+object_uid: 01a00926-2119-7e88-8ebe-f1c6066c41b1
+object_id: workcase-01M04JC88SFT48XFQHRR36RGDH
+fact_type_key: workcase
+created_at: '2026-08-16T05:58:07.840746Z'
+updated_at: '2026-08-16T05:58:07.840746Z'
