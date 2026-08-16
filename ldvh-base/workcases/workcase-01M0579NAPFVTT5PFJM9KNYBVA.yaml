@@ -1,0 +1,158 @@
+status: closed
+title: 代表性真实任务中的 Helper 服务质量复验
+goal: 在代表性真实任务上，以可比较、可复现且失败关闭的受控复验，判断 read、普通事实更新、WorkCase 非 item 更新三个任务族是否存在稳定且超过预注册实用阈值的 operation 级 Helper 服务残差；结论只用于决定是否值得另建一个窄实现 WorkCase。
+scope: 仅新增 code/ldvh/testing/representative_task_retrial.py、code/tests/testing/test_representative_task_retrial.py、docs/metrics/representative-task-retrial-protocol-v1.json、docs/metrics/representative-task-retrial-results-v1.json、docs/metrics/representative-task-retrial-report-v1.md，并通过 import 复用现有 session_comparability、evidence_protocol、equivalence_retrial、trial_measurement；若必须修改既有接口则按超界停止。冻结 18 个任务框（read、普通事实更新、WorkCase 非 item 更新各 6 个），每框在全新上下文运行 2 次，目标 36 个 retained sessions；技术故障最多替换 6 次、总尝试不超过 42 次。主设计为单臂实际轨迹对预注册 gold legal trace，重复次序与任务族顺序平衡，不作广义因果断言；这里的收益只指相对 gold 的预注册任务效用代理，不表示未测量的业务收益。每个任务族必须 6/6 任务框、每框两次均可比才可给确定性结论；5/6 同向只作为完整任务族内部的稳定性门槛，不能容忍缺框。更新类任务只在本次新建的隔离临时根和 fixture 事实库执行；当前 Working Tree 的受管事实除本 WorkCase 自身生命周期外零写入。固定入口、runner、权限、提示布局与可观测执行设置；model_name 只能来自当前直接观察或 runner 产生的可审计标识，仍无权威来源时不能证明模型固定并触发 not-comparable 停止。测量 Helper 调用数与字符数、invalid_request、payload、首次合法动作、额外规则读取、repair/fallback、可观测延迟/cache；原始敏感正文不进入结果工件。明确排除修改生产 Helper、Specs、09、Web、Schema、MCP、任何其它事实对象、目标 Spark 状态、网络或外部消息、依赖安装、push、PR 与 release。
+success_criterion_definitions:
+- criterion_id: criterion-protocol
+  statement: 协议在首个 retained trial 前冻结并 hash 绑定，完整覆盖 18 个任务框、gold legal traces、固定入口/runner/权限/提示、可审计模型标识要求、指标、operation 级任务效用代理阈值、排除、停止、盲评和隐私；任何阈值或口径不得在看到 retained 结果后修改。
+- criterion_id: criterion-tooling
+  statement: 新增工具链及其测试能 fail-closed 校验记录 schema、轨迹与任务身份、可比性、隔离临时根和当前事实零写入，并只产出脱敏、可聚合且能与 protocol hash 绑定的记录。
+- criterion_id: criterion-trials
+  statement: 实际运行不超过 42 次，并形成 36 个可比 retained sessions，或在模型身份、可比性、隔离或关键指标不足时形成可审计的 not-comparable 停止结果；任一任务族缺少任一冻结任务框的两次可比记录时，该族只能判为 not-comparable，且不可比 trial 不进入评分。
+- criterion_id: criterion-report
+  statement: 结果与报告按 operation 记录全部预注册指标、排除账本、不可用语义、protocol/results hash 和 reproduction 信息，不保存原始敏感正文，也不把单臂 gold-trace 差异表述为业务收益或因果效果。
+- criterion_id: criterion-decision
+  statement: go 只在一个具体 operation/任务族的 6/6 任务框均完整可比、至少 5/6 任务框同向，且预注册区间与任务效用代理实用阈值均满足并高于测得调用/字符/延迟成本时成立；否则为 no-go 或 not-comparable。本 WorkCase 不修改生产 Helper、Specs、09、Web、Schema 或 MCP，也不形成 Helper 整体或广义改造结论。
+success_criterion_results:
+- criterion_id: criterion-decision
+  outcome: satisfied
+  summary: 允许的 harness-request-header 模型标识不可得，故三族均按冻结规则判为 not-comparable；未把不可比记录纳入评分，也未形成 Helper 整体、业务收益、因果效果或生产改造结论。生产 Helper、Specs、09、Web、Schema 与 MCP 均未修改。
+- criterion_id: criterion-protocol
+  outcome: satisfied
+  summary: 首个 retained trial 前已冻结 18 个任务框、36 个计划会话、42 次上限、gold traces、carrier 可审计性、指标、阈值、排除、停止、盲评与隐私；canonical SHA-256=c597455d20cbb894f42c2571959ddc23ad375b6cd7360ba697d858f158b3db37，之后未改变。
+- criterion_id: criterion-report
+  outcome: satisfied
+  summary: results/report 记录零尝试、三个 operation family 的 not-comparable、排除账本、不可用语义及 protocol/results/reproduction hash；原始 session 内容未保留，报告明确不估计因果效果或业务收益。
+- criterion_id: criterion-tooling
+  outcome: satisfied
+  summary: 新增模块 fail-closed 校验闭合 schema、任务/协议/fixture/carrier/event 身份、隔离根、当前事实指纹、脱敏记录和 hash 绑定聚合；12 项直接测试及 97 项目标与复用模块回归通过，既有模块零修改。
+- criterion_id: criterion-trials
+  outcome: satisfied
+  summary: 冻结协议允许“36 个 retained sessions 或在模型身份不足时形成可审计 not-comparable 停止结果”；本次在 attempt 1 前因唯一允许的模型身份来源不可得而停止，attempts/retained=0/0、排除账本 1 条，不启动 trial agent、不评分且当前事实 trial 写入为 0。
+result_summary: 代表性真实任务复验已按失败关闭边界收敛：协议与工具链成立，但当前可用工具面不能从预注册的 harness-request-header 取得非空 provider/model，因此在首个 trial 前停止；三个任务族均为 not-comparable，没有 operation 级残差分数，也没有生产改造依据。结果只证明该批次不可比，不证明 Helper 无残差或有残差。
+validation_summary: 新增直接测试 12 passed；目标及复用 testing 模块回归 97 passed；两个新增 Python 文件 Ruff passed；git diff --check passed；protocol canonical SHA-256=c597455d...b37，results payload=308b730b...3a4，results file=5c6e5cd7...340，report file=88bd46fb...c46，绑定与隐私扫描通过；ldvh check passed，facts complete。全套测试另为 2078 passed/15 skipped/3 failed/8 errors：8 errors 和 2 failures 来自本 worktree 缺少两组未跟踪历史 metrics 工件，1 failure 来自本机无 js-yaml；依赖安装与这些工件均在授权外，未越界修复。
+closure_outcome: completed
+disposition_summary: 当前记录所称 Gate 2 授权仅来自 UI 回包，Human 现明确否认曾作出该文字授权；closed/completed 技术分类不得解释为 Human 已接受 Gate 2。
+spark_suggestions:
+- suggestion_id: suggestion-auditable-runner-retrial
+  suggestion_kind: follow_up_opportunity
+  summary: 本批次只得到不可比结论，不能据此判断三个任务族存在或不存在 Helper 服务残差。
+  follow_up_summary: 仅当未来 runner 能从冻结允许的 harness-request-header 直接提供非空 provider/model，并能固定同一 carrier 时，再以新的 WorkCase 和新 Gate1 复用本协议重跑；当前不创建窄实现 WorkCase。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
+change_log:
+- at: '2026-08-16T12:03:43.215597Z'
+  summary: 受控创建 WorkCase：承接目标 Spark，以 18 个冻结任务框和最多 42 次隔离尝试复验三个代表性任务族的 operation 级 Helper 服务残差；当前仅进入 Human Gate 1 等待，不执行代码或 trial。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T14:12:45.115938Z'
+  summary: Human Gate 1 批准：plan_version=1 与完整 execution authorization baseline 获准执行；移除 Human waiting，进入 executing，下一入口为 item-protocol。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T14:13:45.655459Z'
+  summary: 开始 item-protocol：冻结代表性任务框、gold、可比性、阈值、隐私与停止条件；首个 retained trial 仍未运行。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T14:18:07.092488Z'
+  summary: 完成 item-protocol：冻结并校验 18 框/36 会话/42 次上限的 protocol v1，记录 canonical hash；retained trial 仍为 0。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T14:18:46.931120Z'
+  summary: 开始 item-tooling：仅新增代表性任务复验模块与直接测试，复用现有 comparability、identity、measurement 与安全临时根接口。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T14:28:03.186678Z'
+  summary: 完成 item-tooling：新增复验编排模块与直接测试，定向及复用模块回归 97 passed、Ruff 通过，未运行 trial。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T14:28:51.034434Z'
+  summary: 开始 item-trials：先执行冻结协议的可审计 runner carrier 预检，未通过时在首个 trial 前停止。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T14:29:44.106788Z'
+  summary: 完成 item-trials：模型身份允许来源不可得，按冻结停止规则在 attempt 1 前以零尝试 not-comparable 收敛。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T14:30:06.837762Z'
+  summary: 开始 item-report：核验零尝试 not-comparable 结果与报告的 hash、隐私和结论边界。
+- at: '2026-08-16T14:38:59.127610Z'
+  summary: 完成 item-report，分配 result_version=1 并进入 controller_checking：零尝试 not-comparable 的结果、报告、hash 和验证边界已形成。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T14:40:16.170113Z'
+  summary: 形成 canonical result projection v1：五项成功标准均按零尝试 not-comparable 停止边界验收，并记录 Controller 与完整验证摘要。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T14:40:50.770612Z'
+  summary: canonical result projection v1 完整回读并进入 independent_reviewing，等待独立只读复核。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T14:44:05.048692Z'
+  summary: 记录 result_version=1 的独立只读结果复核：conclusion=pass，未提出需要修改 projection 的 feedback。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T14:47:45.573700Z'
+  summary: 独立结果复核通过后创建唯一受控本地 commit ad23c7dd58fb60836f97dbdc8063b36fcb66c5fc，并进入 closure_preparing。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T14:48:57.490184Z'
+  summary: 形成完整关闭提案：proposed_outcome=completed，原 scope 内无 residual decisions；保留未来可审计 runner 可用后再复验的 follow-up opportunity。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T14:49:31.517116Z'
+  summary: 冻结 closure proposal 并进入 human_closure_confirming：五项 criterion 均 satisfied，proposed_outcome=completed，等待 Human Gate 2。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T14:51:54.973649Z'
+  summary: 消费 Human Gate 2：接受 completed 关闭提案，原子关闭 WorkCase；保留可审计 runner 可用后再复验的 follow_up_opportunity。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:31:52.522786Z'
+  summary: closed 终态最小事实更正：Human 以普通聊天文字明确否认曾对原 Gate 2 作出文字授权，并批准本精确 after；保持 closed、closure_outcome=completed、原 v1 scope/criteria/results/技术证据/Spark suggestion/relations 与全部既有日志，仅更正 disposition_summary。旧错误日志按不可改写历史边界保留；本条为追加澄清，不宣称历史已恢复。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+object_uid: 01a00a74-d556-7ef5-a2d9-f2a2675f2f6a
+object_id: workcase-01M0579NAPFVTT5PFJM9KNYBVA
+fact_type_key: workcase
+created_at: '2026-08-16T12:03:43.215597Z'
+updated_at: '2026-08-16T15:31:52.522786Z'
