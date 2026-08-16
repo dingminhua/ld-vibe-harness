@@ -1,0 +1,142 @@
+title: 接续 WC-E：正式落地 prepare-fact-object-update
+status: closed
+goal: 接续已 partial 关闭的旧 WC-E（workcase-01M02C9P2ZFKNBZC8BWDCYFR4T）在 source contract、只读实现、official-route 兼容测试与 12-task deterministic replay 上已经满足的四项行为标准，并显式承接其 residual-public-operation-fixed-lists、residual-full-ruff-baseline 与 residual-replay-advisories；在当前 HEAD da902935688dd5e95f403d6a43c007e6fbafeeb8 之上，把 read-only、caller_completion_required、非 execution-ready 的 prepare-fact-object-update public operation 落地为正式能力，完成当前授权范围内的固定清单兼容、全量验证与受控本地提交，不把旧 stash 的其它事项混入。
+scope: 只参考 stash 中与 prepare-fact-object-update 直接相关的窄改动，按当前 HEAD 逐文件吸收而不整体 restore/apply/覆盖。允许修改 specs/04-Helper CLI 服务规范.md、specs/05-事实模型基础规范.md、specs/21-WorkCase-工作项.md、specs/attachments/04.Att.01-Helper CLI 请求与响应字段表.md、code/ldvh/helper/operations/__init__.py；允许新增 code/ldvh/helper/operations/fact_update_prepare_operation.py、code/tests/helper/test_fact_update_prepare_operation.py、code/ldvh/testing/prepare_update_replay.py、code/tests/testing/test_prepare_update_replay.py、docs/metrics/prepare-update-protocol-v1.json、docs/metrics/prepare-update-results-v1.json、docs/metrics/prepare-update-report-v1.md。旧 WC ceiling 外的 fixed-list 补授权精确覆盖 5 项直接失效检查所在文件：code/tests/helper/test_service.py、code/tests/helper/test_cli_process.py、code/tests/helper/test_read_failure_hints.py、code/tests/specs/test_repository.py、code/tests/platform/test_native_windows.py；只允许把 prepare-fact-object-update 加入既有 operation count/read-set/declaration/source-map/platform-set 断言，不重构其它测试。允许运行 focused/full pytest、changed/full Ruff、git diff --check、./ldvh capabilities、./ldvh check、check-fact-integrity、precheck-git-commit 与真实 Git Gate，并在验证后创建一个仅含上述普通实现文件的本地 commit；WorkCase 自身只经 21 专属操作更新/关闭，不混入该普通提交。明确排除 stash 中署名契约、中文为主、独立审核披露等其它事项，排除 generic patch、事实写入/预留/授权/语义决定能力、Web/MCP/依赖/网络/push，以及为清零 residual-full-ruff-baseline 而修改 7 个无关 Ruff 文件；full Ruff 只运行并如实报告。既有 update-fact-object/update-workcase 的验证、CAS、原子替换、回读和完整性语义不得改写或削弱。
+success_criterion_definitions:
+- criterion_id: criterion-contract-boundary
+  statement: 当前来源与实现一致登记 prepare-fact-object-update 为 read-only、caller_completion_required、非 execution-ready、非 patch/write/reservation/authorization/semantic decision；它只形成绑定当前 UID/fingerprint 与官方完整对象更新路由的全对象草案，不改写或削弱 update-fact-object/update-workcase 的验证、CAS、原子替换、回读与完整性语义。
+- criterion_id: criterion-operation-and-official-route
+  statement: prepare operation、登记与 direct/isolated tests 在当前 HEAD 上成立：合法唯一对象返回正确 UID/fingerprint/path/carrier/type/official route 与仅移除 Code-managed 顶层字段的草案；Markdown body 与既有 change_log prefix 保留；completion requirements 仍要求 caller 独立提供真实语义变化、恰一条新 log、fresh 三字段 signature 及 official route 所需授权；closed WorkCase、invalid/unresolved/ambiguous 不返回 draft，official route 继续独立拒绝 stale/no-op/非法对象/transition/signature/authorization 且失败零写入。
+- criterion_id: criterion-fixed-public-lists
+  statement: 旧 WC ceiling 外的 residual-public-operation-fixed-lists 在本次得到窄补授权：test_service.py、test_cli_process.py、test_read_failure_hints.py、test_repository.py 与 test_native_windows.py 中 5 项因新增 public operation 直接失效的 operation count/read-set/declaration/source-map/platform-set 检查精确纳入 prepare-fact-object-update；当前平台可执行的固定清单测试通过，native Windows 检查保持由 full suite 的平台条件如实呈现，不借此重构或扩大其它 service contract。
+- criterion_id: criterion-replay-and-disclosure
+  statement: 12-task/24-record deterministic isolated replay 与 protocol/results/report 在当前实现上复现预期：minimal known-contract 2→2 只称 parity，cold discovery 3→2 只称一项机械调用减少，失败分支零写入，host receipt/tokens/cache/latency 保持 unavailable；若 repository/worktree 术语和 workflow-step transformation count 两项 advisory 仍适用，报告明确披露而不夸大为 fresh-agent、真实代表任务、因果或广泛服务质量证据。
+- criterion_id: criterion-validation-and-delivery
+  statement: 指定 focused pytest、5 项 fixed-list 检查、./ldvh capabilities、./ldvh check、创建前 261 对象基线与创建后实际对象集合的 check-fact-integrity、full suite、full Ruff、changed Ruff 与 git diff --check 均实际执行并如实记录；任何失败/partial/unavailable 不写成通过。residual-full-ruff-baseline 因与本能力无直接关系而不纳入修复授权，只保留实际运行结论。
+change_log:
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-15T20:36:54.671570Z'
+  summary: 受控创建接续 WC-E 候选：在 HEAD da902935 上冻结 prepare-fact-object-update 的窄能力、五项 fixed-list 补授权、三 residual 处置、精确验证与 no-push 单提交边界；两轮 subagent creation review feedback 已全部处置，等待 Gate 1。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-15T20:40:15.409855Z'
+  summary: 消费 Human Gate 1 approval：冻结 plan_version=1、完整执行授权与 subagent-only reviewer policy，进入 executing；不授权 push、无关 Ruff 修复或 stash 其它事项。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-15T20:40:43.188263Z'
+  summary: 启动 item-source-contract：先形成 in_progress 稳定检查点，再逐文件比较 stash 参考与当前 HEAD，仅吸收 prepare operation 窄契约。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-15T20:43:02.390476Z'
+  summary: 完成 item-source-contract：四份授权来源形成 read-only caller-completion-required whole-object composition 契约，未混入 stash 其它事项。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-15T20:43:27.139395Z'
+  summary: 启动 item-helper-operation：实现只读 prepare operation、登记、direct/official-route tests 与五项 fixed-list 兼容。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-15T20:46:07.525045Z'
+  summary: 完成 item-helper-operation：prepare operation 与 official-route tests 成立，五个 fixed-list 文件已兼容；当前平台 92 passed/8 Windows skipped。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-15T20:46:30.363791Z'
+  summary: 启动 item-deterministic-replay：核对并恢复 12-task fixture replay 与三份评估材料。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-15T20:49:48.793637Z'
+  summary: 完成 item-deterministic-replay：冻结 replay 全部命中并补充两项 residual advisory 的非阻塞报告披露。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-15T20:50:13.045562Z'
+  summary: 启动 item-validation：执行全部 focused/full 验证并如实保留 residual 与失败。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-15T20:58:24.684415Z'
+  summary: 完成最后 item 并原子进入 controller_checking/result_version=1：五项 criterion 均按其实际陈述形成结果；full suite 2 failures 与 full Ruff 7 errors 原样进入 canonical projection。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-15T20:59:47.700256Z'
+  summary: 进入 result_version=1 independent_reviewing：按 Gate1 冻结 policy 委派一次 claude-sonnet-5 subagent-read-only 结果复核。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-15T21:10:03.088547Z'
+  summary: 完成 result_version=1 subagent-read-only review：pass_with_followups；doctor count、full Ruff、replay advisories、两次 full-suite 运行与提交排除边界均已处置，projection 不变。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-15T21:31:48.241594Z'
+  summary: 完成独立结果复核并进入 closure_preparing：result_version=1、projection 完整、result review feedback 已全部处置；在 closure_preparing 内承接受控 Git 提交与关闭提案。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-15T21:35:06.899726Z'
+  summary: 在 closure_preparing 内形成完整关闭提案（proposed_outcome=completed）；下一步冻结 proposal 后进入 human_closure_confirming。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-15T21:35:23.187463Z'
+  summary: 冻结 closure proposal 并进入 human_closure_confirming：proposed_outcome=completed，五项 criterion 均 satisfied，等待 Human Gate 2。
+- signature:
+    product_name: Cindy
+    model_name: chatgpt/gpt-5.6-sol
+    agent_runtime_name: claude-code
+  at: '2026-08-16T08:36:46.678803Z'
+  summary: 消费 Human Gate 2：接受 completed 关闭提案，原子关闭 WC；保留 follow_up_opportunity 为范围外后续入口。
+success_criterion_results:
+- criterion_id: criterion-contract-boundary
+  outcome: satisfied
+  summary: 四份来源与实现一致定义 read-only caller-completion-required whole-object composition；未引入 patch/write/reservation/authorization/semantic decision，官方写路由权威保持。
+- criterion_id: criterion-operation-and-official-route
+  outcome: satisfied
+  summary: direct/isolated tests 覆盖 YAML/Markdown/open WorkCase、invalid/blocked/closed、positive/stale/no-op/all-null signature；官方 route 独立决定并在失败分支零写入。
+- criterion_id: criterion-fixed-public-lists
+  outcome: satisfied
+  summary: Gate1 明列的五个 fixed-list 文件已作窄兼容；当前平台 operation/fixed-list 测试 92 passed，native Windows 8 skipped。另发现 doctor.py 的第六处 count 不在授权范围，保留到 validation/residual。
+- criterion_id: criterion-replay-and-disclosure
+  outcome: satisfied
+  summary: 12 tasks/24 records 全部命中且失败零写；minimal 2→2 仅 parity，cold 3→2 仅一项机械调用减少；host metrics unavailable；报告已补 repository/working-tree 术语与 workflow-step count 两项 advisory。
+- criterion_id: criterion-validation-and-delivery
+  outcome: satisfied
+  summary: 所有指定 focused/full/check/integrity/Ruff/diff 命令均实际运行并如实记录；full suite 2 failed、full Ruff 7 errors 未写成通过，未修改授权外文件。普通实现 commit 仍由后续受控提交生命周期动作承接。
+result_summary: prepare-fact-object-update 已在当前 HEAD 上形成正式 read-only public operation、来源契约、official-route tests、五文件 fixed-list 兼容和 deterministic replay。行为标准与计划内验证责任成立；repository validation 仍如实包含 full suite 2 failures 与 full Ruff 7 errors，其中无关 baseline 不在修复授权。
+validation_summary: 通过：focused 31；operation/fixed-list 92/8 platform skips；replay 6；changed Ruff；git diff --check；capabilities 26/present；ldvh check passed；integrity complete 263/0。失败：full suite 2056 passed/15 skipped/2 failed（doctor count 25→26 未获五文件授权；并发创建用例本轮失败、隔离复跑 1 passed）；full Ruff 7 errors，均在本次未修改且明确排除修复的文件。
+closure_outcome: completed
+disposition_summary: 本 WC 的责任已全部完成：prepare-fact-object-update 正式落地并提交、五个 fixed-list 文件窄兼容、deterministic replay 与评估材料、全部计划内验证如实执行。repository validation 仍存在的 doctor 固定 operation_count 失败与 full Ruff 7 个错误均位于本 WC 授权外文件，不构成本 WC 剩余责任；接受本 completed 提案即确认上述授权边界与范围外机会。
+spark_suggestions:
+- suggestion_id: suggestion-repository-validation-cleanup
+  suggestion_kind: follow_up_opportunity
+  summary: repository validation 仍含两项授权外既有缺口：doctor.py 固定 operation_count 期望 25 而实际 26；full Ruff 7 个错误位于本 WC 未修改文件。
+  follow_up_summary: 未来单独授权时把 doctor.py 的 operation_count 期望更新为当前实际公开操作数，并视需要清零 full Ruff baseline。
+object_uid: 01a00724-5169-7ff9-9707-a124bf5a4434
+object_id: workcase-01M03J8MB9FZWSE1X14JZNMH1M
+fact_type_key: workcase
+created_at: '2026-08-15T20:36:54.671570Z'
+updated_at: '2026-08-16T08:36:46.678803Z'
