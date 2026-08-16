@@ -73,6 +73,10 @@ ldvh_spec:
 
 存在当前合法下一控制步骤时，Controller 继续消费已批准责任，不以聊天总结、工具成功、测试通过、子任务返回或 item 的 `current_summary` / `resume_from` 代替事实转换。item 的开始、直接完成、阻塞、解阻、完成、取消、计划返修、结果形成与质量链只按 21 的当前规则执行；需要跨对象共同生效时仍服从 32 的能力边界。
 
+**Gate 2 非持久化环境阶段 Goal：** Gate 1 有效批准后，若宿主环境当前可观察且可调用原生 Goal 能力，并且不存在与当前事项冲突的未完成 Goal，Controller 可建立一个“依当前 LDVH 规则将当前获批 WorkCase 推进到 Gate 2”的非持久化环境阶段 Goal。它只是当次执行的注意力与续跑约束，不是 LDVH 事实对象、状态、授权、投影或第二调度器，不写入 canonical 载体或模板运行字段，也不要求任何宿主专用 API 名称或适配层。能力不可用、不可观察、存在冲突或调用失败时，保留该缺口并原样继续当前 LDVH 流程，不伪造 Goal，不引入适配层。
+
+该阶段 Goal 只能在 Controller 以当前 WorkCase 稳定引用另行公开精确回读，取得完整对象和非空 `content_fingerprint`，且当次 fresh 投影为 `resolution=resolved`、`source_content_fingerprint` 与该 `content_fingerprint` 一致、`handoff_narrative_key=gate2_waiting`、`next_required_control_step=human_gate_2` 时标记成功完成。item terminal、测试通过、Reviewer 返回、结果形成、本地 commit 或 closure proposal 都不是完成依据。真实 blocked、持续 unresolved、Human 主动中止或对象 closed 是 LDVH 安全退出，不得被写成该 Gate 2 阶段 Goal 的成功；Controller 只使用宿主真实支持的保持、阻塞或取消语义处置，并继续服从本文既有合法退出。
+
 **Gate 1 后统一 pre-yield 控制点：** Gate 1 获批后，`plan_revising`、`executing`、`controller_checking`、`independent_reviewing` 与 `closure_preparing` 均处于同一条 Controller-owned 收敛链，`status=blocked` 仅作为任一合法活动 phase 上的覆盖层。每个稳定检查点、委派或交接、恢复以及每个结果链控制步骤，都必须先完成完整 after、CAS、精确回读与独立事实完整性审计；Controller 只消费 `resolution=resolved` 且 `source_content_fingerprint` 与刚回读 `content_fingerprint` 相同的 fresh projection。只要刚回读快照仍为 `status=open`、投影仍指向 Controller-owned 结构步骤且尚未形成 §5.4 的合法交还出口，Controller 就继续处理该步骤；fresh projection 的派生 `handoff_allowed=false`（reason=controller_owned）即该位置仍为 Controller-owned，必须继续，`handoff_allowed=true` 只在 §5.4 的安全出口成立。AI 仍负责授权、依赖、能力、语义相关性和具体 item 的判断，Code 与 projection 不替 AI 作决定。
 
 `termination_preparing` 是由 Human 主动中止切换出的专属 Controller-owned 善后链：同样服从 fresh projection 与 pre-yield 控制点，但只处理 `termination_cleanup`，不再消费普通生命周期下一步。善后事实闭合、`cleanup_status=completed` 且无入向 `depends-on` 后，Controller 直接调用 `complete-workcase-termination`；成功回读 closed 才退出，不形成正常 closure proposal、不进入 Gate2，也不请求第二次 Human 决定。
