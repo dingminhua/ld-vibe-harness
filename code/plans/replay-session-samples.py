@@ -15,13 +15,13 @@ import json
 import sys
 from pathlib import Path
 
-from ldvh.testing.session_comparability import audit_session, SessionLogError
 from ldvh.testing.evidence_protocol import (
+    SOURCE_LEVELS,
     classify_session_events,
     extract_session_identity,
     judge_protocol_comparability,
-    SOURCE_LEVELS,
 )
+from ldvh.testing.session_comparability import SessionLogError, audit_session
 
 # Session log directory and session IDs to replay.
 SESSION_DIR = Path.home() / ".dsh" / "sessions" / "--Users-dmh2002-poker_hud_projects-ld-vibe-harness-v4--"

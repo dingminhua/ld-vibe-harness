@@ -22,7 +22,6 @@ from typing import Any
 from ldvh.testing.evidence_protocol import (
     IdentityFingerprintSet,
     ProtocolComparability,
-    check_pre_scoring_threshold,
     extract_trial_identity,
     is_out_of_protocol,
     judge_protocol_comparability,

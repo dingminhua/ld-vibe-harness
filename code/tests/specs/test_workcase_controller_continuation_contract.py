@@ -90,7 +90,10 @@ def test_controlled_write_failure_must_be_repaired_not_silently_skipped() -> Non
     source = _source(EXECUTION_TEMPLATE)
 
     assert "受控写入调用的失败处置" in source
-    assert "任一 21 专属 Helper 写入操作返回 `invalid_request`、`rejected`、`unavailable` 或其它非成功外层结果时" in source
+    assert (
+        "任一 21 专属 Helper 写入操作返回 `invalid_request`、`rejected`、`unavailable` 或其它非成功外层结果时"
+        in source
+    )
     assert "Controller 必须当场读取该响应的 `gaps` 与 `diagnostics`" in source
     assert "修正请求形状、指纹或内容后重试" in source
     assert "停在最后合法状态，按 §5.4 只经真实 blocked 或读取缺口交还" in source

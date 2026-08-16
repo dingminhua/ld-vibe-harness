@@ -3,26 +3,24 @@ from __future__ import annotations
 from ldvh.testing.evidence_protocol import (
     EVIDENCE_PROTOCOL_VERSION,
     IDENTITY_TYPES,
-    SOURCE_LEVELS,
-    SOURCE_LEVEL_LDVH_PREPARED,
-    SOURCE_LEVEL_HARNESS_DELIVERED,
-    SOURCE_LEVEL_HOST_RECEIVED,
     SOURCE_LEVEL_BEHAVIOR_CONSISTENT,
     SOURCE_LEVEL_CAUSAL_EFFECT,
+    SOURCE_LEVEL_HARNESS_DELIVERED,
+    SOURCE_LEVEL_HOST_RECEIVED,
+    SOURCE_LEVEL_LDVH_PREPARED,
+    SOURCE_LEVELS,
     IdentityFingerprintSet,
-    ProtocolComparability,
     check_pre_scoring_threshold,
     classify_event_type,
     classify_event_types,
     classify_session_events,
-    extract_trial_identity,
     extract_session_identity,
+    extract_trial_identity,
     is_out_of_protocol,
     judge_protocol_comparability,
 )
 from ldvh.testing.session_comparability import (
     SessionFingerprint,
-    judge_comparability,
 )
 
 

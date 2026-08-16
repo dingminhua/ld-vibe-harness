@@ -11,8 +11,8 @@ from ldvh.facts.validation import (
     study_report_creation_issues,
     timestamp_appended_change_log,
     timestamp_initial_change_log,
-    validate_chinese_primary_changes,
     validate_change_log_transition,
+    validate_chinese_primary_changes,
     validate_fact_object,
 )
 

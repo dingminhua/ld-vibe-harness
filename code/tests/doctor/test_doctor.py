@@ -53,7 +53,7 @@ def test_doctor_reports_ready_for_explicit_governed_project(tmp_path: Path) -> N
     assert len(result["source_repository"]["revision"]) == 40
     assert result["source_repository"]["working_tree_status"] in {"clean", "dirty"}
     assert result["helper"]["contract"] == "ldvh-helper-cli/2"
-    assert result["helper"]["operation_count"] == 25
+    assert result["helper"]["operation_count"] == 26
     assert result["configuration"]["config_status"] == "valid"
     assert result["configuration"]["scope_status"] == "governed_single"
     assert result["configuration"]["governed_project_id"] == "sample"

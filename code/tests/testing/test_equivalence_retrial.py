@@ -352,7 +352,7 @@ def test_persist_batch_artifacts_includes_out_of_protocol(tmp_path) -> None:  # 
     )
     assessment = assess_trial(record, {"c": lambda r: True})
     summary = summarize_batch([record], [assessment])
-    paths = persist_batch_artifacts(root, records=[record], assessments=[assessment], summary=summary)
+    persist_batch_artifacts(root, records=[record], assessments=[assessment], summary=summary)
     payload = root.read_json("records/trials.json")
     assert payload["records"][0]["out_of_protocol"] is True
     assert summary.out_of_protocol_count == 1

@@ -16,7 +16,6 @@ from ldvh.facts.schema import FactSchema
 from ldvh.facts.workcase_validation import validate_workcase_snapshot
 from ldvh.signature import parse_signature
 
-
 _CHINESE_PRIMARY_NATURAL_FIELD_NAMES = frozenset(
     {
         "abstract", "action_ceiling", "allowed_adjustments", "applicability", "avoidance",
