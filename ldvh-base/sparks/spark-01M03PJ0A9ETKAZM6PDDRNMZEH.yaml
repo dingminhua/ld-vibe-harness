@@ -1,8 +1,16 @@
 title: WorkCase 语义重复创建的分层防线与验证闭环
 intent: 保留并持续验证同一任务被重复创建多个内容相同 WorkCase 的问题及其分层解决方案：后续需要判断锁内 UID 重检、创建前 title 精确去重和 Skill 创建前候选检索是否共同阻断机械竞态、语义重复与 AI 重试诱因；若防线仍有缺口，需要定位缺口属于 Code 事务、事实索引、Skill 行为还是上下文与并行执行。若不跨行动保留该议题，重复 WC 复发时将增加根因定位、污染清理、方案复核和上下文恢复负担。
-status: open
-priority: P1
-summary: "## 问题现象\n同一个任务近期可能被重复创建多个 WorkCase，内容完全相同但 UID 不同，曾观察到最多同时存在 4 个重复 WC，造成事实库污染。\n\n## 根因分层\n1. **TOCTOU 竞态**：UID 唯一性检查在写锁外完成，锁内不重检；并发调用可各自生成不同 UID 并分别创建。\n2. **缺少语义去重**：系统只检查 UID，不检查已有 WorkCase 的语义是否重复；不同 UID 因而都能通过。\n3. **AI 行为诱因**：上下文压缩后重试、并行子代理互不知晓，以及首次创建后的回读或 follow-up 失败，可能导致再次创建。\n\n## 分层方案\n- **机械级**：在 `create_fact_object_locked` 内重建 `ConfigurationFactIndex`，锁内再次验证 UID，封堵 TOCTOU。\n- **语义级**：在创建前按 title 精确匹配已有 `open`/`blocked` WorkCase；命中则返回 `creation_conflict` 并携带已有 WC 引用，避免误判并阻止重复写入。\n- **AI 行为级**：Skill 创建路由要求先调用 `find-fact-object-candidates`；命中已有对象时走更新路径而不是新建。\n\n## 验证与剩余关注\n- 静态分析已沿 `fact_creation_operation.py`、`creation_application.py`、`creation.py`、`filesystem.py`、`configuration_index.py` 与 `relations.py` 梳理创建链路。\n- `test_creation_application.py` 33 项与 `test_fact_creation_operation.py` 46 项已通过。\n- 仍需持续确认并发、上下文压缩重试、并行委派和创建后回读失败场景下，三层防线能否共同避免事实库再次污染。"
+status: discarded
+summary: "## 问题现象\n同一个任务近期可能被重复创建多个 WorkCase，内容完全相同但 UID 不同，曾观察到最多同时存在 4 个重复 WC，造成事实库污染。\n\n## 根因分层\n1. **TOCTOU 竞态**：UID 唯一性检查在写锁外完成，锁内不重检；并发调用可各自生成不同 UID 并分别创建。\n2. **缺少语义去重**：系统只检查 UID，不检查已有 WorkCase 的语义是否重复；不同 UID 因而都能通过。\n3. **AI 行为诱因**：上下文压缩后重试、并行子代理互不知晓，以及首次创建后的回读或 follow-up 失败，可能导致再次创建。\n\n## 分层方案\n- **机械级**：在 `create_fact_object_locked` 内重建 `ConfigurationFactIndex`，锁内再次验证 UID，封堵 TOCTOU。\n- **语义级**：在创建前按 title 精确匹配已有 `open`/`blocked` WorkCase；命中则返回 `creation_conflict` 并携带已有 WC 引用，避免误判并阻止重复写入。\n- **AI 行为级**：Skill 创建路由要求先调用 `find-fact-object-candidates`；命中已有对象时走更新路径而不是新建。\n\n## 承接关系与当前状态\n- 语义去重层（活跃标题精确冲突防线）已由 `workcase-01M04JC88SFT48XFQHRR36RGDH`「阻断 WorkCase 活跃标题重复受控创建」承接并 `closed`（本地 commit `685cee2a`）：在当前实际 Git Working Tree 内，锁内完整扫描加严格相等比较，顺序重试、创建成功但响应丢失后重试、真实多进程并发均验证零第二文件；本 Spark 与该 WC 的 `related-to` 已双向建立。\n- 该 WC 的 scope 明确排除：跨 linked worktree / 不同 common-dir 的全局唯一、UID 协调重构、历史重复清理、候选检索语义变化、模糊或 LLM 语义匹配、Web/API、push/PR/发布。\n\n## 验证与剩余关注\n- 静态分析已沿 `fact_creation_operation.py`、`creation_application.py`、`creation.py`、`filesystem.py`、`configuration_index.py` 与 `relations.py` 梳理创建链路；该 WC 聚焦 125 项、受影响全量 2051 项与 `./ldvh check` 均通过。\n- 残余未承接范围（仍属本 Spark 入口职责，保持 open）：上下文压缩后重试、并行委派 / AI 行为级防线的跨会话行为验证、以及跨 linked worktree 与不同 common-dir 的事实视图边界。这三块明确不在已关闭 WC 的 scope 内，需另由其它的 WorkCase 承接，或由本 Spark 持续验证后再走终态。"
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a00926-2119-7e88-8ebe-f1c6066c41b1
+evolution:
+- at: '2026-08-16T11:13:14.218211Z'
+  summary: WC `01M04JC88` 已承接语义去重层并 closed，双向 related-to 建立；本 Spark 摘要收窄残余到上下文压缩重试、并行委派 AI 行为层与跨 worktree 视图边界，三块明确不在该 WC scope 内，故本 Spark 仍保持 open。
+- at: '2026-08-16T11:24:19.357222Z'
+  summary: Human 明确决定不再继续跟踪本 Spark，入口转为 discarded；语义去重层已由 workcase-01M04JC88 closed 承接，残余三项（上下文压缩重试、并行委派 AI 行为层、跨 worktree 视图边界）Human 已知悉但不另设承接，故无承接目标废弃而非分流。
 change_log:
 - signature:
     product_name: Cindy
@@ -10,8 +18,21 @@ change_log:
     agent_runtime_name: claude-code
   at: '2026-08-15T21:51:56.174733Z'
   summary: 根据 Human 提供的问题梳理、根因分析、分层修复方案和测试结果创建 Spark，记录 WorkCase 语义重复创建的防线与后续验证重点。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-16T11:13:29.673833Z'
+  summary: 补全关联图：新增 related-to 回链 → workcase-01M04JC88SFT48XFQHRR36RGDH，与 WC 已有指向本 Spark 的 related-to 对称；同步收窄 summary 残余范围并追加 evolution；status 保持 open。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name:
+  at: '2026-08-16T11:24:34.134822Z'
+  summary: Human 明确授权关闭；status 由 open 转为 discarded，移除 priority，新增 disposition_summary；无承接目标，非分流。关联 related-to 与既有 change_log 前缀保留。
+disposition_summary: Human 已明确决定不再继续跟踪本 Spark 入口：语义去重层已由 `workcase-01M04JC88SFT48XFQHRR36RGDH`「阻断 WorkCase 活跃标题重复受控创建」在其 scope 内承接并 closed（当前实际 Git Working Tree 内锁内完整扫描加严格相等比较，顺序重试、创建成功但响应丢失后重试、真实多进程并发均验证零第二文件）。残余的上下文压缩后重试、并行委派 / AI 行为级防线的跨会话行为验证、以及跨 linked worktree 与不同 common-dir 的事实视图边界，Human 已知悉且决定不再由本 Spark 跟踪；本处置为无承接目标的废弃终态，不代表相关下游工作、规则或代码已完成。
 object_uid: 01a00769-0149-76a6-afd0-d66b715a7dd1
 object_id: spark-01M03PJ0A9ETKAZM6PDDRNMZEH
 fact_type_key: spark
 created_at: '2026-08-15T21:51:56.174733Z'
-updated_at: '2026-08-15T21:51:56.174733Z'
+updated_at: '2026-08-16T11:24:34.134822Z'
