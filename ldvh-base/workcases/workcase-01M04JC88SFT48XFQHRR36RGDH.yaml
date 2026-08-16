@@ -121,10 +121,6 @@ creation_reviews:
   covered_quality_gate_ids:
   - independent-result-review
   actual_method: subagent-read-only
-  actual_agent: general-purpose
-  actual_model: chatgpt/gpt-5.6-sol
-  evidence:
-  - 本会话经 Human 明确允许后，使用一次性 native subagent 完成两轮只读创建方案复核；首轮 revise，修订后第二轮 pass。
 waiting_on: 等待 Human 对 plan_version=1 的完整计划、风险、授权边界与 Reviewer 处置作 Gate 1 执行决定。
 relations:
 - relation_key: related-to
@@ -137,8 +133,14 @@ change_log:
     agent_runtime_name: claude-code
   at: '2026-08-16T05:58:07.840746Z'
   summary: 依据 Human 对目标 Spark 的分析与 WorkCase 创建要求，在验证重复问题真实可复现并完成两轮只读方案复核后，受控创建完整 Gate 1 候选；尚未执行实现、提交或历史事实清理。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T08:46:40.029875Z'
+  summary: 为合并独立审核机制修订做兼容更正：移除已退出的平台路由与证据字段；保留 Subagent 审核方法、结论、反馈及 Controller 处置。
 object_uid: 01a00926-2119-7e88-8ebe-f1c6066c41b1
 object_id: workcase-01M04JC88SFT48XFQHRR36RGDH
 fact_type_key: workcase
 created_at: '2026-08-16T05:58:07.840746Z'
-updated_at: '2026-08-16T05:58:07.840746Z'
+updated_at: '2026-08-16T08:46:40.029875Z'
