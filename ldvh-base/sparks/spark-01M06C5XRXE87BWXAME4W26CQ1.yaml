@@ -1,0 +1,45 @@
+title: AI 反馈与交互改进
+status: open
+priority: P3
+intent: 收集和追踪 AI 在使用 LDVH 过程中发现的交互摩擦、效率瓶颈与改进机会，形成可执行的改进候选。
+summary: "## 当前状态\n\nAI 在通过 Helper CLI 交互时发现以下问题，需纳入治理：\n\n### 1. 输入契约摩擦\n- `call` 子命令的 stdin 传入请求格式不被接受，必须 `--request <file>` 传入；但 `invalid_request` 错误提示 `\"arguments.fact_refs 必须是包含 1–128 项的 array\"`，误导调用方以为是参数格式问题，未指明正确传入方式\n- `--fields` 数组内字段选择（已有实现）在 `read-fact-objects` 组合同样报 missing，实际可用但需配合 `--request` 而非 stdin\n\n### 2. 操作反馈不一致\n- `find-fact-object-candidates` 在参数错误时仅返回 `exit code 5`，无结构化错误信息、无 stderr，调用方无法自纠\n- 相比 `read-fact-objects` 的 `gaps`/`diagnostics` 反馈，此操作的无反馈是明显落差\n\n### 3. 发现入口过重\n- `capabilities` 全量输出 50KB+ 被截断，渐进式发现负担重\n- 缺少单操作轻量明细的中间档（介于全量 capabilities 和 --example 之间）\n\n### 4. 关系查询跨一跳成本高\n- relations 仅存 `object_uid`，不存 `fact_type_key`/`object_id`，跨一跳需再解析才知道指向什么\n\n### 5. 无就绪状态机械信号\n- Spark 是 open/P2 还是 implemented、候选是否达到立项门槛，全靠人读语义+人工对齐姊妹对象，无状态机/候选队列提示\n\n## 待判断问题\n\n- 哪些摩擦在真实多agent会话中稳定出现，值得形成窄 WorkCase；\n- 契约提示优化的边际成本与收益是否支持实施；\n- 是否需要在 CLI 层面统一错误反馈格式。\n\n## 边界\n\n- 不替代 Helper 服务规范（04）的正式契约变更；\n- 窄 WorkCase 优先于全量重写；\n- 与其它 Spark 的 relation 仅追溯共同线索，不创建重复条目。\n\n### 6. 创建过程本身就是现场证据\n\n本 Spark 在创建过程中暴露了它要记录的问题 #1（输入契约摩擦）：\n\n- 第 1 轮：`fact_type_key` 和 `governed_project_id` 放在顶层 arguments 而非 `draft_basis` -> invalid_request\n- 第 2 轮：`model_name: \"\"` 空字符串不合契约（须非空 string 或 null）-> invalid_request\n- 第 3 轮：缺首条 change_log -> rejected\n- 第 4 轮：成功\n\n每次错误提示的 gap 准确，但没有一条给出你应该先调 `prepare-fact-object-draft` 拿到指纹、再合入 `draft_basis`、再补充 `observed_context.signature` 的完整导航。AI 需要自己拼装信息，知识分散在 capabilities、specs 和逐步暴露的错误提示中。\n\n**结论**：创建这个 Spark 的过程，比它的内容更能说明问题。该摩擦证据可作为 #1 的真实任务案例，支持后续窄 WorkCase 立项判断。\n\n### 7. 后续操作中的附加摩擦（2026-08-17 更新环节发现）\n\n本 Spark 在更新过程中暴露出更多交互摩擦，记录如下：\n\n**a) 操作结果确认信息不足**\n- 第一次 `update-fact-object` 实际已成功（outcome=ok），但用 `jq .result.post_update_fingerprint` 提取到 null（正确字段名为 `content_fingerprint`），导致误判为失败，重复执行了一次完整更新\n- 后果：supplement 内容重复，change_log 永久多出一条无效流水（§11.7 禁止删除历史流水）\n- 根因：`capabilities --example` 只给出 request 形状，不给出 response 字段闭集；调用方需查阅 specs/05 §11.7 的\"领域 result 字段闭集\"才能知悉合法字段名，信息获取链条长\n\n**b) 错误提示\"最后一公里\"缺失**\n- 所有 gap 提示准确指出\"什么错了\"，但从不指明\"下一步怎么做\"\n- 例如：`arguments 包含未知字段: xxx` 未提示\"这些字段应放入 draft_basis 中\"\n- 例如：`内容指纹已经过期` 未提示\"重新读取对象获取最新指纹再重试\"\n- 差的那一步正是 AI 最需要的——不是错误诊断，而是修复路径\n\n**c) model_name 的哲学悖论**\n- 系统提示中可观察到模型名（如 deepseek-v4-flash），但 LDVH 署名规则要求\"AI 只可使用按角色直接声明的信息\"\n- 系统提示算不算\"直接声明\"？边界模糊，保守选择 null 导致每次流水签名缺 model_name\n- 每次写入前 AI 都要做一次哲学判断，而非机械执行\n\n**d) 不可删除历史流水的纪律成本**\n- §11.7 规定\"已有流水仍必须保留完整前缀并恰追加一条\"，禁止删除或修改历史流水\n- 这保证了审计完整性，但代价是操作失误（如 a）造成的冗余永久保留\n- 本 Spark 的 change_log 中两条重复的 content_update 流水是这一 trade-off 的实例\n\n**结论**：这些摩擦与本 Spark 记录的 #1（输入契约摩擦）和 #5（操作反馈不够清晰）同源——LDVH 选择了\"机械可审计、不可篡改、严谨验证\"的路线，代价是交互重、执行门槛高、犯错成本大。本 Spark 自身的存在就是 LDVH 承认这一 trade-off 值得被追踪和改进的证据。\n"
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a00bd0-22f7-7013-ade9-0edf55637e94
+change_log:
+- summary: 创建 Spark：记录 AI 在使用 Helper CLI 交互时发现的输入契约摩擦、操作反馈不一致、发现入口过重、关系查询跨一跳成本高、无就绪状态机械信号等问题，关联 Helper 读交互优化 Spark 追溯共同线索。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: pi
+  at: '2026-08-16T22:48:18.013031Z'
+- summary: 'content_update: 追加创建过程本身就是现场证据章节 - 记录本 Spark 创建过程中 3 轮试错(draft_basis 位置/空字符串签名/缺 change_log), 作为 #1(输入契约摩擦)的真实任务摩擦证据。'
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: pi
+  at: '2026-08-16T22:51:38.705404Z'
+- summary: 'content_update: 追加创建过程本身就是现场证据章节 - 记录本 Spark 创建过程中 3 轮试错(draft_basis 位置/空字符串签名/缺 change_log), 作为 #1(输入契约摩擦)的真实任务摩擦证据。'
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: pi
+  at: '2026-08-16T22:52:57.158631Z'
+- summary: 'content_update: 修正第 6 节重复——此前一次成功更新(after 22:51:38)被误判未成功而重复执行，导致第 6 节内容出现两次；本次移除重复内容，保留首次成功更新流水。'
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: pi
+  at: '2026-08-16T22:55:48.017192Z'
+- summary: 'content_update: 追加第 7 节(后续操作中的附加摩擦)——记录更新环节发现的 4 项摩擦: response 字段名不可知导致重复执行、错误提示缺修复路径、model_name 哲学判断、不可删除历史流水的纪律成本。'
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: pi
+  at: '2026-08-16T22:58:04.647006Z'
+object_uid: 01a00cc2-f71d-720e-be75-5471382332e1
+object_id: spark-01M06C5XRXE87BWXAME4W26CQ1
+fact_type_key: spark
+created_at: '2026-08-16T22:48:18.013031Z'
+updated_at: '2026-08-16T22:58:04.647006Z'
