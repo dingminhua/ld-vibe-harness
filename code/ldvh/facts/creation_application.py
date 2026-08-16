@@ -30,6 +30,7 @@ from ldvh.facts.validation import (
     change_log_creation_issues,
     study_report_creation_issues,
     timestamp_initial_change_log,
+    validate_chinese_primary_changes,
     validate_fact_object,
 )
 from ldvh.facts.workcase_validation import required_quality_gate_issues
@@ -222,6 +223,7 @@ def _preflight(
     if parsed.fields is None:
         return fields, text, tuple(issues), False
     issues.extend(validate_fact_object(command.fact_type_key, parsed.fields, command.schema))
+    issues.extend(validate_chinese_primary_changes(parsed.fields))
     issues.extend(_creation_context_issues(command.fact_type_key, parsed.fields))
     if issues:
         return fields, text, tuple(issues), False

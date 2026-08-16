@@ -705,6 +705,7 @@ def _apply_core_workcase_write(
             authorization_reference=domain.authorization_reference,
             route_target_fingerprints=route_targets,
             independent_review_reference=independent_review_reference,
+            enforce_chinese_primary=True,
         )
     )
 

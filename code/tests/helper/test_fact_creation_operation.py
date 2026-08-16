@@ -502,13 +502,35 @@ def test_helper_create_rejects_a_three_level_dependency_with_a_missing_target(
     assert not (project / ".git/ldvh").exists()
 
 
+def _chinese_primary_new_fact(value: object, key: str | None = None) -> object:
+    constrained = {
+        "abstract", "action_ceiling", "allowed_adjustments", "applicability", "avoidance",
+        "blocking_summary", "cleanup_summary", "consequences", "controller_check_summary",
+        "controller_resolution", "decision", "decision_question", "disposition_summary",
+        "effect_scope", "expected_result", "feedback", "goal", "impact_summary", "intent",
+        "not_meaning", "observation_summary", "out_of_bounds_handling", "rationale", "reason",
+        "recommendation_summary", "research_intent", "research_question", "resolution", "result_summary",
+        "resume_from", "risk_summary", "rollback_summary", "root_cause", "scope", "statement", "summary",
+        "symptoms", "target_scope", "title", "trigger_conditions", "validation_summary",
+        "verification_and_rollback", "waiting_on",
+    }
+    if isinstance(value, dict):
+        return {item_key: _chinese_primary_new_fact(item, item_key) for item_key, item in value.items()}
+    if isinstance(value, list):
+        return [_chinese_primary_new_fact(item, key) for item in value]
+    if key in constrained and isinstance(value, str) and not any("\u3400" <= char <= "\u9fff" for char in value):
+        return f"中文 {value}"
+    return value
+
+
 def _create_payload(
     workspace: Path,
     project: Path,
     basis: dict[str, object],
     fact_object: dict[str, object],
 ) -> str:
-    supplied = deepcopy(fact_object)
+    supplied = _chinese_primary_new_fact(deepcopy(fact_object))
+    assert isinstance(supplied, dict)
     change_log_target = supplied.get("frontmatter") if set(supplied) == {"frontmatter", "body"} else supplied
     assert isinstance(change_log_target, dict)
     change_log_target.setdefault(
@@ -521,7 +543,7 @@ def _create_payload(
                     "agent_runtime_name": "pytest-runtime",
                 },
                 "at": (datetime.now().astimezone() - timedelta(minutes=1)).isoformat(),
-                "summary": "Created by the controlled test fixture.",
+                "summary": "由受控测试夹具创建。",
             }
         ],
     )
@@ -691,7 +713,7 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
     target = deepcopy(read["fact_object"])
     for key in ("object_uid", "object_id", "fact_type_key", "created_at", "updated_at"):
         target.pop(key)
-    target["summary"] = "Waiting for Human execution approval after a real update."
+    target["summary"] = "真实更新后等待 Human 执行批准。"
     target["change_log"].append(
         {
                 "signature": {
@@ -700,7 +722,7 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
                     "agent_runtime_name": "placeholder-runtime",
                 },
             "at": datetime.now().astimezone().isoformat(),
-            "summary": "Update the real WorkCase fixture.",
+            "summary": "更新真实 WorkCase 测试夹具。",
         }
     )
     updated = handle_request(
@@ -753,7 +775,7 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
     unavailable_target = deepcopy(reread["fact_object"])
     for key in ("object_uid", "object_id", "fact_type_key", "created_at", "updated_at"):
         unavailable_target.pop(key)
-    unavailable_target["summary"] = "This update must not be written without any observable signer field."
+    unavailable_target["summary"] = "缺少可观察署名字段时不得写入本次更新。"
     unavailable_target["change_log"].append(
         {
             "signature": {
@@ -928,7 +950,7 @@ def test_helper_create_read_and_update_accept_ignored_current_fact(tmp_path: Pat
     target = dict(read["fact_object"])
     for key in ("object_uid", "object_id", "fact_type_key", "created_at", "updated_at"):
         target.pop(key)
-    target["summary"] = "Ignored current fact updated through the Helper."
+    target["summary"] = "通过 Helper 更新被忽略的当前事实对象。"
     target["change_log"].append(
         {
             "signature": {
@@ -937,7 +959,7 @@ def test_helper_create_read_and_update_accept_ignored_current_fact(tmp_path: Pat
                 "agent_runtime_name": "pytest-runtime",
             },
             "at": datetime.now().astimezone().isoformat(),
-            "summary": "Updated by the controlled test fixture.",
+            "summary": "由受控测试夹具完成更新。",
         }
     )
     updated = handle_request(

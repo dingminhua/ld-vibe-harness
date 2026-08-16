@@ -28,6 +28,7 @@ from ldvh.facts.validation import (
     study_report_creation_issues,
     timestamp_appended_change_log,
     validate_change_log_transition,
+    validate_chinese_primary_changes,
     validate_fact_object,
 )
 from ldvh.filesystem import AtomicWriteResult, native_atomic_fact_writes_supported
@@ -76,6 +77,7 @@ class FactUpdateCommand:
     body: str | None
     event_at: str
     allow_legacy_routed_spark_migration: bool = False
+    enforce_chinese_primary: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -161,6 +163,8 @@ def _candidate(
     issues = list(parsed.issues)
     if parsed.fields is not None:
         issues.extend(validate_fact_object(command.fact_type_key, parsed.fields, command.schema))
+        if command.enforce_chinese_primary:
+            issues.extend(validate_chinese_primary_changes(parsed.fields, before=before))
         if command.fact_type_key == "study" and require_study_report_metadata:
             issues.extend(study_report_creation_issues(parsed.fields))
         issues.extend(

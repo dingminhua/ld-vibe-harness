@@ -11,6 +11,7 @@ from ldvh.facts.validation import (
     study_report_creation_issues,
     timestamp_appended_change_log,
     timestamp_initial_change_log,
+    validate_chinese_primary_changes,
     validate_change_log_transition,
     validate_fact_object,
 )
@@ -696,3 +697,132 @@ def test_first_log_transition_rejects_malformed_first_entries(mutate, summary: s
     mutate(after)
     issues = validate_change_log_transition(before, after, allow_first_log=True)
     assert any(summary in issue.summary for issue in issues)
+
+
+def test_chinese_primary_changes_rejects_new_english_natural_language() -> None:
+    issues = validate_chinese_primary_changes({"title": "English only title", "root_cause": "English only cause"})
+    assert [(issue.field_path, issue.summary) for issue in issues] == [
+        ("title", "受约束自然语言字段至少必须包含一个汉字"),
+        ("root_cause", "受约束自然语言字段至少必须包含一个汉字"),
+    ]
+
+
+def test_chinese_primary_changes_accepts_chinese_with_technical_identifiers() -> None:
+    assert validate_chinese_primary_changes({"title": "修复 create-fact-object 语言校验"}) == ()
+
+
+def test_chinese_primary_changes_preserves_untouched_legacy_english() -> None:
+    before = {"title": "Legacy English title", "summary": "旧摘要"}
+    after = {"title": "Legacy English title", "summary": "更新后的中文摘要"}
+    assert validate_chinese_primary_changes(after, before=before) == ()
+
+
+def test_chinese_primary_changes_rejects_nested_workcase_item_current_summary() -> None:
+    # current_summary 是字段矩阵明确列出的受约束散文，但此前 frozenset 遗漏；
+    # 嵌套在 work_items[] 结构成员中时同样必须按字段名递归命中。
+    after = {
+        "work_items": [
+            {
+                "item_id": "item-1",
+                "goal": "形成矩阵",
+                "status": "in_progress",
+                "current_summary": "English only current summary",
+            }
+        ]
+    }
+    issues = validate_chinese_primary_changes(after)
+    assert [(issue.field_path, issue.summary) for issue in issues] == [
+        ("work_items[0].current_summary", "受约束自然语言字段至少必须包含一个汉字"),
+    ]
+
+
+def test_chinese_primary_changes_allows_unchanged_nested_current_summary() -> None:
+    # 未变更的嵌套历史英文字段不得触发拒绝（历史兼容）。
+    before = {
+        "work_items": [
+            {
+                "item_id": "item-1",
+                "goal": "English legacy goal",
+                "status": "in_progress",
+                "current_summary": "English legacy current summary",
+            }
+        ]
+    }
+    after = {
+        "work_items": [
+            {
+                "item_id": "item-1",
+                "goal": "English legacy goal",
+                "status": "in_progress",
+                "current_summary": "English legacy current summary",
+            }
+        ]
+    }
+    assert validate_chinese_primary_changes(after, before=before) == ()
+
+
+def test_chinese_primary_changes_rejects_changed_nested_current_summary_to_english() -> None:
+    # 本次变更把嵌套 current_summary 改为纯英文时拒绝；新值不含汉字。
+    before = {
+        "work_items": [
+            {
+                "item_id": "item-1",
+                "goal": "已有中文目标",
+                "status": "in_progress",
+                "current_summary": "已有中文摘要",
+            }
+        ]
+    }
+    after = {
+        "work_items": [
+            {
+                "item_id": "item-1",
+                "goal": "已有中文目标",
+                "status": "in_progress",
+                "current_summary": "changed to english only",
+            }
+        ]
+    }
+    issues = validate_chinese_primary_changes(after, before=before)
+    assert [(issue.field_path, issue.summary) for issue in issues] == [
+        ("work_items[0].current_summary", "受约束自然语言字段至少必须包含一个汉字"),
+    ]
+
+
+def test_chinese_primary_changes_matches_by_stable_identity_not_index() -> None:
+    """数组按 item_id 身份对照而非下标：重排后历史英文不变不触发拒绝。"""
+    before = {
+        "work_items": [
+            {"item_id": "item-a", "goal": "English legacy goal A", "current_summary": "English legacy summary A"},
+            {"item_id": "item-b", "goal": "English legacy goal B", "current_summary": "English legacy summary B"},
+        ]
+    }
+    after = {
+        "work_items": [
+            {"item_id": "item-b", "goal": "English legacy goal B", "current_summary": "English legacy summary B"},
+            {"item_id": "item-a", "goal": "English legacy goal A", "current_summary": "English legacy summary A"},
+        ]
+    }
+    # 重排后下标 0 是 item-b（历史英文不变），下标 1 是 item-a（历史英文不变）
+    assert validate_chinese_primary_changes(after, before=before) == ()
+
+
+def test_chinese_primary_changes_identity_matched_new_member_has_no_prior() -> None:
+    """按身份匹配时，before 中无对应身份的新成员视作本次变更，纯英文被拒。"""
+    before = {
+        "work_items": [
+            {"item_id": "item-a", "goal": "已有中文目标", "current_summary": "已有中文摘要"},
+        ]
+    }
+    after = {
+        "work_items": [
+            {"item_id": "item-a", "goal": "已有中文目标", "current_summary": "已有中文摘要"},
+            {"item_id": "item-b", "goal": "English only new goal", "current_summary": "English only new summary"},
+        ]
+    }
+    issues = validate_chinese_primary_changes(after, before=before)
+    # item-b 的 goal 和 current_summary 都是纯英文，且没有 before 对应项（新成员）
+    fields = {(issue.field_path, issue.summary) for issue in issues}
+    assert len(fields) == 2
+    assert ("work_items[1].goal", "受约束自然语言字段至少必须包含一个汉字") in fields
+    assert ("work_items[1].current_summary", "受约束自然语言字段至少必须包含一个汉字") in fields

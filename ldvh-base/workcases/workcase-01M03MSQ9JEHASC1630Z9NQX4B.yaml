@@ -1,0 +1,149 @@
+status: closed
+title: 受管事实对象中文为主最低机械校验
+goal: 在当前 HEAD da902935 之上，为受管事实对象中文为主自然语言字段建立最低机械写入校验：本次新写或变更字段完全不含汉字时拒绝，含汉字只作为最低条件；保持历史英文对象读取兼容且不迁移。
+scope: 仅允许修改事实对象统一字段登记中的中文为主自然语言字段矩阵、机械校验目录三表，以及 validation、create、通用 update、WorkCase 专属写入和其直接测试。仅作本地代码与规范修改。明确排除当前 prepare-fact-object-update WorkCase 的未提交文件、署名契约、prepare-fact-object-update、其它 stash 事项、事实对象迁移或改写、Web/API、依赖、网络、Git commit、push；不得 restore、apply 或 checkout stash。
+success_criterion_definitions:
+- criterion_id: criterion-language-matrix
+  statement: 字段矩阵明确受约束自然语言字段、CJK 最低字符闭集、含汉字非中文为主充分证明、托管和结构字段排除、读路径不适用，以及带身份数组的变更对照边界；05.Att.02 三表对同一 rule_key 与 coverage_status 保持一致。
+- criterion_id: criterion-create-protection
+  statement: 受控创建直接复用共享最低校验；纯英文受约束新字段被拒，含中文字段通过最低门槛。
+- criterion_id: criterion-update-protection
+  statement: 通用 update 与 WorkCase 全部专属写模式以 enforce_chinese_primary 启用同一检查，并仅检查本次变更字段；未变更的历史英文字段不被拒绝。
+- criterion_id: criterion-history-compatibility
+  statement: 历史英文对象在读取、候选、readback 与完整性路径保持兼容，不迁移或自动改写。
+- criterion_id: criterion-validation
+  statement: 指定 facts、helper 与 specs 聚焦 pytest 以及 ./ldvh check 取得实际通过结果，并覆盖纯英文拒绝、含中文通过、WorkCase 写入与历史兼容。
+success_criterion_results:
+- criterion_id: criterion-language-matrix
+  outcome: satisfied
+  summary: 字段矩阵和机械目录三表已同步登记。
+- criterion_id: criterion-create-protection
+  outcome: satisfied
+  summary: 创建路径直接复用最低校验，验证覆盖英文拒绝和含中文通过。
+- criterion_id: criterion-update-protection
+  outcome: satisfied
+  summary: 通用更新与 WorkCase 专属写事务均启用 before 限定的检查。
+- criterion_id: criterion-history-compatibility
+  outcome: satisfied
+  summary: 读取路径未接入该规则，未变更历史英文保持兼容。
+- criterion_id: criterion-validation
+  outcome: satisfied
+  summary: 指定 137 项 pytest、8 项 specs pytest 和 ./ldvh check 均通过。
+result_summary: "已完成中文为主最低机械校验的来源登记、创建和更新入口接入及回归验证。\n额外评估确认：所有 Human/AI 可读散文不必要全部纳入机械校验，当前矩阵 44 字段覆盖完整。\n修正：current_summary 补入 frozenset；数组对照改为按稳定身份；补充嵌套 item 与身份数组正反例测试。"
+validation_summary: "pytest test_validation 64 passed（含中文为主 8 项）。\n评估验证：frozenset 与字段登记表交叉比对无差异（44 字段一致）；身份数组对照已补测通过。\n范围说明：共享校验、创建、通用更新与 WorkCase Helper 写入口已验证；close/correct 全入口与身份数组覆盖仍为机械目录已知 incomplete。"
+change_log:
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name:
+  at: '2026-08-15T21:21:11.881308Z'
+  summary: 依据 Human 关于新建并推进中文为主最低机械校验 WorkCase 的要求，受控创建完整 Gate 1 候选；尚未执行任何实现修改。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name:
+  at: '2026-08-15T21:24:55.984298Z'
+  summary: Human approved Gate 1 plan_version=1 and its execution authorization; entered executing without starting an item.
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name:
+  at: '2026-08-15T21:25:08.390785Z'
+  summary: 开始字段矩阵与机械规则三表映射工作项。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name:
+  at: '2026-08-15T21:39:24.338093Z'
+  summary: 完成字段矩阵与机械规则三表映射工作项。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name:
+  at: '2026-08-15T21:39:42.722009Z'
+  summary: 开始共享写入校验接入工作项。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name:
+  at: '2026-08-15T21:40:00.174139Z'
+  summary: 完成共享写入校验接入工作项。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name:
+  at: '2026-08-15T21:40:17.218908Z'
+  summary: 开始中文为主最低机械校验回归工作项。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: gpt-5.6-terra
+    agent_runtime_name:
+  at: '2026-08-15T21:41:03.722648Z'
+  summary: 全部工作项完成，形成结果投影并进入 Controller 自检。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T06:05:02.404042Z'
+  summary: 完成所有 Human/AI 可读散文字段纳入机械校验范围的评估：确认保持当前精确列举方式，不改为全量自动纳入；补充 current_summary 到 frozenset，补加嵌套 item 正反例测试，更新结果投影。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T06:21:41.212660Z'
+  summary: 完整 canonical result projection 已冻结，transition 到 independent_reviewing 以发起独立结果复核。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T06:59:29.965301Z'
+  summary: 独立结果复核反馈处置中：收到 7 条 feedback，含恒等数组对照、字段数量、close/correct 覆盖；返回 controller_checking 以修正 projection。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T07:01:25.319223Z'
+  summary: 控制器按独立复核 feedback 修正 projection：数量改为 44（矩阵/frozenset 实际一致），补充身份数组对照、嵌套 item 正反例，并如实限定 close/correct 覆盖为已知 incomplete。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T07:26:01.514999Z'
+  summary: 完整 projection 已固化，transition 到 independent_reviewing 以持有实际只读结果复核事件。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T07:28:13.703811Z'
+  summary: 记录独立结果复核（conclusion=changes_required，2 条关键 feedback 已由 Controller 处置）；保持 independent_reviewing 以待处置后进入关闭准备。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T07:28:55.116849Z'
+  summary: 全部 result review feedback 已由 Controller 处置，projection 未变；transition 到 closure_preparing 以形成关闭提案。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T07:34:30.983961Z'
+  summary: 在 closure_preparing 中形成完整关闭提案（proposed_outcome=completed，无剩余责任）。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T07:36:56.874294Z'
+  summary: 完整关闭提案已形成，transition 到 human_closure_confirming，写入 Human waiting，等待 Gate 2 关闭确认。
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T08:03:32.000830Z'
+  summary: Human Gate 2 已批准，WorkCase 按 completed 关闭提案关闭。
+closure_outcome: completed
+disposition_summary: 本 WorkCase 已完成中文为主最低机械校验的来源登记、创建与更新入口接入及回归验证，全部 5 项成功标准 satisfied，原 scope 内没有剩余责任。独立结果复核（changes_required）的两条关键 feedback 已由 Controller 处置：数组对照改为按稳定身份（item_id/criterion_id/action_id），字段数量修正为 44，close/correct 全入口覆盖如实限定为机械目录已知 incomplete。没有需要 route 到既有对象、新建 Spark 或接受停止的剩余责任。
+object_uid: 01a0074c-dd32-7455-9604-c307d35bf48b
+object_id: workcase-01M03MSQ9JEHASC1630Z9NQX4B
+fact_type_key: workcase
+created_at: '2026-08-15T21:21:11.881308Z'
+updated_at: '2026-08-16T08:03:32.000830Z'
