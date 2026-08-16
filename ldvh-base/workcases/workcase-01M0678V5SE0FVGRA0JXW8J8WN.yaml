@@ -8,7 +8,7 @@ success_criterion_definitions:
   statement: 05 §11.6.1 / §11.7 与 05.Att.01 的契约文本与实现一致：change_log 的 at 与 signature 由 Code 生成/覆盖，调用方无需手填；写入口机械校验与契约测试通过，写后精确回读 + check-fact-integrity complete。
 - criterion_id: criterion-success-signal
   statement: create-fact-object 与 update-fact-object 的成功结果按各自操作当前形状稳定返回机器可判定的显式写入成功信号（身份、指纹、created/updated 状态与回读 locator 的逐操作字段闭集）；契约文本与实现一致，写后精确回读 + check-fact-integrity complete。
-phase: human_plan_confirming
+phase: executing
 plan_version: 1
 work_items:
 - item_id: item-ritual-audit
@@ -101,7 +101,6 @@ creation_reviews:
   covered_quality_gate_ids:
   - independent-result-review
   actual_method: subagent-read-only
-waiting_on: Human Gate 1：批准当前计划与 execution_authorization 基线
 relations:
 - relation_key: related-to
   target:
@@ -116,8 +115,21 @@ change_log:
     agent_runtime_name:
   at: '2026-08-16T21:22:30.735749Z'
   summary: 受控创建「写交互去仪式与写入成功信号显式化」WorkCase：承接写交互优化 Spark 的 P2-2 与 change_log 去仪式两个候选；当前 open / human_plan_confirming，等待 Gate 1。
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-pro
+    agent_runtime_name:
+  at: '2026-08-16T21:29:42.185516Z'
+  summary: Human Gate 1 批准：写入 execution_approval（subject_version=1，baseline_fingerprint 绑定冻结基线），phase human_plan_confirming→executing，移除 Human waiting；保留 authorization、plan、items 与 creation reviews。
+execution_approval:
+  subject_version: 1
+  approved_at: '2026-08-16T21:28:53Z'
+  summary: Human 在当前会话明确回复「批准」，批准 workcase-01M0678V5SE0FVGRA0JXW8J8WN plan_version=1 的完整计划与 execution authorization baseline（含改 05 规范、改 code、本地 commit、委派/结果复核五项动作及其禁止项、超界收敛）。
+  baseline_fingerprint: dafd5c6f613c9a007389f258db1947b3525ce001c013ffe58b856478e36ff267
+  source_refs:
+  - current-conversation:user-message:批准
 object_uid: 01a00c74-6cb9-701f-b861-409778892395
 object_id: workcase-01M0678V5SE0FVGRA0JXW8J8WN
 fact_type_key: workcase
 created_at: '2026-08-16T21:22:30.735749Z'
-updated_at: '2026-08-16T21:22:30.735749Z'
+updated_at: '2026-08-16T21:29:42.185516Z'
