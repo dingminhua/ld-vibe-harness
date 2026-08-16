@@ -2,7 +2,7 @@ title: Helper 读交互优化
 status: open
 priority: P2
 intent: 保留 Helper 只读操作在真实任务中是否存在响应过重、每次读回完整对象、无法选择字段或按条件过滤、无法批量读的交互摩擦，并判断哪些只读 operation 的具体窄化能产生可观察的成本改善，而不依赖固定模型统计对比或大规模测试框架。
-summary: "## 当前状态\n\nHelper 只读操作（read-fact-objects、read-action-template-candidates、read-specification-candidates 等）当前每次按完整对象返回，缺少字段选择、条件过滤与批量读取能力；一项目常查询往往需要读入完整内容，实际需要的只是少量字段。\n\n## 实测证据（2026-08-16，dev-v4 @ 83eb9f4a）\n\n在真实 worktree 上对只读响应做体积分解：\n\n- read-fact-objects（父 Spark 大对象）：总响应 26.4KB，其中 fact_object 本体 10.1KB，sources 段 4.0KB；title/status/priority/intent/summary 五核心字段仅 3.96KB；\n- read-action-template-candidates：总响应 14.0KB，result 5.2KB，sources 4.1KB，verification 4.4KB；\n- read-specification-candidates：总响应 24.0KB，result 7.7KB，sources 4.4KB，verification 4.4KB；\n- capabilities 全量：65KB，result.operations 51.6KB，sources 12.4KB。\n\n每次调用都无条件携带 sources + verification 段（合计约 8–16KB），即使调用方只需要 result。`--fields` 投影已确认有效：`--fields \"result.items\"` 把 read-fact-objects 响应从 26.4KB 降到 11.5KB（裁剪 sources/gaps/follow_up 等包装段）。\n\n## 已确认代码级限制：--fields 无法进入数组\n\n`code/ldvh/cli_projection.py::_lookup_object_path` 只支持逐层 dict 导航，遇数组（如 result.items）即判 missing：`--fields \"result.items.fact_object.title\"` 实测返回 missing（报\"selector 语法无效\"实为数组路径不支持）。这正是本 Spark 描述的核心摩擦点——调用方无法只取 items[] 内的少量字段，被迫读回完整对象。\n\n## 待判断问题\n\n- 哪些只读 operation 的响应存在稳定过量或重复传输，导致 AI 调用成本上升；\n- fields 选择（含数组内字段）、compact profile 或批量读是否能在不改变完整性语义的前提下降低往返次数与 payload；\n- 变化的边际成本与收益是否支持实际实施。\n\n## 边界\n\n- 不依赖固定模型可比性、统计区间或 go/no-go 判断；\n- 不修改生产 Helper 公共契约（除非经窄 WorkCase 批准）；\n- 与受控写入优化独立，仅通过 related-to 关联追溯共同线索。"
+summary: "## 当前状态\n\nHelper 只读操作（read-fact-objects、read-action-template-candidates、read-specification-candidates 等）当前每次按完整对象返回，缺少字段选择、条件过滤与批量读取能力；一项目常查询往往需要读入完整内容，实际需要的只是少量字段。\n\n## 实测证据（2026-08-16，dev-v4 @ 83eb9f4a）\n\n在真实 worktree 上对只读响应做体积分解：\n\n- read-fact-objects（父 Spark 大对象）：总响应 26.4KB，其中 fact_object 本体 10.1KB，sources 段 4.0KB；title/status/priority/intent/summary 五核心字段仅 3.96KB；\n- read-action-template-candidates：总响应 14.0KB，result 5.2KB，sources 4.1KB，verification 4.4KB；\n- read-specification-candidates：总响应 24.0KB，result 7.7KB，sources 4.4KB，verification 4.4KB；\n- capabilities 全量：65KB，result.operations 51.6KB，sources 12.4KB。\n\n每次调用都无条件携带 sources + verification 段（合计约 8–16KB），即使调用方只需要 result。`--fields` 投影已确认有效：`--fields \"result.items\"` 把 read-fact-objects 响应从 26.4KB 降到 11.5KB（裁剪 sources/gaps/follow_up 等包装段）。\n\n## 已确认代码级限制：--fields 无法进入数组\n\n`code/ldvh/cli_projection.py::_lookup_object_path` 只支持逐层 dict 导航，遇数组（如 result.items）即判 missing：`--fields \"result.items.fact_object.title\"` 实测返回 missing（报\"selector 语法无效\"实为数组路径不支持）。这正是本 Spark 描述的核心摩擦点——调用方无法只取 items[] 内的少量字段，被迫读回完整对象。\n\n\n## 实施结果（2026-08-16）\n\n窄 WorkCase workcase-01M062YSRWFS58GRXT8C51Q7TQ 已 Gate1 批准执行并经 Gate2 关闭（closed/completed）：Helper CLI --fields 现支持数组内字段选择（如 result.items.fact_object.title），实现为结构保持的 list 逐元素投影 + 按索引深合并，现有 object-only 投影与公共契约保持。真实 worktree 实测四类只读操作选择少量字段即可降低 payload 87.9%-98.3%，全部 missing=[]；93 个相关测试通过，2 轮独立结果复核全部 feedback 已处置。\n\n本 Spark 的\"数组内字段选择\"摩擦点已收敛；\"批量读、条件过滤、compact profile\"仍为待判断候选，须先有真实任务摩擦证据再评估是否形成窄 WorkCase。\n## 待判断问题\n\n- 哪些只读 operation 的响应存在稳定过量或重复传输，导致 AI 调用成本上升；\n- fields 选择（含数组内字段）、compact profile 或批量读是否能在不改变完整性语义的前提下降低往返次数与 payload；\n- 变化的边际成本与收益是否支持实际实施。\n\n## 边界\n\n- 不依赖固定模型可比性、统计区间或 go/no-go 判断；\n- 不修改生产 Helper 公共契约（除非经窄 WorkCase 批准）；\n- 与受控写入优化独立，仅通过 related-to 关联追溯共同线索。"
 relations:
 - relation_key: related-to
   target:
@@ -20,8 +20,14 @@ change_log:
     product_name: DeepSeek Harness
     model_name: deepseek-v4-flash
     agent_runtime_name:
+- at: '2026-08-16T20:47:51.630882Z'
+  summary: content_update：追加实施结果闭环——数组内字段选择已由窄 WorkCase workcase-01M062YSRWFS58GRXT8C51Q7TQ 实现并关闭（closed/completed），实测降幅 87.9%-98.3%；批量读/条件过滤/compact profile 仍为待判断候选。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+    agent_runtime_name:
 object_uid: 01a00bd0-22f7-7013-ade9-0edf55637e94
 object_id: spark-01M05X08QQE09TVT8EVXAP6ZMM
 fact_type_key: spark
 created_at: '2026-08-16T18:23:03.931073Z'
-updated_at: '2026-08-16T19:58:28.385296Z'
+updated_at: '2026-08-16T20:47:51.630882Z'
