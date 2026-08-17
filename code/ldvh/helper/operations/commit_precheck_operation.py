@@ -58,6 +58,25 @@ _COMMIT_MESSAGE_INPUT_EXAMPLE = {
         "三项均不可观察时必须停止。该片段只示例连续 trailer 排列，不证明 message、授权或提交内容有效。"
     ),
 }
+_COMMIT_PAYLOAD_INPUT_EXAMPLE = {
+    "summary": "含 work_object_locators 的完整 precheck 请求示例（arguments_fragment + 顶层字段说明）",
+    "arguments_fragment": {
+        "message": (
+            "feat: <fill-subject>\n\n"
+            "<fill-body>\n\n"
+            "LDVH-Product-Name: <fill-directly-observed-product-name>\n"
+            "LDVH-Model-Name: <fill-directly-observed-model-name>\n"
+            "LDVH-Agent-Runtime-Name: <fill-directly-observed-agent-runtime-name>"
+        ),
+    },
+    "source_refs": (_INPUT_CONTRACT,),
+    "composition_note": (
+        "此示例只展示 arguments.message 形状。实际调用时必须在请求顶层加入 work_object_locators: "
+        "[\"/absolute/path/to/git/worktree\"]（恰一个绝对路径 string，指向实际 Git worktree 根）。"
+        "message 必须包含完整 commit message，含 header、body 和 LDVH trailer。"
+        "按同一次提交前直接观察逐项替换 trailer 尖括号占位。"
+    ),
+}
 
 
 def _plain(value: Any) -> Any:
@@ -132,6 +151,28 @@ def _result_json(result: CommitPrecheckResult) -> dict[str, Any]:
     if value is None:
         raise ValueError("completed commit precheck is missing validation input")
     validation = result.validation
+    checks = (
+        {
+            "check": "commit_contract_source",
+            "status": "passed",
+            "summary": "03 提交契约来源已定位",
+        },
+        {
+            "check": "governance_scope",
+            "status": "passed",
+            "summary": "管辖解析已形成可信结果",
+        },
+        {
+            "check": "git_candidate_observation",
+            "status": "passed",
+            "summary": "Git 候选观察已形成可信校验输入",
+        },
+        {
+            "check": "message_validation",
+            "status": validation.outcome,
+            "summary": f"message 机械校验: {validation.outcome}",
+        },
+    )
     return {
         "mechanical_outcome": validation.outcome,
         "candidate": {
@@ -153,6 +194,7 @@ def _result_json(result: CommitPrecheckResult) -> dict[str, Any]:
         "issues": [
             {"code": issue.code, "message": issue.message} for issue in result.issues if issue.stage == "validation"
         ],
+        "checks": list(checks),
         "semantic_checks_required": list(validation.semantic_checks_required),
     }
 
@@ -232,8 +274,8 @@ COMMIT_PRECHECK_IMPLEMENTATION = OperationImplementation(
     evidence=_IMPLEMENTATION_EVIDENCE,
     check_availability=_check_availability,
     call=_call,
-    input_examples=(_COMMIT_MESSAGE_INPUT_EXAMPLE,),
-    response_fields=("mechanical_outcome", "candidate", "message", "contract"),
+    input_examples=(_COMMIT_MESSAGE_INPUT_EXAMPLE, _COMMIT_PAYLOAD_INPUT_EXAMPLE),
+    response_fields=("mechanical_outcome", "candidate", "message", "contract", "checks"),
 )
 
 __all__ = ["COMMIT_PRECHECK_IMPLEMENTATION", "OPERATION_KEY"]

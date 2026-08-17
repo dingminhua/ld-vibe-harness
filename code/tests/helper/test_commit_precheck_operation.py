@@ -134,6 +134,9 @@ def test_helper_precheck_and_native_gate_share_one_bound_result(tmp_path: Path) 
     assert response["result"]["candidate"]["snapshot_identity"] == gate.snapshot_identity
     assert response["result"]["contract"]["source_fingerprint"] == gate.source_fingerprint
     assert response["result"]["semantic_checks_required"]
+    assert "checks" in response["result"]
+    assert any(item["check"] == "commit_contract_source" and item["status"] == "passed" for item in response["result"]["checks"])
+    assert any(item["check"] == "message_validation" and item["status"] == "passed" for item in response["result"]["checks"])
     assert response["scope"]["governance_resolution"]["scope_status"] == "governed_single"
     assert response["changes"] == []
     assert _state(project) == before
