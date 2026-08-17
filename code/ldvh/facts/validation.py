@@ -785,12 +785,11 @@ def _is_legacy_change_log_signature_issue(fields: Mapping[str, Any], issue: Fact
     )
     three_field_legacy = frozenset({"product_name", "model_name", "agent_runtime_name"})
     if isinstance(signature, dict) and set(signature) == three_field_legacy:
-        # The retired three-field shape is legacy-readable. product_name and
-        # model_name must be non-empty; agent_runtime_name may be null (it was
-        # written as an unobservable retired member before the two-field cutover).
-        return isinstance(signature.get("product_name"), str) and signature["product_name"].strip() and isinstance(
-            signature.get("model_name"), str
-        ) and signature["model_name"].strip()
+        # The retired three-field shape is legacy-readable. product_name must
+        # be non-empty; model_name and agent_runtime_name may be null (they
+        # were written as unobservable retired members before the two-field
+        # cutover, and many historical Cindy entries have model_name=None).
+        return isinstance(signature.get("product_name"), str) and signature["product_name"].strip()
     if not (
         isinstance(signature, dict)
         and set(signature) in legacy_shapes
