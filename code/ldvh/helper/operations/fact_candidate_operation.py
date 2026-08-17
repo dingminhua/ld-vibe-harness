@@ -59,7 +59,7 @@ _INPUT_EXAMPLES = (
         ),
     },
     {
-        "summary": "按关系目标反向查询：找出所有引用指定对象的同类或异类事实",
+        "summary": "按关系目标反向查询（legacy 三元组形状）：找出所有引用指定对象的同类或异类事实",
         "arguments_fragment": {
             "card_layer": "F2",
             "fact_type_keys": ["spark", "workcase"],
@@ -72,6 +72,22 @@ _INPUT_EXAMPLES = (
             "这是可组合输入片段，不是完整请求；调用者仍须加入当前实际 governed_project_id，"
             "并按实际目标替换 relation_targets 各项的 fact_type_key 与 object_id。"
             "relation_targets、relation_source_refs 和 relation_keys 分别支持以目标、来源和关系键反向查询。"
+        ),
+    },
+    {
+        "summary": "按关系目标反向查询（UID 形状）：用 object_uid 精确定位目标，无需已知类型或 project_id",
+        "arguments_fragment": {
+            "card_layer": "F2",
+            "fact_type_keys": ["spark"],
+            "relation_targets": [
+                {"object_uid": "01ar3x8gf1ta0ex4j6rvq7vt9s"}
+            ],
+        },
+        "source_refs": (_INPUT_CONTRACT,),
+        "composition_note": (
+            "这是可组合输入片段，不是完整请求；调用者仍须加入当前实际 governed_project_id。"
+            "UID 形状与 legacy 三元组形状互斥，二选一；"
+            "UID 形状无需指定 fact_type_key 或 governed_project_id。"
         ),
     },
 )
@@ -704,7 +720,7 @@ def _card(
         projection = tuple(field for field in projection if field in read.fields)
     fields = {field: read.fields[field] for field in projection}
     excerpts: list[dict[str, object]] = []
-    if domain.card_layer == "F2" and fact_type_key == "spark":
+    if domain.card_layer == "F2" and fact_type_key == "spark" and domain.card_fields is None:
         for field_path in ("intent", "summary"):
             value = read.fields.get(field_path)
             if not isinstance(value, str):
