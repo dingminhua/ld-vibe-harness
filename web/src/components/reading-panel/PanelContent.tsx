@@ -580,7 +580,7 @@ export function CommitDetailContent({
         );
       })}
 
-      {entry?.signature && <CommitSignatureSection signature={entry.signature} labels={labels} />}
+      {/* {entry?.signature && <CommitSignatureSection signature={entry.signature} labels={labels} />} */}
 
       <CommitReadingNodeSection
         title={labels.changedFiles}
