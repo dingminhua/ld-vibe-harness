@@ -1,0 +1,183 @@
+title: v4 结构验证实验：行动指引字段对 F2→F3 决策的独立效应
+goal: 实现并运行一个 source-complete、条件盲评的 v4 配对实验，比较 F2 卡片有无 trigger_signal / scope_of_impact / action_relevance 三个新字段时，模型在 F2 触发决策与 F2→F3 消费上的差异。复用 v0.3 的 18 个冻结任务、宽触发策略（L1-baseline）、盲评 rubric 与 scorer 校验基础设施，两臂共享同一 trigger policy，唯一实验差异为 F2 卡片是否含新字段。把严格预注册的采用或不采用判断写回相关 Spark。
+scope: 仅新增 code/ldvh/testing/knowledge_precheck_v4.py、code/ldvh/testing/knowledge_precheck_v4_trial.py、code/tests/testing/test_knowledge_precheck_v4.py、code/tests/testing/test_knowledge_precheck_v4_trial.py 与 docs/metrics/knowledge-precheck-v4；v3 代码只允许作为只读 import/复用依据，docs/metrics/knowledge-precheck-v3 sealed bundle 与 compiled artifacts 不得修改。复用 v0.3 的 18 个 task/gold（含 A1–S6、6 情形、9 applicable/9 non-use/6 no-trigger）和 L1-baseline 宽触发策略文本（1050 B / 9 行）。两臂同一 trigger policy（L1-baseline），唯一差异为 F2 卡片是否含新字段：struct-baseline 剥离 trigger_signal/scope_of_impact/action_relevance，struct-enhanced 含新字段。只允许真实 Helper F2/F3 只读调用及字段闭集证据留存；source-complete 报告成立后，允许经 Helper CAS 更新 Spark UID 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc。排除生产 L1 接入、L0 复评、Specs、Helper contract、事实 Schema、Web、其它事实对象、v3 证据改写、Git commit/push/PR/release、部署和网络发布。
+success_criterion_definitions:
+- criterion_id: criterion-frozen-v4-protocol
+  statement: 冻结 v4 protocol（schema_version=ldvh-knowledge-precheck-v4/1）、18 个 task/gold（复用 v0.3 的 A1–S6）、当前事实集合与 source snapshot（含双卡集：family_cards_enhanced + family_cards_stripped）、L1-baseline 宽触发策略文本（两臂共享同一 policy）、9/9 条件首发顺序平衡、模型/runner 身份策略与盲评 rubric。采用门槛预注册为：trigger_correct 增强臂对基线无显著回退（sign-flip p ≥ 0.05），且增强臂绝对 ≥ 15/18 或对比 v0.3 baseline 有显著改善；f2_decision_accuracy 以 trigger_correct + selection_correct + false_f3 为成分，paired sign test p < 0.05 才算支持新字段；strong_reuse / correct_non_use / first_legal_action_correct 增强臂不得显著低于基线；policy_capacity 与 source_complete_replay 成立。任一门槛失败或证据不足即 do-not-support-enhanced-fields。
+- criterion_id: criterion-dual-card-gateway
+  statement: v4 Gateway 在 expected_f2_cards 校验后，按 condition 对返回给模型的 cards 做投影剥离：struct-baseline 从每张卡的 fields 中删掉三个新字段（trigger_signal/scope_of_impact/action_relevance）并重构字段序；struct-enhanced 原样返回生产 F2 卡。snapshot 中存两套卡（family_cards_enhanced + family_cards_stripped），防止裸字段漂移逃逸。condition_from_packet 改为按 packet 中显式 card_layer/condition 字段区分臂（两臂 policy 完全一致，无法用 policy hash 区分）。盲评 packet、scorer 上下文不得含 struct- 字样。任何 write/unknown、arguments.workspace_root、跨 family、F3-before-F2、source drift 或条件泄漏均 fail closed 且零实验事实写入。
+- criterion_id: criterion-v4-source-complete-replay
+  statement: 独立 sealed evidence bundle 从 protocol/task/gold、source snapshot（含双卡集）、raw Helper exchanges、模型结构化输出、盲评 packet/评分及 adjudication ledger 字节一致重建 records、results 与 report；trigger correctness、unnecessary F2、false F3、selection、first action、strong reuse 与 correct non-use 由 frozen gold 加 raw response/trace 确定性重算。缺失、额外、篡改、hash drift、score/packet 不绑定或 post-hoc override 均被拒绝。
+- criterion_id: criterion-v4-automated-verification
+  statement: v4 focused tests 实际覆盖 protocol 闭集与双卡/双条件结构、dual-card gateway 的剥离/漂移/condition 泄漏拒绝、真实只读 fixture、byte replay、blind packet 脱敏（无 struct- 字样）、fresh context/scorer 唯一性、attempt/replacement/launch/time ceiling 与 technical-exclusion 闭集；同时重跑 v3 non-live-source focused tests 证明 sealed v3 行为与产物未被改变。
+- criterion_id: criterion-v4-paired-measurement
+  statement: 实际取得恰 18 retained pairs；最多 21 个 pair attempts、3 个仅由预注册技术排除触发的整对 replacements、42 个 member launches 与 42 个 scorer contexts，每个 member 最多 600 秒、无单臂重试、总运行不超过 6 小时。报告逐 family/情形及总体的 trigger confusion matrix、unnecessary F2、F3 precision/recall、selection、knowledge-adjusted first legal action、strong_reuse、correct_non_use、false F3、Helper 调用/F3 数量及可观察成本，并严格按冻结联合门槛给出 supports-enhanced-fields 或 do-not-support-enhanced-fields；错误、null、负效应和不利 family 结果不得排除。
+- criterion_id: criterion-spark-v4-writeback
+  statement: 仅在 v4 source-complete 报告成立后，目标 Spark UID 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc 的公开精确回读包含报告绑定、实测指标、各门槛通过/失败、运行时可观察性与因果限制，以及严格的 supports-enhanced-fields 或 do-not-support-enhanced-fields 判断；写后 check-fact-integrity 外层 outcome=ok 且 result.status=complete。
+priority: P1
+work_items:
+- item_id: item-freeze-v4-protocol
+  goal: 冻结 v4 protocol：基于 v0.3 的 18 个 task/gold（A1–S6）和 L1-baseline 宽触发策略（9 行/1050 B），构建 v4 protocol（schema_version=ldvh-knowledge-precheck-v4/1），含双条件（struct-baseline/struct-enhanced）、9/9 首发顺序平衡、预注册门槛、盲评 rubric、artifact denylist、ceilings（18 pairs/21 attempts/3 replacements/42 launches/42 scorer contexts/600s per member/6h total)。
+  status: pending
+  expected_result: v4 protocol.json 已冻结，全部 18 个 task/gold、双条件、9/9 首发顺序、预注册门槛、盲评 rubric、ceilings 经测试验证
+- item_id: item-capture-v4-source-snapshot
+  goal: 捕获 v4 source snapshot：真实 Helper 捕获三类 F2 卡（含新字段 trigger_signal/scope_of_impact/action_relevance）+ F3 指纹；从捕获中派生 stripped 卡集（删除三个新字段 + 重构字段序），两者 hash 绑定存入 snapshot 双卡集。
+  status: pending
+  expected_result: source-snapshot.json 已捕获，含 family_cards_enhanced、family_cards_stripped 双卡集及 F3 指纹
+- item_id: item-implement-v4-runner
+  goal: 实现 v4 runner + gateway：剪裁 v3 代码创建 knowledge_precheck_v4.py（Schema v4、双卡剥离 Gateway、source snapshot 双卡集、18 任务复用、编译/回放/反篡改）和 knowledge_precheck_v4_trial.py（运行编排 CLI）。
+  status: pending
+  expected_result: knowledge_precheck_v4.py 和 knowledge_precheck_v4_trial.py 已实现，v4 Gateway 双卡剥离、编译/回放/反篡改通过
+- item_id: item-write-v4-tests
+  goal: 实现 v4 测试：test_knowledge_precheck_v4.py（协议闭集/双卡剥离/gateway 漂移拒绝/source-complete 回放/盲评脱敏/篡改拒绝）和 test_knowledge_precheck_v4_trial.py（真实只读 F2/F3 fixture/跨臂剥离正确性/ledger 上限/fresh context）。
+  status: pending
+  expected_result: test_knowledge_precheck_v4.py 和 test_knowledge_precheck_v4_trial.py 已实现，全部测试通过
+- item_id: item-run-v4-experiment
+  goal: 运行 36 个 member run（18 对 × 2 臂）+ 18 对盲评：真实子代理，600s/attempt 上限，按 v4 protocol 编排；记录全部原始证据、触发 trace、Helper exchange、F3 决策、最终输出和盲评评分。
+  status: pending
+  depends_on:
+  - item-implement-v4-runner
+  - item-freeze-v4-protocol
+  - item-capture-v4-source-snapshot
+  expected_result: 36 个 member run + 18 对盲评已完成，ledger 完整，全部在上限内
+- item_id: item-compile-sealed-bundle
+  goal: compile sealed evidence bundle：source-complete 回放，byte-identical 重建 records/results/report；manifest 闭合，SHA-256 校验全部文件。
+  status: pending
+  depends_on:
+  - item-run-v4-experiment
+  expected_result: sealed evidence bundle 已 compile，byte-identical 重建 records/results/report 通过
+- item_id: item-spark-writeback
+  goal: 写回结果到相关 Spark（现有 spark-01KZXN5TXNEKMANG1WTFBKT5FW.yaml，保持 open/P1），记录 v4 结论（supports-enhanced-fields 或 do-not-support-enhanced-fields）与方向。
+  status: pending
+  depends_on:
+  - item-compile-sealed-bundle
+  expected_result: Spark UID 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc 已受控写回，check-fact-integrity outcome=ok/status=complete
+execution_authorization:
+  authorized_actions:
+  - action_id: authorization-create-v4-modules
+    summary: 新建 v4 实验模块（runner 和 gateway）
+    target_scope: 新建 v4 实验模块（runner 和 gateway）
+    effect_scope: 在当前 worktree 本地新建上述文件；不修改 v2/v3 代码
+    risk_summary: 新代码可能含缺陷；通过 focused tests 和 source-complete replay 验证
+    rollback_summary: 文件未进入 Git 提交，可直接删除重建
+    rule_refs:
+    - workcase-fact-type::6. 状态、阶段与生命周期
+  - action_id: authorization-create-v4-trial-cli
+    summary: 新建 v4 运行编排 CLI
+    target_scope: 新建 v4 运行编排 CLI
+    effect_scope: 在当前 worktree 本地新建上述文件；不修改 v2/v3 代码
+    risk_summary: 新代码可能含缺陷；通过 focused tests 和 source-complete replay 验证
+    rollback_summary: 文件未进入 Git 提交，可直接删除重建
+    rule_refs:
+    - workcase-fact-type::6. 状态、阶段与生命周期
+  - action_id: authorization-create-v4-tests
+    summary: 新建 v4 focused tests（两个测试文件）
+    target_scope: 新建 v4 focused tests（两个测试文件）
+    effect_scope: 在当前 worktree 本地新建上述文件；不修改 v2/v3 测试
+    risk_summary: 测试覆盖不足或过严；通过全量测试运行验证
+    rollback_summary: 文件未进入 Git 提交，可直接删除重建
+    rule_refs:
+    - workcase-fact-type::6. 状态、阶段与生命周期
+  - action_id: authorization-create-v4-metrics-dir
+    summary: 新建 docs/metrics/knowledge-precheck-v4/ 实验产物目录
+    target_scope: 新建 docs/metrics/knowledge-precheck-v4/ 实验产物目录
+    effect_scope: 在当前 worktree 本地创建产物（protocol/snapshot/evidence/compiled）
+    risk_summary: 实验证据量大；通过 manifest 闭合与 SHA-256 校验
+    rollback_summary: 目录未进入 Git 提交，可直接重建
+    rule_refs:
+    - workcase-fact-type::6. 状态、阶段与生命周期
+  - action_id: authorization-read-only-helper-calls
+    summary: 真实 Helper 只读 F2/F3 调用（知识捕获与实验 member run）
+    target_scope: ldvh Helper CLI 的 find-fact-object-candidates / read-fact-objects（只读操作）
+    effect_scope: 只读；changes 必须为空；arguments.workspace_root 禁止
+    risk_summary: 知识快照漂移；通过 gateway 对 expected cards/fingerprints 校验 fail closed
+    rollback_summary: 只读调用不产生副作用，无需回滚
+    rule_refs:
+    - workcase-fact-type::6. 状态、阶段与生命周期
+  - action_id: authorization-workcase-checkpoints
+    summary: Helper CAS 写回本 WorkCase 检查点
+    target_scope: 本 WorkCase canonical 载体
+    effect_scope: phase/work_items/resume_from 等检查点字段更新
+    risk_summary: 写回争用；通过 CAS 与精确回读防冲突
+    rollback_summary: 只能向前写回；冲突时停止并重新读取
+    rule_refs:
+    - workcase-fact-type::6. 状态、阶段与生命周期
+  - action_id: authorization-spark-result-writeback
+    summary: Helper CAS 写回 Spark UID 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc（仅 source-complete 报告成立后）
+    target_scope: Spark 目标对象（Spark UID 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc（spark-01KZXN5TXNEKMANG1WTFBKT5FW.yaml））
+    effect_scope: summary/evolution 更新，保持 open/P1
+    risk_summary: 写回内容错误；通过公开精确回读和 check-fact-integrity 验证
+    rollback_summary: 只能向前写回；写错时按受控更正流程处置
+    rule_refs:
+    - workcase-fact-type::6. 状态、阶段与生命周期
+  - action_id: authorization-run-member-and-scorer
+    summary: 运行 36 个 member run + 18 对盲评（真实子代理）
+    target_scope: 运行 36 个 member run + 18 对盲评（真实子代理）
+    effect_scope: 仅写入 bundle 内证据文件；不写入生产代码
+    risk_summary: 运行时长和失败重试；受 ceilings（42 launches/42 scorer/600s/6h）约束
+    rollback_summary: 失败按技术排除流程替换整对；无副作用写入
+    rule_refs:
+    - workcase-fact-type::6. 状态、阶段与生命周期
+  action_ceiling: 全部授权动作仅限本 scope 明确列出的文件和目录；不超过 42 个 member launches 和 42 个 scorer contexts；每个 member run 不超过 600 秒；总运行不超过 6 小时；replacement 最多 3 次；pair attempts 最多 21 次
+  prohibited_actions:
+  - 生产 Helper contract 变更
+  - 生产 F2 投影剥离写入生产代码（剥离只发生在实验 Gateway）
+  - Git commit/push/PR/release
+  - Web 发布
+  - 修改 v2/v3 代码或 sealed bundle
+  - 修改 specs、Helper contract 或事实 Schema
+  - 创建本 WorkCase 和 Spark 写回以外的其它事实对象
+  - 生产 L1/L0 接入实现
+  allowed_adjustments: run 过程中按 ceilings 上限调整 attempt/replacement 次数；编译器可修正 compiled results.json 的 records_sha256 内部引用一致性
+  verification_and_rollback: v4 focused tests 全部通过后 seal；source-complete replay 两次重建 byte-identical；v3 sealed bundle 155 文件 hash 不变；Ruff format/check、py_compile 通过；check-fact-integrity outcome=ok/status=complete
+  out_of_bounds_handling: 超出 scope 的事项不获授权；按 21 与 34 取消受影响 item 并收敛到结果链；不请求扩权
+  quality_gates:
+  - gate_id: independent-result-review
+    reviewer_mode: independent-read-only
+    delegation_action_id: authorization-spark-result-writeback
+    result_review_action_id: authorization-create-v4-tests
+status: open
+phase: executing
+plan_version: 1
+creation_reviews:
+- reviewer: same-ai-switched-role-read-only
+  reviewed_at: '2026-08-16T16:00:00Z'
+  subject_version: 1
+  scope: v4 结构验证实验 WorkCase 计划完整检查：goal/scope/success_criterion_definitions/work_items/execution_authorization 是否完整覆盖 21 §4.4 与 §6，item 和 criterion 是否吸收生命周期关口或 Human Gate
+  conclusion: pass
+  feedback:
+  - 逐项检查完成：work items 与 success criteria 均不吸收 controller_checking/independent_reviewing/closure_preparing/human_closure_confirming 等生命周期关口或 Human Gate；execution_authorization 覆盖全部计划内写入、Helper 操作、副作用、风险和禁止项；quality_gates 声明独立结果复核
+  controller_resolution: 采纳；所有 feedback 已反映到最终计划
+  covered_quality_gate_ids:
+  - independent-result-review
+  actual_method: same-ai-switched-role-read-only
+  capability_evidence:
+  - 当前会话工具面中未发现可用的只读 Subagent 创建能力，无法委派独立 Reviewer
+  assurance_gap: 非独立审核：same-AI 切换只读视角，不构成独立保证
+  human_disclosure_summary: 本创建复核由同一 AI 切换只读 Reviewer 视角完成，非独立 Subagent 审核；已向 Human 披露保证差距
+  human_disclosed_at: '2026-08-17T00:00:00Z'
+change_log:
+- at: '2026-08-16T22:53:52.455892Z'
+  summary: 创建 v4 结构验证实验 WorkCase 草案，等待 Gate 1：验证 F2 卡片中 trigger_signal/scope_of_impact/action_relevance 三个新字段对 F2→F3 决策的独立效应
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T23:06:29.612972Z'
+  summary: Human Gate 1 已批准 plan_version=1，绑定完整执行授权基线并进入执行阶段
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+execution_approval:
+  summary: Human Gate 1 批准 plan_version=1 的完整执行授权基线，进入执行阶段
+  approved_at: '2026-08-16T22:53:53.000000Z'
+  subject_version: 1
+  baseline_fingerprint: 71acc13d40428d238df0ca1e8c80bb6137b41583fedab447d14ff9a875a39341
+  source_refs:
+  - conversation-20260817-first:User said 批准执行 (approve execution)
+object_uid: 01a00cc8-1198-7abb-9b1e-ecdf1fce5be1
+object_id: workcase-01M06CG4CRFAXSP7QCVWFWWPZ1
+fact_type_key: workcase
+created_at: '2026-08-16T22:53:52.455892Z'
+updated_at: '2026-08-16T23:06:29.612972Z'
