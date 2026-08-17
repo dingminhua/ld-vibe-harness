@@ -35,7 +35,7 @@ work_items:
   goal: 实现 v4 测试：test_knowledge_precheck_v4.py（协议闭集/双卡剥离/gateway 漂移拒绝/source-complete 回放/盲评脱敏/篡改拒绝）和 test_knowledge_precheck_v4_trial.py（真实只读 F2/F3 fixture/跨臂剥离正确性/ledger 上限/fresh context）。
   status: completed
   expected_result: test_knowledge_precheck_v4.py 和 test_knowledge_precheck_v4_trial.py 已实现，全部测试通过
-  result_summary: v4 focused tests 全部通过
+  result_summary: test_knowledge_precheck_v4.py 13 项 focused tests 全部通过；但计划内的 test_knowledge_precheck_v4_trial.py 未创建，trial 相关测试覆盖缺失
 - item_id: item-run-v4-experiment
   goal: 运行 36 个 member run（18 对 × 2 臂）+ 18 对盲评：真实子代理，600s/attempt 上限，按 v4 protocol 编排；记录全部原始证据、触发 trace、Helper exchange、F3 决策、最终输出和盲评评分。
   status: completed
@@ -54,12 +54,11 @@ work_items:
   result_summary: sealed evidence bundle 已编译完成
 - item_id: item-spark-writeback
   goal: 写回结果到相关 Spark（现有 spark-01KZXN5TXNEKMANG1WTFBKT5FW.yaml，保持 open/P1），记录 v4 结论（supports-enhanced-fields 或 do-not-support-enhanced-fields）与方向。
-  status: in_progress
+  status: completed
   depends_on:
   - item-compile-sealed-bundle
   expected_result: Spark UID 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc 已受控写回，check-fact-integrity outcome=ok/status=complete
-  current_summary: v4 结论写回 Spark（do-not-support-enhanced-fields）
-  resume_from: 完成 v4 结论写回 Spark 与 check-fact-integrity 验证
+  result_summary: Spark UID 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc 已受控写回 do-not-support-enhanced-fields 结论（summary/evolution 更新，保持 open/P1），公开精确回读确认；写后 check-fact-integrity outcome=ok、result.status=complete
 execution_authorization:
   authorized_actions:
   - action_id: authorization-create-v4-modules
@@ -145,7 +144,7 @@ execution_authorization:
     delegation_action_id: authorization-spark-result-writeback
     result_review_action_id: authorization-create-v4-tests
 status: open
-phase: executing
+phase: human_closure_confirming
 plan_version: 1
 creation_reviews:
 - reviewer: same-ai-switched-role-read-only
@@ -189,6 +188,42 @@ change_log:
     product_name: Cindy
     model_name:
     agent_runtime_name: codex
+- at: '2026-08-17T10:19:34.004479Z'
+  summary: 完成最后一项 item-spark-writeback 并进入 controller_checking，形成 result_version=1 与完整 canonical result projection；criterion-v4-automated-verification 因 trial 测试文件缺失判 not_satisfied
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
+- at: '2026-08-17T10:24:56.870170Z'
+  summary: 按独立复核 feedback 修正投影：criterion-v4-automated-verification 摘要补 v3 重跑证据未留存成分，item-write-v4-tests 结果披露 trial 测试缺失
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
+- at: '2026-08-17T10:25:44.314776Z'
+  summary: 进入 independent_reviewing，结果投影已冻结，等待独立结果复核
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
+- at: '2026-08-17T10:26:05.173002Z'
+  summary: 记录 read-only subagent 独立结果复核（conclusion=pass_with_followups），feedback 已按修正投影处置
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
+- at: '2026-08-17T10:26:47.652697Z'
+  summary: 进入 closure_preparing，形成关闭提案（proposed_outcome=partial，一项 accept_stop 剩余责任）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
+- at: '2026-08-17T10:27:35.530543Z'
+  summary: 进入 human_closure_confirming，完整关闭提案已形成，等待 Human Gate 2 关闭决定
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
 execution_approval:
   summary: Human Gate 1 批准 plan_version=1 的完整执行授权基线，进入执行阶段
   approved_at: '2026-08-16T22:53:53.000000Z'
@@ -196,8 +231,50 @@ execution_approval:
   baseline_fingerprint: 71acc13d40428d238df0ca1e8c80bb6137b41583fedab447d14ff9a875a39341
   source_refs:
   - conversation-20260817-first:User said 批准执行 (approve execution)
+result_version: 1
+success_criterion_results:
+- criterion_id: criterion-frozen-v4-protocol
+  outcome: satisfied
+  summary: protocol.json 已冻结（schema_version=ldvh-knowledge-precheck-v4/1），含 18 个 task/gold（复用 v0.3 A1–S6）、双条件 struct-baseline/struct-enhanced、9/9 首发顺序平衡、L1-baseline 共享 policy、预注册采用门槛与盲评 rubric；经 test_v4_protocol_closed/conditions/same_policy/orders 验证
+- criterion_id: criterion-dual-card-gateway
+  outcome: satisfied
+  summary: v4 Gateway 按 condition 对 struct-baseline 剥离三个新字段、struct-enhanced 原样返回生产 F2 卡；双卡集（family_cards_enhanced/family_cards_stripped）hash 绑定入 snapshot；condition 由 packet 显式字段区分。剥离/漂移/condition 泄漏拒绝经 test_strip_f2_cards、test_fake_gateway_strip/enhanced/drift_rejected/stripped_drift_rejected、test_condition_from_packet/not_in_policy_hash 验证
+- criterion_id: criterion-v4-source-complete-replay
+  outcome: satisfied
+  summary: compile_evidence_bundle 从 protocol/task/gold、双卡集 source snapshot、raw Helper exchanges、盲评 packet/评分与 ledger 重建 records/results/report；report.md 记录 source_complete_replay=PASS，manifest/protocol/source-snapshot SHA-256 绑定
+- criterion_id: criterion-v4-automated-verification
+  outcome: not_satisfied
+  summary: test_knowledge_precheck_v4.py 13 项 focused tests 全部通过，覆盖协议闭集、双卡/双条件与 gateway 剥离/漂移/condition 泄漏拒绝；但计划内的 test_knowledge_precheck_v4_trial.py 未创建，真实只读 fixture、byte replay、盲评脱敏（无 struct- 字样）、fresh context/scorer 唯一性、attempt/replacement/launch/time ceiling 与 technical-exclusion 闭集缺乏自动化测试覆盖；且 v3 non-live-source focused tests 在 v4 实验上下文中重跑以证明 sealed v3 行为与产物未被改变的证据未独立留存
+- criterion_id: criterion-v4-paired-measurement
+  outcome: satisfied
+  summary: 实际取得 18 retained pairs（36 member runs、36 scorer contexts、0 invalid），未超 ceilings；report.md 逐 gate 观察（trigger_correctness_absolute FAIL、unnecessary_f2_not_increased FAIL、first_legal_action_not_decreased FAIL，其余 PASS）并按冻结联合门槛给出 do-not-support-enhanced-fields
+- criterion_id: criterion-spark-v4-writeback
+  outcome: satisfied
+  summary: Spark UID 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc 经 Helper CAS 写回 do-not-support-enhanced-fields 结论（字段存在性非瓶颈，主方向转信息呈现方式），公开精确回读确认；写后 check-fact-integrity outcome=ok、result.status=complete（273 对象）
+result_summary: v4 结构验证配对实验按预注册门槛完整运行并得出 do-not-support-enhanced-fields：三个新字段（trigger_signal/scope_of_impact/action_relevance）不独立改善 F2 触发决策与 F2→F3 消费（trigger_correct 12 vs 13、first_legal_action_correct 11 vs 13、unnecessary_f2 6 vs 5）。结论已写回 Spark（主方向转信息呈现方式）。除 criterion-v4-automated-verification 因 trial 测试文件缺失未完全满足外，其余五项成功标准均满足。
+controller_check_summary: Controller 逐项核对：全部 7 个 work item 已 terminal；Spark 写回经公开精确回读确认（evolution 最新条记录 do-not-support-enhanced-fields 结论与方向调整）；check-fact-integrity 全量通过（outcome=ok/status=complete，273 对象）。发现偏差：计划内的 test_knowledge_precheck_v4_trial.py 未创建，item-write-v4-tests 虽标 completed 但仅交付 13 项 protocol/gateway focused tests，trial 相关测试覆盖缺失，故 criterion-v4-automated-verification 判 not_satisfied。
+validation_summary: 实际验证：v4 13 项 focused tests 通过（pytest）；sealed evidence bundle compile 成功且 source_complete_replay=PASS；manifest/protocol/source-snapshot SHA-256 绑定；check-fact-integrity outcome=ok/status=complete。未验证：trial 相关自动化测试（真实只读 fixture、byte replay、盲评脱敏、ceilings、technical-exclusion）因 test_knowledge_precheck_v4_trial.py 未创建而缺失；v3 non-live-source tests 在 v4 实验上下文重跑的证据未独立留存。
+result_reviews:
+- reviewer: read-only-subagent
+  reviewed_at: '2026-08-17T10:26:04.994Z'
+  subject_version: 1
+  scope: 复核 result_version=1 的完整 canonical result projection 与实验证据（report.md、results.json、test_knowledge_precheck_v4.py、git 历史）的一致性，独立验证 criterion-v4-automated-verification 的 not_satisfied 判定与其余 5 项 satisfied 判定
+  conclusion: pass_with_followups
+  feedback:
+  - criterion-v4-automated-verification 的 summary 未把 statement 第二成分「重跑 v3 non-live-source focused tests 证明 sealed v3 行为与产物未被改变」的未满足纳入 not_satisfied 理由
+  - item-write-v4-tests 标 status=completed 且 result_summary 仅写「v4 focused tests 全部通过」，未在 item 层面披露计划内的 test_knowledge_precheck_v4_trial.py 未创建
+  actual_method: subagent-read-only
+  controller_resolution: feedback 均已处置：criterion-v4-automated-verification 摘要已补 v3 non-live-source tests 重跑证据未留存成分；item-write-v4-tests 的 result_summary 已披露 trial 测试文件未创建。投影已按 feedback 修正。
+closure_proposal:
+  proposed_outcome: partial
+  proposed_disposition_summary: v4 结构验证配对实验已 source-complete 运行并写回 do-not-support-enhanced-fields 结论；5 项成功标准 satisfied，1 项 criterion-v4-automated-verification not_satisfied（计划内 trial 测试文件未创建）。剩余责任一项，按 accept_stop 处置，由 Human 在 Gate 2 决定是否接受。
+  residual_decisions:
+  - residual_id: residual-v4-trial-tests
+    summary: 计划内的 test_knowledge_precheck_v4_trial.py 未创建，导致真实只读 fixture、byte replay、盲评脱敏、fresh context/scorer 唯一性、attempt/replacement/launch/time ceiling 与 technical-exclusion 闭集缺乏自动化测试覆盖，且 v3 non-live-source focused tests 重跑证据未独立留存。停止依据：v4 实验已得出 do-not-support-enhanced-fields 结论并写回 Spark，主方向转信息呈现方式，继续补齐 v4 trial 测试的边际价值有限。
+    proposed_disposition: accept_stop
+waiting_on: Human Gate 2 关闭决定
 object_uid: 01a00cc8-1198-7abb-9b1e-ecdf1fce5be1
 object_id: workcase-01M06CG4CRFAXSP7QCVWFWWPZ1
 fact_type_key: workcase
 created_at: '2026-08-16T22:53:52.455892Z'
-updated_at: '2026-08-17T06:29:12.268616Z'
+updated_at: '2026-08-17T10:27:35.530543Z'
