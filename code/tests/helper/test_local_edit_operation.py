@@ -34,7 +34,7 @@ def test_rule_candidate_returns_exact_range_diff_stale_and_no_changes(current_sp
     assert item["stale"] is True
     assert item["candidate_after"] == "candidate\n"
     assert item["unified_diff"].startswith("--- specs/00-理念与构成.md:before\n")
-    assert item["source_ranges"][0]["start_line"] == 213
+    assert item["source_ranges"][0]["start_line"] == 226
     assert item["scope_coverage"]["unexpanded"]
     assert response["scope"]["governance_resolution"] is None
     assert any(gap.get("code") == "baseline_stale" for gap in response["gaps"])
