@@ -515,6 +515,41 @@ def _governance_identity(governance: GovernanceScopeResult) -> str:
     return f"sha256:{hashlib.sha256(encoded).hexdigest()}"
 
 
+_TEMP_FILE_PATTERNS = frozenset({
+    ".codex-commit-msg.tmp",
+    "COMMIT_EDITMSG",
+    ".ldvh-commit-msg-",
+    ".ldvh-hook-rollback-",
+})
+
+
+def _observe_temp_file_paths(
+    worktree: Path,
+    *,
+    index_file: Path | None = None,
+) -> tuple[tuple[str, ...], CommitCandidateObservationIssue | None]:
+    """Scan the working tree for untracked files matching known temp file patterns."""
+    output = _successful(
+        _run_git(worktree, ("ls-files", "--others", "--exclude-standard", "-z"), index_file=index_file),
+        "untracked files",
+    )
+    if isinstance(output, CommitCandidateObservationIssue):
+        return (), output
+    try:
+        tokens = output.decode("utf-8").split("\0")
+    except UnicodeDecodeError:
+        return (), _issue("git_output", "Git untracked files listing is not valid UTF-8")
+    if tokens and tokens[-1] == "":
+        tokens.pop()
+    temp_paths: list[str] = []
+    for token in tokens:
+        if not token:
+            continue
+        if any(marker in token for marker in _TEMP_FILE_PATTERNS):
+            temp_paths.append(token)
+    return tuple(temp_paths), None
+
+
 def _observe_index(
     *,
     worktree: Path,
@@ -559,6 +594,10 @@ def _observe_index(
         issue = _issue("drift", "Index or HEAD changed while the candidate was being observed")
         return CommitCandidateObservation("drifted", None, (issue,), paths, snapshot_after)
 
+    temp_file_paths, temp_failure = _observe_temp_file_paths(worktree, index_file=index_file)
+    if temp_failure is not None:
+        return CommitCandidateObservation("unverifiable", None, (temp_failure,), paths, snapshot_after)
+
     value = CommitValidationInput(
         message=message,
         candidate_paths=paths,
@@ -572,6 +611,7 @@ def _observe_index(
         source_fingerprint=contract.content_fingerprint,
         governance_instance_name=governance.governance_instance_name,
         fact_candidates=fact_candidates,
+        temp_file_paths=temp_file_paths,
     )
     return CommitCandidateObservation(
         "observed",

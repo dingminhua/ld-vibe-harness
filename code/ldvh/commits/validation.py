@@ -56,7 +56,14 @@ SEMANTIC_CHECKS_REQUIRED = (
     "breaking 必要性",
     "body 充分性",
     "验证结论与风险真实性",
+    "no-verify 禁用 Git Gate 门禁风险",
 )
+_TEMP_FILE_PATTERNS = frozenset({
+    ".codex-commit-msg.tmp",
+    "COMMIT_EDITMSG",
+    ".ldvh-commit-msg-",
+    ".ldvh-hook-rollback-",
+})
 
 
 @dataclass(frozen=True, slots=True)
@@ -98,6 +105,7 @@ class CommitValidationInput:
     spec_activated_paths: tuple[str, ...] | None = None
     fact_candidates: tuple[StagedFactCandidate, ...] = ()
     fact_schemas: tuple[FactSchema, ...] = ()
+    temp_file_paths: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -636,6 +644,17 @@ def _valid_legacy_first_entries(appended: list[object], after_fields: dict[str, 
     return appended[-1].get("at") == after_fields.get("updated_at")
 
 
+def _temp_file_issues(value: CommitValidationInput) -> list[CommitValidationIssue]:
+    """Report untracked working-tree files matching known temp file patterns."""
+    issues: list[CommitValidationIssue] = []
+    for path in value.temp_file_paths:
+        if path in _TEMP_FILE_PATTERNS or any(
+            marker in path for marker in _TEMP_FILE_PATTERNS if marker.startswith(".")
+        ):
+            issues.append(_issue("temp_file_in_worktree", f"工作树中发现未跟踪临时文件: {path}"))
+    return issues
+
+
 def validate_commit(contract: CommitContractProjection, value: CommitValidationInput) -> CommitValidationResult:
     """Validate only the deterministic subset; never reads Git or the filesystem."""
 
@@ -679,6 +698,7 @@ def validate_commit(contract: CommitContractProjection, value: CommitValidationI
     assert value.message is not None and value.candidate_paths is not None
     normalized, lines = _normalize_message(value.message)
     failures: list[CommitValidationIssue] = []
+    failures.extend(_temp_file_issues(value))
     body_lines: list[str] = []
     content_body_lines: list[str] = []
     match: re.Match[str] | None = None
