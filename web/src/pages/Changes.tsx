@@ -13,7 +13,6 @@ import {
 import CopyPathButton from '@/components/CopyPathButton';
 import PageHeader from '@/components/PageHeader';
 import { useI18n } from '@/i18n/context';
-import { getGitStatusLabel } from '@/i18n/locales';
 import {
   getDiffLineClass,
   getFileName,
@@ -217,7 +216,7 @@ export default function Changes() {
                   return (
                     <div
                       key={`${entry.projectId}:${entry.status}:${entry.path}`}
-                      className={`group flex w-full min-w-0 items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-ldvh-border/30 ${
+                      className={`group relative flex w-full min-w-0 items-center gap-3 rounded-md px-2 py-2 text-left transition-colors hover:bg-ldvh-border/30 ${
                         selected ? 'bg-ldvh-accent/10 text-ldvh-accent' : ''
                       }`}
                     >
@@ -230,12 +229,12 @@ export default function Changes() {
                         <span className="ldvh-meta-primary w-8 shrink-0 rounded bg-ldvh-bg px-1.5 py-0.5 text-center">
                           {entry.status}
                         </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="ldvh-card-title block truncate transition-colors group-hover:text-ldvh-accent">
+                        <span className="group/tooltip relative">
+                          <span className="ldvh-card-title block min-w-0 max-w-40 truncate xl:max-w-60">
                             {getFileName(entry.path)}
                           </span>
-                          <span className="ldvh-meta block truncate">
-                            {getGitStatusLabel(entry.status, locale)} · {entry.path}
+                          <span className="ldvh-caption pointer-events-none absolute bottom-full left-0 z-50 mb-1 hidden max-w-[calc(100vw-8rem)] break-all rounded-md border border-ldvh-border bg-ldvh-panel px-2 py-1 text-ldvh-text-primary shadow-lg shadow-black/10 group-hover/tooltip:block">
+                            {entry.path}
                           </span>
                         </span>
                       </button>
@@ -291,13 +290,20 @@ export default function Changes() {
                                 key={`${entry.status}:${entry.path}`}
                                 className="flex min-w-0 items-center gap-2 rounded px-2 py-1"
                               >
-                                <span className="ldvh-meta-primary w-7 shrink-0 rounded bg-ldvh-bg px-1 py-0.5 text-center text-xs">
+                                <span className="ldvh-meta w-7 shrink-0 rounded bg-ldvh-bg px-1 py-0.5 text-center text-xs">
                                   {entry.status}
                                 </span>
-                                <span className="ldvh-card-title min-w-0 flex-1 truncate text-sm">
-                                  {getFileName(entry.path)}
+                                <span className="group/tooltip relative min-w-0 flex-1">
+                                  <span className="ldvh-meta block min-w-0 truncate text-xs">
+                                    {getFileName(entry.path)}
+                                  </span>
+                                  <span className="ldvh-caption pointer-events-none absolute bottom-full left-0 z-50 mb-1 hidden max-w-[calc(100vw-8rem)] break-all rounded-md border border-ldvh-border bg-ldvh-panel px-2 py-1 text-ldvh-text-primary shadow-lg shadow-black/10 group-hover/tooltip:block">
+                                    {entry.path}
+                                  </span>
                                 </span>
-                                <span className="ldvh-meta truncate text-xs">{entry.path}</span>
+                                <CopyPathButton
+                                  path={entry.absolutePath}
+                                />
                               </div>
                             ))}
                           </div>
