@@ -1,0 +1,1215 @@
+{
+  "schema_version": "ldvh-knowledge-precheck-v4-source-snapshot/1",
+  "frozen_at": "2026-08-17T00:00:00Z",
+  "governed_project_id": "ldvh",
+  "object_set_fingerprint": "1e7ccdc9c63cd992f4e919a31961e0a675f30c8b6841684aec0d114ab74dfc75",
+  "family_counts": {
+    "adr": 5,
+    "pitfall": 6,
+    "study": 21
+  },
+  "family_cards_enhanced": {
+    "adr": [
+      {
+        "object_uid": "019ffb52-ebb5-724c-881f-4f0f7d97038f",
+        "object_id": "adr-01KZXN5TXNE968G7TF1XYSE0WF",
+        "title": "规则缺口时先修规则源",
+        "status": "active",
+        "decision_question": "发现的问题暴露当前规则源不足以支持实现选择时，应以什么顺序完成变更？",
+        "decision": "决定以下变更顺序：当发现当前规则源不足以支持实现选择时，先完成受影响 Specs 或授权附件的最小充分修正及独立复核，再修改 Code、Web、Helper、Hook、测试或其它实现，并按风险完成验证与回读；当规则已完整且问题仅为实现偏差时，回指该规则后直接修复实现，不为流程伪造规范变更。该 ADR 在其 applicability 内约束后续工作方向；具体实现与高风险行动仍遵守相应 Specs 和 Human 授权。",
+        "applicability": "适用于 LDVH 中会改变或依赖行为、字段、生命周期、公开或跨模块接口、可观察结果、授权或验证边界的缺陷修复与增量实现；不适用于不影响规则理解的错字、链接或格式修正，也不要求为已由当前规则完整覆盖的纯实现偏差新增 Specs。",
+        "trigger_signal": "发现当前规则源不足以支持实现选择时，先修正受影响 Specs 或授权附件，再改实现",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7340-8d6f-d7deb235f4dd",
+        "object_id": "adr-01KZXN5TXNED08TVYQVTS3BX6X",
+        "title": "交付中解释关键术语与代码标识",
+        "status": "active",
+        "decision_question": "AI 面向 Human 使用中文沟通时，如何表达可能影响理解的技术术语及代码标识，使其语义可理解，又保留与技术来源的准确对应？",
+        "decision": "决定在面向 Human 的中文自然语言交付中，对会影响理解、判断、授权或验收的技术术语，以及出现于说明、方案、审核或代码讨论中的常量名、变量名、方法名、类名、字段名等代码标识，在首次有意义使用处给出简短、贴合当前语境的中文语义解释；原术语、英文名或精确标识仍保留以便回指。后续重复不机械复述。代码标识可以原样置于代码、路径、命令或引用中；当它在对话中承载判断、选择、风险、行为或结果说明时，在相邻自然语言中说明“它在这里表示什么、起什么作用或不代表什么”。术语密集时可以集中列出小型中文释义，而不逐词翻译。该 ADR 在其 applicability 内约束中文交付；它不改写精确标识，也不替代具体 Specs 或 Human 授权。",
+        "applicability": "适用于 LDVH 中 AI 向 Human 的中文回复、方案、审核、报告、说明和需要 Human 作出理解、选择、授权或验收的自然语言交付，尤其包括对代码、配置、接口、事实对象或测试的讨论。它不改写 Specs、事实对象、代码、命令、路径、字段名或外部原文的精确文本；这里的决定是在面向 Human 的相邻中文说明中解释这些标识的语义，而不是修改其名字。已解释过且当前语境未变化的术语或标识无需重复展开；Human 对篇幅、语言或术语表另有明确要求时，按其当次要求调整表达方式。",
+        "trigger_signal": "编写或修改面向 Human 的中文技术说明、代码标识解释、术语翻译、验收说明",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7376-ad8a-3c4f8c01d342",
+        "object_id": "adr-01KZXN5TXNEDVAV2HW9Y603MT2",
+        "title": "提交预检机械诊断的修正信息权威来源策略",
+        "status": "active",
+        "decision_question": "提交预检对未知 scope、未知 type、未知正文小标题等能准确定位，但只报告错误值，不给当前允许值、最小合法示例或精确继续读取入口。后续应通过什么机制向诊断补充修正信息，使 AI 可据诊断直接修正，同时不复制规则正文、不形成第二权威？",
+        "decision": "决定将诊断的修正信息来源按以下分层策略处理：\n\n1. 确定性约束——诊断直接附带允许值闭集。对于不依赖规则附件投影、在规范生命周期内不变或仅通过 Code 提交本身变更的硬编码闭集，在诊断 message 中直接列出允许值。当前适用：body 固定小标题（_FIXED_HEADINGS：动机:、关键变更:、影响边界:、验证结论:、风险与后续:）、Platform-Affected/Platform-Verified 枚举值（macos/windows/both/unaffected/none）、必需 footer trailer 名（Session-ID、Agent-ID、Host-Environment）。上述值已在诊断中部分附带（Platform 类），其余待补齐（body_heading_unknown 应列出 _FIXED_HEADINGS 闭集）。\n\n2. 规则驱动值——由调用方通过 contract projection 注入诊断。对于 type_tokens、scope_tokens 等从 03.Att.01 动态投影的值，不在诊断中硬编码允许列表，而是利用 validate_commit() 已接收的 CommitContractProjection 参数，在构造 type_unknown/scope_unknown 诊断时将 contract.type_tokens/contract.scope_tokens 格式化进 message。该注入不建立第二权威，因为注入源是同一规则投影的运行时消费，而非独立硬编码副本。\n\n3. 精确读取入口——以锚点路径文本并入诊断 message 实现，不扩展 _issue(code, message) 的响应 schema。当允许值列表过长（如 scope_tokens 可能超过 20 项）不适合直接嵌入 message 时，或在确定性/规则驱动值之外需要 caller 阅读完整规则上下文的场景，诊断在 message 中附加精确读取入口指向 03.Att.01 对应表格的章节路径。若未来确需结构化 source 字段，另立 WorkCase 评估。",
+        "applicability": "适用于 code/ldvh/commits/validation.py 及 precheck.py 中所有返回给 AI 调用的机械诊断构造；不改变 Hook 的原生 Git 输出（commit-msg Hook 仍保持简洁）。本 ADR 约束的是 Helper 操作 precheck-git-commit 返回的 issues[*].message 字段内容策略，不改变诊断的 code、stage 或校验逻辑本身。",
+        "trigger_signal": "构造或修改提交预检诊断的 message 字段，决定错误提示的修正信息来源",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7a91-8ba0-1e1cc33ecedf",
+        "object_id": "adr-01KZXN5TXNFA8RQ80Y3K1KXKPZ",
+        "title": "以「你好，LDVH」问候作为 AI 规则递达验证信标",
+        "status": "active",
+        "decision_question": "LDVH 接入后，如何以最低成本在每次 AI 交互中获得一个 Human 可直接观察的信号，证明当次会话已实际取得 LDVH 规则引导（薄 Skill 路由递达），而非来自历史上下文恢复或规则未加载？",
+        "decision": "决定：在 LDVH 管辖项目的每次 AI 交互中，AI 须在当次回应正文最前先输出问候「你好，LDVH」。该问候作为规则递达验证信标——其出现证明当次会话已实际加载并遵从 LDVH 路由纪律（先经薄 Skill 取规则引导与行动模板再动手），问候缺失即提示规则递达可能失败、需复核接入。本决定只确立问候约定与验证意图，不构成事实写入、提交或行动授权，不替代事实完整性校验、Git Gate 或其它机械检查，也不证明深度合规；问候存在仅证明表面递达。",
+        "applicability": "适用于全部 LDVH 管辖项目（ldvh、poker-train-card、poker-train-video、ldvh-closure-preview）中 AI 与 Human 的交互会话；问候出现在 AI 当次回应正文的最前，只读查询与单次工具调用等非交互性回应同样适用。明确排除：本约定不构成任何事实写入、提交或行动授权；不替代任何规范、Human Gate、Git Gate 或机械校验；问候存在不证明 LDVH 已完整接入或规则已深度遵从，仅作递达信标；Human 可在特定会话明示豁免当次问候。",
+        "trigger_signal": "开始新会话交互准备输出问候时；判断规则递达验证信标是否存在",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7ee2-9b1b-ef63e974b98a",
+        "object_id": "adr-01KZXN5TXNFVH9P6ZFCFMQ9ECA",
+        "title": "以中文语义理解并执行",
+        "status": "active",
+        "decision_question": "AI 在面向 Human 的中文工作中，应如何理解并执行中文目标、交付要求、事实源和规范源；当既有工作流程要求审核时，中文语义应如何进入审核？",
+        "decision": "决定 AI 在中文工作中始终以中文语义理解并执行 Human 的目标、边界和要求，特别核对主体、对象、条件、否定、时态、范围、授权与完成含义；不得以字面词、英文映射、字段名、模板惯性或实现习惯静默替代中文原意。当前规则、风险或工作流程已经要求审核时，审核必须增加独立的中文语义核对：审核者独立回读中文原意与当前来源，判断形成内容、判断或行动是否发生语义偏移。原本无需审核的工作不因此新增审核关卡、Human Gate 或授权条件，但执行者仍须保持上述中文语义视角。",
+        "applicability": "适用于 LDVH 中 AI 处理 Human 的中文目标、反馈、约束和验收要求，以及形成、修改、审核或消费面向 Human 的中文交付、事实源和规范源时。它不改变代码标识、路径、命令、外部原文或机器字段的精确写法；需要保留这些精确标识时，应在中文语义中正确理解和说明其当前作用。Human 明确指定其它语言、原文优先或特定表达方式时，按该当次要求执行，同时不得误解其中文约束。",
+        "trigger_signal": "处理 Human 的中文目标、反馈、约束或验收要求；审核中文交付内容",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      }
+    ],
+    "pitfall": [
+      {
+        "object_uid": "019ffb52-ebb5-705a-aa9b-e2ac31dfc7cb",
+        "object_id": "pitfall-01KZXN5TXNE1DAN6Z2NGRXZHYB",
+        "title": "独立入口契约真空致首选规则引导入口被放弃",
+        "status": "active",
+        "symptoms": "调用方按技能指引调用 ldvh-work-context 首选规则引导入口时，先撞参数错误、再撞 stdin 契约缺失提示；随后在 capabilities 与 Helper 服务规范（04）中反复查找事件形状无果（十几次 find/grep/试调），自行构造调用时 shell 引号失败，最终放弃首选入口、退回降级路径；全过程耗时约为修复后正常路径的三倍。识别信号：会话记录中出现对同一入口的多次试错调用，且最终回答声明“首选 unavailable、改用降级路径”。",
+        "trigger_conditions": "前置条件组合：（1）需要经 ldvh-work-context、ldvh-doctor 等独立入口完成调用（它们不是 Helper 操作）；（2）调用方持有的指引把“调用信封与参数”的权威统一指向 capabilities 与 04；（3）该入口的调用契约实际只登记在环境接入面附件（09.Att.01）对应入口行；（4）指引未把调用方指向该附件。已观察条件：薄 Skill 会话中按指引现取参数时必然命中。未知条件：其它 AI 环境 adapter 手工接入同一入口时是否同样命中，未逐一验证。",
+        "scope_of_impact": "与 LDVH 独立（非 Helper）入口的调用、指引编写或契约定位相关的工作；薄 Skill 规则引导",
+        "applicability": "适用边界：LDVH 薄 Skill 接入的各 AI 环境中，凡需调用 ldvh-work-context、ldvh-doctor、ldvh-context-recovery、ldvh-git-commit-msg 等独立（非 Helper）入口的场景，以及为任何新独立入口编写或修订调用指引的场景。观察环境：macOS 桌面 Kimi 环境、0.1.0 本地发行物、修复后模板。不适用：Helper 操作本身的参数发现（capabilities/04 已覆盖）；入口实现内部的逻辑问题。",
+        "validation_summary": "已观察结果：修复前探针（17.7 分钟、31 次 Bash 调用、首选入口零成功、降级路径兜底、一次越界临时文件自建自删）；修复后探针（5.5 分钟、19 次调用、首选入口一次 ok、最终回答如实声明经首选入口交付）；相关测试 222 项（docs/specs/commits/environment/packaging）与相邻回归 816 项全绿；三次相关提交的 Git Gate 机械预检均通过后落库。覆盖：同一环境、同一发行物、同一自然指令的修复前后对照。事件形状补充实测（2026-07-31）：SessionStart 四个 source（startup/resume/clear/compact）全部 ok；SubagentStart 标准形状 ok（交付 3981 字引导）、缺 cwd 按契约返回 unavailable、多余 source 被忽略仍 ok——事件形状覆盖已补齐。未覆盖范围：其它 AI 环境的行为复测；部署件被应用更新覆盖后的长期稳定性。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-719c-b88e-30877858aac1",
+        "object_id": "pitfall-01KZXN5TXNE6EBH3HGGXW5HAP1",
+        "title": "ZCode 插件 Hook 注册后需在环境设置中启用/信任才能实时触发",
+        "status": "active",
+        "symptoms": "1. 插件已部署到用户级插件目录，~/.zcode/plugins/ 中有完整文件结构\n2. 启动日志中报告 hookCount:1，证明 Hook 已注册\n3. data 文件（ldvh.json）完整，手动执行 hook 脚本可返回 work-context\n4. 新会话中没有 hook_run_started/hook_run_completed 记录\n5. 执行目录为空，无 Hook 执行产物\n6. 会话中可能出现 work-context，但来自 hydrate 恢复而非实时触发",
+        "trigger_conditions": "1. 通过 filesystem 方式部署 ZCode 插件，插件 manifest 声明了 SessionStart Hook\n2. 插件文件已安装到正确目录，enabledPlugins 已启用\n3. 验证者只检查了文件存在、Hook 注册日志和手动脚本可执行性\n4. 未检查 ZCode 设置中该插件的 Hook 是否已被信任/允许执行\n5. 目标环境（ZCode）将插件部署和 Hook 信任分离为两个独立步骤",
+        "scope_of_impact": "ZCode 环境中的插件部署、Hook 注册与信任检查；环境技能文件部署验证",
+        "applicability": "适用于通过 filesystem 方式在 ZCode 中安装 LDVH 插件的场景：插件已部署到用户级插件目录、Hook 已注册、data 文件完整、手动脚本可执行，但新会话未触发实时 Hook。它不说明通过 ZCode 官方插件市场分发、或其他 AI 环境（如 Trae CN、Codex、Cursor）的信任机制，也不适用于无法通过环境设置手动启用/信任插件的场景。",
+        "validation_summary": "2026-07-26 在 ZCode 完成两轮验证的对比：\n\n第一次安装（2026-07-24）：\n- 资产完整性：初始失败（data 目录缺 ldvh.json），后补全\n- 可执行性：手动脚本可返回 work-context\n- 实时触发：未通过，已注册 Hook 但无 hook_run_started/hook_run_completed\n- 结论：误以为 data 补全即可修复，未检查环境设置中 Hook 信任状态\n\n第二次重装（2026-07-26）：\n- 按 README 指引完成安装后，先在 ZCode 设置中确认插件已启用、Hook 已被信任\n- 启动新的 cold startup 会话\n- 实时触发：通过，启动日志中出现 hook_run_started/hook_run_completed，执行目录有对应产物\n- 完整接入声明：SessionStart 已 verified\n\n对比两轮结果，确认第一次失败的根因是：Hook 已注册但未在 ZCode 设置中被信任/允许执行，而非 Data 文件完整性问题。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-76c1-bf82-3e69c790f6b0",
+        "object_id": "pitfall-01KZXN5TXNEV0VZ0HYD73S1XNG",
+        "title": "Trae CN 环境接入：通过 hooks.json 部署 LDVH 插件",
+        "status": "active",
+        "symptoms": "1. LDVH 核心已通过 pip install -e 安装，但 AI 会话启动时未自动收到 LDVH 规则引导\n2. 手动调用 ldvh-work-context 可以返回规则内容，但新开会话后 AI 仍然不知道 LDVH 的存在\n3. 项目中有完整的 specs/ 规范目录，但 AI 每次都需要 Human 提示才去读取\n4. 已安装 LDVH 但子代理（subagent）启动时没有上下文恢复\n5. 尝试参考 code/plugins/ldvh/ 的 Codex hooks.json 格式配置，发现 Trae CN 不兼容",
+        "trigger_conditions": "1. 目标环境是 Trae CN（非 Trae Solo），通过本地 filesystem 部署插件\n2. LDVH 核心已通过 .venv/bin/pip install -e 安装\n3. 尝试复用 code/plugins/ldvh/hooks/hooks.json（Codex 格式）失败\n4. 目标环境存在 ~/.trae-cn/hooks.json 机制，但需要正确的 wrapper 脚本路径和 JSON 格式\n5. 插件数据目录和 wrapper 脚本默认放在 /tmp/ 下，重启后丢失",
+        "scope_of_impact": "Trae 环境中的 LDVH 插件部署、hooks.json 配置与接入验证",
+        "applicability": "适用于在 Trae CN IDE 中通过本地 filesystem 插件方式接入 LDVH 的场景：LDVH 核心已安装在项目 .venv 中，需要通过 Trae CN 的 ~/.trae-cn/hooks.json 机制注册 SessionStart 和 SubagentStart 事件，使 AI 会话启动时自动注入 LDVH 规则引导。它不说明其他 AI 环境（如 Codex、Cursor、Windsurf 等）的接入方式，也不适用于通过 Trae CN 官方插件市场分发或远程安装的场景。",
+        "validation_summary": "2026-07-26 在 Trae CN 环境完成以下验证：\n\n1. 静态部署：插件 manifest、wrapper 脚本、配置数据已部署到 ~/.trae-cn/plugins/ldvh/1.0.0/\n2. hooks.json：SessionStart 和 SubagentStart 均已注册，指向持久化 wrapper 脚本\n3. 核心直调：通过 wrapper 脚本模拟 SessionStart 事件，成功调用 ldvh-work-context 核心，返回 8.系统级运行架构 + 8.1渐进式披露 + 8.2薄引用 规则引导\n4. 插件注册：已注册到 installed-plugins.json 和 plugin-config.json 并启用\n\n该分层验证分别覆盖了资产完整性、Hook 注册、手动可执行性和实时触发（直调）。真实 Trae 会话启动时的自动触发尚未经新窗口验证，保持 unverified。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-777b-99f4-543318c03fc1",
+        "object_id": "pitfall-01KZXN5TXNEXXSKX2M6CCC0FY1",
+        "title": "将项目 worktree 误作 workspace_root 会误报配置缺失",
+        "status": "active",
+        "symptoms": "Helper 返回 config_status=missing 与 scope_status=scope_unknown，并说明未选择任何 governed-projects configuration；但父工作区实际存在有效的 LDVH-GOVERNED-PROJECTS.yaml，且当前项目已在其中登记。",
+        "trigger_conditions": "调用管辖解析或依赖其结果的事实读取操作时，显式传入 workspace_root；该值是项目 Git worktree 根，而 LDVH-GOVERNED-PROJECTS.yaml 位于父工作区根。",
+        "scope_of_impact": "LDVH 环境接入时检查或配置 worktree 定位、workspace_root 传递",
+        "applicability": "适用于 LDVH Helper 的 workspace_root 被显式指定，且该目录本身不含 LDVH-GOVERNED-PROJECTS.yaml、配置位于上级工作区目录的场景。它不适用于配置确实不存在、配置无效或冲突，或 Human 有意选择另一个 workspace root 的情况。",
+        "validation_summary": "2026-07-30 在 ld-vibe-harness-v4 实际验证：1) 显式 workspace_root=/Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4 时，Helper 返回 config_status=missing；2) 该目录的父目录实际存在 LDVH-GOVERNED-PROJECTS.yaml，并登记 ldvh 项目指向当前 worktree；3) 不传 workspace_root、仅提供当前 worktree locator 后，Helper 自动发现父目录配置并返回 config_status=valid、scope_status=governed_single。验证覆盖当前配置位置与当前 Helper 版本；不证明所有安装布局或未来配置发现实现都具有相同行为。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7ec3-856b-149a2befc2a8",
+        "object_id": "pitfall-01KZXN5TXNFV1RATRMK8NYZGN8",
+        "title": "Claude Code 技能在 Cindy/Codex 环境中部署失败",
+        "status": "active",
+        "symptoms": "1. 按 Claude Code 标准文档将技能文件部署为 ~/.claude/skills/<name>.md 后，重启 Claude Code\n   会话看不到技能。\n2. /skill 命令返回 Unknown command，而原生 Claude Code 环境应能识别。\n3. 技能文件存在于文件系统中，但 Claude Code 启动时未加载。\n4. 在 Cindy/Codex 环境中，codex-home/skills/ 目录下的 symlink 指向的目录中有技能文件，\n   但根目录 .md 文件不被识别。\n",
+        "trigger_conditions": "前置条件组合：（1）通过 Cindy/Codex 环境启动 Claude Code（非原生 Claude Code 可执行文件）；\n（2）技能部署为 ~/.claude/skills/<name>.md 扁平文件格式；（3）未将技能部署到 ~/.codex/skills/\n或 ~/.agents/skills/ 目录的目录格式路径。已观察条件：Cindy 的 Pi 文档明确说明 ~/.agents/skills/\n和 .agents/skills/ 中根目录 .md 文件被忽略，只有包含 SKILL.md 的子目录才被识别。未知条件：\nCindy/Codex 其他版本（如 2.0.x 或 3.x）是否采用相同规则；是否还有其他隐藏的技能扫描路径。\n",
+        "scope_of_impact": "跨平台技能文件部署、Skill 路径配置与加载验证",
+        "applicability": "适用于 Cindy/Codex 环境下运行 Claude Code 的用户。该环境通过 codex-home/skills/ 下的 symlink 链\n加载技能，技能发现规则为目录格式（<skill-name>/SKILL.md），而非原生 Claude Code 的扁平 .md 文件\n格式。不适用于原生 Claude Code 环境或使用 Claude Code 标准技能路径 ~/.claude/skills/ 的场景。\n",
+        "validation_summary": "2026-08-06 验证：将 ldvh 技能从 ~/.claude/skills/ldvh.md（扁平格式）迁移到\n~/.codex/skills/ldvh/SKILL.md（目录格式）后，重启全新会话，技能可见。/skill 命令可正常响应，\n不再返回 Unknown command。已观察环境：Windows，Cindy/Codex 2.1.219，Pi 0.83.0。未覆盖范围：\n其他操作系统（macOS/Linux）上的 Cindy/Codex 行为未知；Cindy/Codex 版本升级后技能发现规则\n是否变化未知。\n",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "01a00741-c69b-7b14-b640-af1394cd39af",
+        "object_id": "pitfall-01M03M3HMVFCABCG5F2EACTEDF",
+        "title": "子代理指定模型但未指定 provider 时继承宿主路由导致启动失败",
+        "status": "active",
+        "symptoms": "在 DeepSeek Harness Web 会话中执行\"用 subagent_deepseek_v4_pro 委派一个子代理报告它的模型身份\"，工具调用直接返回 Error: subagent run failed；会话代理改调 subagent_with_model 只传 model=deepseek-v4-pro 时同样失败。识别信号：父会话运行在 openai-codex/gpt-5.6-terra 路由上时子代理必然无法启动；自定义工具名（subagent_deepseek_v4_pro）在工具目录中时有时无——曾出现在自定义 preset 会话（04:39）中，随后在默认 preset 会话（04:47、04:53）中消失，profile 补丁写入后新会话仍看不到。",
+        "trigger_conditions": "前置条件组合：(1) 使用 DeepSeek Harness（dsh web profile，含 @aaravarr/dsh-subagent-max 0.1.1 bundle）；(2) 父会话运行在无法服务目标模型的 provider 路由上（如 openai-codex 只服务 codex 系模型），settings.yaml 默认模型为 openai-codex/gpt-5.6-terra；(3) 调用 subagent_with_model 时只指定 model、省略 provider，或把\"注册指定模型专用工具\"寄托在 profile 层 cordis.patch.yml 上。已观察条件：上述路由组合的会话中必然命中；dsh web profile 下 profile 补丁无法向 agent preset 合成层插入工具行。未知条件：其它宿主（Cindy/Trae 等）或其它 profile 组合是否同样命中，未逐一验证。",
+        "scope_of_impact": "子代理模型选择、provider 配置、跨环境路由继承",
+        "applicability": "适用边界：DeepSeek Harness（dsh web profile）及使用 dsh-subagent-max 类\"可选 provider/model\"子代理工具的宿主环境中为子代理指定模型路由的场景；以及任何\"想通过 profile/patch 层给 agent preset 增加工具行\"的场景。观察环境：DeepSeek Harness Web GUI（dsh web）、settings.yaml 默认 openai-codex/gpt-5.6-terra、dsh-subagent-max 0.1.1、2026-08-16。不适用：目标模型与父会话同 provider 的委派（无需改 provider）；preset 层自身的内容质量问题。",
+        "validation_summary": "已观察结果：(1) 修复前对照：04:47 与 04:53 两个失败会话中代理调用 subagent_with_model 仅带 model=deepseek-v4-pro，均返回 subagent run failed；两会话工具目录均无 subagent_deepseek_v4_pro；(2) 修复后验证：同一环境显式 provider=deepseek-official + model=deepseek-v4-pro 委派两次均成功，子代理自报 deepseek-v4-pro，并自读 DSH_SESSION_JSONL 确认 request/header config 为 provider=deepseek-official、model=deepseek-v4-pro；(3) 组合层实证：4 个 bundle 补丁 + profile 补丁按序组合出的 root 树不含 delegation 组与自定义工具，insert 补丁不生效并产生启动告警。覆盖：同一 dsh web 环境、同一宿主路由、同一目标模型的修复前后对照，以及 root 组合树的离线实证。未覆盖范围：其它宿主环境（Cindy/Trae）的 provider 继承与 preset 挂载行为；父会话 provider 恰为 deepseek-official 时省略 provider 也能成功（本经验仍建议显式化以消除路由歧义）。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      }
+    ],
+    "study": [
+      {
+        "object_uid": "019ffb52-ebb5-707e-a100-6f2f8150ce24",
+        "object_id": "study-01KZXN5TXNE1ZA203F5Y0N1KH4",
+        "title": "Codebase Memory MCP 插件调研与 LDVH 吸收建议",
+        "status": "active",
+        "research_question": "Codebase Memory MCP 的本地代码知识图谱能力对 LDVH 的代码探索和事实源组织有什么启发？哪些可以吸收，哪些不应吸收？",
+        "abstract": "Codebase Memory MCP 通过 tree-sitter、Hybrid LSP、SQLite 图存储、BM25/语义/结构查询、变更影响分析，把代码探索从文件级 grep/read 转为图谱级结构查询。对 LDVH 的核心启发不是直接引入该工具作为事实源，而是吸收\"本地图谱索引 + 查询工具 + 非阻塞发现提醒 + 可提交图谱快照 + 明确事实源边界\"的能力形态。",
+        "research_intent": "调研 Codebase Memory MCP 插件的能力和限制，判断 LDVH 是否可以吸收其本地代码知识图谱能力。",
+        "recommendation_summary": "Codebase Memory MCP 适合被视为 AI 代码探索的运行时扩展和 Code 辅助索引，而不是 LDVH 的最终事实源。LDVH 可吸收其结构化代码图谱、跨仓库索引、影响分析、Agent 接入安装、非阻塞 hook、团队共享索引快照、图谱 UI 和本地隐私边界；不应吸收其\"运行时索引即事实\"的隐含风险，也不应让 MCP 查询结果替代 specs、ldvh-base 工作对象、Git 提交记录或现有 validator。",
+        "action_relevance": "设计或评估代码探索、事实源组织方案时，考虑本地图谱索引而非直接引入外部工具作为事实源",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-708a-83b5-fa3ba3da425c",
+        "object_id": "study-01KZXN5TXNE2587DFT7EHXMGJW",
+        "title": "AI 代理授权边界的行业实践：混淆代理与过度代理权的对策调研",
+        "status": "active",
+        "research_question": "在 AI 代理（尤其编码代理）场景中，行业如何防止 AI 把“仅记录/仅创建对象”的授权误用为实施授权？授权证据如何做到不被 AI 伪造，行业主流采用哪些机制（人类在环、作用域凭据、外部授权点、沙箱与审计）？",
+        "abstract": "本报告基于 OWASP Agentic Top 10（2025-12）、OWASP LLM06 Excessive Agency、NIST 2026-02 代理身份概念论文及 IBM/SANS/Okta/Andromeda 等资料，调研 AI 代理越权（混淆代理、过度代理权）的行业对策，并核对 LDVH 自身 21（WorkCase）、30（Git 提交）规范的现状。结论：该问题是行业公认的头号代理安全风险，且有真实攻击链（GTG-1002、ForcedLeak、Devin 自授权、LiteLLM 供应链）；行业解法重心是授权决策外部化（人类在环、短期最小权限凭据、凭据代理/网关、fail-closed 执行点与审计），而非“为 AI 造不可伪造的密钥设施”。现状核对发现：LDVH 的 WorkCase 创建机制（Gate1 批准绑定 baseline_fingerprint 与真实 Human source_refs、专属受控写入口、30 模板对 commit 的授权要求）已经实现“授权证据绑定 Human 决策 + 执行点 fail-closed”的行业等价闭环，spark-0048 设想的外部信任设施并非必要；真实缺口落在 WorkCase 与 Git 提交之外的普通实施动作（直接改代码/规范/测试文件）——该范围没有机械执行点，只能靠薄 Skill 的劝告级约束与事后审计。",
+        "research_intent": "spark-0047 提出“记录型授权被误判为实施授权”的越权阻断需求，spark-0048 进一步追问可信签发与验签根如何使授权证据无法由 AI 伪造。本调研用于判断该问题是否需要解决、行业主流如何解决，以及 LDVH 应采用何种务实路径推进；2026-08-09 依据现状核对（21、30 规范与既有 WorkCase 机制）更新了对 LDVH 已覆盖范围的判断。",
+        "recommendation_summary": "不再建议为 spark-0048 引入可信签发与验签根设施：LDVH 的 WC 创建机制（21 §4.4/§6.5/§7.3）与 30 模板已实现“授权证据绑定 Human Gate + 执行点 fail-closed”的闭环。剩余问题收敛为两选一：(a) 把实施类动作（改代码/规范/测试）强制纳入已获 Gate1 批准的 WorkCase 授权包，WC 外实施即无授权并 fail-closed；(b) 如实承认薄 Skill 边界下普通文件直写只能劝告级约束 + 事后审计，将 spark-0047 预期从机械阻断降级。两者都无需新信任设施；建议按 (a) 评估一个 WorkCase，或先明确选择。",
+        "action_relevance": "设计或审核授权边界时，确保授权决策外部化（人类在环、最小权限凭据）而非依赖 AI 自检",
+        "relations": [
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "019ffb52-ebb5-72a0-9268-1a053e010945"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-79a1-9fed-fa91fab7f6fc"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7092-b4c0-34c698c88385",
+        "object_id": "study-01KZXN5TXNE29B9G1MRTCCH0W5",
+        "title": "Codex 子代理与 Worktree 协作：LDVH 的并行判断",
+        "status": "active",
+        "research_question": "Codex 的子代理和 Git worktree 能如何帮助 LDVH 处理可并行的研究、核验与实现工作，同时避免把产品能力误写为固定流程？",
+        "abstract": "官方资料表明：子代理适合边界清晰、可独立汇总的读密集任务；并行写入需要额外协调；工作树隔离并发改动但不替代环境准备、权限控制或人类决策。对 LDVH 的启发是把并行性视作按任务选择的执行策略，并始终显式保留实际工作树、写入所有者和汇总责任。",
+        "research_intent": "为 LDVH 未来涉及研究、核验与实现的协作选择一个清楚的判断方式：何时应拆分并行任务，何时应保留单一写入与汇总责任。",
+        "recommendation_summary": "把并行视为按任务可分性选择的工作方式：先写清输出、汇总人与不修改范围；共享写入保留单一所有者；只有在确有需求时，以有界 WorkCase 验证 worktree 准备与交接，并由 Human 决定是否固化为长期默认。",
+        "action_relevance": "设计或评估并行执行策略时，每项并行任务必须有明确输出、汇总人和不修改范围；共享写入保留单一所有者",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-70ce-b94e-b15942d1b870",
+        "object_id": "study-01KZXN5TXNE37BJKNHB51D3E3G",
+        "title": "addyosmani/agent-skills 工程工作流与 LDVH 吸收建议调研",
+        "status": "active",
+        "research_question": "addyosmani/agent-skills 如何把软件工程实践组织成可发现、可执行、可验证的 AI agent 工作流？其真实优势、证据边界、跨环境限制和治理风险是什么？LDVH 可以有选择地吸收哪些机制而不混淆规则源、事实源、Helper 确定性能力与模型软约束？",
+        "abstract": "在 2026-07-29 对 main 分支 revision 7829ffd 的检查中，agent-skills 是一个以 24 个 Markdown 技能为核心、覆盖 Define—Plan—Build—Verify—Review—Ship 的工程工作流包，并辅以 8 个命令、4 个评审 persona、共享参考资料、宿主适配器和三层评测。其关键价值是把工程纪律写成“触发—步骤—反合理化—红旗—证据门禁”的行为契约，并对目录结构与路由进行机械评测；本次实际运行结构、命令和 Tier-2 路由检查均通过，路由 rank-1 为 86%。但这不证明真实任务质量：Tier 2 只是词法近似，Tier 3 默认按需且依赖模型；不同宿主只共享部分能力；单技能安装可能丢失共享引用；技能文本本身不能强制权限、Human Gate 或完成判断。",
+        "research_intent": "深入研究 addyosmani/agent-skills 的实际架构、技能行为契约、验证机制、跨宿主适配和局限，判断 LDVH 应吸收哪些设计原语、应拒绝哪些直接移植方式，以及后续是否值得建立有界试点。",
+        "recommendation_summary": "LDVH 不应整体复制该项目或把其技能内容提升为规则。最值得吸收的是五个可分离机制：明确的触发/排除契约、步骤与停止条件、反逃避信号、证据化完成门禁、结构/路由/行为分层评测；同时应保留 LDVH 的来源与职责边界，让 Helper/Code 只做确定性检查、Human 保留授权与取舍。建议后续仅在 Human 同意时建立一个小规模 WorkCase，用 3 个代表性行动模板做 A/B 试点，并以规则冲突、误触发、任务正确性、上下文成本和验证证据为验收指标。",
+        "action_relevance": "评估或复用 agent-skills 模式时，确保技能粒度与 LDVH 的规范/事实/行动模板边界一致，不引入无规则约束的纯脚本",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7346-ad74-1f5ee785c315",
+        "object_id": "study-01KZXN5TXNED3ATX0ZBVKRBGRN",
+        "title": "WorkBuddy 专家团团队交互模式与 LDVH 学习方向调研",
+        "status": "active",
+        "research_question": "WorkBuddy 的专家团团队交互模式对 LDVH 有什么学习价值？LDVH 应如何吸收其角色契约、任务编排和结果整合能力？",
+        "abstract": "WorkBuddy 值得学习的不是\"多开几个 Agent\"，而是把专家角色、方法论、工具链、团队席位、共享任务列表、成员状态、直接沟通、计划审批、后台任务和结果整合显性化。LDVH 应吸收为\"团队编排层\"的设计方向：角色契约、任务卡、计划门禁、成员消息、状态投影、质量复核和成本/权限边界都应成为可追踪结构；但 WorkBuddy 的专家团运行状态、截图 UI 或外部工具输出不能替代 LDVH 的事实源。",
+        "research_intent": "调研 WorkBuddy 专家团团队交互模式，分析 LDVH 后续在行动编排和 Web 表达方面应学习和吸收的方向。",
+        "recommendation_summary": "LDVH 应把 WorkBuddy 式团队交互作为下一阶段行动编排和 Web 表达的重要参考。优先学习方向包括 Role Contract、Team Session/Task List、Result Review、TaskOutput 状态投影、专家/Skill/MCP 组合边界、Human Gate 与权限分层。正式落地前应先形成 WorkCase 或 ADR，避免把外部产品的专家团直接写成 LDVH 事实模型规则。",
+        "action_relevance": "设计或评估团队协作模式时，区分专家团（独立判断+汇总）与流水线（分步交接），不对应固定 WorkCase 结构",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-74a2-b262-b27705d1eb71",
+        "object_id": "study-01KZXN5TXNEJHB4RNJEW2X3TVH",
+        "title": "LDVH 设计价值与过度设计评估：对照 00 价值标准",
+        "status": "active",
+        "research_question": "以 00 §6 的 V1-V8 与 HV1-HV5 价值评判标准及「可辨认净收益且新增负担不抵消价值」纳入测试衡量，当前 LDVH（v4 工作树，2026-08-05 观察时点）的规范模型、事实模型、行动模板、Helper CLI/Code 与 Web 设计，对 AI 执行者与 Human 各带来哪些可验证的实际价值，哪些部分的复杂度净收益不成立（过度设计集中在何处、根因是什么）？",
+        "abstract": "对照 00 价值标准逐项核验当前 LDVH 设计：价值主干真实成立（V6 接续、V5 据实、HV1-HV3 决策/授权/入档闭环，有 59 个完整关闭 WorkCase 与当次调用证据支持）；过度设计同样成立且为淤积型——流程层 80/20 场景倒置（模板 31 的 23 条 Stop Conditions、约 8 次交互的规则引导）、协议层为 18 项静态操作配置动态绑定与重型共同响应、规范层条款只增不减且比例原则未适用于自身。项目已有三份独立诊断（归档评估、spark-0055、提交减负 WorkCase）结论一致但未收敛。建议：新建两个 WorkCase（低风险快速通道、Helper 操作层收敛），条款日落方向经 Human Gate 后形成 ADR，HV4 验证由 spark-0045 承接。关键限制：Web 运行效果未验证；02/03/07/08/20/23 规范未精读；统计量以 2026-08-05 各观察时点为准。",
+        "research_intent": "spark-0055 以直觉疑问保留了「必要严谨还是过度设计」议题并要求反复回看；Human 当次明确要求以 00 为标准作出价值判断并入档，以便逐项处置。本研究为 spark-0055 的处置与后续简化类 WorkCase/ADR 的创建判断提供共享、可回指的基线，避免每次简化讨论从头重建对价值主干与淤积位置的认定。",
+        "recommendation_summary": "建议创建 WorkCase「低风险写入与提交快速通道」（风险分级路径、机械检查底线不降）与 WorkCase「Helper 操作层与协议收敛」（统一 result builder、合并拆对、启动期绑定校验）；「规范条款日落机制」属方向取舍，经 Human Gate 决定后形成 ADR；Web HV4/HV5 验证无需对象化，由 spark-0045 承接并设监测条件。简化必须以发现一的保护清单（事实对象、受控写入、证据回指、Human Gate、Git Gate）为不可削弱前提。",
+        "action_relevance": "评估新增规范、字段或机制时，对照 00 的价值标准（V1-V8/HV1-HV5）做净价值判断，避免过度设计",
+        "relations": [
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-71da-8f50-223f834fad25"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-751c-8041-ba92bae6c7bc",
+        "object_id": "study-01KZXN5TXNEME80GDTJAXEDHXW",
+        "title": "无环境 Hook 条件下的持续结果校验与 Git Gate 分层方案",
+        "status": "active",
+        "research_question": "当 AI 开发环境不提供可靠的 post-write 环境 Hook 时，行业如何在任意写入之后尽早检查结果规范；显式高频检查、文件 watcher、稳定快照、验证 receipt、Git Hook 和远端门禁应如何分工，才能让 LDVH 放松写入过程约束而不削弱最终结果与提交边界？",
+        "abstract": "本报告于 2026-08-11 对照 Watchman、Node.js、Gradle、TypeScript、Chokidar、pre-commit、Git、GitHub 与 Bazel 的官方资料。行业主流不是把文件事件当成可靠写入证明，而是把 watcher 用作失效或调度信号，把显式检查绑定当前输入，并由 Git Hook 保留提交前最后门禁。根据 Human 后续方向，本研究首期采纳低成本、高频、一次性的显式 ldvh check：它读取当前规则源与当前实际 worktree 的完整管辖事实库，保留原始子结果和 gaps；watcher、receipt 与 ADR 不在首期实现。当前未实现 watcher 原型、性能基准或故障注入。",
+        "research_intent": "Human 希望 LDVH 约束最终结果而非 AI 的具体写入方式，并要求写完后尽早由 Code 检查；目标环境没有可用的 post-write 环境 Hook，但 Git Hook 仍须保留。本研究为显式检查的可信边界、与 Git Gate 的分工，以及 watcher 作为可选后续增强的条件提供可复读依据。",
+        "recommendation_summary": "首期保留 common-dir 级 Git Hook 与 Git Gate，并交付显式、一次性、只读的 ldvh check。它固定检查当前源码 worktree 的完整规则源与由实际 cwd 解析出的受管辖 Git worktree 的完整事实库，逐项保留规则与事实子检查的原始结果、gaps 和未完成范围；普通业务代码、构建产物和临时文件不进入输入。事实子检查非 complete、任一子检查 partial/unavailable/error 或合同定义的阻断 gap 时不得返回 passed。该能力补充而不替代每次事实写后的精确回读和完整性审计，也不替代 Git Hook/Gate。watcher、范围级 receipt 和 ADR 仅在显式检查被证明不足且 Human 另行要求更低延迟自动反馈时再研究。",
+        "action_relevance": "设计或评估无环境 Hook 条件下的持续校验方案时，确认 Git Gate 分层方案已覆盖事实完整性终闸",
+        "relations": [
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-7d9e-b5cc-17beecdc5303"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7589-8adb-8984aba3476b",
+        "object_id": "study-01KZXN5TXNEP4RNPW9GJNT6HVB",
+        "title": "LDVH Windows 受控写入与环境接入的目标平台实测证据",
+        "status": "active",
+        "research_question": "LDVH 能否声称支持 Windows？在 09 §6.3 将 Windows 列为「未验证范围、不得声明完整接入成立」的前提下，受控事实写入与 Git Hook 执行能力是否已在目标平台（win32 / NTFS fixed drive / Python 3.13.14）实测通过，从而满足 §6.3.1 恢复 verified 的门槛？",
+        "abstract": "本文汇总 2026-08-07 在 Windows 目标平台对 ldvh 受控写入与环境接入的实测证据。native_atomic_fact_writes_supported() 在 Windows 返回 True；11 个 native_windows 标记测试（原子写入、六进程分配器连续 ID、跨 worktree 共享计数器、条件更新单赢、file-only 边界、worktree 隔离、junction/symlink/UNC 拒绝、msvcrt 锁串行化）全绿；经 Helper 服务层 prepare→create→read 端到端写入 spark 成功并读回一致、磁盘无 CRLF；14 个 commit-msg Git Hook 测试在 Windows 经 Git Bash 真实调起并全部通过（含真实 git commit 被钩子拦截/放行）。据此，09 §6.3 §8 未验证清单各项已在目标平台实测通过，满足 §6.3.1「在目标平台实际执行范围匹配的测试并全部通过，且测试结果绑定到当前 worktree」的恢复门槛。",
+        "research_intent": "为「把 09 §6.3 中 Windows 从『未验证范围』翻为『已验证平台』」这一 Human Gate 决策留存可回指证据；不替代 Human 决定，仅如实交还实测范围与未验证范围。",
+        "recommendation_summary": "建议经 Human Gate 后将 09 §6.3 的 Windows 声明由「未验证范围」更新为「已验证平台（受控写入，file_only 耐久，仅限 NTFS fixed drive）」，并保留 05 §11.8 的授权范围与残留风险声明不变。完整接入的其它平台（非 Windows）仍按未验证范围处理。",
+        "action_relevance": "设计或评估 Windows 平台受控写入能力时，确认 file_only 耐久与 NTFS fixed drive 边界已覆盖",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-770a-97f4-e7da87043ed4",
+        "object_id": "study-01KZXN5TXNEW59FX77VA3G8FPM",
+        "title": "跨平台变更传播与再验证纪律：规则落点与触发机制设计",
+        "status": "active",
+        "research_question": "在 LDVH 走向 macOS+Windows 双平台支持后，当任一平台侧改动触及平台相关面时，另一侧平台的已验证声明应如何失效并触发范围匹配重验或回退 unverified，以及该纪律的规则落点、清单界定、触发机制、测试/CI 方案与验收矩阵应如何设计？",
+        "abstract": "本报告为 spark-0057 议题的全面调研，围绕「跨平台变更传播与再验证纪律」的五个核心问题——规则落点（09 环境接入 vs 07 Code 实践）、平台相关面清单界定标准与防腐机制、重验触发机制（含 Git Gate 可行性边界）、测试/CI 最小方案、与 spark-0004 验收矩阵的衔接——逐项给出判断与设计建议。核心结论：触发规则落点应为 09 §6 平台声明生命周期，不新增独立规范；清单界定标准为「路径/平台抽象层/平台条件分支，且改动可能改变另一侧平台上的行为语义」，以机械扫描 + AI 复核双轨防腐；重验触发采用 Git Gate 路径匹配 + AI 语义判断的分级机制；测试以 CI matrix 为主、Windows 本地跑为辅的最小方案。报告同时给出可直接进入规范修订的最小增量草案。",
+        "research_intent": "spark-0057 以「修订漂移使跨平台验证失效」为缺口保留议题，要求判断规则落点（09 环境接入的平台声明生命周期 vs 07 Code 平台相关面工程约束）、平台相关面清单如何界定、重验范围如何分级、纪律如何进入 spark-0004 验收矩阵。本研究为 spark-0057 的收敛提供完整调研基础，使后续规范修订与 WorkCase 创建有据可依。",
+        "recommendation_summary": "建议规则落点放在 09 §6，在 09 §6.3 中新增「平台声明生命周期」条款，07 仅增加一条回指引用；平台相关面清单以「路径/平台抽象函数/平台条件分支」为机械扫描标准，以 AI 复核擅入检查为语义过滤；重验触发采用 Git Gate 路径匹配拦截 + message 声明格式的分级机制；测试采用 CI matrix（macOS + Windows）为主、Windows 本地验收跑为辅；验收面在 spark-0004 中新增「跨平台变更传播后重验」验收行。方案已成熟可直接进入规范修订，但需 Human 授权后按 01 §13.6 顺序执行。",
+        "action_relevance": "设计或评估跨平台变更传播方案时，确保验证纪律与规则落点机制已同时覆盖多平台",
+        "relations": [
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "019ffb52-ebb5-760f-a9f9-3acc6e3f74b9"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-760f-a9f9-3acc6e3f74b9"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-74ac-b57f-8adf8ea11892"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-77cd-b796-e8c6d3ac71ee",
+        "object_id": "study-01KZXN5TXNEZ6VF5Q8RV9TRWFE",
+        "title": "Vibe Coding 从 Demo 到产品级与 LDVH 增强方向调研",
+        "status": "active",
+        "research_question": "Vibe Coding 做 demo 和做产品级开发的本质差异是什么？从 demo 到产品级需要补齐哪些软件工程能力？LDVH 当前已经做了规范和基础流程，未来若面向产品级开发还需要增强哪些环节？",
+        "abstract": "Vibe Coding 从 demo 到产品级的核心变化不是\"让 AI 多写代码\"，而是把 AI 生成代码纳入产品工程闭环。产品级要求需求、架构、质量、安全、供应链、发布、运行、观测、事故、用户反馈和成本都可管理、可验证、可追溯。LDVH 当前已经有规范、工作模型、基础流程、Code 和 Web 的底盘，但仍需要增强产品需求层、架构治理、质量门禁、DevSecOps、生产就绪、运行观测、发布治理、AI 评测和 Human-facing 驾驶舱。",
+        "research_intent": "调研 Vibe Coding 从 demo 到产品级需要哪些变化，以及 LDVH 未来面向产品级开发还需要增强哪些环节。",
+        "recommendation_summary": "LDVH 下一阶段应从\"规范和基础事实源治理\"升级为\"AI 原生产品工程治理\"。建议优先增强三条主线：产品级事实源（需求、用户旅程、架构、接口、数据、质量属性、发布对象）、产品级门禁（测试策略、安全审查、供应链、生产就绪、SLO、回滚、事故复盘）、AI 原生执行保障（角色契约、子 Agent 审查、代码评测、上下文包、风险仪表盘、自动化校验）。",
+        "action_relevance": "评估 LDVH 增强方向时，区分 Vibe Coding 从 Demo 到产品级的不同阶段需求，不对应完整 Harness 结构",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-79f2-bf60-aaf3ce3cc35a",
+        "object_id": "study-01KZXN5TXNF7SBYR5AYF73SGTT",
+        "title": "LDVH 深度审计：规范—代码—实践三轴对齐与结构性改进方向",
+        "status": "active",
+        "research_question": "在 study-0022 已建立的价值主干与过度设计基线之上，进一步从规范密度、规范—代码对齐度、AI 执行体验、架构分层合理性与自诊断能力五个维度，审计当前 LDVH（v4 worktree，2026-08-05 观察时点）的实际运行状态，识别 study-0022 未覆盖的深层结构性问题，并提出可操作的分层改进路线。",
+        "abstract": "本次深度审计在 study-0022 的价值判断基础上，完成了五个新维度的全量探索：① 规范密度审计——创建单个 Spark 需要穿越 7 份规范、3 层交叉引用、23 条 Stop Conditions；② 规范—代码对齐审计——18 项 Helper 操作逐项映射，发现 3 项规范声明与代码实现之间存在\"结构投影断言\"式耦合而非语义绑定；③ AI 执行体验审计——首次以 Claude Code 在 Kimi Work 环境中实测完整 LDVH 交互链，记录 12 次 Helper 调用中 3 次 invalid_request 的根因与修正成本；④ 架构分层审计——facts 模块（7671 行）的 creation → application → transitions → validation 四层中 application 层价值不成立，transitions（1278 行）与 workcase_validation（984 行）可合并下沉；⑤ 自诊断能力审计——项目已有 3 份独立过度设计诊断，2 份残留审计（study-0021/0022），但无一份进入实际收敛。建议形成三层改进路线：第 0 层立即冻结——收敛三份诊断为一份共享基线并关闭火花；第 1 层小步快跑——helper 协议收敛 + 提交验证减负（1–2 周）；第 2 层结构性演进——比例原则自适用 + 条款日落机制（需 Human Gate ADR）。关键限制：未对 Web 层做运行时审计；未做跨平台验证；未做与外部工具（GitHub/GitLab）的集成验证。",
+        "research_intent": "study-0022 已确认价值主干成立、过度设计为淤积型且三份诊断未收敛。本审计在此基础上完成 study-0022 明确标记为\"未精读\"和\"未验证\"范围的补充审计，并首次从 AI 执行体验角度（非 Kimi Work 的 Kimi 执行者视角，而是 Claude Code 的跨环境视角）提供独立复证，为后续 WorkCase 的具体计划形成提供更精确的改进边界。",
+        "recommendation_summary": "立即行动（无对象化成本）：更新 spark-0019 记录本审计中 Claude Code 的跨环境复证，更新 spark-0055 记录本审计对 80/20 倒置的独立复证。第0 层冻结：新建 WorkCase「收敛三份过度设计诊断为共享基线」。第 1 层小步快跑：更新承接 spark-0019 的 WorkCase，纳入本审计发现的规范—代码结构投影耦合问题。第 2 层方向取舍：条款日落方向继续等待 Human Gate。不必新建的对象：study-0021/0022 与本审计的三份独立诊断可互相印证，不必再建第四份价值评估报告。",
+        "action_relevance": "进行规范-代码-实践三轴对齐审计时，按发现优先级排序，先修复阻塞性缺口再处理结构性改进",
+        "relations": [
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c"
+            }
+          },
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "019ffb52-ebb5-71da-8f50-223f834fad25"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-71da-8f50-223f834fad25"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7d6f-a5b9-3bf5c169d437",
+        "object_id": "study-01KZXN5TXNFNQTBE9VYQ0PKN1Q",
+        "title": "技能登记字段调研：各环境技能安装/登记要求与 LDVH 填值分工",
+        "status": "active",
+        "research_question": "各目标 AI 环境安装或登记一项技能时要求提供哪些字段信息，LDVH 薄 Skill 每个字段的规范填值与其权威来源分别是什么？",
+        "abstract": "本轮读取 Agent Skills 开放规范与 Trae、Codex、Claude 四方资料，结合 Kimi Work 既有实证（study-0018），梳理技能安装/登记字段：开放标准仅 name/description 必填，license/compatibility/metadata 可选；Trae 创建表单为技能名称/描述/指令三字段并支持导入自动填充；Codex 与 Claude 以目录放置加 frontmatter 为主，私有扩展分别走 agents/openai.yaml 与 Claude 专属 frontmatter；市场卡片的图标与厂商名属提交侧元数据。LDVH 填值分工：name/description/指令正文照抄 skill/SKILL.md 当次内容；license=MIT 与作者=LD Vibe Harness 现取 LICENSE 版权行；版本现取 pyproject（当前 0.1.0）；仓库 URL 现取 git remote origin；图标素材现取 icons/。关键限制：Codex 技能目录存在两种二手说法未读官方一手文档；各环境表单随版本变化，接入时须复核。",
+        "research_intent": "用户将携 LDVH 薄 Skill 前往 Trae、Claude、Codex 等环境接入，要求把各环境技能登记所需字段提前调研并备好填值，使接入方照表填写即可，避免逐环境临时摸索。本研究提供字段级准备清单与照抄/现取/不预填的分工，支撑 README 一句话接入流程在任意环境的可复制，并防止接入方为凑字段而改写 canonical SKILL.md 内容。",
+        "recommendation_summary": "接入任一新环境时先按 33 复核该环境当前官方技能资料，再按分工填值：name、description、指令正文一律照抄 skill/SKILL.md 当次内容（表单自动填充不一致时以 canonical 为准修正）；license、作者、版本、仓库 URL、图标素材按各自权威来源现取；环境私有扩展字段（agents/openai.yaml、Claude 专属 frontmatter 等）首次接入一律不预填，确有需要时在目标环境侧沉淀。SKILL.md frontmatter 维持 name/description 两字段不增补（增补引入版本漂移与重部署负担）。技能市场上架属另一议题，届时另起 Study。",
+        "action_relevance": "在目标环境中部署或登记 LDVH 技能时，按当次环境官方资料逐字段填写，不预填或猜测厂商专有字段",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7ead-a694-70845998ef8c",
+        "object_id": "study-01KZXN5TXNFTPTD53GGHCSHVWC",
+        "title": "AI Agent 输出格式治理与 LDVH 审计报告吸收调研",
+        "status": "active",
+        "research_question": "主流 AI agent 产品如何组织 agent 输出？为什么 Trae 的输出显得更有条理？LDVH 应如何定义自己的输出契约和过程信封？",
+        "abstract": "调研 Trae、Cursor、Claude Code、OpenAI Codex、GitHub Copilot、Windsurf/Cascade、Devin 和 Replit 等主流 agent 产品的输出组织方式。结论是：Trae 输出显得更有条理，主要因为它把 agent 过程渲染成计划、任务、工具面板、命令卡片、阶段状态和结果摘要，而不是只依赖模型自然语言。Codex 可以通过明确输出契约、AGENTS/Skill、plan/progress/final discipline 达到相近的人类可读效果；在 JSONL 事件流、output schema、App Server、structured outputs 和 traces 层，Codex/OpenAI 生态还具备更先进的机器可消费格式。",
+        "research_intent": "调研主流 AI agent 产品的输出组织方式，为 LDVH 定义人类可读的简洁输出契约和机器可读的 Agent Output Envelope。",
+        "recommendation_summary": "LDVH 应把 agent 输出分成两层治理：第一层是人类可读的简洁输出契约，用于 Codex 对话、review、handoff 和最终汇报；第二层是机器可读的 Agent Output Envelope，用事件、状态、计划项、工具调用、验证证据、风险、Human Gate 和事实源吸收结果支撑 Web、Code、Hook 和未来编排。",
+        "action_relevance": "设计或评估 AI 输出格式治理时，确认审计报告吸收机制已覆盖输出格式的结构化要求",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7ed1-a1aa-f90dd9655d0b",
+        "object_id": "study-01KZXN5TXNFV8T3AQS1QCPAQ8B",
+        "title": "LDVH 规则源与五类事实源的局部编辑策略评估",
+        "status": "active",
+        "research_question": "针对 LDVH 的规则源 specs/及授权附件与五类受管事实对象，局部编辑、并发处理、治理与正式发布应如何分层；哪些能力能够共享，哪些必须按规则源、Study、Spark、Pitfall、ADR 和 WorkCase 分别处理？",
+        "abstract": "本技术评估于 2026-08-12 回读 LDVH 当前规则源、五类事实类型、受控更新实现与 study-0028，并比较其中已记录的条件请求、JSON Patch、TextEdit、Git 三方合并与 OT/CRDT 资料线索。结论是六类资产应采用不同语义策略：规范源走直接工作树编辑、独立复核、风险匹配验证、条件性 Human Gate 与 Git 闭环；五类事实继续由 Helper 的完整对象验证、CAS、原子替换、回读和审计发布。两边可共享局部定位、候选 diff、草稿与 stale 提示，但不能共享写权限、正式生效条件或权威校验。Study 是局部正文请求的首个候选；其余事实类型应先优化各自的候选、草稿、更正或专属生命周期输入。",
+        "research_intent": "此前关于大段事实文本局部补丁的研究已产生一个需要重新分层的问题：规则源与事实源都包含 Markdown 或 YAML，但它们的权威边界、授权路径和发布机制不同。项目需要一份可独立复读的技术评估，避免把规范源误写成 Helper 受控事实更新，或把五类事实对象误写成同一种通用 patch。",
+        "recommendation_summary": "将共同能力限于局部读取、精确候选与差异审阅。规范源保持直接编辑后的语义治理和 Git 闭环；事实源保持 Helper 完整对象发布。若继续降低事实编辑成本，先以 Study 正文的严格局部请求试点，随后按 Spark、Pitfall、ADR、WorkCase 的字段所有权和生命周期逐类判断，不承诺全类型通用 patch、自动合并或 OT/CRDT。",
+        "action_relevance": "设计或评估事实对象局部编辑策略时，明确规则源与事实源的编辑边界，不把实现便利反向定义为规则",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7f92-9d4f-f3afc71f8d45",
+        "object_id": "study-01KZXN5TXNFY99TKZKNZ3HZ3A5",
+        "title": "LDVH 规范残留问题：宿主生命周期事件取消后的文本与实现残留",
+        "status": "active",
+        "research_question": "LDVH 取消宿主生命周期事件要求后，规范文本、SKILL.md、CLI 实现和场景表中仍残留哪些与该政策变更不匹配的约束、参数和路径假设？",
+        "abstract": "对 LDVH 自身规范体系进行内部审计，发现政策取消宿主生命周期事件对象后，09 §5.4、SKILL.md、CLI work-context 入口、09 场景表和 09.Att.01 中仍有 5 处残留，导致 Kimi Work 环境下 AI 被引导经历无意义的'尝试首选→失败→降级'仪式。",
+        "research_intent": "LDVH 已决定不再强制要求 AI 宿主环境原生提供生命周期事件对象。本审计旨在确认该政策变更后，规范源中仍残留的结构性不匹配，以便后续决定是修订规范文本、修复 CLI 实现，还是两者并行。",
+        "recommendation_summary": "建议方案 B（规范层修正）为主、方案 A（Code 层修复）为辅：09 §5.4 和 SKILL.md 应将精确规则读取设为默认路径；ldvh work-context 的 --helper-executable 参数应移除或改为可选；09 场景表应增加'入口直接不可调用'场景。",
+        "action_relevance": "清理宿主生命周期事件取消后的文本残留时，确保实现说明与规范声明一致，不遗留无来源支撑的声称",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffc1f-36b6-7175-891f-a3ba657b5ec0",
+        "object_id": "study-01KZY1YDNPE5TRJ7X3Q9JQPQP0",
+        "title": "规则精确读取三变体上下文合同评估方法试跑",
+        "status": "active",
+        "research_question": "冻结的最小必要上下文合同与三变体盲评能否形成可执行且声明边界可靠的规则精确读取评估方法？",
+        "abstract": "完成了单一规则精确读取任务族的三任务九单元方法试跑。方法和隐私边界可以运行，但执行输出稳定性、样本规模与宿主递达证据不足，当前只能形成诊断性方法证据，不能形成因果效应或总体服务改善结论。",
+        "research_intent": "保存本次已完成方法试跑的输入边界、聚合结果、限制与分流，避免后续把运行证据基础、单次比例或输入引用误作 LDVH 已服务好 AI 的证据，并为是否值得以等价执行扩大样本提供稳定判断依据。",
+        "recommendation_summary": "保留三变体模块为方法原型；下一轮先统一模型和工具入口、机器化执行记录并增加重复样本。在此之前不接入日常合同检查，不建立健康分、遥测、Dashboard 或告警。",
+        "action_relevance": "设计或评估规则精确读取方法时，按上下文合同三变体判断读取边界，确保 L3 切片不遗漏强制要求",
+        "relations": [
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "019ffb52-ebb5-74ea-a2f9-9f309e85d013"
+            }
+          },
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "019ffbfb-5be6-7a5f-9aa0-7125159435c6"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffd18-bafe-714f-be81-257c1502b922",
+        "object_id": "study-01KZYHHEQYE57VX095FGAG5E92",
+        "title": "DeepSeek Harness 会话事件日志执行可比性观察面盘点",
+        "status": "active",
+        "research_question": "DeepSeek Harness 持久化会话事件日志能否在评分前以机器证据判定各试次执行载体是否可比较（comparable / not_comparable / inconclusive），从而支撑 LDVH 最小执行证据协议与执行可比性门槛？",
+        "abstract": "对当前环境 6 个真实 DeepSeek Harness 会话日志（~/.dsh/sessions 下 Zstandard 压缩 JSONL）执行只读盘点，确认模型/工具入口、事件图配对完整性与 approval/permission/compact/retry/hook 等执行载体事件均可直接机器观察，并给出每会话的可比性三值初判。盘点确认轨迹日志可作为 harness-delivered 层级的执行载体证据来源，但不提升为 host-received；同会话跨模型切换（reason=change）是执行载体不等价的直接机器证据。",
+        "research_intent": "保存本次只读盘点的观察面、提取规则与三值初判结论，供后续最小执行证据协议定义与等价复验 WorkCase 直接消费，避免后续 AI 重新摸索 DSH 日志结构或误把轨迹渲染视图当作可读数据源。",
+        "recommendation_summary": "轨迹日志可直接支撑评分前执行可比性判定；下一步以 session_comparability 模块把盘点逻辑固化为可复用只读工具并配聚焦测试（纳入 WorkCase），先过执行可比性门槛再判断上下文效果差异。",
+        "action_relevance": "分析或比较不同会话日志的可比性时，标注各环境的事件观察面差异，不假设字段对称",
+        "relations": [
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "019ffb52-ebb5-74ea-a2f9-9f309e85d013"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019fff8d-1608-7eef-a0a0-70073d8c90aa",
+        "object_id": "study-01KZZRT5G8FVQT183G0WYRS45A",
+        "title": "围绕根规范 00《理念与构成》的 LDVH 全面评估：设计质量与兑现度（v4.1.0）",
+        "status": "active",
+        "research_question": "以根规范 00《理念与构成》为评估锚点，在 v4.1.0（HEAD 56e04a69，2026-08-14 观察时点），00 定义的存在理由、AI 第一服务对象定位、三类语义构成要素、规范源/事实源边界、V1-V8 与 HV1-HV5 价值标准、三种价值交付方式与系统级运行架构，在文档自身设计质量与系统实际兑现两个层面各处于什么状态，00 声明与现实之间存在哪些已验证成立项、已验证缺口与结构性风险？",
+        "abstract": "本报告全文精读 00 并以本会话实测证据对账：00 的核心架构声明在 dogfood 项目真实兑现（Helper 25 项公开操作可用、本会话 8 类调用跑通；规则源 20 份规范 + 13 份附件全量机械读取通过；事实库 237 对象完整性 complete 零 problems；commit-msg Git Hook 已部署；1903 项测试收集中 1888 通过、0 失败）；自我诚实机制制度化生效（00 自报 HV4 未完整具备、全量检查 2 项 gaps 不可被吞没）；治理强度极高且不对称（00 第 1–8 章与 canonical Skill 受最强 Human Gate 保护），与既有两份相邻审计的淤积诊断互证；三种价值交付方式兑现不均衡（Helper 实测成立，Git Gate 真实事件与 Web 运行本会话未验证）。建议：新建 WorkCase 复核 67 项 basis 冗余；HV4 机制维持缺口声明、由价值审计 Spark 周期复核承接；00 文本不主动修改；条款日落方向等待 Human。关键限制：02/03/05/07/08/20-23/30/32-34 未全文精读；评估在 00 自有价值框架内执行存在自评盲区；观察时点 2026-08-14。",
+        "research_intent": "Human 当次明确要求围绕 00 文档对 LDVH 做全面评估并写入 Study。00 是全部上位定义的承载者，既有两份相邻评估观察时点为 2026-08-05 且分别聚焦价值/过度设计与规范—代码—实践对齐，项目缺少以 00 文档自身为对象、且在 v4.1.0 落地后的全面评估基线。本报告为后续规范修订判断、价值审计 Spark 的周期复审以及涉及 00 的 Human Gate 决策提供可回指基线，避免每次评估重建对 00 框架与兑现度的整体认识。",
+        "recommendation_summary": "建议新建 WorkCase「规范关系直接 basis 冗余语义复核」（67 项逐项判定，P3）；HV4 积累效用机制维持缺口声明，由 open Spark「LDVH 价值审计」周期复审承接；00 第 1–8 章不主动修改，出现可归因误判实例后打包经 Human Gate 提请；规范条款日落机制维持相邻研究结论、等待 Human 方向选择；Git Gate 真实事件与 Web 运行验证并入下一次相应行动的验证选择记录，不单独对象化。",
+        "action_relevance": "进行 LDVH 全面评估时，对照 00 的设计质量与兑现度标准逐项评分，不因整体版本号跳过具体缺口",
+        "relations": [
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-7ea7-8303-b58b6d99eccd"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "01a00246-3d5b-77d6-b6fa-e44c05db9aab",
+        "object_id": "study-01M014CFAVEZBBDYQ49G2XQ6NB",
+        "title": "从 DeepSeek Harness 会话日志观察 LDVH Helper 调用模式与优化方向（65 会话结构化统计）",
+        "status": "active",
+        "research_question": "对 DeepSeek Harness 真实会话日志（docs/logs 下 65 个会话、103911 条事件）做结构化统计，能观察到哪些 LDVH Helper 调用模式、性能特征与易错点，以及它们指向哪些有证据支撑的优化方向？",
+        "abstract": "对 DeepSeek Harness 65 个真实会话日志（docs/logs，Zstandard 解压 JSONL，103911 条事件、250 轮、3265 次工具调用）做结构化统计：总输入 20.30M tok vs 输出 1.80M tok（约 11.3:1），覆盖 10 种模型；bash 工具共 1964 次，其中直接调用 LDVH Helper 757 次（38.5%），python heredoc 拼接 155 次（含 PYEOF 定界 18）；Helper 操作集中在 read-fact-objects(224)、read-specification-content(99)、update-workcase(83)、find-fact-object-candidates(63)、read-action-template-content(60)；6 个会话出现 KeyError，64 个会话出现重复/两份信号；52 会话 cacheReadTokens 合计 474.8M（此前误报缓存字段缺失已更正）。结论：Helper 调用封装、规范契约回查、create 结果提示三类优化方向在 65 会话样本中得到量化佐证；统计口径来自宿主（DSH）而非 LDVH 自身，优化立项仍需 LDVH 自身可测量口径。",
+        "research_intent": "保存 65 个真实会话日志的结构化统计结果与 Helper 调用模式证据，为 LDVH 的 Helper 交互、规范检索与上下文占用优化提供跨会话、跨模型的量化证据起点，避免优化仅凭单点观察。",
+        "recommendation_summary": "基于 65 会话统计收敛为分层优化方案：Phase 1 CLI 机械扩展——P1-1 请求文件化（--request，针对 155 次 python heredoc 拼接，验收新会话降为 0）、P1-2 请求骨架现取（--example/input_examples，针对 capabilities 48 次契约发现与盲试重试）、P1-3 结果投影（--fields，针对 KeyError 6 会话）；Phase 2 领域契约扩展——P2-1 CAS prepare-update 一体化（read-fact-objects 224 与 update-workcase 83 配对，往返 3-4 次降为 2）、P2-2 写入成功信号显式化（KeyError 6 会话/重复信号 64 会话）；Phase 3 MCP 化列为治理议题（须先经 09 规范修订 Human Gate 判定是否构成新接入层）。可测量口径（per-op 往返、命令 token、invalid_request 率）为 Phase 1/2 验证前置，经 session_comparability/replay 对照后立项。",
+        "action_relevance": "分析或优化 Helper 调用模式时，基于会话日志的结构化统计识别高频调用、异常路径和优化方向",
+        "relations": [
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "01a0004d-dc0c-71cd-806f-b5acb36d7057"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-75f4-888d-2d7c6df0e8e2"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "01a0038b-e990-7648-a886-df98559d26cf",
+        "object_id": "study-01M01RQTCGES4AH1PZK1AST9PF",
+        "title": "WC-A/B/C 完成后的 Helper 证据与事实库后续分流审计",
+        "status": "active",
+        "research_question": "在 WC-A、WC-B、WC-C 已分别完成 CLI 机械辅助、WorkCase strict item_event 与固定模型 2×2 对照后，当前 35 份 Study、82 个 Spark 和 124 个 closed WorkCase 中，哪些后续问题仍具有独立、可行动或需条件触发的研究价值，哪些已完成、被否定或已由更窄对象承接，以及如何形成不重复既有通用价值审计、也不越过 Human Gate 的后续分流基线？",
+        "abstract": "本内部审计在 2026-08-15 当前 Working Tree 全量通读 35 份 Study 与 82 个 Spark，并对 124 个 closed WorkCase 的 outcome、criterion、residual、route、suggestion 与 validation 线索做结构化扫描和命中深读。当前事实池为 Study 24 active/11 retired、Spark 6 open/60 implemented/16 discarded、WorkCase 124 closed/0 open。WC-A 已交付 --request/--example/--fields 与署名/footer 骨架；WC-B 的 strict item_event 将窄任务 raw request 平均减少 1935.75 bytes，但不替代通用 prepare-update；WC-C 的 40-session 固定模型配对结果显示 Phase 1 invalid_request 降低但 Helper command chars 增加 151.1/session、direct calls 不变，残差只达到 behavior-consistent 的 significant。审计将后续收敛为四层：P1 知识预检与服务质量复验；P2 prepare-update/CAS 与证据驱动的读写契约候选，FileAsset 完整退出已由后继 WorkCase 完成而不再构成 residual；P3 67 项 direct-basis 语义复核与窄测试债；真实需求触发的跨项目、平台、外部工具与 Phase3/09 判断。报告不创建实现授权，不把 host-received 不可观察或 significant 推导成 MCP 必要性。",
+        "research_intent": "Human 在 WC-A/B/C 连续完成后要求通读全部 Study、Spark，并从 WorkCase 中提取仍有价值的残留问题，建立一个后续工作依据。项目已有通用过度设计、根规范兑现度和周期价值审计，但没有一份以这三项新结果为观察断点、对完整当前事实池做去重并把旧推荐重分类为已完成/可判断/证据门槛/触发门槛的窄报告。若不形成该报告，后续会重复读取 117 个 Study/Spark、把 terminal 历史误当 backlog，或把 WC-C narrow residual 越界为 Phase3 授权。",
+        "recommendation_summary": "P1：以 open Spark「ADR、Pitfall 与 Study 的作用强化」和「LDVH 面向 AI 的服务质量评估」为既有承载，先做真实任务中的知识预检/复用效用与 WC-C 证据复验，不新建重复 Spark。P2：将「受控写入优化」校正为 WC-A 已完成署名/footer 机械骨架后仍待证据判断的 prepare-update/CAS；P2-2 统一成功信号仅在出现第二个独立 duplicate-create/解析失败样本时立项；FileAsset 早期 Gate 1 漏项已由后继完整范围 WorkCase 吸收并完成，不再立项。P3：按既有 Study 建议逐项复核 67 项 direct-basis 必要性，并只在真实触发下补 projection-table source-contract、fixture source identity、termination race/Web propagation 或 F1 delta。普通实现是否强制进入 approved WorkCase、条款日落及其它平台/MCP 方向由 Human 单独决定，不进入当前实现。",
+        "action_relevance": "评估 WC 完成后的证据与事实库分流策略时，确认后续责任已按类型归口到正确对象，不遗留未承接的审计发现",
+        "relations": [
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "01a00342-b1a9-7814-9827-8ac7b11fbd74"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-74e8-aac0-3cd3d73d15fc"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-74ea-a2f9-9f309e85d013"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-75f4-888d-2d7c6df0e8e2"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-7706-ba55-38e7bc9b1cc9"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-78ee-91ba-bcfad658463e"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-7ea7-8303-b58b6d99eccd"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "01a006d8-9f76-7caf-bc26-0199d6db014a",
+        "object_id": "study-01M03DH7VPFJQVR9G1K7BDP0AA",
+        "title": "知识对象的使用与触发时机：决策、经验与资料的行业实践调研",
+        "status": "active",
+        "research_question": "在真实软件工程与 AI 辅助开发实践中，决策记录（ADR）、失败经验（Pitfall/lessons learned）与调研资料（Study/文档）分别如何被使用、在什么时机被触发召回：哪些应作为每次对话开始的必读信息，哪些应按事件展开，公共必读层与类型差异层各自需要什么触发信号、读取粒度、容量纪律与失效机制？",
+        "abstract": "围绕 spark-0040 的 P1-1（知识预检与复用效用验证），本报告调研行业实践与文献（Fowler Knowledge Priming、Claude Code 记忆机制、gyst、Kote、54 ADRs 实践、ICSE-48 失败学习案例、PAO 冷启动评测、ICSA 2026 ADR 实证，观察时点 2026-08-15）。关键发现：会话级知识预热已是行业共识且优先级高于会话上下文（F1）；决策影响所有行动，应以常驻决策边界 + 事件核验消费，而非仅写 ADR 时相关（F2）；经验需要主动分发与就近呈现，被动存档必然失效（F3）；资料是典型按需检索型，不进常驻必读层（F4）；公共必读层必须有容量纪律与失效机制，且与触发层正交（F5）。据此建议把 spark-0040 从「三段任务触发预检」修正为「L0 公共必读层 + L1 类型差异触发层」双层模型，并以「无预检基线 vs 双层预检」双路径回放验证，单列公共层上下文成本。限制：为代表性公开资料调研而非系统综述；未做真实 LDVH 会话实验；ICSA 2026 仅条目级摘要旁证。",
+        "research_intent": "Human 指出 spark-0040 的三段预检假设不充分：决策影响任何行动（含读取与行为）、经验影响广泛、资料更接近按需，且关键信息应在每次对话开始必读，既有公共必读部分又有类型差异。需要以行业实践证据澄清项目的决策、经验、技巧与资料如何使用、何时触发，再据以修正 spark-0040 的 P1-1 设计假设与验证指标。若不调研，spark-0040 可能继续按任务类型平铺设计预检，遗漏会话必读层，并缺少公共层成本这一关键净收益观测项。",
+        "recommendation_summary": "建议更新既有 spark-0040，采用「公共必读层 + 类型差异触发层」双层消费模型（S1）：ADR 以决策边界常驻摘要 + 事件触达核验；Pitfall 以症状/技术栈/风险信号主动分发与就近呈现；Study 保持按需检索不进必读层；定义 L0 容量上限与失效规则（S3），验证时单列公共层成本并以双路径回放比较净收益（S2），触发信号按边界/症状建模而非任务类型平铺（S4）。本报告不授权创建 WorkCase 或实现任何自动注入机制；参数冻结后另经 31 行动模板与 Gate 1 评估。",
+        "action_relevance": "设计知识预检或消费机制时，采用双层模型（L0 公共必读 + L1 类型差异触发），按边界/症状建模而非任务类型平铺",
+        "relations": [
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "019ffb52-ebb5-74e8-aac0-3cd3d73d15fc"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-74e8-aac0-3cd3d73d15fc"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      }
+    ]
+  },
+  "family_cards_stripped": {
+    "adr": [
+      {
+        "object_uid": "019ffb52-ebb5-724c-881f-4f0f7d97038f",
+        "object_id": "adr-01KZXN5TXNE968G7TF1XYSE0WF",
+        "title": "规则缺口时先修规则源",
+        "status": "active",
+        "decision_question": "发现的问题暴露当前规则源不足以支持实现选择时，应以什么顺序完成变更？",
+        "decision": "决定以下变更顺序：当发现当前规则源不足以支持实现选择时，先完成受影响 Specs 或授权附件的最小充分修正及独立复核，再修改 Code、Web、Helper、Hook、测试或其它实现，并按风险完成验证与回读；当规则已完整且问题仅为实现偏差时，回指该规则后直接修复实现，不为流程伪造规范变更。该 ADR 在其 applicability 内约束后续工作方向；具体实现与高风险行动仍遵守相应 Specs 和 Human 授权。",
+        "applicability": "适用于 LDVH 中会改变或依赖行为、字段、生命周期、公开或跨模块接口、可观察结果、授权或验证边界的缺陷修复与增量实现；不适用于不影响规则理解的错字、链接或格式修正，也不要求为已由当前规则完整覆盖的纯实现偏差新增 Specs。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7340-8d6f-d7deb235f4dd",
+        "object_id": "adr-01KZXN5TXNED08TVYQVTS3BX6X",
+        "title": "交付中解释关键术语与代码标识",
+        "status": "active",
+        "decision_question": "AI 面向 Human 使用中文沟通时，如何表达可能影响理解的技术术语及代码标识，使其语义可理解，又保留与技术来源的准确对应？",
+        "decision": "决定在面向 Human 的中文自然语言交付中，对会影响理解、判断、授权或验收的技术术语，以及出现于说明、方案、审核或代码讨论中的常量名、变量名、方法名、类名、字段名等代码标识，在首次有意义使用处给出简短、贴合当前语境的中文语义解释；原术语、英文名或精确标识仍保留以便回指。后续重复不机械复述。代码标识可以原样置于代码、路径、命令或引用中；当它在对话中承载判断、选择、风险、行为或结果说明时，在相邻自然语言中说明“它在这里表示什么、起什么作用或不代表什么”。术语密集时可以集中列出小型中文释义，而不逐词翻译。该 ADR 在其 applicability 内约束中文交付；它不改写精确标识，也不替代具体 Specs 或 Human 授权。",
+        "applicability": "适用于 LDVH 中 AI 向 Human 的中文回复、方案、审核、报告、说明和需要 Human 作出理解、选择、授权或验收的自然语言交付，尤其包括对代码、配置、接口、事实对象或测试的讨论。它不改写 Specs、事实对象、代码、命令、路径、字段名或外部原文的精确文本；这里的决定是在面向 Human 的相邻中文说明中解释这些标识的语义，而不是修改其名字。已解释过且当前语境未变化的术语或标识无需重复展开；Human 对篇幅、语言或术语表另有明确要求时，按其当次要求调整表达方式。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7376-ad8a-3c4f8c01d342",
+        "object_id": "adr-01KZXN5TXNEDVAV2HW9Y603MT2",
+        "title": "提交预检机械诊断的修正信息权威来源策略",
+        "status": "active",
+        "decision_question": "提交预检对未知 scope、未知 type、未知正文小标题等能准确定位，但只报告错误值，不给当前允许值、最小合法示例或精确继续读取入口。后续应通过什么机制向诊断补充修正信息，使 AI 可据诊断直接修正，同时不复制规则正文、不形成第二权威？",
+        "decision": "决定将诊断的修正信息来源按以下分层策略处理：\n\n1. 确定性约束——诊断直接附带允许值闭集。对于不依赖规则附件投影、在规范生命周期内不变或仅通过 Code 提交本身变更的硬编码闭集，在诊断 message 中直接列出允许值。当前适用：body 固定小标题（_FIXED_HEADINGS：动机:、关键变更:、影响边界:、验证结论:、风险与后续:）、Platform-Affected/Platform-Verified 枚举值（macos/windows/both/unaffected/none）、必需 footer trailer 名（Session-ID、Agent-ID、Host-Environment）。上述值已在诊断中部分附带（Platform 类），其余待补齐（body_heading_unknown 应列出 _FIXED_HEADINGS 闭集）。\n\n2. 规则驱动值——由调用方通过 contract projection 注入诊断。对于 type_tokens、scope_tokens 等从 03.Att.01 动态投影的值，不在诊断中硬编码允许列表，而是利用 validate_commit() 已接收的 CommitContractProjection 参数，在构造 type_unknown/scope_unknown 诊断时将 contract.type_tokens/contract.scope_tokens 格式化进 message。该注入不建立第二权威，因为注入源是同一规则投影的运行时消费，而非独立硬编码副本。\n\n3. 精确读取入口——以锚点路径文本并入诊断 message 实现，不扩展 _issue(code, message) 的响应 schema。当允许值列表过长（如 scope_tokens 可能超过 20 项）不适合直接嵌入 message 时，或在确定性/规则驱动值之外需要 caller 阅读完整规则上下文的场景，诊断在 message 中附加精确读取入口指向 03.Att.01 对应表格的章节路径。若未来确需结构化 source 字段，另立 WorkCase 评估。",
+        "applicability": "适用于 code/ldvh/commits/validation.py 及 precheck.py 中所有返回给 AI 调用的机械诊断构造；不改变 Hook 的原生 Git 输出（commit-msg Hook 仍保持简洁）。本 ADR 约束的是 Helper 操作 precheck-git-commit 返回的 issues[*].message 字段内容策略，不改变诊断的 code、stage 或校验逻辑本身。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7a91-8ba0-1e1cc33ecedf",
+        "object_id": "adr-01KZXN5TXNFA8RQ80Y3K1KXKPZ",
+        "title": "以「你好，LDVH」问候作为 AI 规则递达验证信标",
+        "status": "active",
+        "decision_question": "LDVH 接入后，如何以最低成本在每次 AI 交互中获得一个 Human 可直接观察的信号，证明当次会话已实际取得 LDVH 规则引导（薄 Skill 路由递达），而非来自历史上下文恢复或规则未加载？",
+        "decision": "决定：在 LDVH 管辖项目的每次 AI 交互中，AI 须在当次回应正文最前先输出问候「你好，LDVH」。该问候作为规则递达验证信标——其出现证明当次会话已实际加载并遵从 LDVH 路由纪律（先经薄 Skill 取规则引导与行动模板再动手），问候缺失即提示规则递达可能失败、需复核接入。本决定只确立问候约定与验证意图，不构成事实写入、提交或行动授权，不替代事实完整性校验、Git Gate 或其它机械检查，也不证明深度合规；问候存在仅证明表面递达。",
+        "applicability": "适用于全部 LDVH 管辖项目（ldvh、poker-train-card、poker-train-video、ldvh-closure-preview）中 AI 与 Human 的交互会话；问候出现在 AI 当次回应正文的最前，只读查询与单次工具调用等非交互性回应同样适用。明确排除：本约定不构成任何事实写入、提交或行动授权；不替代任何规范、Human Gate、Git Gate 或机械校验；问候存在不证明 LDVH 已完整接入或规则已深度遵从，仅作递达信标；Human 可在特定会话明示豁免当次问候。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7ee2-9b1b-ef63e974b98a",
+        "object_id": "adr-01KZXN5TXNFVH9P6ZFCFMQ9ECA",
+        "title": "以中文语义理解并执行",
+        "status": "active",
+        "decision_question": "AI 在面向 Human 的中文工作中，应如何理解并执行中文目标、交付要求、事实源和规范源；当既有工作流程要求审核时，中文语义应如何进入审核？",
+        "decision": "决定 AI 在中文工作中始终以中文语义理解并执行 Human 的目标、边界和要求，特别核对主体、对象、条件、否定、时态、范围、授权与完成含义；不得以字面词、英文映射、字段名、模板惯性或实现习惯静默替代中文原意。当前规则、风险或工作流程已经要求审核时，审核必须增加独立的中文语义核对：审核者独立回读中文原意与当前来源，判断形成内容、判断或行动是否发生语义偏移。原本无需审核的工作不因此新增审核关卡、Human Gate 或授权条件，但执行者仍须保持上述中文语义视角。",
+        "applicability": "适用于 LDVH 中 AI 处理 Human 的中文目标、反馈、约束和验收要求，以及形成、修改、审核或消费面向 Human 的中文交付、事实源和规范源时。它不改变代码标识、路径、命令、外部原文或机器字段的精确写法；需要保留这些精确标识时，应在中文语义中正确理解和说明其当前作用。Human 明确指定其它语言、原文优先或特定表达方式时，按该当次要求执行，同时不得误解其中文约束。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      }
+    ],
+    "pitfall": [
+      {
+        "object_uid": "019ffb52-ebb5-705a-aa9b-e2ac31dfc7cb",
+        "object_id": "pitfall-01KZXN5TXNE1DAN6Z2NGRXZHYB",
+        "title": "独立入口契约真空致首选规则引导入口被放弃",
+        "status": "active",
+        "symptoms": "调用方按技能指引调用 ldvh-work-context 首选规则引导入口时，先撞参数错误、再撞 stdin 契约缺失提示；随后在 capabilities 与 Helper 服务规范（04）中反复查找事件形状无果（十几次 find/grep/试调），自行构造调用时 shell 引号失败，最终放弃首选入口、退回降级路径；全过程耗时约为修复后正常路径的三倍。识别信号：会话记录中出现对同一入口的多次试错调用，且最终回答声明“首选 unavailable、改用降级路径”。",
+        "trigger_conditions": "前置条件组合：（1）需要经 ldvh-work-context、ldvh-doctor 等独立入口完成调用（它们不是 Helper 操作）；（2）调用方持有的指引把“调用信封与参数”的权威统一指向 capabilities 与 04；（3）该入口的调用契约实际只登记在环境接入面附件（09.Att.01）对应入口行；（4）指引未把调用方指向该附件。已观察条件：薄 Skill 会话中按指引现取参数时必然命中。未知条件：其它 AI 环境 adapter 手工接入同一入口时是否同样命中，未逐一验证。",
+        "applicability": "适用边界：LDVH 薄 Skill 接入的各 AI 环境中，凡需调用 ldvh-work-context、ldvh-doctor、ldvh-context-recovery、ldvh-git-commit-msg 等独立（非 Helper）入口的场景，以及为任何新独立入口编写或修订调用指引的场景。观察环境：macOS 桌面 Kimi 环境、0.1.0 本地发行物、修复后模板。不适用：Helper 操作本身的参数发现（capabilities/04 已覆盖）；入口实现内部的逻辑问题。",
+        "validation_summary": "已观察结果：修复前探针（17.7 分钟、31 次 Bash 调用、首选入口零成功、降级路径兜底、一次越界临时文件自建自删）；修复后探针（5.5 分钟、19 次调用、首选入口一次 ok、最终回答如实声明经首选入口交付）；相关测试 222 项（docs/specs/commits/environment/packaging）与相邻回归 816 项全绿；三次相关提交的 Git Gate 机械预检均通过后落库。覆盖：同一环境、同一发行物、同一自然指令的修复前后对照。事件形状补充实测（2026-07-31）：SessionStart 四个 source（startup/resume/clear/compact）全部 ok；SubagentStart 标准形状 ok（交付 3981 字引导）、缺 cwd 按契约返回 unavailable、多余 source 被忽略仍 ok——事件形状覆盖已补齐。未覆盖范围：其它 AI 环境的行为复测；部署件被应用更新覆盖后的长期稳定性。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-719c-b88e-30877858aac1",
+        "object_id": "pitfall-01KZXN5TXNE6EBH3HGGXW5HAP1",
+        "title": "ZCode 插件 Hook 注册后需在环境设置中启用/信任才能实时触发",
+        "status": "active",
+        "symptoms": "1. 插件已部署到用户级插件目录，~/.zcode/plugins/ 中有完整文件结构\n2. 启动日志中报告 hookCount:1，证明 Hook 已注册\n3. data 文件（ldvh.json）完整，手动执行 hook 脚本可返回 work-context\n4. 新会话中没有 hook_run_started/hook_run_completed 记录\n5. 执行目录为空，无 Hook 执行产物\n6. 会话中可能出现 work-context，但来自 hydrate 恢复而非实时触发",
+        "trigger_conditions": "1. 通过 filesystem 方式部署 ZCode 插件，插件 manifest 声明了 SessionStart Hook\n2. 插件文件已安装到正确目录，enabledPlugins 已启用\n3. 验证者只检查了文件存在、Hook 注册日志和手动脚本可执行性\n4. 未检查 ZCode 设置中该插件的 Hook 是否已被信任/允许执行\n5. 目标环境（ZCode）将插件部署和 Hook 信任分离为两个独立步骤",
+        "applicability": "适用于通过 filesystem 方式在 ZCode 中安装 LDVH 插件的场景：插件已部署到用户级插件目录、Hook 已注册、data 文件完整、手动脚本可执行，但新会话未触发实时 Hook。它不说明通过 ZCode 官方插件市场分发、或其他 AI 环境（如 Trae CN、Codex、Cursor）的信任机制，也不适用于无法通过环境设置手动启用/信任插件的场景。",
+        "validation_summary": "2026-07-26 在 ZCode 完成两轮验证的对比：\n\n第一次安装（2026-07-24）：\n- 资产完整性：初始失败（data 目录缺 ldvh.json），后补全\n- 可执行性：手动脚本可返回 work-context\n- 实时触发：未通过，已注册 Hook 但无 hook_run_started/hook_run_completed\n- 结论：误以为 data 补全即可修复，未检查环境设置中 Hook 信任状态\n\n第二次重装（2026-07-26）：\n- 按 README 指引完成安装后，先在 ZCode 设置中确认插件已启用、Hook 已被信任\n- 启动新的 cold startup 会话\n- 实时触发：通过，启动日志中出现 hook_run_started/hook_run_completed，执行目录有对应产物\n- 完整接入声明：SessionStart 已 verified\n\n对比两轮结果，确认第一次失败的根因是：Hook 已注册但未在 ZCode 设置中被信任/允许执行，而非 Data 文件完整性问题。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-76c1-bf82-3e69c790f6b0",
+        "object_id": "pitfall-01KZXN5TXNEV0VZ0HYD73S1XNG",
+        "title": "Trae CN 环境接入：通过 hooks.json 部署 LDVH 插件",
+        "status": "active",
+        "symptoms": "1. LDVH 核心已通过 pip install -e 安装，但 AI 会话启动时未自动收到 LDVH 规则引导\n2. 手动调用 ldvh-work-context 可以返回规则内容，但新开会话后 AI 仍然不知道 LDVH 的存在\n3. 项目中有完整的 specs/ 规范目录，但 AI 每次都需要 Human 提示才去读取\n4. 已安装 LDVH 但子代理（subagent）启动时没有上下文恢复\n5. 尝试参考 code/plugins/ldvh/ 的 Codex hooks.json 格式配置，发现 Trae CN 不兼容",
+        "trigger_conditions": "1. 目标环境是 Trae CN（非 Trae Solo），通过本地 filesystem 部署插件\n2. LDVH 核心已通过 .venv/bin/pip install -e 安装\n3. 尝试复用 code/plugins/ldvh/hooks/hooks.json（Codex 格式）失败\n4. 目标环境存在 ~/.trae-cn/hooks.json 机制，但需要正确的 wrapper 脚本路径和 JSON 格式\n5. 插件数据目录和 wrapper 脚本默认放在 /tmp/ 下，重启后丢失",
+        "applicability": "适用于在 Trae CN IDE 中通过本地 filesystem 插件方式接入 LDVH 的场景：LDVH 核心已安装在项目 .venv 中，需要通过 Trae CN 的 ~/.trae-cn/hooks.json 机制注册 SessionStart 和 SubagentStart 事件，使 AI 会话启动时自动注入 LDVH 规则引导。它不说明其他 AI 环境（如 Codex、Cursor、Windsurf 等）的接入方式，也不适用于通过 Trae CN 官方插件市场分发或远程安装的场景。",
+        "validation_summary": "2026-07-26 在 Trae CN 环境完成以下验证：\n\n1. 静态部署：插件 manifest、wrapper 脚本、配置数据已部署到 ~/.trae-cn/plugins/ldvh/1.0.0/\n2. hooks.json：SessionStart 和 SubagentStart 均已注册，指向持久化 wrapper 脚本\n3. 核心直调：通过 wrapper 脚本模拟 SessionStart 事件，成功调用 ldvh-work-context 核心，返回 8.系统级运行架构 + 8.1渐进式披露 + 8.2薄引用 规则引导\n4. 插件注册：已注册到 installed-plugins.json 和 plugin-config.json 并启用\n\n该分层验证分别覆盖了资产完整性、Hook 注册、手动可执行性和实时触发（直调）。真实 Trae 会话启动时的自动触发尚未经新窗口验证，保持 unverified。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-777b-99f4-543318c03fc1",
+        "object_id": "pitfall-01KZXN5TXNEXXSKX2M6CCC0FY1",
+        "title": "将项目 worktree 误作 workspace_root 会误报配置缺失",
+        "status": "active",
+        "symptoms": "Helper 返回 config_status=missing 与 scope_status=scope_unknown，并说明未选择任何 governed-projects configuration；但父工作区实际存在有效的 LDVH-GOVERNED-PROJECTS.yaml，且当前项目已在其中登记。",
+        "trigger_conditions": "调用管辖解析或依赖其结果的事实读取操作时，显式传入 workspace_root；该值是项目 Git worktree 根，而 LDVH-GOVERNED-PROJECTS.yaml 位于父工作区根。",
+        "applicability": "适用于 LDVH Helper 的 workspace_root 被显式指定，且该目录本身不含 LDVH-GOVERNED-PROJECTS.yaml、配置位于上级工作区目录的场景。它不适用于配置确实不存在、配置无效或冲突，或 Human 有意选择另一个 workspace root 的情况。",
+        "validation_summary": "2026-07-30 在 ld-vibe-harness-v4 实际验证：1) 显式 workspace_root=/Users/dmh2002/poker_hud_projects/ld-vibe-harness-v4 时，Helper 返回 config_status=missing；2) 该目录的父目录实际存在 LDVH-GOVERNED-PROJECTS.yaml，并登记 ldvh 项目指向当前 worktree；3) 不传 workspace_root、仅提供当前 worktree locator 后，Helper 自动发现父目录配置并返回 config_status=valid、scope_status=governed_single。验证覆盖当前配置位置与当前 Helper 版本；不证明所有安装布局或未来配置发现实现都具有相同行为。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7ec3-856b-149a2befc2a8",
+        "object_id": "pitfall-01KZXN5TXNFV1RATRMK8NYZGN8",
+        "title": "Claude Code 技能在 Cindy/Codex 环境中部署失败",
+        "status": "active",
+        "symptoms": "1. 按 Claude Code 标准文档将技能文件部署为 ~/.claude/skills/<name>.md 后，重启 Claude Code\n   会话看不到技能。\n2. /skill 命令返回 Unknown command，而原生 Claude Code 环境应能识别。\n3. 技能文件存在于文件系统中，但 Claude Code 启动时未加载。\n4. 在 Cindy/Codex 环境中，codex-home/skills/ 目录下的 symlink 指向的目录中有技能文件，\n   但根目录 .md 文件不被识别。\n",
+        "trigger_conditions": "前置条件组合：（1）通过 Cindy/Codex 环境启动 Claude Code（非原生 Claude Code 可执行文件）；\n（2）技能部署为 ~/.claude/skills/<name>.md 扁平文件格式；（3）未将技能部署到 ~/.codex/skills/\n或 ~/.agents/skills/ 目录的目录格式路径。已观察条件：Cindy 的 Pi 文档明确说明 ~/.agents/skills/\n和 .agents/skills/ 中根目录 .md 文件被忽略，只有包含 SKILL.md 的子目录才被识别。未知条件：\nCindy/Codex 其他版本（如 2.0.x 或 3.x）是否采用相同规则；是否还有其他隐藏的技能扫描路径。\n",
+        "applicability": "适用于 Cindy/Codex 环境下运行 Claude Code 的用户。该环境通过 codex-home/skills/ 下的 symlink 链\n加载技能，技能发现规则为目录格式（<skill-name>/SKILL.md），而非原生 Claude Code 的扁平 .md 文件\n格式。不适用于原生 Claude Code 环境或使用 Claude Code 标准技能路径 ~/.claude/skills/ 的场景。\n",
+        "validation_summary": "2026-08-06 验证：将 ldvh 技能从 ~/.claude/skills/ldvh.md（扁平格式）迁移到\n~/.codex/skills/ldvh/SKILL.md（目录格式）后，重启全新会话，技能可见。/skill 命令可正常响应，\n不再返回 Unknown command。已观察环境：Windows，Cindy/Codex 2.1.219，Pi 0.83.0。未覆盖范围：\n其他操作系统（macOS/Linux）上的 Cindy/Codex 行为未知；Cindy/Codex 版本升级后技能发现规则\n是否变化未知。\n",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "01a00741-c69b-7b14-b640-af1394cd39af",
+        "object_id": "pitfall-01M03M3HMVFCABCG5F2EACTEDF",
+        "title": "子代理指定模型但未指定 provider 时继承宿主路由导致启动失败",
+        "status": "active",
+        "symptoms": "在 DeepSeek Harness Web 会话中执行\"用 subagent_deepseek_v4_pro 委派一个子代理报告它的模型身份\"，工具调用直接返回 Error: subagent run failed；会话代理改调 subagent_with_model 只传 model=deepseek-v4-pro 时同样失败。识别信号：父会话运行在 openai-codex/gpt-5.6-terra 路由上时子代理必然无法启动；自定义工具名（subagent_deepseek_v4_pro）在工具目录中时有时无——曾出现在自定义 preset 会话（04:39）中，随后在默认 preset 会话（04:47、04:53）中消失，profile 补丁写入后新会话仍看不到。",
+        "trigger_conditions": "前置条件组合：(1) 使用 DeepSeek Harness（dsh web profile，含 @aaravarr/dsh-subagent-max 0.1.1 bundle）；(2) 父会话运行在无法服务目标模型的 provider 路由上（如 openai-codex 只服务 codex 系模型），settings.yaml 默认模型为 openai-codex/gpt-5.6-terra；(3) 调用 subagent_with_model 时只指定 model、省略 provider，或把\"注册指定模型专用工具\"寄托在 profile 层 cordis.patch.yml 上。已观察条件：上述路由组合的会话中必然命中；dsh web profile 下 profile 补丁无法向 agent preset 合成层插入工具行。未知条件：其它宿主（Cindy/Trae 等）或其它 profile 组合是否同样命中，未逐一验证。",
+        "applicability": "适用边界：DeepSeek Harness（dsh web profile）及使用 dsh-subagent-max 类\"可选 provider/model\"子代理工具的宿主环境中为子代理指定模型路由的场景；以及任何\"想通过 profile/patch 层给 agent preset 增加工具行\"的场景。观察环境：DeepSeek Harness Web GUI（dsh web）、settings.yaml 默认 openai-codex/gpt-5.6-terra、dsh-subagent-max 0.1.1、2026-08-16。不适用：目标模型与父会话同 provider 的委派（无需改 provider）；preset 层自身的内容质量问题。",
+        "validation_summary": "已观察结果：(1) 修复前对照：04:47 与 04:53 两个失败会话中代理调用 subagent_with_model 仅带 model=deepseek-v4-pro，均返回 subagent run failed；两会话工具目录均无 subagent_deepseek_v4_pro；(2) 修复后验证：同一环境显式 provider=deepseek-official + model=deepseek-v4-pro 委派两次均成功，子代理自报 deepseek-v4-pro，并自读 DSH_SESSION_JSONL 确认 request/header config 为 provider=deepseek-official、model=deepseek-v4-pro；(3) 组合层实证：4 个 bundle 补丁 + profile 补丁按序组合出的 root 树不含 delegation 组与自定义工具，insert 补丁不生效并产生启动告警。覆盖：同一 dsh web 环境、同一宿主路由、同一目标模型的修复前后对照，以及 root 组合树的离线实证。未覆盖范围：其它宿主环境（Cindy/Trae）的 provider 继承与 preset 挂载行为；父会话 provider 恰为 deepseek-official 时省略 provider 也能成功（本经验仍建议显式化以消除路由歧义）。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      }
+    ],
+    "study": [
+      {
+        "object_uid": "019ffb52-ebb5-707e-a100-6f2f8150ce24",
+        "object_id": "study-01KZXN5TXNE1ZA203F5Y0N1KH4",
+        "title": "Codebase Memory MCP 插件调研与 LDVH 吸收建议",
+        "status": "active",
+        "research_question": "Codebase Memory MCP 的本地代码知识图谱能力对 LDVH 的代码探索和事实源组织有什么启发？哪些可以吸收，哪些不应吸收？",
+        "abstract": "Codebase Memory MCP 通过 tree-sitter、Hybrid LSP、SQLite 图存储、BM25/语义/结构查询、变更影响分析，把代码探索从文件级 grep/read 转为图谱级结构查询。对 LDVH 的核心启发不是直接引入该工具作为事实源，而是吸收\"本地图谱索引 + 查询工具 + 非阻塞发现提醒 + 可提交图谱快照 + 明确事实源边界\"的能力形态。",
+        "research_intent": "调研 Codebase Memory MCP 插件的能力和限制，判断 LDVH 是否可以吸收其本地代码知识图谱能力。",
+        "recommendation_summary": "Codebase Memory MCP 适合被视为 AI 代码探索的运行时扩展和 Code 辅助索引，而不是 LDVH 的最终事实源。LDVH 可吸收其结构化代码图谱、跨仓库索引、影响分析、Agent 接入安装、非阻塞 hook、团队共享索引快照、图谱 UI 和本地隐私边界；不应吸收其\"运行时索引即事实\"的隐含风险，也不应让 MCP 查询结果替代 specs、ldvh-base 工作对象、Git 提交记录或现有 validator。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-708a-83b5-fa3ba3da425c",
+        "object_id": "study-01KZXN5TXNE2587DFT7EHXMGJW",
+        "title": "AI 代理授权边界的行业实践：混淆代理与过度代理权的对策调研",
+        "status": "active",
+        "research_question": "在 AI 代理（尤其编码代理）场景中，行业如何防止 AI 把“仅记录/仅创建对象”的授权误用为实施授权？授权证据如何做到不被 AI 伪造，行业主流采用哪些机制（人类在环、作用域凭据、外部授权点、沙箱与审计）？",
+        "abstract": "本报告基于 OWASP Agentic Top 10（2025-12）、OWASP LLM06 Excessive Agency、NIST 2026-02 代理身份概念论文及 IBM/SANS/Okta/Andromeda 等资料，调研 AI 代理越权（混淆代理、过度代理权）的行业对策，并核对 LDVH 自身 21（WorkCase）、30（Git 提交）规范的现状。结论：该问题是行业公认的头号代理安全风险，且有真实攻击链（GTG-1002、ForcedLeak、Devin 自授权、LiteLLM 供应链）；行业解法重心是授权决策外部化（人类在环、短期最小权限凭据、凭据代理/网关、fail-closed 执行点与审计），而非“为 AI 造不可伪造的密钥设施”。现状核对发现：LDVH 的 WorkCase 创建机制（Gate1 批准绑定 baseline_fingerprint 与真实 Human source_refs、专属受控写入口、30 模板对 commit 的授权要求）已经实现“授权证据绑定 Human 决策 + 执行点 fail-closed”的行业等价闭环，spark-0048 设想的外部信任设施并非必要；真实缺口落在 WorkCase 与 Git 提交之外的普通实施动作（直接改代码/规范/测试文件）——该范围没有机械执行点，只能靠薄 Skill 的劝告级约束与事后审计。",
+        "research_intent": "spark-0047 提出“记录型授权被误判为实施授权”的越权阻断需求，spark-0048 进一步追问可信签发与验签根如何使授权证据无法由 AI 伪造。本调研用于判断该问题是否需要解决、行业主流如何解决，以及 LDVH 应采用何种务实路径推进；2026-08-09 依据现状核对（21、30 规范与既有 WorkCase 机制）更新了对 LDVH 已覆盖范围的判断。",
+        "recommendation_summary": "不再建议为 spark-0048 引入可信签发与验签根设施：LDVH 的 WC 创建机制（21 §4.4/§6.5/§7.3）与 30 模板已实现“授权证据绑定 Human Gate + 执行点 fail-closed”的闭环。剩余问题收敛为两选一：(a) 把实施类动作（改代码/规范/测试）强制纳入已获 Gate1 批准的 WorkCase 授权包，WC 外实施即无授权并 fail-closed；(b) 如实承认薄 Skill 边界下普通文件直写只能劝告级约束 + 事后审计，将 spark-0047 预期从机械阻断降级。两者都无需新信任设施；建议按 (a) 评估一个 WorkCase，或先明确选择。",
+        "relations": [
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "019ffb52-ebb5-72a0-9268-1a053e010945"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-79a1-9fed-fa91fab7f6fc"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7092-b4c0-34c698c88385",
+        "object_id": "study-01KZXN5TXNE29B9G1MRTCCH0W5",
+        "title": "Codex 子代理与 Worktree 协作：LDVH 的并行判断",
+        "status": "active",
+        "research_question": "Codex 的子代理和 Git worktree 能如何帮助 LDVH 处理可并行的研究、核验与实现工作，同时避免把产品能力误写为固定流程？",
+        "abstract": "官方资料表明：子代理适合边界清晰、可独立汇总的读密集任务；并行写入需要额外协调；工作树隔离并发改动但不替代环境准备、权限控制或人类决策。对 LDVH 的启发是把并行性视作按任务选择的执行策略，并始终显式保留实际工作树、写入所有者和汇总责任。",
+        "research_intent": "为 LDVH 未来涉及研究、核验与实现的协作选择一个清楚的判断方式：何时应拆分并行任务，何时应保留单一写入与汇总责任。",
+        "recommendation_summary": "把并行视为按任务可分性选择的工作方式：先写清输出、汇总人与不修改范围；共享写入保留单一所有者；只有在确有需求时，以有界 WorkCase 验证 worktree 准备与交接，并由 Human 决定是否固化为长期默认。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-70ce-b94e-b15942d1b870",
+        "object_id": "study-01KZXN5TXNE37BJKNHB51D3E3G",
+        "title": "addyosmani/agent-skills 工程工作流与 LDVH 吸收建议调研",
+        "status": "active",
+        "research_question": "addyosmani/agent-skills 如何把软件工程实践组织成可发现、可执行、可验证的 AI agent 工作流？其真实优势、证据边界、跨环境限制和治理风险是什么？LDVH 可以有选择地吸收哪些机制而不混淆规则源、事实源、Helper 确定性能力与模型软约束？",
+        "abstract": "在 2026-07-29 对 main 分支 revision 7829ffd 的检查中，agent-skills 是一个以 24 个 Markdown 技能为核心、覆盖 Define—Plan—Build—Verify—Review—Ship 的工程工作流包，并辅以 8 个命令、4 个评审 persona、共享参考资料、宿主适配器和三层评测。其关键价值是把工程纪律写成“触发—步骤—反合理化—红旗—证据门禁”的行为契约，并对目录结构与路由进行机械评测；本次实际运行结构、命令和 Tier-2 路由检查均通过，路由 rank-1 为 86%。但这不证明真实任务质量：Tier 2 只是词法近似，Tier 3 默认按需且依赖模型；不同宿主只共享部分能力；单技能安装可能丢失共享引用；技能文本本身不能强制权限、Human Gate 或完成判断。",
+        "research_intent": "深入研究 addyosmani/agent-skills 的实际架构、技能行为契约、验证机制、跨宿主适配和局限，判断 LDVH 应吸收哪些设计原语、应拒绝哪些直接移植方式，以及后续是否值得建立有界试点。",
+        "recommendation_summary": "LDVH 不应整体复制该项目或把其技能内容提升为规则。最值得吸收的是五个可分离机制：明确的触发/排除契约、步骤与停止条件、反逃避信号、证据化完成门禁、结构/路由/行为分层评测；同时应保留 LDVH 的来源与职责边界，让 Helper/Code 只做确定性检查、Human 保留授权与取舍。建议后续仅在 Human 同意时建立一个小规模 WorkCase，用 3 个代表性行动模板做 A/B 试点，并以规则冲突、误触发、任务正确性、上下文成本和验证证据为验收指标。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7346-ad74-1f5ee785c315",
+        "object_id": "study-01KZXN5TXNED3ATX0ZBVKRBGRN",
+        "title": "WorkBuddy 专家团团队交互模式与 LDVH 学习方向调研",
+        "status": "active",
+        "research_question": "WorkBuddy 的专家团团队交互模式对 LDVH 有什么学习价值？LDVH 应如何吸收其角色契约、任务编排和结果整合能力？",
+        "abstract": "WorkBuddy 值得学习的不是\"多开几个 Agent\"，而是把专家角色、方法论、工具链、团队席位、共享任务列表、成员状态、直接沟通、计划审批、后台任务和结果整合显性化。LDVH 应吸收为\"团队编排层\"的设计方向：角色契约、任务卡、计划门禁、成员消息、状态投影、质量复核和成本/权限边界都应成为可追踪结构；但 WorkBuddy 的专家团运行状态、截图 UI 或外部工具输出不能替代 LDVH 的事实源。",
+        "research_intent": "调研 WorkBuddy 专家团团队交互模式，分析 LDVH 后续在行动编排和 Web 表达方面应学习和吸收的方向。",
+        "recommendation_summary": "LDVH 应把 WorkBuddy 式团队交互作为下一阶段行动编排和 Web 表达的重要参考。优先学习方向包括 Role Contract、Team Session/Task List、Result Review、TaskOutput 状态投影、专家/Skill/MCP 组合边界、Human Gate 与权限分层。正式落地前应先形成 WorkCase 或 ADR，避免把外部产品的专家团直接写成 LDVH 事实模型规则。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-74a2-b262-b27705d1eb71",
+        "object_id": "study-01KZXN5TXNEJHB4RNJEW2X3TVH",
+        "title": "LDVH 设计价值与过度设计评估：对照 00 价值标准",
+        "status": "active",
+        "research_question": "以 00 §6 的 V1-V8 与 HV1-HV5 价值评判标准及「可辨认净收益且新增负担不抵消价值」纳入测试衡量，当前 LDVH（v4 工作树，2026-08-05 观察时点）的规范模型、事实模型、行动模板、Helper CLI/Code 与 Web 设计，对 AI 执行者与 Human 各带来哪些可验证的实际价值，哪些部分的复杂度净收益不成立（过度设计集中在何处、根因是什么）？",
+        "abstract": "对照 00 价值标准逐项核验当前 LDVH 设计：价值主干真实成立（V6 接续、V5 据实、HV1-HV3 决策/授权/入档闭环，有 59 个完整关闭 WorkCase 与当次调用证据支持）；过度设计同样成立且为淤积型——流程层 80/20 场景倒置（模板 31 的 23 条 Stop Conditions、约 8 次交互的规则引导）、协议层为 18 项静态操作配置动态绑定与重型共同响应、规范层条款只增不减且比例原则未适用于自身。项目已有三份独立诊断（归档评估、spark-0055、提交减负 WorkCase）结论一致但未收敛。建议：新建两个 WorkCase（低风险快速通道、Helper 操作层收敛），条款日落方向经 Human Gate 后形成 ADR，HV4 验证由 spark-0045 承接。关键限制：Web 运行效果未验证；02/03/07/08/20/23 规范未精读；统计量以 2026-08-05 各观察时点为准。",
+        "research_intent": "spark-0055 以直觉疑问保留了「必要严谨还是过度设计」议题并要求反复回看；Human 当次明确要求以 00 为标准作出价值判断并入档，以便逐项处置。本研究为 spark-0055 的处置与后续简化类 WorkCase/ADR 的创建判断提供共享、可回指的基线，避免每次简化讨论从头重建对价值主干与淤积位置的认定。",
+        "recommendation_summary": "建议创建 WorkCase「低风险写入与提交快速通道」（风险分级路径、机械检查底线不降）与 WorkCase「Helper 操作层与协议收敛」（统一 result builder、合并拆对、启动期绑定校验）；「规范条款日落机制」属方向取舍，经 Human Gate 决定后形成 ADR；Web HV4/HV5 验证无需对象化，由 spark-0045 承接并设监测条件。简化必须以发现一的保护清单（事实对象、受控写入、证据回指、Human Gate、Git Gate）为不可削弱前提。",
+        "relations": [
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-71da-8f50-223f834fad25"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-751c-8041-ba92bae6c7bc",
+        "object_id": "study-01KZXN5TXNEME80GDTJAXEDHXW",
+        "title": "无环境 Hook 条件下的持续结果校验与 Git Gate 分层方案",
+        "status": "active",
+        "research_question": "当 AI 开发环境不提供可靠的 post-write 环境 Hook 时，行业如何在任意写入之后尽早检查结果规范；显式高频检查、文件 watcher、稳定快照、验证 receipt、Git Hook 和远端门禁应如何分工，才能让 LDVH 放松写入过程约束而不削弱最终结果与提交边界？",
+        "abstract": "本报告于 2026-08-11 对照 Watchman、Node.js、Gradle、TypeScript、Chokidar、pre-commit、Git、GitHub 与 Bazel 的官方资料。行业主流不是把文件事件当成可靠写入证明，而是把 watcher 用作失效或调度信号，把显式检查绑定当前输入，并由 Git Hook 保留提交前最后门禁。根据 Human 后续方向，本研究首期采纳低成本、高频、一次性的显式 ldvh check：它读取当前规则源与当前实际 worktree 的完整管辖事实库，保留原始子结果和 gaps；watcher、receipt 与 ADR 不在首期实现。当前未实现 watcher 原型、性能基准或故障注入。",
+        "research_intent": "Human 希望 LDVH 约束最终结果而非 AI 的具体写入方式，并要求写完后尽早由 Code 检查；目标环境没有可用的 post-write 环境 Hook，但 Git Hook 仍须保留。本研究为显式检查的可信边界、与 Git Gate 的分工，以及 watcher 作为可选后续增强的条件提供可复读依据。",
+        "recommendation_summary": "首期保留 common-dir 级 Git Hook 与 Git Gate，并交付显式、一次性、只读的 ldvh check。它固定检查当前源码 worktree 的完整规则源与由实际 cwd 解析出的受管辖 Git worktree 的完整事实库，逐项保留规则与事实子检查的原始结果、gaps 和未完成范围；普通业务代码、构建产物和临时文件不进入输入。事实子检查非 complete、任一子检查 partial/unavailable/error 或合同定义的阻断 gap 时不得返回 passed。该能力补充而不替代每次事实写后的精确回读和完整性审计，也不替代 Git Hook/Gate。watcher、范围级 receipt 和 ADR 仅在显式检查被证明不足且 Human 另行要求更低延迟自动反馈时再研究。",
+        "relations": [
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-7d9e-b5cc-17beecdc5303"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7589-8adb-8984aba3476b",
+        "object_id": "study-01KZXN5TXNEP4RNPW9GJNT6HVB",
+        "title": "LDVH Windows 受控写入与环境接入的目标平台实测证据",
+        "status": "active",
+        "research_question": "LDVH 能否声称支持 Windows？在 09 §6.3 将 Windows 列为「未验证范围、不得声明完整接入成立」的前提下，受控事实写入与 Git Hook 执行能力是否已在目标平台（win32 / NTFS fixed drive / Python 3.13.14）实测通过，从而满足 §6.3.1 恢复 verified 的门槛？",
+        "abstract": "本文汇总 2026-08-07 在 Windows 目标平台对 ldvh 受控写入与环境接入的实测证据。native_atomic_fact_writes_supported() 在 Windows 返回 True；11 个 native_windows 标记测试（原子写入、六进程分配器连续 ID、跨 worktree 共享计数器、条件更新单赢、file-only 边界、worktree 隔离、junction/symlink/UNC 拒绝、msvcrt 锁串行化）全绿；经 Helper 服务层 prepare→create→read 端到端写入 spark 成功并读回一致、磁盘无 CRLF；14 个 commit-msg Git Hook 测试在 Windows 经 Git Bash 真实调起并全部通过（含真实 git commit 被钩子拦截/放行）。据此，09 §6.3 §8 未验证清单各项已在目标平台实测通过，满足 §6.3.1「在目标平台实际执行范围匹配的测试并全部通过，且测试结果绑定到当前 worktree」的恢复门槛。",
+        "research_intent": "为「把 09 §6.3 中 Windows 从『未验证范围』翻为『已验证平台』」这一 Human Gate 决策留存可回指证据；不替代 Human 决定，仅如实交还实测范围与未验证范围。",
+        "recommendation_summary": "建议经 Human Gate 后将 09 §6.3 的 Windows 声明由「未验证范围」更新为「已验证平台（受控写入，file_only 耐久，仅限 NTFS fixed drive）」，并保留 05 §11.8 的授权范围与残留风险声明不变。完整接入的其它平台（非 Windows）仍按未验证范围处理。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-770a-97f4-e7da87043ed4",
+        "object_id": "study-01KZXN5TXNEW59FX77VA3G8FPM",
+        "title": "跨平台变更传播与再验证纪律：规则落点与触发机制设计",
+        "status": "active",
+        "research_question": "在 LDVH 走向 macOS+Windows 双平台支持后，当任一平台侧改动触及平台相关面时，另一侧平台的已验证声明应如何失效并触发范围匹配重验或回退 unverified，以及该纪律的规则落点、清单界定、触发机制、测试/CI 方案与验收矩阵应如何设计？",
+        "abstract": "本报告为 spark-0057 议题的全面调研，围绕「跨平台变更传播与再验证纪律」的五个核心问题——规则落点（09 环境接入 vs 07 Code 实践）、平台相关面清单界定标准与防腐机制、重验触发机制（含 Git Gate 可行性边界）、测试/CI 最小方案、与 spark-0004 验收矩阵的衔接——逐项给出判断与设计建议。核心结论：触发规则落点应为 09 §6 平台声明生命周期，不新增独立规范；清单界定标准为「路径/平台抽象层/平台条件分支，且改动可能改变另一侧平台上的行为语义」，以机械扫描 + AI 复核双轨防腐；重验触发采用 Git Gate 路径匹配 + AI 语义判断的分级机制；测试以 CI matrix 为主、Windows 本地跑为辅的最小方案。报告同时给出可直接进入规范修订的最小增量草案。",
+        "research_intent": "spark-0057 以「修订漂移使跨平台验证失效」为缺口保留议题，要求判断规则落点（09 环境接入的平台声明生命周期 vs 07 Code 平台相关面工程约束）、平台相关面清单如何界定、重验范围如何分级、纪律如何进入 spark-0004 验收矩阵。本研究为 spark-0057 的收敛提供完整调研基础，使后续规范修订与 WorkCase 创建有据可依。",
+        "recommendation_summary": "建议规则落点放在 09 §6，在 09 §6.3 中新增「平台声明生命周期」条款，07 仅增加一条回指引用；平台相关面清单以「路径/平台抽象函数/平台条件分支」为机械扫描标准，以 AI 复核擅入检查为语义过滤；重验触发采用 Git Gate 路径匹配拦截 + message 声明格式的分级机制；测试采用 CI matrix（macOS + Windows）为主、Windows 本地验收跑为辅；验收面在 spark-0004 中新增「跨平台变更传播后重验」验收行。方案已成熟可直接进入规范修订，但需 Human 授权后按 01 §13.6 顺序执行。",
+        "relations": [
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "019ffb52-ebb5-760f-a9f9-3acc6e3f74b9"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-760f-a9f9-3acc6e3f74b9"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-74ac-b57f-8adf8ea11892"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-77cd-b796-e8c6d3ac71ee",
+        "object_id": "study-01KZXN5TXNEZ6VF5Q8RV9TRWFE",
+        "title": "Vibe Coding 从 Demo 到产品级与 LDVH 增强方向调研",
+        "status": "active",
+        "research_question": "Vibe Coding 做 demo 和做产品级开发的本质差异是什么？从 demo 到产品级需要补齐哪些软件工程能力？LDVH 当前已经做了规范和基础流程，未来若面向产品级开发还需要增强哪些环节？",
+        "abstract": "Vibe Coding 从 demo 到产品级的核心变化不是\"让 AI 多写代码\"，而是把 AI 生成代码纳入产品工程闭环。产品级要求需求、架构、质量、安全、供应链、发布、运行、观测、事故、用户反馈和成本都可管理、可验证、可追溯。LDVH 当前已经有规范、工作模型、基础流程、Code 和 Web 的底盘，但仍需要增强产品需求层、架构治理、质量门禁、DevSecOps、生产就绪、运行观测、发布治理、AI 评测和 Human-facing 驾驶舱。",
+        "research_intent": "调研 Vibe Coding 从 demo 到产品级需要哪些变化，以及 LDVH 未来面向产品级开发还需要增强哪些环节。",
+        "recommendation_summary": "LDVH 下一阶段应从\"规范和基础事实源治理\"升级为\"AI 原生产品工程治理\"。建议优先增强三条主线：产品级事实源（需求、用户旅程、架构、接口、数据、质量属性、发布对象）、产品级门禁（测试策略、安全审查、供应链、生产就绪、SLO、回滚、事故复盘）、AI 原生执行保障（角色契约、子 Agent 审查、代码评测、上下文包、风险仪表盘、自动化校验）。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-79f2-bf60-aaf3ce3cc35a",
+        "object_id": "study-01KZXN5TXNF7SBYR5AYF73SGTT",
+        "title": "LDVH 深度审计：规范—代码—实践三轴对齐与结构性改进方向",
+        "status": "active",
+        "research_question": "在 study-0022 已建立的价值主干与过度设计基线之上，进一步从规范密度、规范—代码对齐度、AI 执行体验、架构分层合理性与自诊断能力五个维度，审计当前 LDVH（v4 worktree，2026-08-05 观察时点）的实际运行状态，识别 study-0022 未覆盖的深层结构性问题，并提出可操作的分层改进路线。",
+        "abstract": "本次深度审计在 study-0022 的价值判断基础上，完成了五个新维度的全量探索：① 规范密度审计——创建单个 Spark 需要穿越 7 份规范、3 层交叉引用、23 条 Stop Conditions；② 规范—代码对齐审计——18 项 Helper 操作逐项映射，发现 3 项规范声明与代码实现之间存在\"结构投影断言\"式耦合而非语义绑定；③ AI 执行体验审计——首次以 Claude Code 在 Kimi Work 环境中实测完整 LDVH 交互链，记录 12 次 Helper 调用中 3 次 invalid_request 的根因与修正成本；④ 架构分层审计——facts 模块（7671 行）的 creation → application → transitions → validation 四层中 application 层价值不成立，transitions（1278 行）与 workcase_validation（984 行）可合并下沉；⑤ 自诊断能力审计——项目已有 3 份独立过度设计诊断，2 份残留审计（study-0021/0022），但无一份进入实际收敛。建议形成三层改进路线：第 0 层立即冻结——收敛三份诊断为一份共享基线并关闭火花；第 1 层小步快跑——helper 协议收敛 + 提交验证减负（1–2 周）；第 2 层结构性演进——比例原则自适用 + 条款日落机制（需 Human Gate ADR）。关键限制：未对 Web 层做运行时审计；未做跨平台验证；未做与外部工具（GitHub/GitLab）的集成验证。",
+        "research_intent": "study-0022 已确认价值主干成立、过度设计为淤积型且三份诊断未收敛。本审计在此基础上完成 study-0022 明确标记为\"未精读\"和\"未验证\"范围的补充审计，并首次从 AI 执行体验角度（非 Kimi Work 的 Kimi 执行者视角，而是 Claude Code 的跨环境视角）提供独立复证，为后续 WorkCase 的具体计划形成提供更精确的改进边界。",
+        "recommendation_summary": "立即行动（无对象化成本）：更新 spark-0019 记录本审计中 Claude Code 的跨环境复证，更新 spark-0055 记录本审计对 80/20 倒置的独立复证。第0 层冻结：新建 WorkCase「收敛三份过度设计诊断为共享基线」。第 1 层小步快跑：更新承接 spark-0019 的 WorkCase，纳入本审计发现的规范—代码结构投影耦合问题。第 2 层方向取舍：条款日落方向继续等待 Human Gate。不必新建的对象：study-0021/0022 与本审计的三份独立诊断可互相印证，不必再建第四份价值评估报告。",
+        "relations": [
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c"
+            }
+          },
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "019ffb52-ebb5-71da-8f50-223f834fad25"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-71da-8f50-223f834fad25"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7d6f-a5b9-3bf5c169d437",
+        "object_id": "study-01KZXN5TXNFNQTBE9VYQ0PKN1Q",
+        "title": "技能登记字段调研：各环境技能安装/登记要求与 LDVH 填值分工",
+        "status": "active",
+        "research_question": "各目标 AI 环境安装或登记一项技能时要求提供哪些字段信息，LDVH 薄 Skill 每个字段的规范填值与其权威来源分别是什么？",
+        "abstract": "本轮读取 Agent Skills 开放规范与 Trae、Codex、Claude 四方资料，结合 Kimi Work 既有实证（study-0018），梳理技能安装/登记字段：开放标准仅 name/description 必填，license/compatibility/metadata 可选；Trae 创建表单为技能名称/描述/指令三字段并支持导入自动填充；Codex 与 Claude 以目录放置加 frontmatter 为主，私有扩展分别走 agents/openai.yaml 与 Claude 专属 frontmatter；市场卡片的图标与厂商名属提交侧元数据。LDVH 填值分工：name/description/指令正文照抄 skill/SKILL.md 当次内容；license=MIT 与作者=LD Vibe Harness 现取 LICENSE 版权行；版本现取 pyproject（当前 0.1.0）；仓库 URL 现取 git remote origin；图标素材现取 icons/。关键限制：Codex 技能目录存在两种二手说法未读官方一手文档；各环境表单随版本变化，接入时须复核。",
+        "research_intent": "用户将携 LDVH 薄 Skill 前往 Trae、Claude、Codex 等环境接入，要求把各环境技能登记所需字段提前调研并备好填值，使接入方照表填写即可，避免逐环境临时摸索。本研究提供字段级准备清单与照抄/现取/不预填的分工，支撑 README 一句话接入流程在任意环境的可复制，并防止接入方为凑字段而改写 canonical SKILL.md 内容。",
+        "recommendation_summary": "接入任一新环境时先按 33 复核该环境当前官方技能资料，再按分工填值：name、description、指令正文一律照抄 skill/SKILL.md 当次内容（表单自动填充不一致时以 canonical 为准修正）；license、作者、版本、仓库 URL、图标素材按各自权威来源现取；环境私有扩展字段（agents/openai.yaml、Claude 专属 frontmatter 等）首次接入一律不预填，确有需要时在目标环境侧沉淀。SKILL.md frontmatter 维持 name/description 两字段不增补（增补引入版本漂移与重部署负担）。技能市场上架属另一议题，届时另起 Study。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7ead-a694-70845998ef8c",
+        "object_id": "study-01KZXN5TXNFTPTD53GGHCSHVWC",
+        "title": "AI Agent 输出格式治理与 LDVH 审计报告吸收调研",
+        "status": "active",
+        "research_question": "主流 AI agent 产品如何组织 agent 输出？为什么 Trae 的输出显得更有条理？LDVH 应如何定义自己的输出契约和过程信封？",
+        "abstract": "调研 Trae、Cursor、Claude Code、OpenAI Codex、GitHub Copilot、Windsurf/Cascade、Devin 和 Replit 等主流 agent 产品的输出组织方式。结论是：Trae 输出显得更有条理，主要因为它把 agent 过程渲染成计划、任务、工具面板、命令卡片、阶段状态和结果摘要，而不是只依赖模型自然语言。Codex 可以通过明确输出契约、AGENTS/Skill、plan/progress/final discipline 达到相近的人类可读效果；在 JSONL 事件流、output schema、App Server、structured outputs 和 traces 层，Codex/OpenAI 生态还具备更先进的机器可消费格式。",
+        "research_intent": "调研主流 AI agent 产品的输出组织方式，为 LDVH 定义人类可读的简洁输出契约和机器可读的 Agent Output Envelope。",
+        "recommendation_summary": "LDVH 应把 agent 输出分成两层治理：第一层是人类可读的简洁输出契约，用于 Codex 对话、review、handoff 和最终汇报；第二层是机器可读的 Agent Output Envelope，用事件、状态、计划项、工具调用、验证证据、风险、Human Gate 和事实源吸收结果支撑 Web、Code、Hook 和未来编排。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7ed1-a1aa-f90dd9655d0b",
+        "object_id": "study-01KZXN5TXNFV8T3AQS1QCPAQ8B",
+        "title": "LDVH 规则源与五类事实源的局部编辑策略评估",
+        "status": "active",
+        "research_question": "针对 LDVH 的规则源 specs/及授权附件与五类受管事实对象，局部编辑、并发处理、治理与正式发布应如何分层；哪些能力能够共享，哪些必须按规则源、Study、Spark、Pitfall、ADR 和 WorkCase 分别处理？",
+        "abstract": "本技术评估于 2026-08-12 回读 LDVH 当前规则源、五类事实类型、受控更新实现与 study-0028，并比较其中已记录的条件请求、JSON Patch、TextEdit、Git 三方合并与 OT/CRDT 资料线索。结论是六类资产应采用不同语义策略：规范源走直接工作树编辑、独立复核、风险匹配验证、条件性 Human Gate 与 Git 闭环；五类事实继续由 Helper 的完整对象验证、CAS、原子替换、回读和审计发布。两边可共享局部定位、候选 diff、草稿与 stale 提示，但不能共享写权限、正式生效条件或权威校验。Study 是局部正文请求的首个候选；其余事实类型应先优化各自的候选、草稿、更正或专属生命周期输入。",
+        "research_intent": "此前关于大段事实文本局部补丁的研究已产生一个需要重新分层的问题：规则源与事实源都包含 Markdown 或 YAML，但它们的权威边界、授权路径和发布机制不同。项目需要一份可独立复读的技术评估，避免把规范源误写成 Helper 受控事实更新，或把五类事实对象误写成同一种通用 patch。",
+        "recommendation_summary": "将共同能力限于局部读取、精确候选与差异审阅。规范源保持直接编辑后的语义治理和 Git 闭环；事实源保持 Helper 完整对象发布。若继续降低事实编辑成本，先以 Study 正文的严格局部请求试点，随后按 Spark、Pitfall、ADR、WorkCase 的字段所有权和生命周期逐类判断，不承诺全类型通用 patch、自动合并或 OT/CRDT。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffb52-ebb5-7f92-9d4f-f3afc71f8d45",
+        "object_id": "study-01KZXN5TXNFY99TKZKNZ3HZ3A5",
+        "title": "LDVH 规范残留问题：宿主生命周期事件取消后的文本与实现残留",
+        "status": "active",
+        "research_question": "LDVH 取消宿主生命周期事件要求后，规范文本、SKILL.md、CLI 实现和场景表中仍残留哪些与该政策变更不匹配的约束、参数和路径假设？",
+        "abstract": "对 LDVH 自身规范体系进行内部审计，发现政策取消宿主生命周期事件对象后，09 §5.4、SKILL.md、CLI work-context 入口、09 场景表和 09.Att.01 中仍有 5 处残留，导致 Kimi Work 环境下 AI 被引导经历无意义的'尝试首选→失败→降级'仪式。",
+        "research_intent": "LDVH 已决定不再强制要求 AI 宿主环境原生提供生命周期事件对象。本审计旨在确认该政策变更后，规范源中仍残留的结构性不匹配，以便后续决定是修订规范文本、修复 CLI 实现，还是两者并行。",
+        "recommendation_summary": "建议方案 B（规范层修正）为主、方案 A（Code 层修复）为辅：09 §5.4 和 SKILL.md 应将精确规则读取设为默认路径；ldvh work-context 的 --helper-executable 参数应移除或改为可选；09 场景表应增加'入口直接不可调用'场景。",
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffc1f-36b6-7175-891f-a3ba657b5ec0",
+        "object_id": "study-01KZY1YDNPE5TRJ7X3Q9JQPQP0",
+        "title": "规则精确读取三变体上下文合同评估方法试跑",
+        "status": "active",
+        "research_question": "冻结的最小必要上下文合同与三变体盲评能否形成可执行且声明边界可靠的规则精确读取评估方法？",
+        "abstract": "完成了单一规则精确读取任务族的三任务九单元方法试跑。方法和隐私边界可以运行，但执行输出稳定性、样本规模与宿主递达证据不足，当前只能形成诊断性方法证据，不能形成因果效应或总体服务改善结论。",
+        "research_intent": "保存本次已完成方法试跑的输入边界、聚合结果、限制与分流，避免后续把运行证据基础、单次比例或输入引用误作 LDVH 已服务好 AI 的证据，并为是否值得以等价执行扩大样本提供稳定判断依据。",
+        "recommendation_summary": "保留三变体模块为方法原型；下一轮先统一模型和工具入口、机器化执行记录并增加重复样本。在此之前不接入日常合同检查，不建立健康分、遥测、Dashboard 或告警。",
+        "relations": [
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "019ffb52-ebb5-74ea-a2f9-9f309e85d013"
+            }
+          },
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "019ffbfb-5be6-7a5f-9aa0-7125159435c6"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019ffd18-bafe-714f-be81-257c1502b922",
+        "object_id": "study-01KZYHHEQYE57VX095FGAG5E92",
+        "title": "DeepSeek Harness 会话事件日志执行可比性观察面盘点",
+        "status": "active",
+        "research_question": "DeepSeek Harness 持久化会话事件日志能否在评分前以机器证据判定各试次执行载体是否可比较（comparable / not_comparable / inconclusive），从而支撑 LDVH 最小执行证据协议与执行可比性门槛？",
+        "abstract": "对当前环境 6 个真实 DeepSeek Harness 会话日志（~/.dsh/sessions 下 Zstandard 压缩 JSONL）执行只读盘点，确认模型/工具入口、事件图配对完整性与 approval/permission/compact/retry/hook 等执行载体事件均可直接机器观察，并给出每会话的可比性三值初判。盘点确认轨迹日志可作为 harness-delivered 层级的执行载体证据来源，但不提升为 host-received；同会话跨模型切换（reason=change）是执行载体不等价的直接机器证据。",
+        "research_intent": "保存本次只读盘点的观察面、提取规则与三值初判结论，供后续最小执行证据协议定义与等价复验 WorkCase 直接消费，避免后续 AI 重新摸索 DSH 日志结构或误把轨迹渲染视图当作可读数据源。",
+        "recommendation_summary": "轨迹日志可直接支撑评分前执行可比性判定；下一步以 session_comparability 模块把盘点逻辑固化为可复用只读工具并配聚焦测试（纳入 WorkCase），先过执行可比性门槛再判断上下文效果差异。",
+        "relations": [
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "019ffb52-ebb5-74ea-a2f9-9f309e85d013"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "019fff8d-1608-7eef-a0a0-70073d8c90aa",
+        "object_id": "study-01KZZRT5G8FVQT183G0WYRS45A",
+        "title": "围绕根规范 00《理念与构成》的 LDVH 全面评估：设计质量与兑现度（v4.1.0）",
+        "status": "active",
+        "research_question": "以根规范 00《理念与构成》为评估锚点，在 v4.1.0（HEAD 56e04a69，2026-08-14 观察时点），00 定义的存在理由、AI 第一服务对象定位、三类语义构成要素、规范源/事实源边界、V1-V8 与 HV1-HV5 价值标准、三种价值交付方式与系统级运行架构，在文档自身设计质量与系统实际兑现两个层面各处于什么状态，00 声明与现实之间存在哪些已验证成立项、已验证缺口与结构性风险？",
+        "abstract": "本报告全文精读 00 并以本会话实测证据对账：00 的核心架构声明在 dogfood 项目真实兑现（Helper 25 项公开操作可用、本会话 8 类调用跑通；规则源 20 份规范 + 13 份附件全量机械读取通过；事实库 237 对象完整性 complete 零 problems；commit-msg Git Hook 已部署；1903 项测试收集中 1888 通过、0 失败）；自我诚实机制制度化生效（00 自报 HV4 未完整具备、全量检查 2 项 gaps 不可被吞没）；治理强度极高且不对称（00 第 1–8 章与 canonical Skill 受最强 Human Gate 保护），与既有两份相邻审计的淤积诊断互证；三种价值交付方式兑现不均衡（Helper 实测成立，Git Gate 真实事件与 Web 运行本会话未验证）。建议：新建 WorkCase 复核 67 项 basis 冗余；HV4 机制维持缺口声明、由价值审计 Spark 周期复核承接；00 文本不主动修改；条款日落方向等待 Human。关键限制：02/03/05/07/08/20-23/30/32-34 未全文精读；评估在 00 自有价值框架内执行存在自评盲区；观察时点 2026-08-14。",
+        "research_intent": "Human 当次明确要求围绕 00 文档对 LDVH 做全面评估并写入 Study。00 是全部上位定义的承载者，既有两份相邻评估观察时点为 2026-08-05 且分别聚焦价值/过度设计与规范—代码—实践对齐，项目缺少以 00 文档自身为对象、且在 v4.1.0 落地后的全面评估基线。本报告为后续规范修订判断、价值审计 Spark 的周期复审以及涉及 00 的 Human Gate 决策提供可回指基线，避免每次评估重建对 00 框架与兑现度的整体认识。",
+        "recommendation_summary": "建议新建 WorkCase「规范关系直接 basis 冗余语义复核」（67 项逐项判定，P3）；HV4 积累效用机制维持缺口声明，由 open Spark「LDVH 价值审计」周期复审承接；00 第 1–8 章不主动修改，出现可归因误判实例后打包经 Human Gate 提请；规范条款日落机制维持相邻研究结论、等待 Human 方向选择；Git Gate 真实事件与 Web 运行验证并入下一次相应行动的验证选择记录，不单独对象化。",
+        "relations": [
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-7ea7-8303-b58b6d99eccd"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "01a00246-3d5b-77d6-b6fa-e44c05db9aab",
+        "object_id": "study-01M014CFAVEZBBDYQ49G2XQ6NB",
+        "title": "从 DeepSeek Harness 会话日志观察 LDVH Helper 调用模式与优化方向（65 会话结构化统计）",
+        "status": "active",
+        "research_question": "对 DeepSeek Harness 真实会话日志（docs/logs 下 65 个会话、103911 条事件）做结构化统计，能观察到哪些 LDVH Helper 调用模式、性能特征与易错点，以及它们指向哪些有证据支撑的优化方向？",
+        "abstract": "对 DeepSeek Harness 65 个真实会话日志（docs/logs，Zstandard 解压 JSONL，103911 条事件、250 轮、3265 次工具调用）做结构化统计：总输入 20.30M tok vs 输出 1.80M tok（约 11.3:1），覆盖 10 种模型；bash 工具共 1964 次，其中直接调用 LDVH Helper 757 次（38.5%），python heredoc 拼接 155 次（含 PYEOF 定界 18）；Helper 操作集中在 read-fact-objects(224)、read-specification-content(99)、update-workcase(83)、find-fact-object-candidates(63)、read-action-template-content(60)；6 个会话出现 KeyError，64 个会话出现重复/两份信号；52 会话 cacheReadTokens 合计 474.8M（此前误报缓存字段缺失已更正）。结论：Helper 调用封装、规范契约回查、create 结果提示三类优化方向在 65 会话样本中得到量化佐证；统计口径来自宿主（DSH）而非 LDVH 自身，优化立项仍需 LDVH 自身可测量口径。",
+        "research_intent": "保存 65 个真实会话日志的结构化统计结果与 Helper 调用模式证据，为 LDVH 的 Helper 交互、规范检索与上下文占用优化提供跨会话、跨模型的量化证据起点，避免优化仅凭单点观察。",
+        "recommendation_summary": "基于 65 会话统计收敛为分层优化方案：Phase 1 CLI 机械扩展——P1-1 请求文件化（--request，针对 155 次 python heredoc 拼接，验收新会话降为 0）、P1-2 请求骨架现取（--example/input_examples，针对 capabilities 48 次契约发现与盲试重试）、P1-3 结果投影（--fields，针对 KeyError 6 会话）；Phase 2 领域契约扩展——P2-1 CAS prepare-update 一体化（read-fact-objects 224 与 update-workcase 83 配对，往返 3-4 次降为 2）、P2-2 写入成功信号显式化（KeyError 6 会话/重复信号 64 会话）；Phase 3 MCP 化列为治理议题（须先经 09 规范修订 Human Gate 判定是否构成新接入层）。可测量口径（per-op 往返、命令 token、invalid_request 率）为 Phase 1/2 验证前置，经 session_comparability/replay 对照后立项。",
+        "relations": [
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "01a0004d-dc0c-71cd-806f-b5acb36d7057"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-75f4-888d-2d7c6df0e8e2"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "01a0038b-e990-7648-a886-df98559d26cf",
+        "object_id": "study-01M01RQTCGES4AH1PZK1AST9PF",
+        "title": "WC-A/B/C 完成后的 Helper 证据与事实库后续分流审计",
+        "status": "active",
+        "research_question": "在 WC-A、WC-B、WC-C 已分别完成 CLI 机械辅助、WorkCase strict item_event 与固定模型 2×2 对照后，当前 35 份 Study、82 个 Spark 和 124 个 closed WorkCase 中，哪些后续问题仍具有独立、可行动或需条件触发的研究价值，哪些已完成、被否定或已由更窄对象承接，以及如何形成不重复既有通用价值审计、也不越过 Human Gate 的后续分流基线？",
+        "abstract": "本内部审计在 2026-08-15 当前 Working Tree 全量通读 35 份 Study 与 82 个 Spark，并对 124 个 closed WorkCase 的 outcome、criterion、residual、route、suggestion 与 validation 线索做结构化扫描和命中深读。当前事实池为 Study 24 active/11 retired、Spark 6 open/60 implemented/16 discarded、WorkCase 124 closed/0 open。WC-A 已交付 --request/--example/--fields 与署名/footer 骨架；WC-B 的 strict item_event 将窄任务 raw request 平均减少 1935.75 bytes，但不替代通用 prepare-update；WC-C 的 40-session 固定模型配对结果显示 Phase 1 invalid_request 降低但 Helper command chars 增加 151.1/session、direct calls 不变，残差只达到 behavior-consistent 的 significant。审计将后续收敛为四层：P1 知识预检与服务质量复验；P2 prepare-update/CAS 与证据驱动的读写契约候选，FileAsset 完整退出已由后继 WorkCase 完成而不再构成 residual；P3 67 项 direct-basis 语义复核与窄测试债；真实需求触发的跨项目、平台、外部工具与 Phase3/09 判断。报告不创建实现授权，不把 host-received 不可观察或 significant 推导成 MCP 必要性。",
+        "research_intent": "Human 在 WC-A/B/C 连续完成后要求通读全部 Study、Spark，并从 WorkCase 中提取仍有价值的残留问题，建立一个后续工作依据。项目已有通用过度设计、根规范兑现度和周期价值审计，但没有一份以这三项新结果为观察断点、对完整当前事实池做去重并把旧推荐重分类为已完成/可判断/证据门槛/触发门槛的窄报告。若不形成该报告，后续会重复读取 117 个 Study/Spark、把 terminal 历史误当 backlog，或把 WC-C narrow residual 越界为 Phase3 授权。",
+        "recommendation_summary": "P1：以 open Spark「ADR、Pitfall 与 Study 的作用强化」和「LDVH 面向 AI 的服务质量评估」为既有承载，先做真实任务中的知识预检/复用效用与 WC-C 证据复验，不新建重复 Spark。P2：将「受控写入优化」校正为 WC-A 已完成署名/footer 机械骨架后仍待证据判断的 prepare-update/CAS；P2-2 统一成功信号仅在出现第二个独立 duplicate-create/解析失败样本时立项；FileAsset 早期 Gate 1 漏项已由后继完整范围 WorkCase 吸收并完成，不再立项。P3：按既有 Study 建议逐项复核 67 项 direct-basis 必要性，并只在真实触发下补 projection-table source-contract、fixture source identity、termination race/Web propagation 或 F1 delta。普通实现是否强制进入 approved WorkCase、条款日落及其它平台/MCP 方向由 Human 单独决定，不进入当前实现。",
+        "relations": [
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "01a00342-b1a9-7814-9827-8ac7b11fbd74"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-74e8-aac0-3cd3d73d15fc"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-74ea-a2f9-9f309e85d013"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-75f4-888d-2d7c6df0e8e2"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-7706-ba55-38e7bc9b1cc9"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-78ee-91ba-bcfad658463e"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-7ea7-8303-b58b6d99eccd"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      },
+      {
+        "object_uid": "01a006d8-9f76-7caf-bc26-0199d6db014a",
+        "object_id": "study-01M03DH7VPFJQVR9G1K7BDP0AA",
+        "title": "知识对象的使用与触发时机：决策、经验与资料的行业实践调研",
+        "status": "active",
+        "research_question": "在真实软件工程与 AI 辅助开发实践中，决策记录（ADR）、失败经验（Pitfall/lessons learned）与调研资料（Study/文档）分别如何被使用、在什么时机被触发召回：哪些应作为每次对话开始的必读信息，哪些应按事件展开，公共必读层与类型差异层各自需要什么触发信号、读取粒度、容量纪律与失效机制？",
+        "abstract": "围绕 spark-0040 的 P1-1（知识预检与复用效用验证），本报告调研行业实践与文献（Fowler Knowledge Priming、Claude Code 记忆机制、gyst、Kote、54 ADRs 实践、ICSE-48 失败学习案例、PAO 冷启动评测、ICSA 2026 ADR 实证，观察时点 2026-08-15）。关键发现：会话级知识预热已是行业共识且优先级高于会话上下文（F1）；决策影响所有行动，应以常驻决策边界 + 事件核验消费，而非仅写 ADR 时相关（F2）；经验需要主动分发与就近呈现，被动存档必然失效（F3）；资料是典型按需检索型，不进常驻必读层（F4）；公共必读层必须有容量纪律与失效机制，且与触发层正交（F5）。据此建议把 spark-0040 从「三段任务触发预检」修正为「L0 公共必读层 + L1 类型差异触发层」双层模型，并以「无预检基线 vs 双层预检」双路径回放验证，单列公共层上下文成本。限制：为代表性公开资料调研而非系统综述；未做真实 LDVH 会话实验；ICSA 2026 仅条目级摘要旁证。",
+        "research_intent": "Human 指出 spark-0040 的三段预检假设不充分：决策影响任何行动（含读取与行为）、经验影响广泛、资料更接近按需，且关键信息应在每次对话开始必读，既有公共必读部分又有类型差异。需要以行业实践证据澄清项目的决策、经验、技巧与资料如何使用、何时触发，再据以修正 spark-0040 的 P1-1 设计假设与验证指标。若不调研，spark-0040 可能继续按任务类型平铺设计预检，遗漏会话必读层，并缺少公共层成本这一关键净收益观测项。",
+        "recommendation_summary": "建议更新既有 spark-0040，采用「公共必读层 + 类型差异触发层」双层消费模型（S1）：ADR 以决策边界常驻摘要 + 事件触达核验；Pitfall 以症状/技术栈/风险信号主动分发与就近呈现；Study 保持按需检索不进必读层；定义 L0 容量上限与失效规则（S3），验证时单列公共层成本并以双路径回放比较净收益（S2），触发信号按边界/症状建模而非任务类型平铺（S4）。本报告不授权创建 WorkCase 或实现任何自动注入机制；参数冻结后另经 31 行动模板与 Gate 1 评估。",
+        "relations": [
+          {
+            "relation_key": "inspired-by",
+            "target": {
+              "object_uid": "019ffb52-ebb5-74e8-aac0-3cd3d73d15fc"
+            }
+          },
+          {
+            "relation_key": "informs",
+            "target": {
+              "object_uid": "019ffb52-ebb5-74e8-aac0-3cd3d73d15fc"
+            }
+          }
+        ],
+        "updated_at": "2026-08-16T21:42:45.620720Z"
+      }
+    ]
+  },
+  "knowledge_ref_fingerprints": {
+    "019ffb52-ebb5-724c-881f-4f0f7d97038f": "e0d4d8582ca3ea62941ac5b2774b8e589038d3267ed6a15c274106efb53c8591",
+    "019ffb52-ebb5-7340-8d6f-d7deb235f4dd": "2ce86858c881e4c42a382eb386079cc69bf014315cae71b73a7774c50915cb00",
+    "019ffb52-ebb5-7376-ad8a-3c4f8c01d342": "26127213f985658b3e709dcb2ede24e2e8d423c91246657d39cf60062ef73c82",
+    "019ffb52-ebb5-7a91-8ba0-1e1cc33ecedf": "e604e1965e84795e7369002bba845d64b5c74986323d562f2ee7e513337b4e19",
+    "019ffb52-ebb5-7ee2-9b1b-ef63e974b98a": "c30295e2bff0390caa74a6dbfd8647de2d1545000544096cedff9d8b11c46b69",
+    "019ffb52-ebb5-705a-aa9b-e2ac31dfc7cb": "11303c1da7a2daf9abe83fe9bd9737e2a1c3902f68b869858e544f43033ea2ad",
+    "019ffb52-ebb5-719c-b88e-30877858aac1": "2d3930b7f6932ba8d1e1bf5eef1039eb55a1cd33cd5fb52f59a2d51cf11faad9",
+    "019ffb52-ebb5-76c1-bf82-3e69c790f6b0": "6231d1ea6f2640aaf6e187ea0024ec2f6eb0e11fc199130e0d4c4d127889cd05",
+    "019ffb52-ebb5-777b-99f4-543318c03fc1": "1ac10952f4f1b6a3c3276c4dc58ab8bb1f94a4b6d7f4c0b8a740e55f633a7083",
+    "019ffb52-ebb5-7ec3-856b-149a2befc2a8": "48e668144aa69b75dc4bee9e907b2997abcb0f6dbd39962722bcf45ca33d02b7",
+    "01a00741-c69b-7b14-b640-af1394cd39af": "65b3b8bd9f259f8555e146c6d0bfacaff2f164220faf26b4f6157d76f679462e",
+    "019ffb52-ebb5-707e-a100-6f2f8150ce24": "0e9b0f909461e6a24a5ee47c655cb74684e5a5202a86d30afc904fcc05f5ae80",
+    "019ffb52-ebb5-708a-83b5-fa3ba3da425c": "66248d74dcec0c795c92026513afb20e287ba39a7f5ec8cbbff9f73eed8d978e",
+    "019ffb52-ebb5-7092-b4c0-34c698c88385": "121bd01b108d3e0d3f69c64fbab1574c831ef5a6aa382d7ff42e38308b5378e7",
+    "019ffb52-ebb5-70ce-b94e-b15942d1b870": "3980fd1de20262930cc4fc1d1eae40e3a0dd7f1d46b2003723d6b76310ef6292",
+    "019ffb52-ebb5-7346-ad74-1f5ee785c315": "0d920d8a0ae41c44f86601708994ea26843a9672f833f107e6641d5de97eed38",
+    "019ffb52-ebb5-74a2-b262-b27705d1eb71": "7e2612b6acbcab4616834045c8f2032bdc10e404a83617ac8c95a26114bfe8a0",
+    "019ffb52-ebb5-751c-8041-ba92bae6c7bc": "37c330a4c4191273f9d451cd9d2dc4550c48d12077520d078d57e8ee0125b25a",
+    "019ffb52-ebb5-7589-8adb-8984aba3476b": "2cf449b067da2efbe10fa9c09d4dc3409eaae5adc675b75c8dee7121167fd7bc",
+    "019ffb52-ebb5-770a-97f4-e7da87043ed4": "3c661ee6e3c41aad8b94b6bc1f19c1a1cffdb269076776e14735cd1a279200cc",
+    "019ffb52-ebb5-77cd-b796-e8c6d3ac71ee": "187ab3d4e754f7cb256fa15603838c1e200e641e0978b07278af702d0b20a565",
+    "019ffb52-ebb5-79f2-bf60-aaf3ce3cc35a": "b54c08ee88db44fee12e297ede6acb09d5085a3f06be9b989b66826262ffdcdc",
+    "019ffb52-ebb5-7d6f-a5b9-3bf5c169d437": "3b85471e247ecb8980341dd1bf5d822d77ef5f8416179275d6578a2415953e72",
+    "019ffb52-ebb5-7ead-a694-70845998ef8c": "3ef6ebe1380149420edf07685915d290ed55a38ec524f21518a9099ae3d301b3",
+    "019ffb52-ebb5-7ed1-a1aa-f90dd9655d0b": "ae1aaf850da28e654b344ae58f821a973ce441c482213319ee902b9dfe75c065",
+    "019ffb52-ebb5-7f92-9d4f-f3afc71f8d45": "456a938c586f6c758089d2aa39cf17301be5f8ad3a3d7de419cdef6622772fc4",
+    "019ffc1f-36b6-7175-891f-a3ba657b5ec0": "e96569e85b09bcbc97db6708ed7313836e3d5bf8c08f113f9a115647d461f79e",
+    "019ffd18-bafe-714f-be81-257c1502b922": "e719162c0b8ad195d56b08728ab81209d68087285e382536566e46c40db06a2d",
+    "019fff8d-1608-7eef-a0a0-70073d8c90aa": "05187dce72944b21adc70444f79ffdf1afc188b1680f1ac434fdaf3b5b4e0351",
+    "01a00246-3d5b-77d6-b6fa-e44c05db9aab": "e2673d5ccaa2f954ccb67dffc0e862c11f8a72c49f29709a6851af9b69ec268e",
+    "01a0038b-e990-7648-a886-df98559d26cf": "e9764d5ad49205232bc75038a9001a6d7008ed76174030cbc4850bd891190a4b",
+    "01a006d8-9f76-7caf-bc26-0199d6db014a": "4b347e6500e1b18feeca41b85fcbd01cc84e3e07e55078925b67493640e02e1e"
+  },
+  "knowledge_ref_families": {
+    "019ffb52-ebb5-724c-881f-4f0f7d97038f": "adr",
+    "019ffb52-ebb5-7340-8d6f-d7deb235f4dd": "adr",
+    "019ffb52-ebb5-7376-ad8a-3c4f8c01d342": "adr",
+    "019ffb52-ebb5-7a91-8ba0-1e1cc33ecedf": "adr",
+    "019ffb52-ebb5-7ee2-9b1b-ef63e974b98a": "adr",
+    "019ffb52-ebb5-705a-aa9b-e2ac31dfc7cb": "pitfall",
+    "019ffb52-ebb5-719c-b88e-30877858aac1": "pitfall",
+    "019ffb52-ebb5-76c1-bf82-3e69c790f6b0": "pitfall",
+    "019ffb52-ebb5-777b-99f4-543318c03fc1": "pitfall",
+    "019ffb52-ebb5-7ec3-856b-149a2befc2a8": "pitfall",
+    "01a00741-c69b-7b14-b640-af1394cd39af": "pitfall",
+    "019ffb52-ebb5-707e-a100-6f2f8150ce24": "study",
+    "019ffb52-ebb5-708a-83b5-fa3ba3da425c": "study",
+    "019ffb52-ebb5-7092-b4c0-34c698c88385": "study",
+    "019ffb52-ebb5-70ce-b94e-b15942d1b870": "study",
+    "019ffb52-ebb5-7346-ad74-1f5ee785c315": "study",
+    "019ffb52-ebb5-74a2-b262-b27705d1eb71": "study",
+    "019ffb52-ebb5-751c-8041-ba92bae6c7bc": "study",
+    "019ffb52-ebb5-7589-8adb-8984aba3476b": "study",
+    "019ffb52-ebb5-770a-97f4-e7da87043ed4": "study",
+    "019ffb52-ebb5-77cd-b796-e8c6d3ac71ee": "study",
+    "019ffb52-ebb5-79f2-bf60-aaf3ce3cc35a": "study",
+    "019ffb52-ebb5-7d6f-a5b9-3bf5c169d437": "study",
+    "019ffb52-ebb5-7ead-a694-70845998ef8c": "study",
+    "019ffb52-ebb5-7ed1-a1aa-f90dd9655d0b": "study",
+    "019ffb52-ebb5-7f92-9d4f-f3afc71f8d45": "study",
+    "019ffc1f-36b6-7175-891f-a3ba657b5ec0": "study",
+    "019ffd18-bafe-714f-be81-257c1502b922": "study",
+    "019fff8d-1608-7eef-a0a0-70073d8c90aa": "study",
+    "01a00246-3d5b-77d6-b6fa-e44c05db9aab": "study",
+    "01a0038b-e990-7648-a886-df98559d26cf": "study",
+    "01a006d8-9f76-7caf-bc26-0199d6db014a": "study"
+  },
+  "observation_file_sha256": {
+    "adr-f2.request.json": "404cb06642e079a0ff6a3bd01892982ea553f7582c13c1994b64440f685de286",
+    "adr-f2.response.json": "417ac7ae2ce7231f6120c1730cc2eca41470c459ec357a0342e11129bc791d40",
+    "adr-f3.request.json": "67d43f89f6658f440a7dbab8df5702bedef88f4c7a2a46dd64ffe7808c1dc4d9",
+    "adr-f3.response.json": "77b23d19427a8fb197d01c3f2e9b743ec7db99f201734d12d632d368e8818a84",
+    "pitfall-f2.request.json": "ba8835b908d7c7e2601174953e0d1ee22ebe6b406768017f29ad5ca62096f162",
+    "pitfall-f2.response.json": "4f40b96bd0e9469143ac6d8b093b27d9c87c590c5cd54890ce4ec77115ad5976",
+    "pitfall-f3.request.json": "d9ea3dd6b5b11c4df085f5c15b8ce053c66d1c8111033861d7975405f63ba520",
+    "pitfall-f3.response.json": "387e307bc4da0bdd91e84e128418d57a5612372990f678e4964ffb7f6d410e34",
+    "study-f2.request.json": "a810154ba5785a91e752a97e6fb3be54fdb740191c15c2fba6d7aa6dc51b6952",
+    "study-f2.response.json": "f0250469f14b12a90cf90a91043c5500575c73dcf856726ed3d9e04ad44aaa32",
+    "study-f3.request.json": "8d63665021f484bc217f6ecca91fe38db94c1e539ac1dad9c121ad66ae5fb4e2",
+    "study-f3.response.json": "1135e39f925c2a51487c8d1592980856df27e16ff94afe717f14568dc044dbfd"
+  }
+}

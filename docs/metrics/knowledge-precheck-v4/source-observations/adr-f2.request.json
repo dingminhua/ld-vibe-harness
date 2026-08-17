@@ -1,0 +1,8 @@
+{
+  "arguments": {
+    "governed_project_id": "ldvh",
+    "card_layer": "F2",
+    "fact_type_keys": ["adr"],
+    "statuses": ["active"]
+  }
+}

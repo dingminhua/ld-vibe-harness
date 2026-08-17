@@ -1,0 +1,847 @@
+{
+  "schema_version": "ldvh-knowledge-precheck-v4/1",
+  "frozen_at": null,
+  "conditions": [
+    "struct-baseline",
+    "struct-enhanced"
+  ],
+  "allowed_knowledge_operations": [
+    "find-fact-object-candidates",
+    "read-fact-objects"
+  ],
+  "ceilings": {
+    "maximum_member_launches": 42,
+    "maximum_pair_attempts": 21,
+    "maximum_replacements": 3,
+    "maximum_scorer_contexts": 42,
+    "retained_pair_target": 18,
+    "run_timeout_seconds": 600,
+    "same_arm_retries": 0,
+    "total_timeout_seconds": 21600
+  },
+  "tasks": [
+    {
+      "case_kind": "exact-positive",
+      "confidence": "high",
+      "family": "adr",
+      "gold": {
+        "action_changed_definition": "知识必须改变选择、计划、调查范围、验证顺序或风险处置；仅读取或复述不计。",
+        "admissible_answer": "先核对规则缺口并形成最小规范修正，再实施。",
+        "applicable_refs": [
+          "019ffb52-ebb5-724c-881f-4f0f7d97038f"
+        ],
+        "correct_non_use_definition": "仅 non-use 题可计 correct non-use：不选择或套用对象、不发生 F3 误展开，并保持正确首个合法动作；应 F2 但无精确适用对象时允许只做 F2。",
+        "expected_f2_family": "adr",
+        "expected_f2_trigger": true,
+        "expected_f3_allow_set": [
+          "019ffb52-ebb5-724c-881f-4f0f7d97038f"
+        ],
+        "first_legal_action": "read-rule-gap-before-code",
+        "strong_reuse_definition": "仅适用题可计 strong reuse：精确采用全部且仅适用对象，并据此改变实质动作；F2/F3 导航本身不计。",
+        "tempting_nonapplicable_refs": [
+          "019ffb52-ebb5-7376-ad8a-3c4f8c01d342"
+        ],
+        "wrong_action_codes": [
+          "code-first",
+          "diagnostic-adr-overreach"
+        ]
+      },
+      "pair_id": "A1",
+      "source_refs": [
+        {
+          "content_fingerprint": "77084f3f8e16ebe5223f993f8fa18f2fe8943764a3c388a8b3b282aa162259e7",
+          "object_uid": "019ffb52-ebb5-724c-881f-4f0f7d97038f"
+        },
+        {
+          "content_fingerprint": "8eff2129955dee9964ebb8869999f4d8d5754cdc226de242a6a726eb873f2512",
+          "object_uid": "019ffb52-ebb5-7376-ad8a-3c4f8c01d342"
+        }
+      ],
+      "text_origin": "rewritten-for-v0.3-not-historical-verbatim",
+      "user_task": "Helper 缺陷暴露当前 Specs 未定义实现语义，团队却准备直接改 Code。给出首个合法动作和知识读取计划。"
+    },
+    {
+      "case_kind": "exact-positive",
+      "confidence": "high",
+      "family": "adr",
+      "gold": {
+        "action_changed_definition": "知识必须改变选择、计划、调查范围、验证顺序或风险处置；仅读取或复述不计。",
+        "admissible_answer": "在相邻中文说明中解释两个标识的当前作用，同时保留原名。",
+        "applicable_refs": [
+          "019ffb52-ebb5-7340-8d6f-d7deb235f4dd"
+        ],
+        "correct_non_use_definition": "仅 non-use 题可计 correct non-use：不选择或套用对象、不发生 F3 误展开，并保持正确首个合法动作；应 F2 但无精确适用对象时允许只做 F2。",
+        "expected_f2_family": "adr",
+        "expected_f2_trigger": true,
+        "expected_f3_allow_set": [
+          "019ffb52-ebb5-7340-8d6f-d7deb235f4dd"
+        ],
+        "first_legal_action": "explain-identifiers-in-context",
+        "strong_reuse_definition": "仅适用题可计 strong reuse：精确采用全部且仅适用对象，并据此改变实质动作；F2/F3 导航本身不计。",
+        "tempting_nonapplicable_refs": [
+          "019ffb52-ebb5-7a91-8ba0-1e1cc33ecedf"
+        ],
+        "wrong_action_codes": [
+          "leave-identifiers-unexplained",
+          "rename-identifiers"
+        ]
+      },
+      "pair_id": "A2",
+      "source_refs": [
+        {
+          "content_fingerprint": "eea6a50faa31ca51e0936d881eb3315e709b656e731cbfc58300cdb767283837",
+          "object_uid": "019ffb52-ebb5-7340-8d6f-d7deb235f4dd"
+        },
+        {
+          "content_fingerprint": "871688b3fa0c9d0afdc741eb94ee3d0234f91a463e7cd57a50d92998ea118953",
+          "object_uid": "019ffb52-ebb5-7a91-8ba0-1e1cc33ecedf"
+        }
+      ],
+      "text_origin": "rewritten-for-v0.3-not-historical-verbatim",
+      "user_task": "面向 Human 的中文验收说明首次出现 content_fingerprint 与 CAS，需要保持精确标识且让含义可理解。首个动作是什么？"
+    },
+    {
+      "case_kind": "boundary-partial",
+      "confidence": "high",
+      "family": "adr",
+      "gold": {
+        "action_changed_definition": "知识必须改变选择、计划、调查范围、验证顺序或风险处置；仅读取或复述不计。",
+        "admissible_answer": "采用既有诊断信息分层边界，先补允许值提示；新的结构化字段另行判断，不在本动作扩 schema。",
+        "applicable_refs": [
+          "019ffb52-ebb5-7376-ad8a-3c4f8c01d342"
+        ],
+        "correct_non_use_definition": "仅 non-use 题可计 correct non-use：不选择或套用对象、不发生 F3 误展开，并保持正确首个合法动作；应 F2 但无精确适用对象时允许只做 F2。",
+        "expected_f2_family": "adr",
+        "expected_f2_trigger": true,
+        "expected_f3_allow_set": [
+          "019ffb52-ebb5-7376-ad8a-3c4f8c01d342"
+        ],
+        "first_legal_action": "classify-existing-diagnostic-vs-new-schema",
+        "strong_reuse_definition": "仅适用题可计 strong reuse：精确采用全部且仅适用对象，并据此改变实质动作；F2/F3 导航本身不计。",
+        "tempting_nonapplicable_refs": [
+          "019ffb52-ebb5-724c-881f-4f0f7d97038f"
+        ],
+        "wrong_action_codes": [
+          "expand-schema-now",
+          "ignore-current-diagnostic-policy"
+        ]
+      },
+      "pair_id": "A3",
+      "source_refs": [
+        {
+          "content_fingerprint": "8eff2129955dee9964ebb8869999f4d8d5754cdc226de242a6a726eb873f2512",
+          "object_uid": "019ffb52-ebb5-7376-ad8a-3c4f8c01d342"
+        },
+        {
+          "content_fingerprint": "77084f3f8e16ebe5223f993f8fa18f2fe8943764a3c388a8b3b282aa162259e7",
+          "object_uid": "019ffb52-ebb5-724c-881f-4f0f7d97038f"
+        }
+      ],
+      "text_origin": "rewritten-for-v0.3-not-historical-verbatim",
+      "user_task": "提交预检只需为既有 body_heading_unknown 增加允许值提示，同时有人主张新增结构化 source 字段。应如何分流？"
+    },
+    {
+      "case_kind": "pure-non-use",
+      "confidence": "high",
+      "family": "adr",
+      "gold": {
+        "action_changed_definition": "知识必须改变选择、计划、调查范围、验证顺序或风险处置；仅读取或复述不计。",
+        "admissible_answer": "只修 fixture 与聚焦测试，不制造规范变更。",
+        "applicable_refs": [],
+        "correct_non_use_definition": "仅 non-use 题可计 correct non-use：不选择或套用对象、不发生 F3 误展开，并保持正确首个合法动作；应 F2 但无精确适用对象时允许只做 F2。",
+        "expected_f2_family": null,
+        "expected_f2_trigger": false,
+        "expected_f3_allow_set": [],
+        "first_legal_action": "fix-fixture-and-focused-test",
+        "strong_reuse_definition": "仅适用题可计 strong reuse：精确采用全部且仅适用对象，并据此改变实质动作；F2/F3 导航本身不计。",
+        "tempting_nonapplicable_refs": [
+          "019ffb52-ebb5-724c-881f-4f0f7d97038f"
+        ],
+        "wrong_action_codes": [
+          "invent-spec-change",
+          "create-new-adr"
+        ]
+      },
+      "pair_id": "A4",
+      "source_refs": [
+        {
+          "content_fingerprint": "77084f3f8e16ebe5223f993f8fa18f2fe8943764a3c388a8b3b282aa162259e7",
+          "object_uid": "019ffb52-ebb5-724c-881f-4f0f7d97038f"
+        }
+      ],
+      "text_origin": "rewritten-for-v0.3-not-historical-verbatim",
+      "user_task": "生产实现符合完整规则，只有测试 fixture 仍断言旧行为。应先改 Specs、建 ADR，还是只修 fixture？"
+    },
+    {
+      "case_kind": "tempting-no-trigger",
+      "confidence": "high",
+      "family": "adr",
+      "gold": {
+        "action_changed_definition": "知识必须改变选择、计划、调查范围、验证顺序或风险处置；仅读取或复述不计。",
+        "admissible_answer": "直接读取当前规则与 Helper 契约，不把历史 ADR 当当前接口权威。",
+        "applicable_refs": [],
+        "correct_non_use_definition": "仅 non-use 题可计 correct non-use：不选择或套用对象、不发生 F3 误展开，并保持正确首个合法动作；应 F2 但无精确适用对象时允许只做 F2。",
+        "expected_f2_family": null,
+        "expected_f2_trigger": false,
+        "expected_f3_allow_set": [],
+        "first_legal_action": "read-current-contract",
+        "strong_reuse_definition": "仅适用题可计 strong reuse：精确采用全部且仅适用对象，并据此改变实质动作；F2/F3 导航本身不计。",
+        "tempting_nonapplicable_refs": [
+          "019ffb52-ebb5-7376-ad8a-3c4f8c01d342"
+        ],
+        "wrong_action_codes": [
+          "apply-historical-adr-as-contract"
+        ]
+      },
+      "pair_id": "A5",
+      "source_refs": [
+        {
+          "content_fingerprint": "8eff2129955dee9964ebb8869999f4d8d5754cdc226de242a6a726eb873f2512",
+          "object_uid": "019ffb52-ebb5-7376-ad8a-3c4f8c01d342"
+        }
+      ],
+      "text_origin": "rewritten-for-v0.3-not-historical-verbatim",
+      "user_task": "只需确认 read-fact-objects 当前契约；旁人以“历史 ADR 可能有诊断策略”为由要求先套用旧决定。首个合法动作是什么？"
+    },
+    {
+      "case_kind": "f2-no-f3",
+      "confidence": "high",
+      "family": "adr",
+      "gold": {
+        "action_changed_definition": "知识必须改变选择、计划、调查范围、验证顺序或风险处置；仅读取或复述不计。",
+        "admissible_answer": "先查看活跃 ADR 的边界，确认没有精确适用决定后暂缓，不展开 F3。",
+        "applicable_refs": [],
+        "correct_non_use_definition": "仅 non-use 题可计 correct non-use：不选择或套用对象、不发生 F3 误展开，并保持正确首个合法动作；应 F2 但无精确适用对象时允许只做 F2。",
+        "expected_f2_family": "adr",
+        "expected_f2_trigger": true,
+        "expected_f3_allow_set": [],
+        "first_legal_action": "inspect-active-adr-boundaries-then-defer",
+        "strong_reuse_definition": "仅适用题可计 strong reuse：精确采用全部且仅适用对象，并据此改变实质动作；F2/F3 导航本身不计。",
+        "tempting_nonapplicable_refs": [
+          "019ffb52-ebb5-724c-881f-4f0f7d97038f"
+        ],
+        "wrong_action_codes": [
+          "force-rule-gap-adr",
+          "skip-f2-entirely"
+        ]
+      },
+      "pair_id": "A6",
+      "source_refs": [
+        {
+          "content_fingerprint": "77084f3f8e16ebe5223f993f8fa18f2fe8943764a3c388a8b3b282aa162259e7",
+          "object_uid": "019ffb52-ebb5-724c-881f-4f0f7d97038f"
+        }
+      ],
+      "text_origin": "rewritten-for-v0.3-not-historical-verbatim",
+      "user_task": "Human 说下周也许会改公开接口，但尚无具体变更、冲突选择或已观察规则缺口。现在应如何处理知识预检？"
+    },
+    {
+      "case_kind": "exact-positive",
+      "confidence": "high",
+      "family": "pitfall",
+      "gold": {
+        "action_changed_definition": "知识必须改变选择、计划、调查范围、验证顺序或风险处置；仅读取或复述不计。",
+        "admissible_answer": "移除 arguments.workspace_root，让 Helper 从当前 worktree 自动发现。",
+        "applicable_refs": [
+          "019ffb52-ebb5-777b-99f4-543318c03fc1"
+        ],
+        "correct_non_use_definition": "仅 non-use 题可计 correct non-use：不选择或套用对象、不发生 F3 误展开，并保持正确首个合法动作；应 F2 但无精确适用对象时允许只做 F2。",
+        "expected_f2_family": "pitfall",
+        "expected_f2_trigger": true,
+        "expected_f3_allow_set": [
+          "019ffb52-ebb5-777b-99f4-543318c03fc1"
+        ],
+        "first_legal_action": "omit-workspace-root-and-auto-discover",
+        "strong_reuse_definition": "仅适用题可计 strong reuse：精确采用全部且仅适用对象，并据此改变实质动作；F2/F3 导航本身不计。",
+        "tempting_nonapplicable_refs": [
+          "019ffb52-ebb5-705a-aa9b-e2ac31dfc7cb"
+        ],
+        "wrong_action_codes": [
+          "retry-same-workspace-root",
+          "switch-entrypoint"
+        ]
+      },
+      "pair_id": "P1",
+      "source_refs": [
+        {
+          "content_fingerprint": "575db265725030f4085265dc83b5206114fcacc38f8dd1b2a890ba5335784314",
+          "object_uid": "019ffb52-ebb5-777b-99f4-543318c03fc1"
+        },
+        {
+          "content_fingerprint": "140c73304e7554cf169c569d1cde3fc9cf4e69c4d066492deab449b5d7868402",
+          "object_uid": "019ffb52-ebb5-705a-aa9b-e2ac31dfc7cb"
+        }
+      ],
+      "text_origin": "rewritten-for-v0.3-not-historical-verbatim",
+      "user_task": "显式把项目 worktree 作为 arguments.workspace_root 后 Helper 报 config missing，而父级工作区确有配置。首个合法动作是什么？"
+    },
+    {
+      "case_kind": "exact-positive",
+      "confidence": "high",
+      "family": "pitfall",
+      "gold": {
+        "action_changed_definition": "知识必须改变选择、计划、调查范围、验证顺序或风险处置；仅读取或复述不计。",
+        "admissible_answer": "先定位接入面登记的独立入口契约，再进行一次符合契约的调用。",
+        "applicable_refs": [
+          "019ffb52-ebb5-705a-aa9b-e2ac31dfc7cb"
+        ],
+        "correct_non_use_definition": "仅 non-use 题可计 correct non-use：不选择或套用对象、不发生 F3 误展开，并保持正确首个合法动作；应 F2 但无精确适用对象时允许只做 F2。",
+        "expected_f2_family": "pitfall",
+        "expected_f2_trigger": true,
+        "expected_f3_allow_set": [
+          "019ffb52-ebb5-705a-aa9b-e2ac31dfc7cb"
+        ],
+        "first_legal_action": "locate-independent-entry-contract-before-retry",
+        "strong_reuse_definition": "仅适用题可计 strong reuse：精确采用全部且仅适用对象，并据此改变实质动作；F2/F3 导航本身不计。",
+        "tempting_nonapplicable_refs": [
+          "019ffb52-ebb5-777b-99f4-543318c03fc1"
+        ],
+        "wrong_action_codes": [
+          "blind-parameter-retries",
+          "premature-fallback"
+        ]
+      },
+      "pair_id": "P2",
+      "source_refs": [
+        {
+          "content_fingerprint": "140c73304e7554cf169c569d1cde3fc9cf4e69c4d066492deab449b5d7868402",
+          "object_uid": "019ffb52-ebb5-705a-aa9b-e2ac31dfc7cb"
+        },
+        {
+          "content_fingerprint": "575db265725030f4085265dc83b5206114fcacc38f8dd1b2a890ba5335784314",
+          "object_uid": "019ffb52-ebb5-777b-99f4-543318c03fc1"
+        }
+      ],
+      "text_origin": "rewritten-for-v0.3-not-historical-verbatim",
+      "user_task": "调用独立入口时，技能指引没有指出参数与 stdin 契约位置，团队准备反复试调或退回降级入口。首个合法动作是什么？"
+    },
+    {
+      "case_kind": "boundary-partial",
+      "confidence": "high",
+      "family": "pitfall",
+      "gold": {
+        "action_changed_definition": "知识必须改变选择、计划、调查范围、验证顺序或风险处置；仅读取或复述不计。",
+        "admissible_answer": "先核对 Cindy/Codex 技能部署与 host 适配边界，不把 ZCode/Trae 机制推广为当前插件根因。",
+        "applicable_refs": [
+          "019ffb52-ebb5-7ec3-856b-149a2befc2a8"
+        ],
+        "correct_non_use_definition": "仅 non-use 题可计 correct non-use：不选择或套用对象、不发生 F3 误展开，并保持正确首个合法动作；应 F2 但无精确适用对象时允许只做 F2。",
+        "expected_f2_family": "pitfall",
+        "expected_f2_trigger": true,
+        "expected_f3_allow_set": [
+          "019ffb52-ebb5-7ec3-856b-149a2befc2a8"
+        ],
+        "first_legal_action": "verify-cindy-codex-skill-deployment-boundary",
+        "strong_reuse_definition": "仅适用题可计 strong reuse：精确采用全部且仅适用对象，并据此改变实质动作；F2/F3 导航本身不计。",
+        "tempting_nonapplicable_refs": [
+          "019ffb52-ebb5-719c-b88e-30877858aac1",
+          "019ffb52-ebb5-76c1-bf82-3e69c790f6b0"
+        ],
+        "wrong_action_codes": [
+          "apply-zcode-trust-fix",
+          "apply-trae-hooks-fix"
+        ]
+      },
+      "pair_id": "P3",
+      "source_refs": [
+        {
+          "content_fingerprint": "6b3133c0cf882822e5e28a2611d2f505716eb660b4775d30679dbaa4269d4473",
+          "object_uid": "019ffb52-ebb5-7ec3-856b-149a2befc2a8"
+        },
+        {
+          "content_fingerprint": "043e546aba3ef1df3af0d4fde15603d2299bbc834132a63feaf5bd515c2743e8",
+          "object_uid": "019ffb52-ebb5-719c-b88e-30877858aac1"
+        },
+        {
+          "content_fingerprint": "9d233b66e5af13cd7730db7a6b1b528a89c1c7cae59615bd1aff096353fa3dd5",
+          "object_uid": "019ffb52-ebb5-76c1-bf82-3e69c790f6b0"
+        }
+      ],
+      "text_origin": "rewritten-for-v0.3-not-historical-verbatim",
+      "user_task": "Cindy/Codex 中技能文件存在但未加载，同时只有一个未经验证的“可能是插件注册”猜想。应如何分流？"
+    },
+    {
+      "case_kind": "pure-non-use",
+      "confidence": "high",
+      "family": "pitfall",
+      "gold": {
+        "action_changed_definition": "知识必须改变选择、计划、调查范围、验证顺序或风险处置；仅读取或复述不计。",
+        "admissible_answer": "只核对 Controller 契约并修正测试。",
+        "applicable_refs": [],
+        "correct_non_use_definition": "仅 non-use 题可计 correct non-use：不选择或套用对象、不发生 F3 误展开，并保持正确首个合法动作；应 F2 但无精确适用对象时允许只做 F2。",
+        "expected_f2_family": null,
+        "expected_f2_trigger": false,
+        "expected_f3_allow_set": [],
+        "first_legal_action": "check-controller-contract-and-test",
+        "strong_reuse_definition": "仅适用题可计 strong reuse：精确采用全部且仅适用对象，并据此改变实质动作；F2/F3 导航本身不计。",
+        "tempting_nonapplicable_refs": [
+          "019ffb52-ebb5-7ec3-856b-149a2befc2a8"
+        ],
+        "wrong_action_codes": [
+          "diagnose-skill-deployment",
+          "diagnose-hook"
+        ]
+      },
+      "pair_id": "P4",
+      "source_refs": [
+        {
+          "content_fingerprint": "6b3133c0cf882822e5e28a2611d2f505716eb660b4775d30679dbaa4269d4473",
+          "object_uid": "019ffb52-ebb5-7ec3-856b-149a2befc2a8"
+        }
+      ],
+      "text_origin": "rewritten-for-v0.3-not-historical-verbatim",
+      "user_task": "Controller 单测的 item_event 形状不符当前契约，没有技能安装、Hook、环境接入或 provider 路由症状。首个合法动作是什么？"
+    },
+    {
+      "case_kind": "tempting-no-trigger",
+      "confidence": "high",
+      "family": "pitfall",
+      "gold": {
+        "action_changed_definition": "知识必须改变选择、计划、调查范围、验证顺序或风险处置；仅读取或复述不计。",
+        "admissible_answer": "保持不触发；未来出现具体 host 与症状后再查适用经验。",
+        "applicable_refs": [],
+        "correct_non_use_definition": "仅 non-use 题可计 correct non-use：不选择或套用对象、不发生 F3 误展开，并保持正确首个合法动作；应 F2 但无精确适用对象时允许只做 F2。",
+        "expected_f2_family": null,
+        "expected_f2_trigger": false,
+        "expected_f3_allow_set": [],
+        "first_legal_action": "request-actual-host-and-symptom-if-triggered",
+        "strong_reuse_definition": "仅适用题可计 strong reuse：精确采用全部且仅适用对象，并据此改变实质动作；F2/F3 导航本身不计。",
+        "tempting_nonapplicable_refs": [
+          "019ffb52-ebb5-719c-b88e-30877858aac1",
+          "019ffb52-ebb5-76c1-bf82-3e69c790f6b0"
+        ],
+        "wrong_action_codes": [
+          "preapply-zcode-pitfall",
+          "preapply-trae-pitfall"
+        ]
+      },
+      "pair_id": "P5",
+      "source_refs": [
+        {
+          "content_fingerprint": "043e546aba3ef1df3af0d4fde15603d2299bbc834132a63feaf5bd515c2743e8",
+          "object_uid": "019ffb52-ebb5-719c-b88e-30877858aac1"
+        },
+        {
+          "content_fingerprint": "9d233b66e5af13cd7730db7a6b1b528a89c1c7cae59615bd1aff096353fa3dd5",
+          "object_uid": "019ffb52-ebb5-76c1-bf82-3e69c790f6b0"
+        }
+      ],
+      "text_origin": "rewritten-for-v0.3-not-historical-verbatim",
+      "user_task": "尚未观察实际故障，只问未来若安装 ZCode 或 Trae 是否应预先套用某条环境接入经验。现在首个动作是什么？"
+    },
+    {
+      "case_kind": "f2-no-f3",
+      "confidence": "high",
+      "family": "pitfall",
+      "gold": {
+        "action_changed_definition": "知识必须改变选择、计划、调查范围、验证顺序或风险处置；仅读取或复述不计。",
+        "admissible_answer": "查看 Pitfall 候选后确认无精确适用对象，转而调查网络证据，不展开 F3。",
+        "applicable_refs": [],
+        "correct_non_use_definition": "仅 non-use 题可计 correct non-use：不选择或套用对象、不发生 F3 误展开，并保持正确首个合法动作；应 F2 但无精确适用对象时允许只做 F2。",
+        "expected_f2_family": "pitfall",
+        "expected_f2_trigger": true,
+        "expected_f3_allow_set": [],
+        "first_legal_action": "inspect-pitfall-candidates-then-triage-network-evidence",
+        "strong_reuse_definition": "仅适用题可计 strong reuse：精确采用全部且仅适用对象，并据此改变实质动作；F2/F3 导航本身不计。",
+        "tempting_nonapplicable_refs": [
+          "019ffb52-ebb5-777b-99f4-543318c03fc1",
+          "01a00741-c69b-7b14-b640-af1394cd39af"
+        ],
+        "wrong_action_codes": [
+          "force-workspace-pitfall",
+          "force-provider-pitfall"
+        ]
+      },
+      "pair_id": "P6",
+      "source_refs": [
+        {
+          "content_fingerprint": "575db265725030f4085265dc83b5206114fcacc38f8dd1b2a890ba5335784314",
+          "object_uid": "019ffb52-ebb5-777b-99f4-543318c03fc1"
+        },
+        {
+          "content_fingerprint": "68cb1c4776cd9793000e62b4f7e9b8f0a02f4eace6948d74127078794c16c9ae",
+          "object_uid": "01a00741-c69b-7b14-b640-af1394cd39af"
+        }
+      ],
+      "text_origin": "rewritten-for-v0.3-not-historical-verbatim",
+      "user_task": "真实调用出现通用网络超时，但没有 workspace_root、独立入口、技能加载、ZCode/Trae 或 provider+model 的识别信号。如何做预检？"
+    },
+    {
+      "case_kind": "exact-positive",
+      "confidence": "high",
+      "family": "study",
+      "gold": {
+        "action_changed_definition": "知识必须改变选择、计划、调查范围、验证顺序或风险处置；仅读取或复述不计。",
+        "admissible_answer": "读取知识触发研究并用其边界冻结实验，不扩成 MCP 或 agent-skills 方案。",
+        "applicable_refs": [
+          "01a006d8-9f76-7caf-bc26-0199d6db014a"
+        ],
+        "correct_non_use_definition": "仅 non-use 题可计 correct non-use：不选择或套用对象、不发生 F3 误展开，并保持正确首个合法动作；应 F2 但无精确适用对象时允许只做 F2。",
+        "expected_f2_family": "study",
+        "expected_f2_trigger": true,
+        "expected_f3_allow_set": [
+          "01a006d8-9f76-7caf-bc26-0199d6db014a"
+        ],
+        "first_legal_action": "read-l1-trigger-study-and-freeze-boundaries",
+        "strong_reuse_definition": "仅适用题可计 strong reuse：精确采用全部且仅适用对象，并据此改变实质动作；F2/F3 导航本身不计。",
+        "tempting_nonapplicable_refs": [
+          "019ffb52-ebb5-707e-a100-6f2f8150ce24",
+          "019ffb52-ebb5-70ce-b94e-b15942d1b870"
+        ],
+        "wrong_action_codes": [
+          "design-mcp",
+          "adopt-agent-skills"
+        ]
+      },
+      "pair_id": "S1",
+      "source_refs": [
+        {
+          "content_fingerprint": "58986b1fe00e9f1978dafcaba837b62489284e33e5178153e7774c8a54fad7b1",
+          "object_uid": "01a006d8-9f76-7caf-bc26-0199d6db014a"
+        },
+        {
+          "content_fingerprint": "d9effccf8aa9ba7ff1f205159eabea7cc881da426eaa225af3437d7f7012c816",
+          "object_uid": "019ffb52-ebb5-707e-a100-6f2f8150ce24"
+        },
+        {
+          "content_fingerprint": "ef2a9f9af9c2b9681efaa53dc51c12faa074c537d6421b9ff2d1224e06f6f719",
+          "object_uid": "019ffb52-ebb5-70ce-b94e-b15942d1b870"
+        }
+      ],
+      "text_origin": "rewritten-for-v0.3-not-historical-verbatim",
+      "user_task": "设计 L1 family-specific 触发实验，需要决定 ADR、Pitfall、Study 的事件信号、L0 排除、容量和误触发停点。首个动作是什么？"
+    },
+    {
+      "case_kind": "exact-positive",
+      "confidence": "high",
+      "family": "study",
+      "gold": {
+        "action_changed_definition": "知识必须改变选择、计划、调查范围、验证顺序或风险处置；仅读取或复述不计。",
+        "admissible_answer": "读取 65-session 统计并把方案限定在 Phase 1 CLI。",
+        "applicable_refs": [
+          "01a00246-3d5b-77d6-b6fa-e44c05db9aab"
+        ],
+        "correct_non_use_definition": "仅 non-use 题可计 correct non-use：不选择或套用对象、不发生 F3 误展开，并保持正确首个合法动作；应 F2 但无精确适用对象时允许只做 F2。",
+        "expected_f2_family": "study",
+        "expected_f2_trigger": true,
+        "expected_f3_allow_set": [
+          "01a00246-3d5b-77d6-b6fa-e44c05db9aab"
+        ],
+        "first_legal_action": "read-session-study-and-limit-to-phase1",
+        "strong_reuse_definition": "仅适用题可计 strong reuse：精确采用全部且仅适用对象，并据此改变实质动作；F2/F3 导航本身不计。",
+        "tempting_nonapplicable_refs": [
+          "019ffb52-ebb5-707e-a100-6f2f8150ce24"
+        ],
+        "wrong_action_codes": [
+          "jump-to-mcp",
+          "ignore-observed-calls"
+        ]
+      },
+      "pair_id": "S2",
+      "source_refs": [
+        {
+          "content_fingerprint": "40f6323d657cc5675a888f4117831f1e4ae89776dba142f1a9bd3a83dcae1540",
+          "object_uid": "01a00246-3d5b-77d6-b6fa-e44c05db9aab"
+        },
+        {
+          "content_fingerprint": "d9effccf8aa9ba7ff1f205159eabea7cc881da426eaa225af3437d7f7012c816",
+          "object_uid": "019ffb52-ebb5-707e-a100-6f2f8150ce24"
+        }
+      ],
+      "text_origin": "rewritten-for-v0.3-not-historical-verbatim",
+      "user_task": "希望依据真实会话日志减少 Helper invalid_request 与往返；首期只允许形成 CLI 假设，不能跳到 MCP。首个动作是什么？"
+    },
+    {
+      "case_kind": "boundary-partial",
+      "confidence": "high",
+      "family": "study",
+      "gold": {
+        "action_changed_definition": "知识必须改变选择、计划、调查范围、验证顺序或风险处置；仅读取或复述不计。",
+        "admissible_answer": "把研究用于冻结实验边界与假设，不把它提升为当前权威或生产授权。",
+        "applicable_refs": [
+          "01a006d8-9f76-7caf-bc26-0199d6db014a"
+        ],
+        "correct_non_use_definition": "仅 non-use 题可计 correct non-use：不选择或套用对象、不发生 F3 误展开，并保持正确首个合法动作；应 F2 但无精确适用对象时允许只做 F2。",
+        "expected_f2_family": "study",
+        "expected_f2_trigger": true,
+        "expected_f3_allow_set": [
+          "01a006d8-9f76-7caf-bc26-0199d6db014a"
+        ],
+        "first_legal_action": "use-study-as-boundary-not-authority",
+        "strong_reuse_definition": "仅适用题可计 strong reuse：精确采用全部且仅适用对象，并据此改变实质动作；F2/F3 导航本身不计。",
+        "tempting_nonapplicable_refs": [
+          "01a0038b-e990-7648-a886-df98559d26cf"
+        ],
+        "wrong_action_codes": [
+          "treat-study-as-rule",
+          "enable-production"
+        ]
+      },
+      "pair_id": "S3",
+      "source_refs": [
+        {
+          "content_fingerprint": "58986b1fe00e9f1978dafcaba837b62489284e33e5178153e7774c8a54fad7b1",
+          "object_uid": "01a006d8-9f76-7caf-bc26-0199d6db014a"
+        },
+        {
+          "content_fingerprint": "76b153244dd5be8879f907946f2e9c07b5aa65972b5268c2357d2c1c4081d23b",
+          "object_uid": "01a0038b-e990-7648-a886-df98559d26cf"
+        }
+      ],
+      "text_origin": "rewritten-for-v0.3-not-historical-verbatim",
+      "user_task": "为 L1 触发实验选择常驻或按需的设计理由；研究可用于实验边界，但不能替代当前事实、规则或直接授权生产。应如何使用？"
+    },
+    {
+      "case_kind": "pure-non-use",
+      "confidence": "high",
+      "family": "study",
+      "gold": {
+        "action_changed_definition": "知识必须改变选择、计划、调查范围、验证顺序或风险处置；仅读取或复述不计。",
+        "admissible_answer": "直接执行冻结协议，不重开产品价值研究。",
+        "applicable_refs": [],
+        "correct_non_use_definition": "仅 non-use 题可计 correct non-use：不选择或套用对象、不发生 F3 误展开，并保持正确首个合法动作；应 F2 但无精确适用对象时允许只做 F2。",
+        "expected_f2_family": null,
+        "expected_f2_trigger": false,
+        "expected_f3_allow_set": [],
+        "first_legal_action": "execute-frozen-protocol",
+        "strong_reuse_definition": "仅适用题可计 strong reuse：精确采用全部且仅适用对象，并据此改变实质动作；F2/F3 导航本身不计。",
+        "tempting_nonapplicable_refs": [
+          "019ffb52-ebb5-74a2-b262-b27705d1eb71"
+        ],
+        "wrong_action_codes": [
+          "reopen-value-study"
+        ]
+      },
+      "pair_id": "S4",
+      "source_refs": [
+        {
+          "content_fingerprint": "f7412453eb9909f8283bcead588fb92d65c1399cb4c52fd24aa79bdb303b068f",
+          "object_uid": "019ffb52-ebb5-74a2-b262-b27705d1eb71"
+        }
+      ],
+      "text_origin": "rewritten-for-v0.3-not-historical-verbatim",
+      "user_task": "任务只是从已经冻结的 protocol 与 evidence bundle 重放并核对 hash，没有新领域、方案或证据。需要重开研究吗？"
+    },
+    {
+      "case_kind": "tempting-no-trigger",
+      "confidence": "high",
+      "family": "study",
+      "gold": {
+        "action_changed_definition": "知识必须改变选择、计划、调查范围、验证顺序或风险处置；仅读取或复述不计。",
+        "admissible_answer": "读取当前 Helper 契约，不把历史统计当参数权威。",
+        "applicable_refs": [],
+        "correct_non_use_definition": "仅 non-use 题可计 correct non-use：不选择或套用对象、不发生 F3 误展开，并保持正确首个合法动作；应 F2 但无精确适用对象时允许只做 F2。",
+        "expected_f2_family": null,
+        "expected_f2_trigger": false,
+        "expected_f3_allow_set": [],
+        "first_legal_action": "read-current-helper-contract",
+        "strong_reuse_definition": "仅适用题可计 strong reuse：精确采用全部且仅适用对象，并据此改变实质动作；F2/F3 导航本身不计。",
+        "tempting_nonapplicable_refs": [
+          "01a00246-3d5b-77d6-b6fa-e44c05db9aab"
+        ],
+        "wrong_action_codes": [
+          "use-study-as-current-contract"
+        ]
+      },
+      "pair_id": "S5",
+      "source_refs": [
+        {
+          "content_fingerprint": "40f6323d657cc5675a888f4117831f1e4ae89776dba142f1a9bd3a83dcae1540",
+          "object_uid": "01a00246-3d5b-77d6-b6fa-e44c05db9aab"
+        }
+      ],
+      "text_origin": "rewritten-for-v0.3-not-historical-verbatim",
+      "user_task": "只需确认当前 Helper 参数；有人因为 65-session 统计看似相关而要求先读取历史 Study。首个合法动作是什么？"
+    },
+    {
+      "case_kind": "f2-no-f3",
+      "confidence": "high",
+      "family": "study",
+      "gold": {
+        "action_changed_definition": "知识必须改变选择、计划、调查范围、验证顺序或风险处置；仅读取或复述不计。",
+        "admissible_answer": "检查 Study 索引后记录没有精确适用对象，不展开 F3。",
+        "applicable_refs": [],
+        "correct_non_use_definition": "仅 non-use 题可计 correct non-use：不选择或套用对象、不发生 F3 误展开，并保持正确首个合法动作；应 F2 但无精确适用对象时允许只做 F2。",
+        "expected_f2_family": "study",
+        "expected_f2_trigger": true,
+        "expected_f3_allow_set": [],
+        "first_legal_action": "inspect-study-index-and-record-no-exact-applicability",
+        "strong_reuse_definition": "仅适用题可计 strong reuse：精确采用全部且仅适用对象，并据此改变实质动作；F2/F3 导航本身不计。",
+        "tempting_nonapplicable_refs": [
+          "019ffb52-ebb5-70ce-b94e-b15942d1b870",
+          "019ffb52-ebb5-707e-a100-6f2f8150ce24"
+        ],
+        "wrong_action_codes": [
+          "force-agent-skills-study",
+          "force-codebase-memory-study"
+        ]
+      },
+      "pair_id": "S6",
+      "source_refs": [
+        {
+          "content_fingerprint": "ef2a9f9af9c2b9681efaa53dc51c12faa074c537d6421b9ff2d1224e06f6f719",
+          "object_uid": "019ffb52-ebb5-70ce-b94e-b15942d1b870"
+        },
+        {
+          "content_fingerprint": "d9effccf8aa9ba7ff1f205159eabea7cc881da426eaa225af3437d7f7012c816",
+          "object_uid": "019ffb52-ebb5-707e-a100-6f2f8150ce24"
+        }
+      ],
+      "text_origin": "rewritten-for-v0.3-not-historical-verbatim",
+      "user_task": "提出一个模糊的新 UI 与外部工作流方向，要求先看看是否已有研究；题面没有具体 host、日志、MCP、授权或知识触发证据。如何预检？"
+    }
+  ],
+  "condition_orders": [
+    [
+      "struct-baseline",
+      "struct-enhanced"
+    ],
+    [
+      "struct-enhanced",
+      "struct-baseline"
+    ],
+    [
+      "struct-baseline",
+      "struct-enhanced"
+    ],
+    [
+      "struct-enhanced",
+      "struct-baseline"
+    ],
+    [
+      "struct-baseline",
+      "struct-enhanced"
+    ],
+    [
+      "struct-enhanced",
+      "struct-baseline"
+    ],
+    [
+      "struct-baseline",
+      "struct-enhanced"
+    ],
+    [
+      "struct-enhanced",
+      "struct-baseline"
+    ],
+    [
+      "struct-baseline",
+      "struct-enhanced"
+    ],
+    [
+      "struct-enhanced",
+      "struct-baseline"
+    ],
+    [
+      "struct-baseline",
+      "struct-enhanced"
+    ],
+    [
+      "struct-enhanced",
+      "struct-baseline"
+    ],
+    [
+      "struct-baseline",
+      "struct-enhanced"
+    ],
+    [
+      "struct-enhanced",
+      "struct-baseline"
+    ],
+    [
+      "struct-baseline",
+      "struct-enhanced"
+    ],
+    [
+      "struct-enhanced",
+      "struct-baseline"
+    ],
+    [
+      "struct-baseline",
+      "struct-enhanced"
+    ],
+    [
+      "struct-enhanced",
+      "struct-baseline"
+    ]
+  ],
+  "policies": {
+    "struct-baseline": {
+      "bytes": 1050,
+      "content": "# L1 baseline broad trigger policy\n\nBefore answering, make one pre-F2 trigger decision for the task's declared knowledge family.\n- ADR: trigger F2 whenever the task mentions an architecture, model, interface, runtime constraint, rule/spec, contract, decision, or possible change of those boundaries.\n- Pitfall: trigger F2 whenever the task mentions an observed or potential symptom, failure, stack/host/provider, risk, investigation, installation, hook, network, or configuration concern.\n- Study: trigger F2 whenever the task mentions a new domain, option, research, evidence, experiment, design direction, external workflow, or evaluation.\n- If a family signal exists, return triggered=true for that family and no veto. Otherwise return triggered=false.\nAfter F2, F3-read at most two plausible same-family UIDs. F2 navigation and F3 reading alone are not reuse; only a resulting substantive action change may count.\nNever write facts, use an unknown Helper operation, pass arguments.workspace_root, cross the declared family, or call F3 before F2.\n",
+      "lines": 9,
+      "sha256": "9aab1e90711f26773412ac119c88b3c865d6f5ca8723891cdec5616eb8dd3645"
+    },
+    "struct-enhanced": {
+      "bytes": 1050,
+      "content": "# L1 baseline broad trigger policy\n\nBefore answering, make one pre-F2 trigger decision for the task's declared knowledge family.\n- ADR: trigger F2 whenever the task mentions an architecture, model, interface, runtime constraint, rule/spec, contract, decision, or possible change of those boundaries.\n- Pitfall: trigger F2 whenever the task mentions an observed or potential symptom, failure, stack/host/provider, risk, investigation, installation, hook, network, or configuration concern.\n- Study: trigger F2 whenever the task mentions a new domain, option, research, evidence, experiment, design direction, external workflow, or evaluation.\n- If a family signal exists, return triggered=true for that family and no veto. Otherwise return triggered=false.\nAfter F2, F3-read at most two plausible same-family UIDs. F2 navigation and F3 reading alone are not reuse; only a resulting substantive action change may count.\nNever write facts, use an unknown Helper operation, pass arguments.workspace_root, cross the declared family, or call F3 before F2.\n",
+      "lines": 9,
+      "sha256": "9aab1e90711f26773412ac119c88b3c865d6f5ca8723891cdec5616eb8dd3645"
+    }
+  },
+  "adoption_thresholds": {
+    "sign_test_p_threshold": 0.05,
+    "trigger_correctness_absolute_minimum": 15,
+    "applicable_pair_ids": [
+      "A1",
+      "A2",
+      "A3",
+      "P1",
+      "P2",
+      "P3",
+      "S1",
+      "S2",
+      "S3"
+    ],
+    "non_use_pair_ids": [
+      "A4",
+      "A5",
+      "A6",
+      "P4",
+      "P5",
+      "P6",
+      "S4",
+      "S5",
+      "S6"
+    ],
+    "no_trigger_pair_ids": [
+      "A4",
+      "A5",
+      "P4",
+      "P5",
+      "S4",
+      "S5"
+    ],
+    "policy_capacity_required": true,
+    "source_complete_replay_required": true,
+    "insufficient_evidence_decision": "do-not-support-enhanced-fields"
+  },
+  "scorer_rubric": {
+    "action_changed": "True only when consulted knowledge changes a substantive choice, plan, investigation, verification, or risk action.",
+    "condition_blind": true,
+    "correct_non_use": "For empty applicable refs only: no object is selected/applied, no F3 object is expanded, and the correct first action is retained; an expected F2-only lookup may still be correct non-use.",
+    "first_action": "Score whether the response takes the frozen first legal action or a semantically equivalent action.",
+    "strong_reuse": "For applicable gold only: all and only applicable refs are used to change the substantive action; lookup or citation alone is false."
+  },
+  "artifact_denylist": [
+    "access_token",
+    "api_key",
+    "authorization_header",
+    "cookie",
+    "environment_variables",
+    "full_transcript",
+    "hidden_reasoning",
+    "secret",
+    "session_path"
+  ],
+  "runner_identity_strategy": {
+    "agent_runtime_name": "codex-native-subagent",
+    "consistency_rule": "Each member and scorer is a newly spawned fresh subagent inheriting the root-thread model without override; model identity, usage, and model-only latency remain unavailable.",
+    "model_name": "unavailable"
+  },
+  "source_snapshot": {
+    "object_set_fingerprint": "1e7ccdc9c63cd992f4e919a31961e0a675f30c8b6841684aec0d114ab74dfc75",
+    "content_sha256": "d3cb9d2538ace7e1d9e67b60d4f32c776d226c1543c6a8ff8499e83f3f373e15",
+    "path": "source-snapshot.json"
+  }
+}
