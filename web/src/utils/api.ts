@@ -1023,6 +1023,15 @@ export async function fetchProjectGitStatus(projectId?: string): Promise<Project
   return request<ProjectGitStatusData>(`/project-files/git/status${qs ? `?${qs}` : ''}`);
 }
 
+/** 读取指定 worktree 的 git 未提交变更（只读，用于其他分支概览）。 */
+export async function fetchProjectWorktreeGitStatus(
+  projectId: string,
+  worktreePath: string,
+): Promise<ProjectGitStatusData> {
+  const params = new URLSearchParams({ projectId, worktreePath });
+  return request<ProjectGitStatusData>(`/project-files/git/status?${params.toString()}`);
+}
+
 export async function fetchProjectGitDiff(projectId: string, filePath: string, status: string): Promise<ProjectGitDiffData> {
   const params = new URLSearchParams({ projectId, path: filePath, status });
   return request<ProjectGitDiffData>(`/project-files/git/diff?${params.toString()}`);

@@ -1,8 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   AlertCircle,
+  ChevronDown,
+  ChevronRight,
   Columns2,
   Diff,
+  GitBranch,
   GitPullRequestArrow,
   Loader2,
   Rows3,
@@ -19,6 +22,10 @@ import {
 } from '@/pages/project-files/model';
 import { useWorkspaceChanges } from '@/pages/changes/useWorkspaceChanges';
 import { useProjectScope } from '@/utils/projectContext';
+import {
+  fetchProjectWorktreeGitStatus,
+  type ProjectGitStatusEntry,
+} from '@/utils/api';
 
 const WIDE_DIFF_LAYOUT_QUERY = '(min-width: 1280px)';
 
@@ -49,6 +56,7 @@ export default function Changes() {
   const {
     projects,
     selectedProject,
+    selectedWorktreePath,
     loading: projectsLoading,
     error: projectsError,
   } = useProjectScope();
@@ -64,6 +72,58 @@ export default function Changes() {
   } = useWorkspaceChanges(projectId);
   const [diffViewMode, setDiffViewMode] = useState<DiffViewMode>(getDefaultDiffViewMode);
   const diffViewModeWasSelected = useRef(false);
+
+  // 其他分支的 git status 数据
+  const [otherWorktrees, setOtherWorktrees] = useState<{
+    branch: string;
+    path: string;
+    entries: ProjectGitStatusEntry[];
+    loading: boolean;
+    error: string | null;
+  }[]>([]);
+  const [otherWorktreesLoading, setOtherWorktreesLoading] = useState(false);
+  const [expandedWorktree, setExpandedWorktree] = useState<string | null>(null);
+
+  useEffect(() => {
+    const worktrees = selectedProject?.worktrees ?? [];
+    const others = worktrees.filter((w) => w.path !== selectedWorktreePath);
+    if (others.length === 0) {
+      setOtherWorktrees([]);
+      return;
+    }
+
+    setOtherWorktreesLoading(true);
+    setOtherWorktrees(
+      others.map((w) => ({
+        branch: w.branch ?? 'detached',
+        path: w.path,
+        entries: [],
+        loading: true,
+        error: null,
+      })),
+    );
+
+    Promise.allSettled(
+      others.map(async (w) => {
+        const result = await fetchProjectWorktreeGitStatus(projectId, w.path);
+        return { path: w.path, entries: result.entries ?? [] };
+      }),
+    ).then((results) => {
+      setOtherWorktrees(
+        others.map((w, i) => {
+          const r = results[i];
+          return {
+            branch: w.branch ?? 'detached',
+            path: w.path,
+            entries: r.status === 'fulfilled' ? r.value.entries : [],
+            loading: false,
+            error: r.status === 'rejected' ? (r.reason instanceof Error ? r.reason.message : String(r.reason)) : null,
+          };
+        }),
+      );
+      setOtherWorktreesLoading(false);
+    });
+  }, [projectId, selectedWorktreePath, selectedProject]);
 
   useEffect(() => {
     if (typeof window.matchMedia !== 'function') return undefined;
@@ -183,6 +243,69 @@ export default function Changes() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {/* 其他分支 */}
+            {otherWorktrees.length > 0 && (
+              <div className="mt-3 border-t border-ldvh-border pt-3">
+                <div className="flex min-w-0 items-center justify-between gap-3 px-1">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <GitBranch size={14} className="shrink-0 text-ldvh-accent" />
+                    <h2 className="ldvh-section-title">{t('changes.otherBranches')}</h2>
+                  </div>
+                  {otherWorktreesLoading && <Loader2 size={14} className="animate-spin text-ldvh-text-secondary" />}
+                </div>
+                <div className="mt-2 min-w-0 space-y-1">
+                  {otherWorktrees.map((wt) => {
+                    const changeCount = wt.entries.length;
+                    const isExpanded = expandedWorktree === wt.path;
+                    return (
+                      <div key={wt.path}>
+                        <button
+                          type="button"
+                          onClick={() => setExpandedWorktree(isExpanded ? null : wt.path)}
+                          className="flex w-full min-w-0 items-center gap-2 rounded-md px-2 py-2 text-left transition-colors hover:bg-ldvh-border/30"
+                        >
+                          {wt.error ? (
+                            <AlertCircle size={14} className="shrink-0 text-red-400" />
+                          ) : changeCount > 0 ? (
+                            isExpanded ? <ChevronDown size={14} className="shrink-0 text-ldvh-accent" />
+                              : <ChevronRight size={14} className="shrink-0 text-ldvh-accent" />
+                          ) : (
+                            <ChevronRight size={14} className="shrink-0 text-ldvh-text-secondary" />
+                          )}
+                          <span className="ldvh-card-title min-w-0 flex-1 truncate">{wt.branch}</span>
+                          {wt.error ? (
+                            <span className="ldvh-meta shrink-0 text-red-400">{wt.error}</span>
+                          ) : changeCount > 0 ? (
+                            <span className="ldvh-meta-primary shrink-0">{changeCount} {t('changes.otherBranchesChanges')}</span>
+                          ) : (
+                            <span className="ldvh-meta shrink-0">{t('changes.otherBranchesClean')}</span>
+                          )}
+                        </button>
+                        {isExpanded && changeCount > 0 && !wt.error && (
+                          <div className="ml-5 space-y-0.5 border-l border-ldvh-border pl-2">
+                            {wt.entries.map((entry) => (
+                              <div
+                                key={`${entry.status}:${entry.path}`}
+                                className="flex min-w-0 items-center gap-2 rounded px-2 py-1"
+                              >
+                                <span className="ldvh-meta-primary w-7 shrink-0 rounded bg-ldvh-bg px-1 py-0.5 text-center text-xs">
+                                  {entry.status}
+                                </span>
+                                <span className="ldvh-card-title min-w-0 flex-1 truncate text-sm">
+                                  {getFileName(entry.path)}
+                                </span>
+                                <span className="ldvh-meta truncate text-xs">{entry.path}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>
