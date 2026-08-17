@@ -47,15 +47,27 @@ from ldvh.testing.knowledge_precheck_v3 import (
     KnowledgePrecheckV3Error,
     build_blind_packet,
     build_raw_response_evidence,
-    build_trigger_trace,
     is_valid_structured_response,
     parse_raw_response_evidence,
     validate_f3_decision_response,
-    validate_model_output,
     validate_score,
     validate_scorer_response,
     validate_technical_failure_response,
-    validate_trigger_trace,
+)
+
+# Build v4-specific trigger trace that uses v4 condition_from_packet
+_TRIGGER_TRACE_FIELDS = frozenset(
+    {
+        "schema_version",
+        "attempt_id",
+        "pair_id",
+        "condition",
+        "family",
+        "triggered",
+        "trigger_family",
+        "positive_condition_codes",
+        "veto_condition_codes",
+    }
 )
 
 SCHEMA_VERSION = "ldvh-knowledge-precheck-v4/1"
@@ -782,6 +794,107 @@ def validate_trigger_response(response: Mapping[str, Any], family: str) -> None:
         raise KnowledgePrecheckV4Error("a positive trigger needs reasons and no veto")
     if not triggered and positives and not vetoes:
         raise KnowledgePrecheckV4Error("a vetoed positive signal must name a veto")
+
+
+def build_trigger_trace(
+    response: Mapping[str, Any],
+    packet: Mapping[str, Any],
+    protocol: Mapping[str, Any],
+) -> dict[str, Any]:
+    """v4-specific trigger trace that resolves condition from card_layer."""
+    validate_trigger_response(response, str(packet["family"]))
+    trace = {
+        "schema_version": EVIDENCE_SCHEMA_VERSION,
+        "attempt_id": packet["attempt_id"],
+        "pair_id": packet["pair_id"],
+        "condition": condition_from_packet(packet, protocol),
+        "family": packet["family"],
+        **response,
+    }
+    validate_trigger_trace(trace, packet, protocol)
+    return trace
+
+
+def validate_trigger_trace(
+    trace: Mapping[str, Any],
+    packet: Mapping[str, Any],
+    protocol: Mapping[str, Any] | None = None,
+) -> None:
+    """v4-specific trigger trace validation that resolves condition from card_layer."""
+    if set(trace) != _TRIGGER_TRACE_FIELDS:
+        raise KnowledgePrecheckV4Error("trigger trace fields are not closed")
+    for field in ("attempt_id", "pair_id", "family"):
+        if trace.get(field) != packet.get(field):
+            raise KnowledgePrecheckV4Error(f"trigger trace {field} binding is invalid")
+    if protocol is not None and trace.get("condition") != condition_from_packet(packet, protocol):
+        raise KnowledgePrecheckV4Error("trigger trace condition binding is invalid")
+    if trace.get("schema_version") != EVIDENCE_SCHEMA_VERSION:
+        raise KnowledgePrecheckV4Error("trigger trace schema is invalid")
+    validate_trigger_response({field: trace[field] for field in _TRIGGER_RESPONSE_FIELDS}, str(packet["family"]))
+
+
+def validate_model_output(output: Mapping[str, Any], protocol: Mapping[str, Any]) -> None:
+    """v4-specific model output validation using v4 CONDITIONS."""
+    _closed_mapping(output, _OUTPUT_FIELDS, "model output")
+    response = _closed_mapping(output.get("structured_response"), _RESPONSE_FIELDS, "structured response")
+    tasks = {task["pair_id"]: task for task in protocol["tasks"]}
+    if output.get("pair_id") not in tasks or output.get("condition") not in CONDITIONS:
+        raise KnowledgePrecheckV4Error("model output binding is not frozen")
+    for field in ("attempt_id", "agent_runtime_name", "fresh_context_id_hash"):
+        _one_line(output.get(field), field)
+    _hex64(output.get("fresh_context_id_hash"), "fresh_context_id_hash")
+    if output.get("model_name") is not None or output.get("agent_runtime_name") != NATIVE_SUBAGENT_RUNTIME:
+        raise KnowledgePrecheckV4Error("member identity must remain the frozen native-subagent identity")
+    for field in ("decision", "first_legal_action"):
+        _one_line(response.get(field), field)
+    for field in ("selected_refs", "rationale_codes", "refusal_reason_codes"):
+        _unique_strings(response.get(field), field)
+    _unique_strings(output.get("helper_exchange_ids"), "helper_exchange_ids")
+    if output.get("usage") != "unavailable" or output.get("latency") != "unavailable":
+        raise KnowledgePrecheckV4Error("unobservable usage/latency must remain unavailable")
+
+
+def is_valid_structured_response(
+    response: Mapping[str, Any],
+    *,
+    packet: Mapping[str, Any],
+    protocol: Mapping[str, Any],
+) -> bool:
+    """v4-specific check using v4 CONDITIONS."""
+    candidate = {
+        "attempt_id": packet["attempt_id"],
+        "pair_id": packet["pair_id"],
+        "condition": condition_from_packet(packet, protocol),
+        "model_name": None,
+        "agent_runtime_name": NATIVE_SUBAGENT_RUNTIME,
+        "fresh_context_id_hash": packet["fresh_context_id_hash"],
+        "structured_response": response,
+        "helper_exchange_ids": [],
+        "usage": "unavailable",
+        "latency": "unavailable",
+    }
+    try:
+        validate_model_output(candidate, protocol)
+    except KnowledgePrecheckV4Error:
+        return False
+    return True
+
+
+def validate_technical_failure_response(
+    response: Mapping[str, Any],
+    *,
+    exclusion_code: str,
+    packet: Mapping[str, Any],
+    protocol: Mapping[str, Any],
+) -> None:
+    """v4-specific technical failure validation using v4 CONDITIONS."""
+    if exclusion_code not in TECHNICAL_EXCLUSION_CODES:
+        raise KnowledgePrecheckV4Error("replacement uses a nontechnical exclusion")
+    if exclusion_code != "missing_structured_output":
+        return
+    if not is_valid_structured_response(response, packet=packet, protocol=protocol):
+        return
+    raise KnowledgePrecheckV4Error("technical failure response is a valid structured output")
 
 
 def _source_snapshot_observation_hashes(root: Path, snapshot: Mapping[str, Any]) -> dict[str, str]:
