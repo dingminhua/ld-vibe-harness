@@ -13,9 +13,9 @@ from pathlib import Path
 from typing import Any
 
 from ldvh.environment_sync import (
+    _SKILL_FILENAME,
     _has_ldvh_frontmatter,
     _read_skill_version,
-    _SKILL_FILENAME,
     inspect_hook_surface,
 )
 from ldvh.governance.models import LocatorSource, ScopeDescriptor
@@ -223,7 +223,6 @@ def _execute(
             diagnostics=(),
         )
 
-
     base = context.cwd
     requested_scope = (ScopeDescriptor(0, locator, LocatorSource.EXPLICIT_LOCATOR),)
     run = resolve_governance_scope(requested_scope, base=base, explicit_workspace_root=None)
@@ -255,12 +254,10 @@ def _execute(
     stop_gate = _stop_gate_check(root)
     hooks = inspect_hook_surface(common_hooks=common_hooks)
     commit_msg = hooks["commit-msg"]
-    prepare = hooks["prepare-commit-msg"]
     worktrees = _worktree_check(root)
 
     checks = [
         {"surface": "commit-msg", "aligned": commit_msg["aligned"], "detail": commit_msg},
-        {"surface": "prepare-commit-msg", "aligned": prepare["aligned"], "detail": prepare},
         {"surface": "skill", "aligned": skill["aligned"], "detail": skill},
         {"surface": "stop-gate", "aligned": stop_gate["aligned"], "detail": stop_gate},
         {"surface": "worktrees", "aligned": worktrees["aligned"], "detail": worktrees},

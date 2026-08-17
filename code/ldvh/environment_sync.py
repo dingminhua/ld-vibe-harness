@@ -30,9 +30,7 @@ from pathlib import Path
 from typing import Literal
 
 from ldvh.git_hooks.commit_msg import (
-    _LAST_PREPARE_BUNDLE_VERSION,
     _MANAGED_MARKER_PREFIX,
-    _PREPARE_MANAGED_MARKER_PREFIX,
     HOOK_BUNDLE_VERSION,
     _existing_hook_state,
     _hook_bundle_version,
@@ -148,10 +146,7 @@ def inspect_skill(*, platform: str, skill_path: str, source_path: Path) -> Skill
     source_version = _read_skill_version(source_path) if source_path.is_file() else None
     byte_aligned = bool(exists and source_path.is_file() and target.read_bytes() == source_path.read_bytes())
     version_aligned = bool(
-        exists
-        and source_version is not None
-        and target_version is not None
-        and target_version == source_version
+        exists and source_version is not None and target_version is not None and target_version == source_version
     )
     return SkillInspection(
         platform=label,
@@ -298,23 +293,15 @@ def update_skill(
 def inspect_hook_surface(*, common_hooks: Path) -> dict[str, object]:
     """Reuse the Git Hook manager's deterministic state classification verbatim."""
     commit_msg = _hook_check(common_hooks, "commit-msg", _MANAGED_MARKER_PREFIX, HOOK_BUNDLE_VERSION)
-    prepare = _hook_check(
-        common_hooks,
-        "prepare-commit-msg",
-        _PREPARE_MANAGED_MARKER_PREFIX,
-        _LAST_PREPARE_BUNDLE_VERSION,
-    )
-    return {"commit-msg": commit_msg, "prepare-commit-msg": prepare}
+    return {"commit-msg": commit_msg}
 
 
 def _hook_check(common_hooks: Path, name: str, marker_prefix: str, expected_version: str) -> dict[str, object]:
     hook = common_hooks / name
     state, detail_text = _existing_hook_state(hook, name=name, marker_prefix=marker_prefix)
     deployed_version = _hook_bundle_version(hook) if hook.is_file() else None
-    if name == "prepare-commit-msg":
-        aligned = state in {"absent", "managed"}
-    else:
-        aligned = state == "managed" and deployed_version == expected_version
+    aligned = state == "managed" and deployed_version == expected_version
+
     return {
         "path": str(hook),
         "state": state,
