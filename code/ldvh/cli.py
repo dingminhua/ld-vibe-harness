@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import os
 import select
+import stat
 import sys
 from pathlib import Path
 from typing import Any
@@ -17,6 +18,7 @@ if _CODE_ROOT not in sys.path:
     sys.path.insert(0, _CODE_ROOT)
 
 from ldvh.cli_projection import (  # noqa: E402
+    MAX_REQUEST_BYTES,
     build_example_projection,
     parse_cli_arguments,
     project_response_fields,
@@ -74,6 +76,77 @@ def _alternate_input_conflicts() -> bool:
         return True
     raw = stdin_buffer.read(1)
     return raw is None or bool(raw)
+
+
+def _read_message_file(path_text: str) -> tuple[str | None, tuple[str, ...]]:
+    """Read one bounded UTF-8 commit message file for ``--message-file``."""
+    if not path_text or path_text == "-":
+        return None, ("--message-file 路径必须非空且不得使用 '-'",)
+    path = Path(path_text)
+    if path.is_symlink():
+        return None, ("--message-file 只接受非符号链接的普通文件",)
+    descriptor: int | None = None
+    try:
+        flags = os.O_RDONLY | getattr(os, "O_NONBLOCK", 0) | getattr(os, "O_NOFOLLOW", 0)
+        descriptor = os.open(path, flags)
+        file_stat = os.fstat(descriptor)
+        if not stat.S_ISREG(file_stat.st_mode):
+            return None, ("--message-file 只接受普通文件",)
+        if file_stat.st_size > MAX_REQUEST_BYTES:
+            return None, (f"--message-file 文件不得超过 {MAX_REQUEST_BYTES} bytes",)
+        chunks: list[bytes] = []
+        remaining = MAX_REQUEST_BYTES + 1
+        while remaining:
+            chunk = os.read(descriptor, remaining)
+            if not chunk:
+                break
+            chunks.append(chunk)
+            remaining -= len(chunk)
+        raw = b"".join(chunks)
+    except OSError:
+        return None, ("--message-file 指定的文件不存在或不可读",)
+    finally:
+        if descriptor is not None:
+            os.close(descriptor)
+    if len(raw) > MAX_REQUEST_BYTES:
+        return None, (f"--message-file 文件不得超过 {MAX_REQUEST_BYTES} bytes",)
+    try:
+        return raw.decode("utf-8"), ()
+    except UnicodeDecodeError:
+        return None, ("--message-file 文件必须是 UTF-8",)
+
+
+def _inject_message_file(
+    raw_input: str,
+    operation_key: str | None,
+    message_file_path: str,
+) -> tuple[str | None, tuple[str, ...]]:
+    """Inject the commit message file into the request's arguments.message.
+
+    Only ``precheck-git-commit`` accepts this convenience entry. The message
+    file is treated as the full commit message; the caller still provides the
+    rest of the request (notably ``work_object_locators``) by other means.
+    """
+    if operation_key != "precheck-git-commit":
+        return None, ("--message-file 只允许用于 precheck-git-commit",)
+    message, problems = _read_message_file(message_file_path)
+    if problems:
+        return None, problems
+    if message is None:
+        return None, ("--message-file 读取结果为空",)
+    try:
+        request = json.loads(raw_input or "")
+    except json.JSONDecodeError:
+        return None, ("--message-file 需要请求加载失败",)
+    if not isinstance(request, dict):
+        return None, ("--message-file 需要请求为 object",)
+    arguments = request.setdefault("arguments", {})
+    if not isinstance(arguments, dict):
+        return None, ("--message-file 需请求 arguments 为 object",)
+    if "message" in arguments:
+        return None, ("arguments.message 已存在，不得与 --message-file 同时使用",)
+    arguments["message"] = message
+    return json.dumps(request, ensure_ascii=False), ()
 
 
 def main() -> int:
@@ -189,7 +262,31 @@ def main() -> int:
         return result.exit_code
 
     try:
-        if parsed.request_path is None:
+        if parsed.message_file_path is not None:
+            if _alternate_input_conflicts():
+                result = invalid_request_result(
+                    request_kind,
+                    operation_key,
+                    ("--message-file 不得与非空标准输入同时使用",),
+                )
+            elif parsed.request_path is not None:
+                raw_input, file_problems = read_request_file(parsed.request_path)
+                if file_problems:
+                    result = invalid_request_result(request_kind, operation_key, file_problems)
+                else:
+                    injected, problems = _inject_message_file(raw_input or "", operation_key, parsed.message_file_path)
+                    if problems:
+                        result = invalid_request_result(request_kind, operation_key, problems)
+                    else:
+                        result = handle_request(request_kind, operation_key, injected or "")
+            else:
+                raw_input = _read_request_input()
+                injected, problems = _inject_message_file(raw_input, operation_key, parsed.message_file_path)
+                if problems:
+                    result = invalid_request_result(request_kind, operation_key, problems)
+                else:
+                    result = handle_request(request_kind, operation_key, injected or "")
+        elif parsed.request_path is None:
             try:
                 raw_input = _read_request_input()
             except UnicodeDecodeError:
