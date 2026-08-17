@@ -18,40 +18,48 @@ priority: P1
 work_items:
 - item_id: item-freeze-v4-protocol
   goal: 冻结 v4 protocol：基于 v0.3 的 18 个 task/gold（A1–S6）和 L1-baseline 宽触发策略（9 行/1050 B），构建 v4 protocol（schema_version=ldvh-knowledge-precheck-v4/1），含双条件（struct-baseline/struct-enhanced）、9/9 首发顺序平衡、预注册门槛、盲评 rubric、artifact denylist、ceilings（18 pairs/21 attempts/3 replacements/42 launches/42 scorer contexts/600s per member/6h total)。
-  status: pending
+  status: completed
   expected_result: v4 protocol.json 已冻结，全部 18 个 task/gold、双条件、9/9 首发顺序、预注册门槛、盲评 rubric、ceilings 经测试验证
+  result_summary: v4 协议已冻结完成
 - item_id: item-capture-v4-source-snapshot
   goal: 捕获 v4 source snapshot：真实 Helper 捕获三类 F2 卡（含新字段 trigger_signal/scope_of_impact/action_relevance）+ F3 指纹；从捕获中派生 stripped 卡集（删除三个新字段 + 重构字段序），两者 hash 绑定存入 snapshot 双卡集。
-  status: pending
+  status: completed
   expected_result: source-snapshot.json 已捕获，含 family_cards_enhanced、family_cards_stripped 双卡集及 F3 指纹
+  result_summary: 双卡集快照已捕获完成
 - item_id: item-implement-v4-runner
   goal: 实现 v4 runner + gateway：剪裁 v3 代码创建 knowledge_precheck_v4.py（Schema v4、双卡剥离 Gateway、source snapshot 双卡集、18 任务复用、编译/回放/反篡改）和 knowledge_precheck_v4_trial.py（运行编排 CLI）。
-  status: pending
+  status: completed
   expected_result: knowledge_precheck_v4.py 和 knowledge_precheck_v4_trial.py 已实现，v4 Gateway 双卡剥离、编译/回放/反篡改通过
+  result_summary: v4 runner 与 gateway 已实现完成
 - item_id: item-write-v4-tests
   goal: 实现 v4 测试：test_knowledge_precheck_v4.py（协议闭集/双卡剥离/gateway 漂移拒绝/source-complete 回放/盲评脱敏/篡改拒绝）和 test_knowledge_precheck_v4_trial.py（真实只读 F2/F3 fixture/跨臂剥离正确性/ledger 上限/fresh context）。
-  status: pending
+  status: completed
   expected_result: test_knowledge_precheck_v4.py 和 test_knowledge_precheck_v4_trial.py 已实现，全部测试通过
+  result_summary: v4 focused tests 全部通过
 - item_id: item-run-v4-experiment
   goal: 运行 36 个 member run（18 对 × 2 臂）+ 18 对盲评：真实子代理，600s/attempt 上限，按 v4 protocol 编排；记录全部原始证据、触发 trace、Helper exchange、F3 决策、最终输出和盲评评分。
-  status: pending
+  status: completed
   depends_on:
   - item-implement-v4-runner
   - item-freeze-v4-protocol
   - item-capture-v4-source-snapshot
   expected_result: 36 个 member run + 18 对盲评已完成，ledger 完整，全部在上限内
+  result_summary: 36 个 member run 与 18 对盲评已全部完成
 - item_id: item-compile-sealed-bundle
   goal: compile sealed evidence bundle：source-complete 回放，byte-identical 重建 records/results/report；manifest 闭合，SHA-256 校验全部文件。
-  status: pending
+  status: completed
   depends_on:
   - item-run-v4-experiment
   expected_result: sealed evidence bundle 已 compile，byte-identical 重建 records/results/report 通过
+  result_summary: sealed evidence bundle 已编译完成
 - item_id: item-spark-writeback
   goal: 写回结果到相关 Spark（现有 spark-01KZXN5TXNEKMANG1WTFBKT5FW.yaml，保持 open/P1），记录 v4 结论（supports-enhanced-fields 或 do-not-support-enhanced-fields）与方向。
-  status: pending
+  status: in_progress
   depends_on:
   - item-compile-sealed-bundle
   expected_result: Spark UID 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc 已受控写回，check-fact-integrity outcome=ok/status=complete
+  current_summary: v4 结论写回 Spark（do-not-support-enhanced-fields）
+  resume_from: 完成 v4 结论写回 Spark 与 check-fact-integrity 验证
 execution_authorization:
   authorized_actions:
   - action_id: authorization-create-v4-modules
@@ -169,6 +177,18 @@ change_log:
     product_name: Cindy
     model_name:
     agent_runtime_name: codex
+- at: '2026-08-17T05:26:14.440218Z'
+  summary: commit 84f2d97d 提交至 cindy/swift-mendel，v4 代码、协议、快照、测试已就绪；开始运行实验
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-17T06:29:12.268616Z'
+  summary: v4 实验完成：36 member runs sealed 并 compile，结论 do-not-support-enhanced-fields，正在写回 Spark
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
 execution_approval:
   summary: Human Gate 1 批准 plan_version=1 的完整执行授权基线，进入执行阶段
   approved_at: '2026-08-16T22:53:53.000000Z'
@@ -180,4 +200,4 @@ object_uid: 01a00cc8-1198-7abb-9b1e-ecdf1fce5be1
 object_id: workcase-01M06CG4CRFAXSP7QCVWFWWPZ1
 fact_type_key: workcase
 created_at: '2026-08-16T22:53:52.455892Z'
-updated_at: '2026-08-16T23:06:29.612972Z'
+updated_at: '2026-08-17T06:29:12.268616Z'

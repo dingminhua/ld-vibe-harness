@@ -1,0 +1,182 @@
+status: closed
+title: 验证 L1 类型差异触发策略的精度与复用效用
+goal: 实现并运行一个 source-complete、条件盲评的 L1 触发策略配对实验，在不使用 L0 的前提下比较当前宽触发策略与 family-specific 精确触发策略，判断后者能否同时提升触发决策精度和 strong reuse、保证 correct non-use，并消除不适用对象的 F3 误展开；把严格预注册的采用或不采用判断写回相关 Spark。
+scope: 仅新增 code/ldvh/testing/knowledge_precheck_v3.py、code/ldvh/testing/knowledge_precheck_v3_trial.py、code/tests/testing/test_knowledge_precheck_v3.py、code/tests/testing/test_knowledge_precheck_v3_trial.py 与 docs/metrics/knowledge-precheck-v3，并通过 Helper 写回本 WorkCase 检查点；v2 代码只允许作为只读 import/复用依据，docs/metrics/knowledge-precheck-v2 sealed bundle 与 compiled artifacts 不得修改。冻结 18 个任务：ADR/Pitfall/Study 各 6，含 2 个精确正例、1 个边界/部分适用、1 个纯 non-use、1 个诱导性 no-trigger、1 个应 F2 但不应 F3 的 non-use；两臂均无 L0，唯一实验差异为 L1-baseline 宽触发 policy 与 L1-specific family-specific policy。只允许真实 Helper F2/F3 只读调用及字段闭集证据留存；source-complete 报告成立后，允许经 Helper CAS 更新 Spark UID 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc。排除生产 L1 接入、L0 复评、Specs、Helper contract、事实 Schema、Web、其它事实对象、v2 证据改写、Git commit/push/PR/release、部署和网络发布。
+success_criterion_definitions:
+- criterion_id: criterion-frozen-l1-protocol
+  statement: 冻结 v0.3 protocol、18 个 task/gold、当前事实集合与 source snapshot、两份 L1 policy 文本/hash、9/9 条件首发顺序、模型/runner 身份策略与盲评 rubric。任务在三种事实 family 与六种情形上精确平衡；每题冻结 expected F2 trigger/family、F3 allow-set、all-and-only applicable refs、correct non-use 条件、首个实质动作和错误分类。L1-specific policy 不超过 12 KiB UTF-8 与 160 logical lines。采用门槛预注册为：trigger-decision correctness 相对 baseline 净增至少 3/18 且绝对至少 15/18；9 个适用题 strong_reuse 绝对至少 7/9 且净增至少 2；9 个 non-use 题 treatment 全部 correct_non_use；6 个 no-trigger 题 unnecessary F2 为 0；9 个 non-use 题 false F3 为 0且全体 false F3 不高于 baseline；selection correctness 与 knowledge-adjusted first legal action correctness 均不下降；source-complete 与 policy capacity 成立。任一门槛失败或证据不足即不支持采用 L1-specific。
+- criterion_id: criterion-policy-isolation-and-read-only
+  statement: 两臂都不接收 L0，并共享同一冻结任务、source snapshot、只读 F2/F3 gateway、允许操作、fresh-context、评分 rubric 与模型运行方式；model input 的唯一预注册差异是 L1 trigger policy。L1-specific 只在 family-specific positive conditions 成立且 veto conditions 不成立时触发 F2；F3 只在 F2 命中且证据满足冻结 applicability 条件时展开精确 UID。任何 write/unknown、arguments.workspace_root、跨 family、F3-before-F2、source drift 或条件泄漏均 fail closed 且零实验事实写入。
+- criterion_id: criterion-v3-source-complete-replay
+  statement: 独立 sealed evidence bundle 从 protocol/task/gold、两份 policy 与 source snapshot、raw Helper exchanges、模型结构化输出、盲评 packet/评分及 adjudication ledger 字节一致重建 records、results 与 report；trigger correctness、unnecessary F2、false F3、selection、first action、strong reuse 与 correct non-use 由 frozen gold 加 raw response/trace 确定性重算。缺失、额外、篡改、hash drift、score/packet 不绑定或 post-hoc override 均被拒绝。
+- criterion_id: criterion-v3-automated-verification
+  statement: v3 focused tests 实际覆盖 protocol 闭集与 family/情形/顺序平衡、唯一 arm 差异、fake gateway 的 write/drift/cross-family/F3-before-F2 拒绝、真实只读 fixture、byte replay、blind packet 脱敏、fresh context/scorer 唯一性、attempt/replacement/launch/time ceiling 与 technical-exclusion 闭集；同时重跑 v2 focused tests 证明 sealed v2 行为与产物未被改变。
+- criterion_id: criterion-v3-paired-measurement
+  statement: 实际取得恰 18 retained pairs；最多 21 个 pair attempts、3 个仅由预注册技术排除触发的整对 replacements、42 个 member launches 与 42 个 scorer contexts，每个 member 最多 600 秒、无单臂重试、总运行不超过 6 小时。报告逐 family/情形及总体的 trigger confusion matrix、unnecessary F2、F3 precision/recall、selection、knowledge-adjusted first legal action、strong_reuse、correct_non_use、false F3、Helper 调用/F3 数量及可观察成本，并严格按冻结联合门槛给出 supports-l1-specific-for-separate-production-design 或 do-not-support-adopting-l1-specific；错误、null、负效应和不利 family 结果不得排除。
+- criterion_id: criterion-spark-v3-writeback
+  statement: 仅在 v3 source-complete 报告成立后，目标 Spark 的公开精确回读包含报告绑定、实测指标、各门槛通过/失败、运行时可观察性与因果限制，以及严格的采用/不采用判断；写后 check-fact-integrity 外层 outcome=ok 且 result.status=complete。
+success_criterion_results:
+- criterion_id: criterion-frozen-l1-protocol
+  outcome: satisfied
+  summary: 最终冻结 v0.3 protocol（SHA-256 62f7d9…7ed7a）、18 个平衡 task/gold、两份 L1 policy（L1-specific 未超 12 KiB/160 行）、9/9 条件首发顺序、source snapshot（SHA-256 c8589f…da2）与盲评 rubric；当前 F2 object_set_fingerprint 复核仍为 63e31f…27ea；policy 容量、联合采用门槛、runner 身份与盲评 rubric 均由测试机械验证。
+- criterion_id: criterion-policy-isolation-and-read-only
+  outcome: satisfied
+  summary: 两臂唯一差异为 L1 trigger policy（hash 绑定），无 L0；只读 F2/F3 gateway 对 write/unknown、arguments.workspace_root、跨 family、F3-before-F2、source drift 均 fail closed；所有原始 Helper bytes/hash 与拒绝理由进入闭集 manifest。
+- criterion_id: criterion-v3-source-complete-replay
+  outcome: satisfied
+  summary: sealed bundle 从 protocol/task/gold、policy、source snapshot、raw Helper exchanges、结构化模型输出、盲评 packet/score 及 adjudication ledger 两次重建 records/results/report byte-identical（manifest ae675eff…6065c 闭合）；缺失、额外、篡改均被 compiler/tests 拒绝。
+- criterion_id: criterion-v3-automated-verification
+  outcome: satisfied
+  summary: 25 项 v3 focused tests 全部通过，覆盖协议闭集、family/情形/顺序平衡、唯一 arm 差异、fake gateway 的 write/drift/cross-family/F3-before-F2 拒绝、真实只读 fixture、byte replay、blind packet 脱敏、fresh context/scorer 唯一性、attempt/replacement/launch/time ceiling 与 technical-exclusion 闭集；v2 非 live-source 15 项回归全绿，155 个受保护 v2 文件 hash 未变。
+- criterion_id: criterion-v3-paired-measurement
+  outcome: satisfied
+  summary: 实际取得 18 retained pairs / 21 pair attempts / 3 整对 member 技术 replacement / 42 member launches / 41 scorer contexts（36 retained + 5 无效 scorer 输出），均在预注册上限内；报告逐 family/情形及总体的 trigger confusion matrix、unnecessary F2、F3 precision/recall、selection、first action、strong reuse、correct non-use、false F3、Helper 调用/F3 数量及可观察成本，严格按冻结联合门槛给出 do-not-support-adopting-l1-specific；错误、null、负效应和不利 family 结果未排除。
+- criterion_id: criterion-spark-v3-writeback
+  outcome: satisfied
+  summary: 目标 Spark UID 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc 已受控写回，公开精确回读包含 v3 报告绑定（manifest/results/report SHA-256）、实测指标、各门槛通过/失败、运行时可观察性与因果限制，以及严格的 do-not-support-adopting-l1-specific 判断；写后 check-fact-integrity outcome=ok/status=complete。
+result_summary: 已完成 v0.3 L1 触发策略 source-complete 配对实验并写回目标 Spark：18 个 frozen pairs（ADR/Pitfall/Study 各 6，含 9 applicable 与 9 non-use，其中 6 no-trigger），21 pair attempts、3 次整对 member 技术 replacement、42 member launches、41 scorer contexts（36 retained + 5 次无效 scorer 输出作为技术失败原件保留且纳入计数），全部在预注册上限内。严格按冻结联合门槛给出 do-not-support-adopting-l1-specific：trigger correct 13/18→14/18（绝对 15 与净增 3 均未达）、applicable strong reuse 7/9→5/9（绝对 7 与净增 2 均失败）、correct non-use 1/9→4/9（未达 9/9）、first legal action 11→9（下降）；同时 selection 14→17、false F3 6→0、F3 expansions 15→8、Helper calls 31→16、no-trigger unnecessary F2=0，后四项误触/成本改善受联合门槛否决。source-complete replay 与 policy capacity 成立。Spark UID 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc 已受控写回，保持 open/P1，并新增 related-to 当前 WorkCase。后续方向为 family/情形校准消解过度 veto。未实施任何生产 L1 接入、Specs/Helper/Web 变更、Git commit、push、发布或部署。
+validation_summary: 已验证：25 项 v3 focused tests 与 Ruff/py_compile 通过（覆盖协议闭集、family/情形/顺序平衡、两臂唯一差异、fake gateway 的 write/drift/cross-family/F3-before-F2 拒绝、真实只读 fixture、byte replay、blind packet 脱敏、fresh context/scorer 唯一性、attempt/replacement/launch/time ceiling 与 technical-exclusion 闭集）；v2 非 live-source 15 项回归全绿，155 个受保护 v2 文件 hash 未变。source-complete compiler 从 sealed bundle 两次重建 records/results/report byte-identical；manifest ae675eff19624323e33471476b39edfb5ec0e0095560b3586058b01c8776065c 闭合，records/results/report SHA-256 分别为 4634f9c5a81f2967ab80e5b60a2356ba9570aa2736f65ee46f6a7ab8e730a227、89db40eaffac94f2d41b790639159f85b77c0c8242c26e800bb078191ead64f3、a2c08f2c8fa79c20d2165abc3a7b008cc944be0351e3bc2e2249359c3c686733。Ruff format/check、git diff --check 与 ./ldvh check 均通过。Spark 写后精确回读 mechanically_valid、fingerprint f9455524…ac51ab6，整库 check-fact-integrity outcome=ok/status=complete。独立只读 Reviewer 核对最终 report/results、ledger、manifest 与 5 份无效 scorer 原件，一对一绑定和 36+5=41 计数成立，无阻塞项。限制：原生 runtime 不提供底层 model name、token usage 与 model-only latency（如实 unavailable 不补造）；不保留完整 transcript/hidden reasoning；fresh-context 与 gateway-only 由 runner 执行但无 runtime 独立 attestation；18 个冻结 pair 不建立广泛因果效应，false-F3/Helper 成本改善不得外推为所有真实工作流收益。
+closure_outcome: completed
+disposition_summary: 已按 Gate 1 授权的 v0.3 计划完成全部 scope 内工作并取得独立只读复核。实验结论为 do-not-support-adopting-l1-specific：L1-specific 在 false-F3=0 与 Helper 成本下降上有改善，但 trigger 门槛、strong reuse、全部 correct non-use 与首动作质量联合门槛失败。当前 WorkCase scope 内无剩余责任；后续可证伪方向与 compiled artifacts 一致性修正由后续独立机会承载。
+spark_suggestions:
+- suggestion_id: suggestion-v4-family-calibration
+  suggestion_kind: follow_up_opportunity
+  summary: L1 触发策略 family/情形校准实验：在 L1-specific 整体策略不通过后，拆分 ADR/Pitfall/Study 各自的 positive/veto conditions 进行独立校准，重点验证过度 veto 是否造成适用样本 strong reuse 7→5 与首动作 11→9 回退，并预注册误触不反弹约束与 false-F3=0 保留。
+  follow_up_summary: 下一 WorkCase 应冻结 family-specific 的 positive/veto conditions、预注册联合门槛，并保留 false-F3=0 作为误触不反弹约束；scope 外机会，需独立 Gate 1。
+- suggestion_id: suggestion-v4-sha256-fix
+  suggestion_kind: follow_up_opportunity
+  summary: 修正 v3 compiled results.json 的 records_sha256 引用：当前值为内存 compact 序列化哈希，与磁盘文件哈希不一致；建议修正 compiler 使其写入实际文件哈希，提升 compiled artifacts 内部自引用一致性。
+  follow_up_summary: 在后续 compiler 维护中将 records_sha256 改为文件写入后磁盘哈希，scope 外，可与下次 compiler 改动合并。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc
+- relation_key: related-to
+  target:
+    object_uid: 01a00aef-e453-7f88-ba0c-59dbce5d9adf
+change_log:
+- at: '2026-08-16T15:48:40.939145Z'
+  summary: 按 Human 明确要求与独立只读 creation review 创建 L1 v0.3 可证伪配对实验计划，等待 Gate 1。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:54:25.182063Z'
+  summary: 消费 Human Gate 1 对 plan_version=1 与冻结 execution_authorization 的明确批准，进入 executing；尚未实现或运行 v3 实验。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T15:54:59.079597Z'
+  summary: 启动 item-freeze-l1-protocol：冻结 v0.3 的 18-task、两臂 policy、source snapshot、盲评与采用门槛。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T16:19:17.868700Z'
+  summary: 完成 item-freeze-l1-protocol：冻结 v0.3 L1 双臂、18-task/gold、source-complete 来源快照、盲评与联合采用门槛。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T16:19:55.331759Z'
+  summary: 启动 item-build-v3-runner：复核并定型隔离输入、原始响应证据与只读 Helper 编排。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T16:22:07.545891Z'
+  summary: 完成 item-build-v3-runner：双臂隔离、原始响应绑定与只读 F2/F3 编排已定型并验证。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T16:22:25.623207Z'
+  summary: 启动 item-build-v3-replay-tests：收敛 compiler、盲评与反篡改回放验证。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T16:24:12.655153Z'
+  summary: 完成 item-build-v3-replay-tests：source-complete compiler、盲评与负向篡改验证已成立。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T16:24:32.786321Z'
+  summary: 启动 item-run-v3-paired-experiment：进入 36 个 fresh member 与 36 个 fresh blind scorer 的真实运行阶段。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T17:23:10.651099Z'
+  summary: 完成 item-run-v3-paired-experiment：source-complete v0.3 实验未支持采用 L1-specific，并保留全部 member/scorer 技术失败证据。
+- signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+  at: '2026-08-16T17:24:22.589121Z'
+  summary: 启动 item-writeback-l1-spark：按最终 v0.3 证据更新目标 Spark。
+- at: '2026-08-16T17:29:33.970109Z'
+  summary: 完成最后一个 work item 并进入 Controller 结果检查：Spark v0.3 写回、精确回读与整库审计已成立。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T17:58:58.180668Z'
+  summary: 形成 result_version=1 的完整 canonical result projection：result_summary、validation_summary 与 controller_check_summary 已写入，五个 item 全部 completed，进入独立结果复核阶段。
+  signature:
+    product_name: Claude Code
+    model_name:
+    agent_runtime_name: claude-code
+- at: '2026-08-16T18:02:22.166502Z'
+  summary: 补全 success_criterion_results 六项标准判断（全部 satisfied），canonical result projection 完整形成，进入独立结果复核。
+  signature:
+    product_name: Claude Code
+    model_name:
+    agent_runtime_name: claude-code
+- at: '2026-08-16T18:03:41.135796Z'
+  summary: canonical result projection 完整形成，phase 从 controller_checking 推进到 independent_reviewing，等待委派独立只读结果复核。
+  signature:
+    product_name: Claude Code
+    model_name:
+    agent_runtime_name: claude-code
+- at: '2026-08-16T18:14:48.519330Z'
+  summary: 独立只读结果复核结论 pass_with_followups（1 项非阻塞跟进：records_sha256 哈希引用不一致），Controller 已处置；保持 independent_reviewing 待 review 写入后推进到 closure_preparing。
+  signature:
+    product_name: Claude Code
+    model_name:
+    agent_runtime_name: claude-code
+- at: '2026-08-16T18:15:18.652388Z'
+  summary: result review 已写入，feedback 已处置；phase 推进到 closure_preparing，开始形成关闭提案。
+  signature:
+    product_name: Claude Code
+    model_name:
+    agent_runtime_name: claude-code
+- at: '2026-08-16T18:21:01.184976Z'
+  summary: 形成完整关闭提案：outcome=completed，两项 follow_up_opportunity suggestions（无 residual_decisions，因全部标准 satisfied）。
+  signature:
+    product_name: Claude Code
+    model_name:
+    agent_runtime_name: claude-code
+- at: '2026-08-16T18:21:31.965086Z'
+  summary: phase 推进到 human_closure_confirming，等待 Gate 2 唯一关闭决定。
+  signature:
+    product_name: Claude Code
+    model_name:
+    agent_runtime_name: claude-code
+- at: '2026-08-16T18:29:27.506696Z'
+  summary: Human Gate 2 已接受关闭提案；按专属关闭事务保留全部结果、验证、disposition、spark_suggestions 与 related-to 关系并关闭 WorkCase。
+  signature:
+    product_name: Claude Code
+    model_name:
+    agent_runtime_name: claude-code
+object_uid: 01a00b42-cb24-7712-8362-79fc7d9c95a0
+object_id: workcase-01M05M5JS4EW986RKSZHYSS5D0
+fact_type_key: workcase
+created_at: '2026-08-16T15:48:40.939145Z'
+updated_at: '2026-08-16T18:29:27.506696Z'

@@ -1,0 +1,146 @@
+status: closed
+title: 运行知识前置检查 v0.2 的 source-complete 配对实验
+goal: 实现并运行一个由真实只读 Helper 驱动、可盲评且能从完整证据包确定性重建的 v0.2 runner，比较 12 个任务上的 L1-only 与 L0+L1，并把依据预注册门槛形成的 L0 产品化判断写回相关 Spark。
+scope: 仅限 code/ldvh/testing、code/tests/testing、docs/metrics/knowledge-precheck-v2 与本 WorkCase 的 Helper 检查点写回；冻结 12 个候选任务，允许重写并明确标注 5 个中等置信任务而不冒充历史原文；L0 使用全部 active ADR F1 卡、全部 active Study 的 object_id/title/updated_at 索引，以及 Human 已选定的两个通用 Pitfall；按 denylist 与字段闭集受控保留 source-complete replay 所需的原始 Helper 交换和模型结构化输出。仅在完整报告成立后，允许经 Helper CAS 更新 Spark UID 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc。排除最终 L0 产品接入、Specs、Helper contract、事实 Schema、Web、其它事实对象、Git commit/push/PR/release、部署和网络发布。
+success_criterion_definitions:
+- criterion_id: criterion-frozen-materials
+  statement: v0.2 protocol、12 个精确 task/gold、事实集合与 L0 快照、hash、6/6 首发顺序、模型/runner 身份策略已经冻结；L0 不超过 24 KiB UTF-8 与 200 logical lines；5 个中等置信任务明确标为本次改写冻结而非历史原文。产品化判定固定为：主指标净增至少 3/12，strong_reuse 干预独有净增至少 2，正确性不下降且 A2/P2/S2 三个空样本全部 correct_non_use，false F3 总增量不超过 2，容量线与 source-complete 均成立；任一不满足或证据不足即不支持固化 L0。
+- criterion_id: criterion-read-only-gateway
+  statement: 实验 runner/gateway 观测到的知识检索 Helper 调用全部属于冻结 allowlist 的只读 F2/F3 操作；任何 write、unknown 或事实/规则快照漂移均以零实验事实写入 fail closed。调用账本完整保存请求/响应 bytes 与 hash、coverage/match reason、F3 引用与 fingerprint、L1 trigger、首个实质动作和拒绝理由。本 WorkCase 检查点与目标 Spark 的受控 Helper 写回不计入该实验知识检索集合，分别服从自身授权边界。
+- criterion_id: criterion-source-complete-replay
+  statement: 在干净隔离临时根中，完整 evidence bundle 能从 protocol/task/gold、source snapshot、Helper exchanges、模型结构化输出、盲评 packet/评分与 adjudication ledger 字节一致重建 records、results 与 report；缺失、额外或篡改输入均失败。原始交换与输出只含闭集字段并通过 denylist 扫描。
+- criterion_id: criterion-automated-verification
+  statement: 相关自动测试实际覆盖并通过 schema/hash/cap 不变量、fake gateway 的 write/drift 拒绝、真实只读 fixture integration、byte replay、盲评脱敏、6/6 顺序、attempt/replacement ceiling 与技术排除闭集。
+- criterion_id: criterion-paired-measurement
+  statement: 实际取得恰 12 个 retained pairs；最多 15 个 pair attempts、3 个仅由预注册技术排除触发的 replacements、30 个 process launches、每个 arm 每次 600 秒且无同一 arm 重试，总运行不超过 5 小时。报告 selection_correct、knowledge-adjusted first legal action、action_changed、strong_reuse、correct_non_use、false F3 expansion，并披露模型身份与 usage/latency 的可用性和全部失败；错误、null 与负效应不得排除。
+- criterion_id: criterion-spark-result-writeback
+  statement: 仅在 source-complete 报告成立后，目标 Spark 的公开精确回读包含报告绑定、实测结果、限制以及严格依预注册门槛导出的继续或不继续产品化 L0 判断；写后 check-fact-integrity 外层 outcome=ok 且 result.status=complete。
+success_criterion_results:
+- criterion_id: criterion-frozen-materials
+  outcome: satisfied
+  summary: 最终冻结材料包含 12 个 task/gold、三类型四 case、6/6 首发、5 个 rewritten 标签及固定判定门槛；最终 protocol SHA-256=82432af5e0beb1abe67a2659cafb77a631b04972d84476006bae2c415a8a8c23，source snapshot SHA-256=2c781fa782bb15c306f0cdbf3be99ee053a939d1d7af52bd37a8ba29ffc67de2，object_set_fingerprint=6bd01f1d7f1a65819c53ce012c20cff3bd9e48c7ab5fb5f86471f914447c30c7；L0 SHA-256=c263c966918992d4d0929640cf7b9520f2b97a94112aeac144c3d0b7176d0937，14,671 bytes/89 lines，低于容量线。
+- criterion_id: criterion-read-only-gateway
+  outcome: satisfied
+  summary: sealed bundle 中 26 次知识检索 Helper exchange 均为 allowlist 内的 F2/F3 只读操作且 changes 为空；gateway 对 write/unknown、arguments.workspace_root、coverage/object-set drift、F3 fingerprint drift 与 F3-before-F2 fail closed，原始 UTF-8 request/response bytes 与 hash 进入闭集 manifest。
+- criterion_id: criterion-source-complete-replay
+  outcome: satisfied
+  summary: 126 文件 sealed evidence manifest 闭合且全部 SHA-256 绑定成立；从 protocol/task/gold、source snapshot、raw Helper exchanges、模型结构化输出、blind packets/scores 与 adjudication ledger 确定性重建 records/results/report，第二个 clean 临时根输出与持久化三文件 byte-identical；缺失、额外和篡改输入由 compiler/tests 拒绝。
+- criterion_id: criterion-automated-verification
+  outcome: satisfied
+  summary: v2 的 16 项 focused tests 全部通过，覆盖 schema/hash/cap、fake gateway write/drift/F3-before-F2、真实只读 fixture、byte replay、盲评脱敏、6/6 顺序、attempt/replacement/launch ceiling 与技术排除闭集；Ruff format/check、git diff --check 与 ldvh check 均通过。
+- criterion_id: criterion-paired-measurement
+  outcome: satisfied
+  summary: 恰 12 retained pairs / 24 member runs、零 replacements、24 launches，均在预注册 15 attempts/3 replacements/30 launches、每 arm 600 秒和总 5 小时上限内；报告全部指定指标、paired CI/sign-flip p、成本可观察性与失败边界。主指标净增 3/12，strong_reuse 净增 1，selection 净增 0，空样本全 correct_non_use=false，false-F3 增量 0，严格判定 do-not-support-productizing-l0。
+- criterion_id: criterion-spark-result-writeback
+  outcome: satisfied
+  summary: 目标 Spark 已经 Helper CAS 写入并公开精确回读；当前 summary 精确绑定 v2 报告、results/records/evidence hashes、门槛结果、运行时可观察性限制和 do-not-support-productizing-l0 判断，且与当前 WorkCase 建立 related-to；写后独立完整性审计 outcome=ok/status=complete。
+result_summary: 已实现并运行知识前置检查 v0.2 的真实只读 F2/F3 runner、source-complete evidence/compiler 与 12-pair 盲评实验，并将严格结论写回目标 Spark。实验主指标净增 3/12 达标，但 strong_reuse 净增 1 与三个空样本全部 correct_non_use 两项失败，因此不支持产品化本轮 L0。代码、测试、sealed 证据、compiled records/results/report 与 Spark 结果绑定均已形成；未实施任何生产 L0 接入、Specs/Helper/Web 变更、Git commit、push、发布或部署。
+validation_summary: 已验证：Ruff format --check 与 ruff check 对 4 个 v2 Python 文件通过；code/tests/testing/test_knowledge_precheck_v2.py 与 test_knowledge_precheck_v2_trial.py 共 16 tests 通过；sealed bundle 在独立 clean 临时根重编译与持久化 records/results/report byte-identical；manifest 126 文件 hash 闭合；git diff --check 通过；./ldvh check 外层 outcome=ok、result=passed；Spark 写后公开精确回读与 check-fact-integrity outcome=ok/status=complete。独立只读预检查也重跑 16 tests、重编译并核对全部门槛算术，PASS。限制：原生 runtime 不提供底层 model name、token usage 或 model-only latency；不保留完整 transcript/hidden reasoning；fresh-context 与 gateway-only 由 Controller 执行但无 runtime 独立 attestation。额外 v1 基线测试中 35 项通过、2 项因仓库原有 v1 protocol/results/report 产物缺失而失败；这些不属于本 v2 批准范围，未补造或改写。ldvh check 仍报告当前规则源资格/直接依据的既有 advisory gaps，但机械检查通过。
+closure_outcome: completed
+disposition_summary: 已完成 Gate 1 授权范围内的 v0.2 材料冻结、只读 runner/source-complete compiler、12-pair 实验、自动验证与目标 Spark 写回；六项成功标准均 satisfied，无当前 WorkCase scope 内剩余责任。预注册门槛得出的技术结论是不支持产品化本轮 L0，相关证据、限制与后续 L1 未决问题已无损保留在 result/validation 与现有 open Spark 中；关闭本 WorkCase 不关闭 Spark、不授权生产接入或 Git/发布动作。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc
+- relation_key: related-to
+  target:
+    object_uid: 01a006d8-9f76-7caf-bc26-0199d6db014a
+- relation_key: related-to
+  target:
+    object_uid: 01a0042d-d784-7a99-aa90-4e8cfc761f4c
+change_log:
+- at: '2026-08-16T14:18:06.501220Z'
+  summary: 按 Human 认可的推荐方案与只读 creation review 创建 v0.2 source-complete 配对实验计划，等待 Gate 1。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T14:24:11.652380Z'
+  summary: Human Gate 1 已批准 plan_version=1，绑定完整执行授权基线并进入执行阶段。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T14:25:20.895312Z'
+  summary: 开始 item-freeze-materials，记录 Gate 1 后第一个可恢复执行检查点。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T14:42:15.791404Z'
+  summary: 冻结 v0.2 的 12-task/gold、事实与 L0 快照、6/6 顺序、身份策略和预注册门槛，完成 focused 验证并开始构建 runner。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T14:49:36.470045Z'
+  summary: 完成真实只读 F2/F3 gateway 与 runner-owned v2 命令面，进入 source-complete replay 和完整自动验证。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T14:57:06.880090Z'
+  summary: 完成 source-complete compiler、运行账本、raw Helper 重放、盲评绑定与负向自动验证，进入配对实验初始化。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:24:22.504539Z'
+  summary: 完成 sealed v0.2 配对实验、确定性重编译与独立只读结果核对，严格判定不支持产品化 L0；开始受控写回目标 Spark。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:28:26.015458Z'
+  summary: 完成目标 Spark 的受控结果写回与写后审计，五个 work item 全部 terminal；形成 result_version=1 的完整 Controller 结果投影并进入 controller_checking。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:28:52.664645Z'
+  summary: result_version=1 的 canonical result projection 已完整形成并回读，进入 independent_reviewing 等待独立只读 Subagent 复核。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:30:29.304926Z'
+  summary: 记录第一轮 result review 的 changes_required 与 Controller 处置；精确回读确认反馈源于响应层级误读，结果投影未变化，继续 fresh 第二轮只读复核。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:31:37.567431Z'
+  summary: fresh 第二轮独立只读 result review 对未变化的 result_version=1 结论 PASS；第一轮层级误读已保留并处置。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:32:04.667576Z'
+  summary: result_version=1 已完成两轮实际只读复核；第一轮反馈已处置，fresh 第二轮 PASS，进入 closure_preparing 形成完整关闭提案。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:32:34.599940Z'
+  summary: 完成终态保留审查并形成 completed 关闭提案：六项标准均 satisfied，当前 WorkCase scope 无剩余责任，L0 不产品化结论与 L1 后续问题已保留在结果和现有 Spark。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:32:59.437918Z'
+  summary: 完整 completed 关闭提案、终态保留审查与无剩余责任核对已成立，进入 human_closure_confirming 等待 Human Gate 2。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+- at: '2026-08-16T15:34:46.335086Z'
+  summary: Human Gate 2 已接受当前 completed 关闭提案；按专属关闭事务保留六项标准结果、总体结果、验证边界、停止处置与 related-to 关系并关闭 WorkCase。
+  signature:
+    product_name: Cindy
+    model_name:
+    agent_runtime_name: codex
+object_uid: 01a00aef-e453-7f88-ba0c-59dbce5d9adf
+object_id: workcase-01M05EZS2KFY4BM32SVF75V6PZ
+fact_type_key: workcase
+created_at: '2026-08-16T14:18:06.501220Z'
+updated_at: '2026-08-16T15:34:46.335086Z'
