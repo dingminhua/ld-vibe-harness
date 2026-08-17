@@ -131,6 +131,7 @@ def test_candidate_discovery_publishes_only_the_source_bound_text_match_input_fr
             "find-fact-object-candidates",
             "precheck-git-commit",
             "prepare-fact-object-update",
+            "read-fact-objects",
             "update-fact-object",
             "update-workcase",
         }

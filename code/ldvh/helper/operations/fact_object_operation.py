@@ -37,6 +37,24 @@ OPERATION_KEY = "read-fact-objects"
 _INPUT_CONTRACT = source_reference("rule", "fact-model-foundation::11.1 事实对象读取输入字段")
 _RESULT_CONTRACT = source_reference("rule", "fact-model-foundation::11.2 事实对象读取结果字段")
 _IMPLEMENTATION_EVIDENCE = (source_reference("implementation", "code/ldvh/helper/operations/fact_object_operation.py"),)
+_INPUT_EXAMPLES = (
+    {
+        "summary": "按 UID 引用读取事实对象",
+        "arguments_fragment": {
+            "fact_refs": [{"object_uid": "01ar3x8gf1ta0ex4j6rvq7vt9s"}],
+        },
+        "source_refs": (_RESULT_CONTRACT, *_IMPLEMENTATION_EVIDENCE),
+        "composition_note": "UID 引用使用 §11.0 所定义的 object_uid 形状",
+    },
+    {
+        "summary": "按 legacy 三元组引用读取事实对象",
+        "arguments_fragment": {
+            "fact_refs": [{"governed_project_id": "sample", "fact_type_key": "spark", "object_id": "spark-0001"}],
+        },
+        "source_refs": (_RESULT_CONTRACT, *_IMPLEMENTATION_EVIDENCE),
+        "composition_note": "legacy 引用使用 §11.0 所定义的 governed_project_id + fact_type_key + object_id 形状",
+    },
+)
 _TYPE_SOURCES = {
     "spark": "specs/20-Spark-火花.md",
     "workcase": "specs/21-WorkCase-工作项.md",
@@ -357,6 +375,7 @@ FACT_OBJECT_IMPLEMENTATION = OperationImplementation(
     check_availability=_check_availability,
     call=_call,
     response_fields=("items",),
+    input_examples=_INPUT_EXAMPLES,
 )
 
 __all__ = ["FACT_OBJECT_IMPLEMENTATION", "OPERATION_KEY"]
