@@ -233,6 +233,7 @@ COMMIT_PRECHECK_IMPLEMENTATION = OperationImplementation(
     check_availability=_check_availability,
     call=_call,
     input_examples=(_COMMIT_MESSAGE_INPUT_EXAMPLE,),
+    response_fields=("mechanical_outcome", "candidate", "message", "contract"),
 )
 
 __all__ = ["COMMIT_PRECHECK_IMPLEMENTATION", "OPERATION_KEY"]

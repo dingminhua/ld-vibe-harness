@@ -2,7 +2,11 @@ title: 三字段署名可观察性与跨角色推导
 status: open
 priority: P2
 intent: 保留 Helper 事实写入与 Git 提交共同使用的三字段署名（product_name / model_name / agent_runtime_name）在两个层面的问题：其一，三个字段在不同宿主环境的可观察性不均，部分环境缺少清晰、与产品名可区分的运行时名或模型名；其二，AI 在自报署名时会从历史事实对象的 change_log 签名跨环境、跨角色推导自己当次的署名，而不是从当次可观察上下文逐项取得，从而产生错误的责任声明。需要判断可观察性是否应由宿主确定性下发、AI 不得从历史签名推导当次署名，以及这一收紧应落在哪一规范（03 / 05.Att.01 / 09）与哪个环境接入点。若不跨行动保留，该错误模式会在后续每次受控写入中反复出现，且无独立入口追踪根因与修复方向，署名（attestation）的可靠性缺口会持续累积。
-summary: "## 根因\n\n三字段署名的摩擦不是「模型名不可得」，而是两个可分离的层面：\n\n1. **可观察性不均**：三个字段能否被写入方观察，取决于宿主/产品接入面是否暴露。DSH 中 `product_name`（DeepSeek Harness）与 `model_name`（如 deepseek-v4-pro）可见，但 `agent_runtime_name` 没有清晰、与产品名可区分的可观察值，历史 DSH 流水也一直为 null。\n2. **跨角色推导**：AI 会把事实对象 `change_log` 里的历史签名（某次会话的 attestation）泛化成环境事实，并据此推导自己当次署名——违反 03 §9 与 05 §11.0 的「不得跨角色推导」禁令。评估「Helper 写交互优化」（spark-01M05X1DZKECG8C6221RJ19WVM）时已实际复现一次（把 Cindy 会话的 `model_name: null` 当成普遍现象）。\n\n## 已核实边界\n\n- Helper 写契约的三字段签名是每次写入会话的责任声明（attestation），规则已禁止跨字段推导、复用旧快照、由 Code 自动补全；由 Helper 自动补全会把错误推导制度化，不是修复方向。\n- 可观察性由产品接入面提供（03 §9「产品接入面只负责提供快照，LDVH 不推断产品、模型或运行时」），因此结构性修复落在 09 环境接入，而非 Helper 写契约。\n\n## 已处理\n\n- 读取护栏已在 05.Att.01 `change-log-signature` 收紧：读取或消费历史 `change_log` 的 `signature` 时，不得把它泛化为环境事实，也不得据此推导当前会话或其它环境的署名可观察性。\n\n## 待判断\n\n- DSH 的 `agent_runtime_name` 是否应给出清晰、与产品名可区分的可观察值（结构性修复落在 09 环境接入）。"
+summary: "## 根因\n\n三字段署名的摩擦不是「模型名不可得」，而是两个可分离的层面：\n\n1. **可观察性不均**：三个字段能否被写入方观察，取决于宿主/产品接入面是否暴露。DSH 中 `product_name`（DeepSeek Harness）与 `model_name`（如 deepseek-v4-pro）可见，但 `agent_runtime_name` 没有清晰、与产品名可区分的可观察值，历史 DSH 流水也一直为 null。\n2. **跨角色推导**：AI 会把事实对象 `change_log` 里的历史签名（某次会话的 attestation）泛化成环境事实，并据此推导自己当次署名——违反 03 §9 与 05 §11.0 的「不得跨角色推导」禁令。评估「Helper 写交互优化」（spark-01M05X1DZKECG8C6221RJ19WVM）时已实际复现一次（把 Cindy 会话的 `model_name: null` 当成普遍现象）。\n\n## 已核实边界\n\n- Helper 写契约的三字段签名是每次写入会话的责任声明（attestation），规则已禁止跨字段推导、复用旧快照、由 Code 自动补全；由 Helper 自动补全会把错误推导制度化，不是修复方向。\n- 可观察性由产品接入面提供（03 §9「产品接入面只负责提供快照，LDVH 不推断产品、模型或运行时」），因此结构性修复落在 09 环境接入，而非 Helper 写契约。\n\n## 已处理\n\n- 读取护栏已在 05.Att.01 `change-log-signature` 收紧：读取或消费历史 `change_log` 的 `signature` 时，不得把它泛化为环境事实，也不得据此推导当前会话或其它环境的署名可观察性。**当次署名与历史 `change_log` 记录毫无关系**——当次三字段快照只能从当次可观察上下文逐项取得，禁止从任何历史签名为当前会话或其它环境推导署名。\n- 运行时名（`agent_runtime_name`）的可观察性要求**仅对 `product_name=Cindy` 的环境适用**：Cindy 环境 `agent_runtime_name=pi` 可观察、要求成立。其他产品环境（含 DSH）**不要求**提供清晰、与产品名可区分的运行时名，无需在 09 环境接入为其做结构性修复。原「DSH 的 `agent_runtime_name` 是否应给出清晰、与产品名可区分的可观察值」的待判断项据此关闭：DSH 不在该要求范围内，不构成可观察性缺口。\n\n## 待判断\n\n- 当前无未决待判断项。"
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a00bd0-b7f3-7320-8618-420e2414f374
 change_log:
 - signature:
     product_name: DeepSeek Harness
@@ -16,12 +20,14 @@ change_log:
     agent_runtime_name:
   at: '2026-08-16T20:44:45.426001Z'
   summary: content_update：把「是否收紧读取护栏」待判断项更新为已处理——读取护栏已在 05.Att.01 change-log-signature 收紧；剩余待判断聚焦 DSH agent_runtime_name 的可观察值。
-relations:
-- relation_key: related-to
-  target:
-    object_uid: 01a00bd0-b7f3-7320-8618-420e2414f374
+- summary: 'content_update: 关闭待判断项——(1)重申当次署名与历史 change_log 记录毫无关系,禁止从历史签名为当前会话推导署名(05.Att.01 read guardrail 已收紧);(2)运行时名(agent_runtime_name)可观察性要求仅对 product_name=Cindy 环境适用,DSH 等其他产品不在要求范围内,不构成可观察性缺口,无需 09 环境接入结构性修复。原 DSH agent_runtime_name 待判断项据此关闭。'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: pi
+  at: '2026-08-17T06:18:34.803068Z'
 object_uid: 01a00c4e-a4b7-72b5-b09c-3c3881b22892
 object_id: spark-01M064X95QEATV171W720V4A4J
 fact_type_key: spark
 created_at: '2026-08-16T20:41:14.643005Z'
-updated_at: '2026-08-16T20:44:45.426001Z'
+updated_at: '2026-08-17T06:18:34.803068Z'

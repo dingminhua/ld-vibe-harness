@@ -308,6 +308,7 @@ GIT_HOOKS_STATUS_IMPLEMENTATION = OperationImplementation(
     evidence=(*_IMPLEMENTATION_EVIDENCE, _CONTRACT, _RESULT_CONTRACT),
     check_availability=_check_availability,
     call=_call,
+    response_fields=("status", "worktree", "common_hooks_dir", "checks"),
 )
 
 __all__ = ["GIT_HOOKS_STATUS_IMPLEMENTATION", "OPERATION_KEY"]

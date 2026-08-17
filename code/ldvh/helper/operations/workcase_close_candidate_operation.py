@@ -302,6 +302,15 @@ WORKCASE_CLOSE_CANDIDATE_IMPLEMENTATION = OperationImplementation(
     evidence=(*_IMPLEMENTATION_EVIDENCE, _CONTRACT),
     check_availability=_check_availability,
     call=_call,
+    response_fields=(
+    "actual_ref",
+    "canonical_path",
+    "carrier",
+    "source_content_fingerprint",
+    "fact_object",
+    "mapping_basis",
+    "change_log_append",
+    ),
 )
 
 __all__ = ["OPERATION_KEY", "WORKCASE_CLOSE_CANDIDATE_IMPLEMENTATION"]

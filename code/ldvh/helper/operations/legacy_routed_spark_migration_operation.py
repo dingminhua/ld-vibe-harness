@@ -205,6 +205,14 @@ MIGRATION_IMPLEMENTATION = OperationImplementation(
     evidence=(_IMPLEMENTATION_SOURCE, _CONTRACT),
     check_availability=_availability,
     call=_execute,
+    response_fields=(
+    "actual_ref",
+    "canonical_path",
+    "carrier",
+    "previous_content_fingerprint",
+    "content_fingerprint",
+    "fact_object",
+    ),
 )
 
 __all__ = ["MIGRATION_IMPLEMENTATION", "OPERATION_KEY"]

@@ -85,6 +85,7 @@ class OperationImplementation:
     check_availability: AvailabilityHandler
     call: CallHandler
     input_examples: tuple[dict[str, Any], ...] = ()
+    response_fields: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.evidence:
@@ -94,6 +95,8 @@ class OperationImplementation:
             raise ValueError("operation input names must be non-empty strings")
         if len(set(fields)) != len(fields):
             raise ValueError("operation input names must be unique")
+        if any(not isinstance(field, str) or not field for field in self.response_fields):
+            raise ValueError("operation response_fields names must be non-empty strings")
         for example in self.input_examples:
             if not isinstance(example, Mapping) or set(example) != _INPUT_EXAMPLE_FIELDS:
                 raise ValueError("operation input examples must use the closed common field set")

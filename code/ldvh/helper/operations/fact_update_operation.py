@@ -955,6 +955,14 @@ FACT_UPDATE_IMPLEMENTATION = OperationImplementation(
     check_availability=_check_availability,
     call=_execute,
     input_examples=(_READ_TO_UPDATE_INPUT_EXAMPLE,),
+    response_fields=(
+        "actual_ref",
+        "canonical_path",
+        "carrier",
+        "previous_content_fingerprint",
+        "content_fingerprint",
+        "fact_object",
+    ),
 )
 
 

@@ -1489,6 +1489,16 @@ def _recover_availability(
     return _check_availability("recover", request, repository, context)
 
 
+_WORKCASE_RESULT_FIELDS = (
+    "actual_ref",
+    "canonical_path",
+    "carrier",
+    "previous_content_fingerprint",
+    "content_fingerprint",
+    "fact_object",
+    "recovery_carrier",
+)
+
 UPDATE_WORKCASE_IMPLEMENTATION = OperationImplementation(
     required_inputs=UPDATE_REQUIRED_INPUTS,
     optional_inputs=UPDATE_OPTIONAL_INPUTS,
@@ -1496,6 +1506,7 @@ UPDATE_WORKCASE_IMPLEMENTATION = OperationImplementation(
     check_availability=_update_availability,
     call=_update_call,
     input_examples=(_UPDATE_ITEM_EVENT_INPUT_EXAMPLE, _UPDATE_FULL_AFTER_INPUT_EXAMPLE),
+    response_fields=_WORKCASE_RESULT_FIELDS,
 )
 BEGIN_WORKCASE_TERMINATION_IMPLEMENTATION = OperationImplementation(
     required_inputs=BEGIN_TERMINATION_REQUIRED_INPUTS,
@@ -1503,6 +1514,7 @@ BEGIN_WORKCASE_TERMINATION_IMPLEMENTATION = OperationImplementation(
     evidence=(_IMPLEMENTATION_SOURCE, _CONTRACTS["begin_termination"]),
     check_availability=_begin_termination_availability,
     call=_begin_termination_call,
+    response_fields=_WORKCASE_RESULT_FIELDS,
 )
 COMPLETE_WORKCASE_TERMINATION_IMPLEMENTATION = OperationImplementation(
     required_inputs=COMPLETE_TERMINATION_REQUIRED_INPUTS,
@@ -1510,6 +1522,7 @@ COMPLETE_WORKCASE_TERMINATION_IMPLEMENTATION = OperationImplementation(
     evidence=(_IMPLEMENTATION_SOURCE, _CONTRACTS["complete_termination"]),
     check_availability=_complete_termination_availability,
     call=_complete_termination_call,
+    response_fields=_WORKCASE_RESULT_FIELDS,
 )
 CLOSE_WORKCASE_IMPLEMENTATION = OperationImplementation(
     required_inputs=CLOSE_REQUIRED_INPUTS,
@@ -1517,6 +1530,7 @@ CLOSE_WORKCASE_IMPLEMENTATION = OperationImplementation(
     evidence=(_IMPLEMENTATION_SOURCE, _CONTRACTS["close"]),
     check_availability=_close_availability,
     call=_close_call,
+    response_fields=_WORKCASE_RESULT_FIELDS,
 )
 CORRECT_CLOSED_WORKCASE_IMPLEMENTATION = OperationImplementation(
     required_inputs=CORRECT_CLOSED_REQUIRED_INPUTS,
@@ -1524,6 +1538,7 @@ CORRECT_CLOSED_WORKCASE_IMPLEMENTATION = OperationImplementation(
     evidence=(_IMPLEMENTATION_SOURCE, _CONTRACTS["correct"]),
     check_availability=_correct_availability,
     call=_correct_call,
+    response_fields=_WORKCASE_RESULT_FIELDS,
 )
 RECOVER_INVALID_WORKCASE_IMPLEMENTATION = OperationImplementation(
     required_inputs=RECOVER_REQUIRED_INPUTS,
@@ -1531,6 +1546,7 @@ RECOVER_INVALID_WORKCASE_IMPLEMENTATION = OperationImplementation(
     evidence=(_IMPLEMENTATION_SOURCE, _CONTRACTS["recover"]),
     check_availability=_recover_availability,
     call=_recover_call,
+    response_fields=_WORKCASE_RESULT_FIELDS,
 )
 
 

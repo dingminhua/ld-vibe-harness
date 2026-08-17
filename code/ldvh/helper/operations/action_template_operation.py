@@ -324,6 +324,7 @@ ACTION_TEMPLATE_CANDIDATE_IMPLEMENTATION = OperationImplementation(
     evidence=_IMPLEMENTATION_EVIDENCE,
     check_availability=_candidate_availability,
     call=_candidate_call,
+    response_fields=("items", "unchecked_conditions"),
 )
 ACTION_TEMPLATE_CONTENT_IMPLEMENTATION = OperationImplementation(
     required_inputs=CONTENT_REQUIRED_INPUTS,
@@ -331,6 +332,7 @@ ACTION_TEMPLATE_CONTENT_IMPLEMENTATION = OperationImplementation(
     evidence=_IMPLEMENTATION_EVIDENCE,
     check_availability=_content_availability,
     call=_content_call,
+    response_fields=("items",),
 )
 
 

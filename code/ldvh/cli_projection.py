@@ -36,6 +36,7 @@ class ParsedCLICommand:
     operation_key: str | None
     request_path: str | None = None
     example: bool = False
+    summary: bool = False
     field_selectors: tuple[str, ...] = ()
 
 
@@ -57,12 +58,19 @@ def parse_cli_arguments(
     positionals: list[str] = []
     request_path: str | None = None
     example = False
+    summary = False
     fields_seen = False
     field_selectors: tuple[str, ...] = ()
     problems: list[str] = []
     index = 1
     while index < len(arguments):
         token = arguments[index]
+        if token == "--summary":
+            if summary:
+                problems.append("--summary 不得重复")
+            summary = True
+            index += 1
+            continue
         if token == "--request":
             if request_path is not None:
                 problems.append("--request 不得重复")
@@ -124,6 +132,17 @@ def parse_cli_arguments(
             problems.append("--example 不得与 --request 同时使用")
         if fields_seen:
             problems.append("--example 不得与 --fields 同时使用")
+    if summary:
+        if request_kind != "capabilities":
+            problems.append("--summary 只允许用于 capabilities")
+        if operation_key is not None:
+            problems.append("--summary 不得与 operation_key 同时使用")
+        if request_path is not None:
+            problems.append("--summary 不得与 --request 同时使用")
+        if fields_seen:
+            problems.append("--summary 不得与 --fields 同时使用")
+        if example:
+            problems.append("--summary 不得与 --example 同时使用")
 
     return (
         ParsedCLICommand(
@@ -131,6 +150,7 @@ def parse_cli_arguments(
             operation_key=operation_key,
             request_path=request_path,
             example=example,
+            summary=summary,
             field_selectors=field_selectors,
         ),
         tuple(problems),

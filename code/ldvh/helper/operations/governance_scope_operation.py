@@ -284,6 +284,15 @@ GOVERNANCE_SCOPE_IMPLEMENTATION = OperationImplementation(
     evidence=_IMPLEMENTATION_EVIDENCE,
     check_availability=_check_availability,
     call=_call,
+    response_fields=(
+    "workspace_root",
+    "config_path",
+    "config_status",
+    "scope_status",
+    "object_resolutions",
+    "registered_project_candidates",
+    "source_refs",
+    ),
 )
 
 __all__ = ["GOVERNANCE_SCOPE_IMPLEMENTATION", "OPERATION_KEY"]

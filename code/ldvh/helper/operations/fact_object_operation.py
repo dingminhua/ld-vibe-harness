@@ -356,6 +356,7 @@ FACT_OBJECT_IMPLEMENTATION = OperationImplementation(
     evidence=(*_IMPLEMENTATION_EVIDENCE, _RESULT_CONTRACT),
     check_availability=_check_availability,
     call=_call,
+    response_fields=("items",),
 )
 
 __all__ = ["FACT_OBJECT_IMPLEMENTATION", "OPERATION_KEY"]
