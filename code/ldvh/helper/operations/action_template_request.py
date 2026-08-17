@@ -9,12 +9,13 @@ from ldvh.helper.requests import CommonRequest, valid_operation_key
 CANDIDATE_REQUIRED_INPUTS: tuple[str, ...] = ()
 CANDIDATE_OPTIONAL_INPUTS: tuple[str, ...] = ("arguments.template_keys",)
 CONTENT_REQUIRED_INPUTS: tuple[str, ...] = ("arguments.template_keys",)
-CONTENT_OPTIONAL_INPUTS: tuple[str, ...] = ()
+CONTENT_OPTIONAL_INPUTS: tuple[str, ...] = ("arguments.heading_path",)
 
 
 @dataclass(frozen=True, slots=True)
 class ActionTemplateRequest:
     template_keys: tuple[str, ...]
+    heading_path: tuple[str, ...] | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -29,7 +30,8 @@ def parse_action_template_request(
     require_keys: bool,
 ) -> ActionTemplateRequestParseResult:
     problems: list[str] = []
-    unknown = sorted(set(request.arguments) - {"template_keys"})
+    known_fields = {"template_keys", "heading_path"}
+    unknown = sorted(set(request.arguments) - known_fields)
     if unknown:
         problems.append(f"arguments 包含未知字段: {', '.join(unknown)}")
     raw_keys = request.arguments.get("template_keys")
@@ -61,9 +63,28 @@ def parse_action_template_request(
         problems.append("authorization_reference 必须为空数组")
     if request.requested_disclosure is not None:
         problems.append("requested_disclosure 必须为 null")
+    raw_heading_path = request.arguments.get("heading_path")
+    heading_path: tuple[str, ...] | None = None
+    if raw_heading_path is not None:
+        if not require_keys:
+            problems.append("arguments.heading_path 只能在内容读取操作中使用")
+        elif not isinstance(raw_heading_path, list):
+            problems.append("arguments.heading_path 必须是 array")
+        elif len(raw_heading_path) not in {1, 2}:
+            problems.append("arguments.heading_path 长度只允许 1 或 2")
+        else:
+            parsed: list[str] = []
+            for index, heading in enumerate(raw_heading_path):
+                if not isinstance(heading, str) or not heading:
+                    problems.append(f"arguments.heading_path[{index}] 必须是非空 string")
+                else:
+                    parsed.append(heading)
+            if len(parsed) == len(raw_heading_path):
+                heading_path = tuple(parsed)
+
     if problems:
         return ActionTemplateRequestParseResult(None, tuple(problems))
-    return ActionTemplateRequestParseResult(ActionTemplateRequest(tuple(keys)), ())
+    return ActionTemplateRequestParseResult(ActionTemplateRequest(tuple(keys), heading_path), ())
 
 
 __all__ = [

@@ -172,7 +172,7 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     template_content = operations["read-action-template-content"]
     assert template_content["implementation"]["present"] is True
     assert template_content["required_inputs"] == ["arguments.template_keys"]
-    assert template_content["optional_inputs"] == []
+    assert template_content["optional_inputs"] == ["arguments.heading_path"]
     assert template_content["availability"] is None
     governance = operations["resolve-governance-scope"]
     _assert_working_tree_implementation(
