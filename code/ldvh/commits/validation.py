@@ -25,6 +25,13 @@ _SIGNATURE_TRAILERS = (
     "LDVH-Model-Name",
     "LDVH-Agent-Runtime-Name",
 )
+# 03 §9.4: an unobservable field is expressed by *omitting* its trailer, not by writing a
+# placeholder. These literals are almost always a writer confusing JSON `null` with a Git
+# trailer value; the validator rejects them so the malformed signature is not recorded as a
+# real identity string.
+_SIGNATURE_LITERAL_NULL_VALUES = frozenset(
+    {"null", "none", "nil", "n/a", "na", "undefined", "void"}
+)
 _RETIRED_SIGNATURE_TRAILERS = (
     "Session-ID",
     "Model-ID",
@@ -239,6 +246,19 @@ def _signature_trailer_issues(
             issues.append(_issue("signature_trailer_multiple", f"footer 的 {name}: 必须恰好声明一次"))
     if present == 0:
         issues.append(_issue("signature_trailer_missing", "footer 至少需要一个非空 LDVH 三字段署名 trailer"))
+    # 03 §9.4: a trailer value that is a null/placeholder literal is rejected. An
+    # unobservable field must be *omitted*, never written as a literal. This catches the
+    # common JSON-null-to-Git-trailer mistake before parse_signature records it as an
+    # identity string.
+    for name in _SIGNATURE_TRAILERS:
+        values = trailers.get(name, [])
+        if values and values[0].strip().lower() in _SIGNATURE_LITERAL_NULL_VALUES:
+            issues.append(
+                _issue(
+                    "signature_trailer_literal_null",
+                    f"footer 的 {name}: 不得为 null/none/n/a 等字面量；不可观察时应省略该 trailer",
+                )
+            )
     if any(trailers.get(name) for name in _RETIRED_SIGNATURE_TRAILERS):
         issues.append(
             _issue(

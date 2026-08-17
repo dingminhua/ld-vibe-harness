@@ -15,6 +15,7 @@ from typing import Any
 from ldvh.environment_sync import (
     _has_ldvh_frontmatter,
     _read_skill_version,
+    _SKILL_FILENAME,
     inspect_hook_surface,
 )
 from ldvh.governance.models import LocatorSource, ScopeDescriptor
@@ -113,6 +114,13 @@ def _run_git(worktree: Path, *args: str) -> str | None:
 
 def _skill_check(skill_path: str, platform: str) -> dict[str, Any]:
     target = Path(skill_path)
+    # 09 §5.9.1: skill_path points at the target SKILL.md file; a caller may pass the
+    # skill directory instead. Resolve a directory (not itself named SKILL.md) to its
+    # SKILL.md so is_file() and byte alignment behave consistently; a directory with no
+    # SKILL.md is "not found". This is read-only inspection; write conflicts stay in
+    # environment_sync.
+    if target.is_dir() and target.name != _SKILL_FILENAME:
+        target = target / _SKILL_FILENAME
     # 本文件位于 code/ldvh/helper/operations/，parents[4] 为仓库根；
     # canonical Skill 源是仓库根下的 skill/SKILL.md（09 §5.2），不是 code/skill/SKILL.md。
     project_skill = Path(__file__).resolve().parents[4] / _PROJECT_SKILL_REL

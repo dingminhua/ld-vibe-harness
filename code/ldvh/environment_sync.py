@@ -41,6 +41,16 @@ from ldvh.git_hooks.commit_msg import (
 _PLATFORM_REQUIRED = "platform 必须是非空字符串标签"
 _SKILL_PATH_REQUIRED = "skill_path 必须是非空绝对路径"
 _SKILL_VERSION_MARKER = "> Skill 版本"
+_SKILL_FILENAME = "SKILL.md"
+
+__all__ = [
+    "SkillInspection",
+    "SkillUpdate",
+    "inspect_skill",
+    "update_skill",
+    "skill_digest",
+    "_SKILL_FILENAME",
+]
 
 _LDVH_FRONTMATTER_NAME = "ldvh"
 
@@ -83,7 +93,14 @@ def _validate_platform(value: object) -> str:
 def _validate_skill_path(value: object) -> Path:
     if not isinstance(value, str) or not value.strip() or not Path(value).is_absolute():
         raise ValueError(_SKILL_PATH_REQUIRED)
-    return Path(value)
+    target = Path(value)
+    # 09 §5.9.1: skill_path points at the target SKILL.md file; a caller may pass the
+    # skill directory instead. Resolve a directory (not itself named SKILL.md) to its
+    # SKILL.md so is_file()/read_bytes() behave consistently. A directory literally
+    # named SKILL.md is a malformed target and stays as-is (a write conflict).
+    if target.is_dir() and target.name != _SKILL_FILENAME:
+        target = target / _SKILL_FILENAME
+    return target
 
 
 def _read_skill_version(path: Path) -> str | None:
