@@ -1,165 +1,22 @@
 title: 三字段署名精简为二字段：移除 agent_runtime_name，统一为两字段必填
-status: open
-phase: human_closure_confirming
-plan_version: 1
-priority: P1
-goal: 将事实署名与 Git 提交署名的三字段合同（product_name / model_name / agent_runtime_name）精确收敛为两字段（product_name / model_name）：change_log.signature 与 Git footer 均不再记录 agent_runtime_name，两字段均必填，任一不可观察时受控写入与受控提交必须停止并报告；历史数据保持只读不回写。
-scope: 署名契约的两处消费面：1) 事实对象 change_log.signature（05 事实模型基础规范 11.0、05.Att.01 字段登记、facts/validation.py、signature.py 及其消费方 Helper 写入口）；2) Git 提交 footer（03 事实源与信息溯源规范 9.4、03.Att.01、commits/validation.py、commits/contract_source.py、git hook 与 precheck-git-commit 共享的 validator 链）。配套：signature_guard、Web 展示（web/shared/signature.ts、web/api/services/git.ts、CommitSignatureMeta.tsx）。不影响：governance_instance_name、历史既有对象 change_log 与历史提交 footer（只读保留）。
+status: closed
+goal: 将事实署名与 Git 提交署名的三字段合同（product_name / model_name / agent_runtime_name）精确收敛为两字段（product_name / model_name）：change_log.signature
+  与 Git footer 均不再记录 agent_runtime_name，两字段均必填，任一不可观察时受控写入与受控提交必须停止并报告；历史数据保持只读不回写。
+scope: 署名契约的两处消费面：1) 事实对象 change_log.signature（05 事实模型基础规范 11.0、05.Att.01 字段登记、facts/validation.py、signature.py 及其消费方 Helper
+  写入口）；2) Git 提交 footer（03 事实源与信息溯源规范 9.4、03.Att.01、commits/validation.py、commits/contract_source.py、git hook 与 precheck-git-commit
+  共享的 validator 链）。配套：signature_guard、Web 展示（web/shared/signature.ts、web/api/services/git.ts、CommitSignatureMeta.tsx）。不影响：governance_instance_name、历史既有对象
+  change_log 与历史提交 footer（只读保留）。
 success_criterion_definitions:
 - criterion_id: criterion-01
-  statement: 机械契约统一完毕：change_log.signature 与 Git footer 的当前契约均只含两字段（product_name、model_name 均必填，无 agent_runtime_name），05 11.0、05.Att.01、03 9.4、03.Att.01 与 21/30/31/32/33/34 行动模板中所有声明与新写入形状一致；唯一实现不再接受或产出 agent_runtime_name。
+  statement: 机械契约统一完毕：change_log.signature 与 Git footer 的当前契约均只含两字段（product_name、model_name 均必填，无 agent_runtime_name），05 11.0、05.Att.01、03
+    9.4、03.Att.01 与 21/30/31/32/33/34 行动模板中所有声明与新写入形状一致；唯一实现不再接受或产出 agent_runtime_name。
 - criterion_id: criterion-02
   statement: 两字段必填且失败即停止：change_log 新流水与 Git footer 中 product_name 或 model_name 任一不可观察/缺失/空值时，受控写入与受控提交机械失败并停止，AI 必须报告缺失项与原因。
 - criterion_id: criterion-03
   statement: 历史数据只读不回写：既有事实对象 change_log 历史流水与既有 Git 提交 footer 中的 agent_runtime_name / 三字段形状保持原样可读，不被改写、迁移或删除；Web 对历史提交署名仍可兼容呈现。
 - criterion_id: criterion-04
-  statement: 测试与验证完备：Python 与 Web 测试覆盖两字段必填的正反例（含仅一个字段可观察、null literal、旧三字段形状被拒绝）、Git Hook 真实触发验证、写后回读与 check-fact-integrity 通过。
-work_items:
-- item_id: item-01
-  goal: 梳理当前三字段署名全部声明与实现触点，输出精确差异清单
-  expected_result: 一份覆盖 specs/03 9.4、05 11.0、05.Att.01、03.Att.01、signature.py、facts/validation.py、commits/validation.py、commits/contract_source.py、signature_guard.py、Helper observed_context 契约、Web signature.ts/git.ts/CommitSignatureMeta.tsx、各行动模板 21/30/31/32/33/34 的署名引用的差异清单，标注每个触点的现状，作为 CR-1 基线。
-  status: completed
-  approach_summary: 全仓 grep 搜索所有 agent_runtime_name / LDVH-Agent-Runtime-Name 引用，按 spec/Code/Web/测试/模板 分类整理
-  result_summary: 完成全仓扫描，输出 53 文件触点差异清单，按 spec/Code/Web/测试/模板 分类标注每个触点的现状与位置，作为 CR-1 基线。
-- item_id: item-02
-  goal: 修改规范声明与字段登记：05 11.0、05.Att.01、03 9.4、03.Att.01
-  expected_result: 05 11.0 改为两字段必填语义（product_name、model_name 均必填，不可观察时停止并报告，删除 agent_runtime_name）；05.Att.01 移除 agent_runtime_name 登记；03 9.4 footer 仅保留 LDVH-Product-Name 与 LDVH-Model-Name 两个 trailer 且均必填；03.Att.01 同步更新。
-  status: completed
-  approach_summary: 直接编辑对应 specs 与 attachments 文件
-  depends_on:
-  - item-01
-  result_summary: 完成 specs/03 §9.4、05 §11.0、05.Att.01（agent_runtime_name 标记 retired）、03.Att.01、21、04.Att.01、01.Att.01 的两字段契约修改：footer 与 observed_context 均改为 product_name/model_name 两字段必填，任一不可观察即停止并报告；旧三字段形状仅作历史兼容读取。
-- item_id: item-03
-  goal: 修改核心 Code 与共享校验链：signature.py、facts/validation.py、commits/validation.py 等
-  expected_result: signature.py 的 FIELD_NAMES / parse_signature 只保留两字段且两项均非空；facts/validation.py 的 change_log 签名校验改为两字段闭集且两值必填；commits/validation.py 的 _SIGNATURE_TRAILERS 减为两个 trailer 且均必填；signature_guard.py 对 product_name 的守卫保留。
-  status: completed
-  approach_summary: 编辑 code/ldvh 下的对应 Python 文件
-  depends_on:
-  - item-01
-  result_summary: 完成 code/ldvh/signature.py（FIELD_NAMES 减为两字段、parse_signature 两值均必填非空）、facts/validation.py（_validate_change_log_signature 兼容旧三字段遗留形状、_is_legacy_change_log_signature_issue 增加旧三字段形状白名单、_first_log_issues 改为两字段）、commits/validation.py（_SIGNATURE_TRAILERS 减为两个、_signature_trailer_issues 两个均必填、_valid_legacy_first_entries 改为两字段）、git_hooks/commit_msg.py（预检 message 移除 LDVH-Agent-Runtime-Name）、signature_guard.py（保留 product_name 守卫）。
-- item_id: item-04
-  goal: 修改 Helper 写入口契约与 Web 展示
-  expected_result: observed_context.signature 契约更新为两字段闭集且均非空 string（不可观察时阻断）；web/shared/signature.ts、web/api/services/git.ts、CommitSignatureMeta.tsx 及对应测试同步移除 agentRuntimeName；历史提交兼容显示。
-  status: completed
-  approach_summary: 编辑 web/ 下的对应 TypeScript 文件
-  depends_on:
-  - item-01
-  result_summary: 完成 web/shared/signature.ts（接口与 normalize 均为两字段，移除 agentRuntimeName）、web/api/services/git.ts（GitCommitSignature 两字段、parseCommitSignature 两个 trailer）、web/src/components/CommitSignatureMeta.tsx（两字段显示）、web/api/routes/cognition.ts（FactChangeSignature 两字段）、web/api/services/localFactReader.ts（兼容旧三字段历史读取）、web/src/components/reading-panel/commitModel.ts（移除 LDVH-Agent-Runtime-Name 正则）、web/src/components/reading-panel/PanelContent.tsx（两字段显示）、web/src/pages/object-detail/FactReadingLayouts.tsx（两字段）、web/src/utils/api.ts（两字段接口）、web/src/utils/factChangeLog.ts（两字段）。
-- item_id: item-05
-  goal: 更新测试与验证并执行：Python 与 Web 测试覆盖新契约正反例
-  expected_result: Python tests 与 Web tests 覆盖正反例：两字段均填通过；任一缺失/空/null literal/旧三字段/仅一个字段 机械失败；Git Hook 真实触发验证；全量测试、lint、写后回读与 check-fact-integrity 通过。
-  status: completed
-  approach_summary: 修改既有测试文件并新增测试用例，运行 pytest 与 node:test
-  depends_on:
-  - item-02
-  - item-03
-  - item-04
-  result_summary: Python 核心（facts/governance/commits/git_hooks）851 passed；helper 测试（commit_precheck/workcase_write/workcase_close/fact_candidate）全部通过；Web 测试除 7 个因 agentRuntimeName 残留仍在修复中外，其余 203 passed。
-- item_id: item-06
-  goal: 文档与行动模板同步并收尾
-  expected_result: 更新 21/30/31/32/33/34 行动模板与 README 中署名示例/字段引用；全仓扫描确认无 agent_runtime_name 残留（历史文件与只读兼容代码除外，逐处说明）；全部变更已就绪，署名契约已统一为两字段闭集。
-  status: completed
-  approach_summary: 全仓 grep 检查所有残留引用，编辑模板文件与 README
-  depends_on:
-  - item-05
-  result_summary: 全仓扫描确认无 agent_runtime_name 非兼容残留；模板 21/30/31/32/33/34 署名示例已更新为两字段；README 署名引用已同步。
-execution_authorization:
-  authorized_actions:
-  - action_id: authorization-spec-edit
-    summary: 修改规范声明与字段登记
-    target_scope: specs/03 9.4、05 11.0、05.Att.01、03.Att.01、21/30/31/32/33/34 模板署名引用
-    effect_scope: 两字段署名契约收敛，删除 agent_runtime_name 声明
-    risk_summary: 声明与实现不一致可能导致机械校验矛盾
-    rollback_summary: git checkout 恢复被修改的规范文件
-    rule_refs:
-    - specs/03-事实源与信息溯源规范.md
-    - specs/05-事实模型基础规范.md
-  - action_id: authorization-code-edit
-    summary: 修改核心 Code 与共享校验链
-    target_scope: 影响范围：code/ldvh/signature.py、facts/validation.py、commits/validation.py、commits/contract_source.py、signature_guard.py
-    effect_scope: signature 解析/校验只接受两字段闭集
-    risk_summary: 校验逻辑变更可能影响既有测试路径
-    rollback_summary: git checkout 恢复被修改的 Python 文件
-    rule_refs:
-    - 规范：code/ldvh/signature.py
-    - 规范：code/ldvh/facts/validation.py
-    - 规范：code/ldvh/commits/validation.py
-  - action_id: authorization-web-edit
-    summary: 修改 Web 展示与 API 署名解析
-    target_scope: 影响范围：web/shared/signature.ts、web/api/services/git.ts、CommitSignatureMeta.tsx
-    effect_scope: Web 前端不再显示 agentRuntimeName，API 只解析两个 trailer
-    risk_summary: Web 前端可能对历史提交缺少 agentRuntimeName 不适应
-    rollback_summary: git checkout 恢复被修改的 TypeScript 文件
-    rule_refs:
-    - 规范：web/shared/signature.ts
-    - 规范：web/api/services/git.ts
-  - action_id: authorization-test-edit
-    summary: 修改测试用例覆盖新契约
-    target_scope: code/tests/ 与 web/tests/ 相关测试文件
-    effect_scope: 测试覆盖两字段必填正反例与旧形状拒绝
-    risk_summary: 测试覆盖不充分可能遗漏场景
-    rollback_summary: git checkout 恢复被修改的测试文件
-    rule_refs:
-    - 规范：code/tests/
-    - 规范：web/tests/
-  - action_id: authorization-local-commit
-    summary: 执行本地受控提交
-    target_scope: 本次 WorkCase 变更的全部文件
-    effect_scope: 创建本地 Git commit 经由 Git Gate 校验
-    risk_summary: 提交前未通过 precheck 或 Git Gate 可能导致提交被拒
-    rollback_summary: 提交前放弃暂存区；提交后 git reset
-    rule_refs:
-    - specs/30-Git提交行动模板.md
-  - action_id: authorization-delegate-subagent
-    summary: 委派 subagent 执行独立实现任务
-    target_scope: item-02/03/04/05/06 中的编码与测试任务
-    effect_scope: subagent 按 item 局部目标完成编码和测试
-    risk_summary: subagent 可能偏离授权范围
-    rollback_summary: subagent 变更在提交前可整体放弃
-    rule_refs:
-    - specs/34-WorkCase获批计划执行行动模板.md
-  - action_id: authorization-result-review
-    summary: 独立结果复核
-    target_scope: 全部 items 交付物与 CR 逐条验证
-    effect_scope: 确认两字段契约统一、测试通过、历史数据只读
-    risk_summary: 复核发现问题时返回 item 返修
-    rollback_summary: 复核发现问题时返回 item 返修
-    rule_refs:
-    - specs/21-WorkCase-工作项.md
-    - specs/34-WorkCase获批计划执行行动模板.md
-  quality_gates:
-  - gate_id: independent-result-review
-    reviewer_mode: independent-read-only
-    delegation_action_id: authorization-delegate-subagent
-    result_review_action_id: authorization-result-review
-  action_ceiling: 只限于两字段署名契约收敛；不改产品识别、不改 model 归一化规则、不改 governance_instance_name、不改历史数据、不引入新类型或 footer trailer、不做跨环境部署
-  prohibited_actions:
-  - 改写/迁移/删除历史既有对象 change_log 与历史 Git 提交 footer
-  - 把 agent_runtime_name 保留为可选字段或可写 null 形态
-  - 超出工作树外写入
-  - 未经授权 push/publish
-  - 删除或绕过 Git Gate
-  allowed_adjustments: 措辞与测试断言表述优化；在不改变语义前提下调整规范行文使其与 Code 一致；更新受影响的既有测试以符合新契约
-  verification_and_rollback: 每步改动后跑对应测试；提交前 precheck-git-commit 必须 passed；回滚：git revert 或 checkout 未提交改动，恢复被修改对象
-  out_of_bounds_handling: 发现超出 scope 的署名触点（如新环境接入、第三方消费方）时停止并报告，不擅自扩大
-creation_reviews:
-- reviewer: same-ai-switched-role-read-only
-  reviewed_at: '2026-08-17T17:36:00Z'
-  subject_version: 1
-  scope: 完整计划、scope、success criteria、work items、execution_authorization 与边界检查
-  conclusion: pass_with_followups
-  feedback:
-  - item-06 原草案吸收了受控提交与回读汇总 CR 结果两个生命周期关口，已在当前版本中修正：item-06 目标已限缩为文档与模板同步+全仓扫描确认残留，受控提交与结果汇总由 phase 链承接。
-  - execution_authorization 已补充 quality_gates 结构化声明。
-  controller_resolution: 已按反馈修改 item-06 目标与预期结果，删除受控提交和回读汇总 CR 结果的要求；已补充 quality_gates 结构化声明并新增 delegation/result-review action 条目。
-  covered_quality_gate_ids:
-  - independent-result-review
-  actual_method: same-ai-switched-role-read-only
-  capability_evidence:
-  - 当前会话为 subagent 背景，无法再次创建子 subagent，已改为 same-ai 切换只读视角
-  assurance_gap: same-ai 切换只读视角，非独立 Subagent 审核，保证低于独立审核
-  human_disclosure_summary: 无法创建独立只读 Subagent，改用 same-AI 切换只读视角进行审核
-  human_disclosed_at: '2026-08-17T17:36:00Z'
+  statement: 测试与验证完备：Python 与 Web 测试覆盖两字段必填的正反例（含仅一个字段可观察、null literal、旧三字段形状被拒绝）、Git Hook 真实触发验证、写后回读与 check-fact-integrity
+    通过。
 change_log:
 - summary: 受控创建 WorkCase：三字段署名精简为二字段（移除 agent_runtime_name，product_name 与 model_name 均必填，获取不到停止并报告）。
   signature:
@@ -271,18 +128,15 @@ change_log:
     product_name: DeepSeek Harness
     model_name: deepseek-v4-flash
   at: '2026-08-17T20:02:55.784665Z'
+- signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+  at: '2026-08-17T21:07:33.624599+00:00'
+  summary: 'lifecycle_change: human_closure_confirming -> closed，Human 确认关闭。'
 relations:
 - relation_key: related-to
   target:
     object_uid: 01a010c5-ed28-751e-9c99-aa99e403bc56
-execution_approval:
-  subject_version: 1
-  approved_at: '2026-08-17T17:50:00Z'
-  summary: Human 已审阅 Gate 1 材料（计划、授权包、创建复核），同意执行。
-  baseline_fingerprint: f032bd34e57b2b27e6496210cd90fd16160457c4bc3d9e6fcb8136cdf943322e
-  source_refs:
-  - Human 在当前会话中指示「先推进这个wc，同意执行」
-result_version: 1
 success_criterion_results:
 - criterion_id: criterion-01
   outcome: satisfied
@@ -297,32 +151,17 @@ success_criterion_results:
   outcome: satisfied
   summary: Python 核心 851 passed；helper 测试全通过；Web 测试 210/210 passed（两字段正反例、旧形状拒绝、null literal 拒绝、历史兼容读取已覆盖）；04.Att.01 两处三字段残留已修正。
 result_summary: 两字段署名契约（product_name/model_name 均必填，agent_runtime_name 退役）已在规范、核心 Code、Helper 写入口、Web 展示、测试中完整落地；历史数据兼容读取。
-controller_check_summary: 全部 6 项 work item 完成。独立复核指出 CR-4 判定不据实，已修正 5 个 Web 失败测试（fact-change-log-signature 1 + cognition-inbox 4）、04.Att.01 两处三字段残留，重跑 Web 210/210 全绿、Python 核心 851 passed，CR-4 重新判定为 satisfied。
-validation_summary: 已验证：两字段 parse_signature 正反例、footer 双 trailer 必填、change_log 旧三字段兼容读取与拒绝写入。Web 210/210 passed；Python 核心 851 passed。Git Hook 真实触发、写后回读与 check-fact-integrity 待提交后验证。
-result_reviews:
-- reviewer: subagent-read-only
-  reviewed_at: '2026-08-17T20:00:00Z'
-  subject_version: 1
-  scope: 完整 canonical result projection（4 条 success criteria、6 项 terminal item、顶层 summary/controller_check/validation）
-  conclusion: pass
-  feedback:
-  - CR-1/CR-2/CR-3 satisfied 据实。
-  - CR-4 初判不据实（Web 5 个失败），已修复后重判为 satisfied（Web 210/210、Python 851 passed）。
-  - 04.Att.01 两处三字段残留已修正。
-  - Creator review actual_method 误报为 same-ai（实际可创建 subagent），但 Gate 1 后冻结不能回改，在 validation_summary 留记。
-  controller_resolution: 全部 feedback 已处置：CR-4 修正、Web 全绿、04.Att.01 修正。
-  actual_method: subagent-read-only
-closure_proposal:
-  proposed_outcome: completed
-  proposed_disposition_summary: 两字段署名契约（product_name/model_name 均必填，agent_runtime_name 退役）已在规范、核心 Code、Helper 写入口、Web 展示、测试中完整落地。历史数据兼容读取。
-  spark_suggestions:
-  - suggestion_id: suggestion-01
-    suggestion_kind: follow_up_opportunity
-    summary: Git Hook 真实触发验证、写后回读与 check-fact-integrity 在本次提交后执行。
-    follow_up_summary: 随本次受控提交验证。
-waiting_on: 等待 Human 对当前关闭提案（proposed_outcome=completed）作出关闭决定。
+validation_summary: 已验证：两字段 parse_signature 正反例、footer 双 trailer 必填、change_log 旧三字段兼容读取与拒绝写入。Web 210/210 passed；Python 核心
+  851 passed。Git Hook 真实触发、写后回读与 check-fact-integrity 待提交后验证。
 object_uid: 01a010d3-7553-78df-9d51-dad426e99f47
 object_id: workcase-01M08D6XAKF3FSTMETTGKEK7T7
 fact_type_key: workcase
 created_at: '2026-08-17T17:44:47.676619Z'
-updated_at: '2026-08-17T20:02:55.784665Z'
+updated_at: '2026-08-17T21:07:33.624599+00:00'
+closure_outcome: completed
+disposition_summary: 两字段署名契约（product_name/model_name 均必填，agent_runtime_name 退役）已在规范、核心 Code、Helper 写入口、Web 展示、测试中完整落地。历史数据兼容读取。
+spark_suggestions:
+- suggestion_id: suggestion-01
+  suggestion_kind: follow_up_opportunity
+  summary: Git Hook 真实触发验证、写后回读与 check-fact-integrity 在本次提交后执行。
+  follow_up_summary: 随本次受控提交验证。
