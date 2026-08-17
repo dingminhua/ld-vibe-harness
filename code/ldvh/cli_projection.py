@@ -35,6 +35,7 @@ class ParsedCLICommand:
     request_kind: RequestKind
     operation_key: str | None
     request_path: str | None = None
+    message_file_path: str | None = None
     example: bool = False
     summary: bool = False
     field_selectors: tuple[str, ...] = ()
@@ -57,6 +58,7 @@ def parse_cli_arguments(
     request_kind: RequestKind = arguments[0]  # type: ignore[assignment]
     positionals: list[str] = []
     request_path: str | None = None
+    message_file_path: str | None = None
     example = False
     summary = False
     fields_seen = False
@@ -83,6 +85,20 @@ def parse_cli_arguments(
                 problems.append("--request 必须紧随一个非空路径")
                 continue
             request_path = arguments[index]
+            index += 1
+            continue
+        if token == "--message-file":
+            if message_file_path is not None:
+                problems.append("--message-file 不得重复")
+                index += 1
+                if index < len(arguments) and not arguments[index].startswith("--"):
+                    index += 1
+                continue
+            index += 1
+            if index >= len(arguments) or arguments[index].startswith("--"):
+                problems.append("--message-file 必须紧随一个非空路径")
+                continue
+            message_file_path = arguments[index]
             index += 1
             continue
         if token == "--fields":
@@ -132,6 +148,8 @@ def parse_cli_arguments(
             problems.append("--example 不得与 --request 同时使用")
         if fields_seen:
             problems.append("--example 不得与 --fields 同时使用")
+        if message_file_path is not None:
+            problems.append("--example 不得与 --message-file 同时使用")
     if summary:
         if request_kind != "capabilities":
             problems.append("--summary 只允许用于 capabilities")
@@ -143,12 +161,17 @@ def parse_cli_arguments(
             problems.append("--summary 不得与 --fields 同时使用")
         if example:
             problems.append("--summary 不得与 --example 同时使用")
+        if message_file_path is not None:
+            problems.append("--summary 不得与 --message-file 同时使用")
+    if message_file_path is not None and request_kind != "call":
+        problems.append("--message-file 只允许用于 call")
 
     return (
         ParsedCLICommand(
             request_kind=request_kind,
             operation_key=operation_key,
             request_path=request_path,
+            message_file_path=message_file_path,
             example=example,
             summary=summary,
             field_selectors=field_selectors,

@@ -1935,6 +1935,46 @@ def test_f2_fields_accepts_object_uid_for_spark(tmp_path: Path) -> None:
     assert set(card["fields"].keys()) == {"object_uid", "title"}
 
 
+def test_f2_fields_spark_omits_excerpts_when_fields_provided(tmp_path: Path) -> None:
+    """When fields are provided for Spark F2, excerpts must be empty."""
+    workspace, project = _fixture(tmp_path)
+    spark = _spark("Excerpt omission test")
+    spark["summary"] = "界" * 600
+    _create(workspace, project, "spark", spark)
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["spark"], fields=["title", "status", "priority"]),
+    ).response
+
+    assert response["outcome"] == "ok"
+    card = response["result"]["cards"][0]
+    assert card["excerpts"] == []
+    assert "summary" not in card["fields"]
+
+
+def test_f2_spark_keeps_excerpts_when_fields_not_provided(tmp_path: Path) -> None:
+    """When fields are not provided, Spark F2 must still carry excerpts."""
+    workspace, project = _fixture(tmp_path)
+    spark = _spark("Fields-not-provided excerpt test")
+    spark["summary"] = "界" * 512 + "尾"
+    spark["intent"] = "Test intent"
+    _create(workspace, project, "spark", spark)
+
+    response = handle_request(
+        "call",
+        "find-fact-object-candidates",
+        _payload(workspace, project, "F2", fact_type_keys=["spark"]),
+    ).response
+
+    assert response["outcome"] == "ok"
+    card = response["result"]["cards"][0]
+    assert len(card["excerpts"]) == 2
+    assert card["excerpts"][0]["field_path"] == "intent"
+    assert card["excerpts"][1]["field_path"] == "summary"
+
+
 def test_f2_fields_workcase_accepts_direct_projection_fields(tmp_path: Path) -> None:
     workspace, project = _fixture(tmp_path)
     _create(workspace, project, "workcase", _workcase())
