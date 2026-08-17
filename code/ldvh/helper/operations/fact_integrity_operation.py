@@ -274,6 +274,7 @@ FACT_INTEGRITY_IMPLEMENTATION = OperationImplementation(
     evidence=_IMPLEMENTATION_EVIDENCE,
     check_availability=_check_availability,
     call=_execute,
+    response_fields=("status", "object_count", "uid_index_object_count", "problems"),
 )
 
 __all__ = ["FACT_INTEGRITY_IMPLEMENTATION", "OPERATION_KEY", "execute_fact_integrity"]

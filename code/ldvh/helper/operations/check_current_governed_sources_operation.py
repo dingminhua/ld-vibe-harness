@@ -241,6 +241,7 @@ CHECK_CURRENT_GOVERNED_SOURCES_IMPLEMENTATION = OperationImplementation(
     evidence=_IMPLEMENTATION_EVIDENCE,
     check_availability=_check_availability,
     call=_execute,
+    response_fields=("status", "rules", "facts"),
 )
 
 __all__ = ["CHECK_CURRENT_GOVERNED_SOURCES_IMPLEMENTATION", "OPERATION_KEY"]

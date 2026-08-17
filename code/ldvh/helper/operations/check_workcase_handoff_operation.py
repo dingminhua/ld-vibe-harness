@@ -261,6 +261,16 @@ CHECK_WORKCASE_HANDOFF_IMPLEMENTATION = OperationImplementation(
     evidence=(*_IMPLEMENTATION_EVIDENCE, _CONTRACT),
     check_availability=_check_availability,
     call=_call,
+    response_fields=(
+        "actual_ref",
+        "canonical_path",
+        "carrier",
+        "source_content_fingerprint",
+        "current_snapshot_projection",
+        "handoff_allowed",
+        "handoff_reason",
+        "next_required_control_step",
+    ),
 )
 
 __all__ = ["CHECK_WORKCASE_HANDOFF_IMPLEMENTATION", "OPERATION_KEY"]

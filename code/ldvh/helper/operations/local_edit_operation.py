@@ -95,6 +95,9 @@ LOCAL_EDIT_IMPLEMENTATION = OperationImplementation(
     evidence=_IMPLEMENTATION_EVIDENCE,
     check_availability=_check_availability,
     call=_call,
+    response_fields=(
+    "items",
+    ),
 )
 
 __all__ = ["LOCAL_EDIT_IMPLEMENTATION", "OPERATION_KEY"]

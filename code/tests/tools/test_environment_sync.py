@@ -151,6 +151,49 @@ class TestReadOnlyZeroWrite:
         assert target.read_bytes() == original
 
 
+class TestDirectorySkillPath:
+    """09 §5.9.1: skill_path may point at the skill directory; the directory is
+    resolved to its SKILL.md so is_file()/read_bytes() behave consistently."""
+
+    def inspect_via_directory(self, tmp_path: Path, target: Path):
+        # make target byte-identical to canonical so alignment is determinable
+        target.write_bytes(CANONICAL_SKILL.read_bytes())
+        return inspect_skill(
+            platform="p",
+            skill_path=str(tmp_path),  # the directory, not the file
+            source_path=CANONICAL_SKILL,
+        )
+
+    def test_inspect_resolves_directory_to_skill_md(self, tmp_path: Path) -> None:
+        target = tmp_path / "SKILL.md"
+        skill = self.inspect_via_directory(tmp_path, target)
+        assert skill.exists is True
+        assert skill.skill_path == str(target)
+        assert skill.byte_aligned is True
+
+    def test_inspect_directory_without_skill_md_reports_missing(self, tmp_path: Path) -> None:
+        skill = inspect_skill(
+            platform="p",
+            skill_path=str(tmp_path),  # directory with no SKILL.md
+            source_path=CANONICAL_SKILL,
+        )
+        assert skill.exists is False
+        assert skill.skill_path == str(tmp_path / "SKILL.md")
+
+    def test_directory_named_skill_md_is_not_resolved(self, tmp_path: Path) -> None:
+        dir_target = tmp_path / "SKILL.md"
+        dir_target.mkdir()
+        # A directory literally named SKILL.md must stay as-is (a write conflict
+        # target), never be joined onto. read-only inspect sees it as non-file.
+        skill = inspect_skill(
+            platform="p",
+            skill_path=str(dir_target),
+            source_path=CANONICAL_SKILL,
+        )
+        assert skill.exists is False
+        assert skill.skill_path == str(dir_target)
+
+
 class TestNoGateZeroWrite:
     def test_update_without_gate_does_not_write(self, tmp_path: Path) -> None:
         target = tmp_path / "SKILL.md"

@@ -111,6 +111,24 @@ def test_required_inputs_are_reported_for_multiple_read_operations(
         assert missing["fields"], operation
 
 
+def test_invalid_request_follow_up_points_at_repair_path(
+    monkeypatch,
+    current_specs_repository: Path,
+) -> None:
+    """invalid_request 的 follow_up 应指向修复路径,而非恒为"无专属后续信息"。
+
+    04/05 交互改进: 当 hints 可用时, follow_up.summary 引导调用方使用 --example
+    获取请求骨架并查阅 result_contract, 代替原来的空泛占位。
+    """
+    _bind_real_operations(monkeypatch, current_specs_repository)
+    response = handle_request("call", "read-fact-objects", json.dumps({"arguments": {}})).response
+    assert response["outcome"] == "invalid_request"
+    follow_up = response["follow_up"]
+    assert "--example" in follow_up["summary"]
+    assert "result_contract" in follow_up["summary"]
+    assert follow_up["suggested_operations"] == []
+
+
 def test_closed_set_violation_still_carries_hints(
     monkeypatch,
     current_specs_repository: Path,

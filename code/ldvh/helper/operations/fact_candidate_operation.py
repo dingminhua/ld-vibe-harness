@@ -1196,6 +1196,7 @@ FACT_CANDIDATE_IMPLEMENTATION = OperationImplementation(
     check_availability=_check_availability,
     call=_execute,
     input_examples=_INPUT_EXAMPLES,
+    response_fields=("recovery_manifest", "cards", "coverage"),
 )
 
 __all__ = ["FACT_CANDIDATE_IMPLEMENTATION", "OPERATION_KEY"]

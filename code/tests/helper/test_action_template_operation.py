@@ -30,11 +30,19 @@ CANDIDATE_FIELDS = {
 CONTENT_FIELDS = CANDIDATE_FIELDS | {"content", "content_sha256", "source_content_sha256"}
 
 
-def _request(*keys: str, disclosure: str | None = None, task: str | None = None) -> CommonRequest:
+def _request(
+    *keys: str,
+    heading_path: list[str] | None = None,
+    disclosure: str | None = None,
+    task: str | None = None,
+) -> CommonRequest:
+    arguments: dict[str, object] = {} if not keys else {"template_keys": list(keys)}
+    if heading_path is not None:
+        arguments["heading_path"] = heading_path
     return CommonRequest(
         task=task,
         work_object_locators=(),
-        arguments={} if not keys else {"template_keys": list(keys)},
+        arguments=arguments,
         requested_disclosure=disclosure,
         observed_context={},
         authorization_reference=(),
@@ -212,6 +220,71 @@ def test_git_commit_template_requires_real_index_and_real_hook_event(
     assert "不带 `--no-verify` 的原生本地 `git commit`" in content
     assert "该真实事件必须实际触发" in content
     assert "Helper 不可用或调用错误都必须保留诊断并停止本次 commit 创建" in content
+
+
+def test_content_heading_path_h2_returns_only_named_section(current_specs_repository: Path) -> None:
+    """heading_path with length 1 slices from the H2 (the definition scope itself) up to the next H2."""
+
+    repository = inspect_repository(current_specs_repository)
+    execution = ACTION_TEMPLATE_CONTENT_IMPLEMENTATION.call(
+        _request("git-commit", heading_path=["5. Git 提交行动模板定义"]),
+        repository,
+        OperationExecutionContext(cwd=current_specs_repository),
+    )
+
+    assert execution.outcome == "ok"
+    assert execution.result is not None
+    item = execution.result["items"][0]
+    content = item["content"]
+    assert content.startswith("## 5. Git 提交行动模板定义\n")
+    assert "行动模板声明" in content
+    assert "5.3 行动步骤与分支" in content
+    assert "## 6. 验证要求" not in content
+    assert hashlib.sha256(content.encode()).hexdigest() == item["content_sha256"]
+
+
+def test_content_heading_path_h3_returns_only_named_subsection(current_specs_repository: Path) -> None:
+    """heading_path with length 2 slices from the H3 up to the next same-or-higher level heading."""
+
+    repository = inspect_repository(current_specs_repository)
+    execution = ACTION_TEMPLATE_CONTENT_IMPLEMENTATION.call(
+        _request("git-commit", heading_path=["5. Git 提交行动模板定义", "5.3 行动步骤与分支"]),
+        repository,
+        OperationExecutionContext(cwd=current_specs_repository),
+    )
+
+    assert execution.outcome == "ok"
+    assert execution.result is not None
+    content = execution.result["items"][0]["content"]
+    assert content.startswith("### 5.3 行动步骤与分支\n")
+    assert "#### A. 建立当次提交边界" in content
+    assert "B. 形成可提交候选" in content
+    assert "C. 创建、回读与验证" in content
+    assert "### 5.4 输出、验证、回写与交还" not in content
+    assert "## 6. 验证要求" not in content
+
+
+def test_content_heading_path_unmatched_rejects_request(current_specs_repository: Path) -> None:
+    """A heading_path that does not match the template's definition range is an invalid request."""
+
+    repository = inspect_repository(current_specs_repository)
+    context = OperationExecutionContext(cwd=current_specs_repository)
+
+    with pytest.raises(OperationRequestError) as bad_h2:
+        ACTION_TEMPLATE_CONTENT_IMPLEMENTATION.call(
+            _request("git-commit", heading_path=["9. 不存在的章节"]),
+            repository,
+            context,
+        )
+    with pytest.raises(OperationRequestError) as bad_h3:
+        ACTION_TEMPLATE_CONTENT_IMPLEMENTATION.call(
+            _request("git-commit", heading_path=["5. Git 提交行动模板定义", "5.9 不存在的子节"]),
+            repository,
+            context,
+        )
+
+    assert "无法精确匹配" in bad_h2.value.problems[0]
+    assert "无法精确匹配" in bad_h3.value.problems[0]
 
 
 def test_candidate_and_content_share_hint_and_ignore_task_for_selection(

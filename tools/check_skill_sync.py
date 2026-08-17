@@ -8,7 +8,6 @@ steps:
 
 1. skill copy: project skill/SKILL.md vs the explicitly named --skill-path target
 2. commit-msg hook: state (managed/absent/conflict) and bundle version vs HOOK_BUNDLE_VERSION
-3. prepare-commit-msg hook: retired asset state
 4. Stop gate: .claude/hooks/ldvh-workcase-stop.py wrapper vs code/ldvh/hooks/workcase_stop.py
 5. worktree coverage: every worktree shares the same git common-dir hooks boundary
 
@@ -207,9 +206,7 @@ def main() -> int:
         return 2
     common_candidate = Path(common)
     common_dir = (
-        common_candidate.resolve()
-        if common_candidate.is_absolute()
-        else (worktree / common_candidate).resolve()
+        common_candidate.resolve() if common_candidate.is_absolute() else (worktree / common_candidate).resolve()
     )
     common_hooks = common_dir / "hooks"
 
@@ -220,14 +217,13 @@ def main() -> int:
         confirm_human_gate=args.confirm_human_gate,
     )
     hooks = check_hook_surface(common_hooks)
-    hook_ok = bool(hooks["commit-msg"]["aligned"]) and bool(hooks["prepare-commit-msg"]["aligned"])
+    hook_ok = bool(hooks["commit-msg"]["aligned"])
     stop_ok, stop_detail = check_stop_gate()
     wt_ok, wt_detail = check_worktree_coverage(worktree)
 
     checks = [
         ("skill", skill_ok, skill_detail),
         ("commit-msg", hook_ok, hooks["commit-msg"]),
-        ("prepare-commit-msg", bool(hooks["prepare-commit-msg"]["aligned"]), hooks["prepare-commit-msg"]),
         ("stop-gate", stop_ok, stop_detail),
         ("worktrees", wt_ok, wt_detail),
     ]

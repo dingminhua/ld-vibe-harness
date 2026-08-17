@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import os
 import re
 import shutil
@@ -21,6 +22,34 @@ from ldvh.hooks.commit_msg import CommitMsgGateResult
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 SOURCE_LAUNCHER = REPOSITORY_ROOT / "ldvh"
+
+
+def _managed_prepare_hook_content(runner: Path = SOURCE_LAUNCHER) -> str:
+    """Build a prepare-commit-msg hook that passes _existing_hook_state's
+    marker+digest check, without calling any deleted render function."""
+    body = (
+        "set -eu\n"
+        'if [ "$#" -lt 1 ]; then\n'
+        "  exit 0\n"
+        "fi\n"
+        "worktree=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0\n"
+        "run_runner() {\n"
+        "  if command -v python3 >/dev/null 2>&1; then\n"
+        f'    exec python3 {runner} "$@"\n'
+        "  elif command -v python >/dev/null 2>&1; then\n"
+        f'    exec python {runner} "$@"\n'
+        "  fi\n"
+        f'  exec {runner} "$@"\n'
+        "}\n"
+        'case "$1" in\n'
+        "  /*|[A-Za-z]:\\\\*|//*) message_file=$1 ;;\n"
+        '  *) message_file="$worktree/$1" ;;\n'
+        "esac\n"
+        'run_runner prepare-commit-msg --message-file "$message_file"\n'
+        ""
+    )
+    digest = hashlib.sha256(body.encode("utf-8")).hexdigest()
+    return f"#!/bin/sh\n{commit_msg._PREPARE_MANAGED_MARKER_PREFIX}{digest}\n{body}"
 
 
 @pytest.fixture(autouse=True)
@@ -323,20 +352,19 @@ def test_unknown_prepare_hook_conflicts_without_replacing_the_commit_gate(tmp_pa
     assert prepare_hook.read_bytes() == original_prepare
 
 
-def test_digest_valid_prepare_for_a_different_runner_is_not_deleted(tmp_path: Path) -> None:
+def test_marker_valid_prepare_for_a_foreign_runner_is_deleted(tmp_path: Path) -> None:
     workspace, main = _managed_project(tmp_path)
     common = Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
     prepare_hook = common / "hooks" / "prepare-commit-msg"
-    foreign = commit_msg.render_prepare_commit_msg_hook(commit_msg_runner=Path("/foreign/ldvh"))
+    foreign = _managed_prepare_hook_content(runner=Path("/foreign/ldvh"))
     prepare_hook.write_text(foreign, encoding="utf-8", newline="\n")
     prepare_hook.chmod(0o744)
 
     blocked = _install(workspace, main)
 
-    assert blocked.state == "conflict"
-    assert prepare_hook.read_text(encoding="utf-8") == foreign
-    assert prepare_hook.stat().st_mode & 0o777 == 0o744
-    assert not (common / "hooks" / "commit-msg").exists()
+    assert blocked.state == "managed", blocked
+    assert not (common / "hooks" / "prepare-commit-msg").exists()
+    assert (common / "hooks" / "commit-msg").is_file()
 
 
 def test_equivalent_local_common_hooks_path_is_retained(tmp_path: Path) -> None:
@@ -365,7 +393,7 @@ def test_exact_legacy_prepare_hook_is_upgraded_with_the_bundle(tmp_path: Path) -
     commit_hook.chmod(0o755)
     prepare_hook = common / "hooks" / "prepare-commit-msg"
     prepare_hook.write_text(
-        commit_msg._legacy_prepare_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER),
+        _managed_prepare_hook_content(),
         encoding="utf-8",
         newline="\n",
     )
@@ -389,7 +417,7 @@ def test_exact_legacy_gate_hook_is_upgraded_with_the_bundle(tmp_path: Path) -> N
     commit_hook.chmod(0o755)
     prepare_hook = common / "hooks" / "prepare-commit-msg"
     prepare_hook.write_text(
-        commit_msg._legacy_prepare_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER),
+        _managed_prepare_hook_content(),
         encoding="utf-8",
         newline="\n",
     )
@@ -401,6 +429,7 @@ def test_exact_legacy_gate_hook_is_upgraded_with_the_bundle(tmp_path: Path) -> N
     assert commit_hook.read_text(encoding="utf-8") == render_commit_msg_hook(
         commit_msg_runner=SOURCE_LAUNCHER, workspace_root=workspace
     )
+    assert not prepare_hook.exists()
 
 
 def test_previous_managed_bundle_version_is_upgraded_with_the_retired_prepare(tmp_path: Path) -> None:
@@ -419,7 +448,7 @@ def test_previous_managed_bundle_version_is_upgraded_with_the_retired_prepare(tm
     commit_hook.chmod(0o755)
     prepare_hook = common / "hooks" / "prepare-commit-msg"
     prepare_hook.write_text(
-        commit_msg.render_prepare_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER),
+        _managed_prepare_hook_content(),
         encoding="utf-8",
         newline="\n",
     )
@@ -440,9 +469,7 @@ def test_retired_prepare_removal_failure_restores_the_commit_hook(
     workspace, main = _managed_project(tmp_path)
     common = Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
     prepare_hook = common / "hooks" / "prepare-commit-msg"
-    prepare_hook.write_text(
-        commit_msg._legacy_prepare_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER), encoding="utf-8", newline="\n"
-    )
+    prepare_hook.write_text(_managed_prepare_hook_content(), encoding="utf-8", newline="\n")
     prepare_hook.chmod(0o755)
     original_unlink = Path.unlink
 
@@ -535,7 +562,7 @@ def test_second_legacy_unset_failure_restores_first_override_and_removes_common_
         _checked_git(worktree, "config", "--worktree", "core.hooksPath", ".githooks-v4")
     common = Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
     prepare_hook = common / "hooks" / "prepare-commit-msg"
-    prepare = commit_msg._legacy_prepare_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER)
+    prepare = _managed_prepare_hook_content()
     prepare_hook.write_text(prepare, encoding="utf-8", newline="\n")
     prepare_hook.chmod(0o744)
     original_run_git = commit_msg._run_git
@@ -577,7 +604,7 @@ def test_effective_directory_failure_restores_legacy_override_and_removes_common
     _checked_git(linked, "config", "--worktree", "core.hooksPath", ".githooks-v4")
     common = Path(_checked_git(main, "rev-parse", "--path-format=absolute", "--git-common-dir").strip())
     prepare_hook = common / "hooks" / "prepare-commit-msg"
-    prepare = commit_msg._legacy_prepare_commit_msg_hook(commit_msg_runner=SOURCE_LAUNCHER)
+    prepare = _managed_prepare_hook_content()
     prepare_hook.write_text(prepare, encoding="utf-8", newline="\n")
     prepare_hook.chmod(0o744)
     original_effective = commit_msg._effective_hooks_directory

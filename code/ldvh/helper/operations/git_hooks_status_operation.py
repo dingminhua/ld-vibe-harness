@@ -13,6 +13,7 @@ from pathlib import Path
 from typing import Any
 
 from ldvh.environment_sync import (
+    _SKILL_FILENAME,
     _has_ldvh_frontmatter,
     _read_skill_version,
     inspect_hook_surface,
@@ -113,6 +114,13 @@ def _run_git(worktree: Path, *args: str) -> str | None:
 
 def _skill_check(skill_path: str, platform: str) -> dict[str, Any]:
     target = Path(skill_path)
+    # 09 §5.9.1: skill_path points at the target SKILL.md file; a caller may pass the
+    # skill directory instead. Resolve a directory (not itself named SKILL.md) to its
+    # SKILL.md so is_file() and byte alignment behave consistently; a directory with no
+    # SKILL.md is "not found". This is read-only inspection; write conflicts stay in
+    # environment_sync.
+    if target.is_dir() and target.name != _SKILL_FILENAME:
+        target = target / _SKILL_FILENAME
     # 本文件位于 code/ldvh/helper/operations/，parents[4] 为仓库根；
     # canonical Skill 源是仓库根下的 skill/SKILL.md（09 §5.2），不是 code/skill/SKILL.md。
     project_skill = Path(__file__).resolve().parents[4] / _PROJECT_SKILL_REL
@@ -215,7 +223,6 @@ def _execute(
             diagnostics=(),
         )
 
-
     base = context.cwd
     requested_scope = (ScopeDescriptor(0, locator, LocatorSource.EXPLICIT_LOCATOR),)
     run = resolve_governance_scope(requested_scope, base=base, explicit_workspace_root=None)
@@ -247,12 +254,10 @@ def _execute(
     stop_gate = _stop_gate_check(root)
     hooks = inspect_hook_surface(common_hooks=common_hooks)
     commit_msg = hooks["commit-msg"]
-    prepare = hooks["prepare-commit-msg"]
     worktrees = _worktree_check(root)
 
     checks = [
         {"surface": "commit-msg", "aligned": commit_msg["aligned"], "detail": commit_msg},
-        {"surface": "prepare-commit-msg", "aligned": prepare["aligned"], "detail": prepare},
         {"surface": "skill", "aligned": skill["aligned"], "detail": skill},
         {"surface": "stop-gate", "aligned": stop_gate["aligned"], "detail": stop_gate},
         {"surface": "worktrees", "aligned": worktrees["aligned"], "detail": worktrees},
@@ -300,6 +305,7 @@ GIT_HOOKS_STATUS_IMPLEMENTATION = OperationImplementation(
     evidence=(*_IMPLEMENTATION_EVIDENCE, _CONTRACT, _RESULT_CONTRACT),
     check_availability=_check_availability,
     call=_call,
+    response_fields=("status", "worktree", "common_hooks_dir", "checks"),
 )
 
 __all__ = ["GIT_HOOKS_STATUS_IMPLEMENTATION", "OPERATION_KEY"]

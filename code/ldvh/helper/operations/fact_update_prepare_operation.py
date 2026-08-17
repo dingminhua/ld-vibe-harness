@@ -305,6 +305,17 @@ FACT_UPDATE_PREPARE_IMPLEMENTATION = OperationImplementation(
     check_availability=_check_availability,
     call=_execute,
     input_examples=(_INPUT_EXAMPLE,),
+    response_fields=(
+        "actual_ref",
+        "canonical_path",
+        "carrier",
+        "fact_type_key",
+        "source_content_fingerprint",
+        "target_operation",
+        "draft_status",
+        "managed_fields_removed",
+        "request_draft",
+    ),
 )
 
 __all__ = ["FACT_UPDATE_PREPARE_IMPLEMENTATION", "OPERATION_KEY"]

@@ -30,9 +30,7 @@ from pathlib import Path
 from typing import Literal
 
 from ldvh.git_hooks.commit_msg import (
-    _LAST_PREPARE_BUNDLE_VERSION,
     _MANAGED_MARKER_PREFIX,
-    _PREPARE_MANAGED_MARKER_PREFIX,
     HOOK_BUNDLE_VERSION,
     _existing_hook_state,
     _hook_bundle_version,
@@ -41,6 +39,16 @@ from ldvh.git_hooks.commit_msg import (
 _PLATFORM_REQUIRED = "platform 必须是非空字符串标签"
 _SKILL_PATH_REQUIRED = "skill_path 必须是非空绝对路径"
 _SKILL_VERSION_MARKER = "> Skill 版本"
+_SKILL_FILENAME = "SKILL.md"
+
+__all__ = [
+    "SkillInspection",
+    "SkillUpdate",
+    "inspect_skill",
+    "update_skill",
+    "skill_digest",
+    "_SKILL_FILENAME",
+]
 
 _LDVH_FRONTMATTER_NAME = "ldvh"
 
@@ -83,7 +91,14 @@ def _validate_platform(value: object) -> str:
 def _validate_skill_path(value: object) -> Path:
     if not isinstance(value, str) or not value.strip() or not Path(value).is_absolute():
         raise ValueError(_SKILL_PATH_REQUIRED)
-    return Path(value)
+    target = Path(value)
+    # 09 §5.9.1: skill_path points at the target SKILL.md file; a caller may pass the
+    # skill directory instead. Resolve a directory (not itself named SKILL.md) to its
+    # SKILL.md so is_file()/read_bytes() behave consistently. A directory literally
+    # named SKILL.md is a malformed target and stays as-is (a write conflict).
+    if target.is_dir() and target.name != _SKILL_FILENAME:
+        target = target / _SKILL_FILENAME
+    return target
 
 
 def _read_skill_version(path: Path) -> str | None:
@@ -131,10 +146,7 @@ def inspect_skill(*, platform: str, skill_path: str, source_path: Path) -> Skill
     source_version = _read_skill_version(source_path) if source_path.is_file() else None
     byte_aligned = bool(exists and source_path.is_file() and target.read_bytes() == source_path.read_bytes())
     version_aligned = bool(
-        exists
-        and source_version is not None
-        and target_version is not None
-        and target_version == source_version
+        exists and source_version is not None and target_version is not None and target_version == source_version
     )
     return SkillInspection(
         platform=label,
@@ -281,23 +293,15 @@ def update_skill(
 def inspect_hook_surface(*, common_hooks: Path) -> dict[str, object]:
     """Reuse the Git Hook manager's deterministic state classification verbatim."""
     commit_msg = _hook_check(common_hooks, "commit-msg", _MANAGED_MARKER_PREFIX, HOOK_BUNDLE_VERSION)
-    prepare = _hook_check(
-        common_hooks,
-        "prepare-commit-msg",
-        _PREPARE_MANAGED_MARKER_PREFIX,
-        _LAST_PREPARE_BUNDLE_VERSION,
-    )
-    return {"commit-msg": commit_msg, "prepare-commit-msg": prepare}
+    return {"commit-msg": commit_msg}
 
 
 def _hook_check(common_hooks: Path, name: str, marker_prefix: str, expected_version: str) -> dict[str, object]:
     hook = common_hooks / name
     state, detail_text = _existing_hook_state(hook, name=name, marker_prefix=marker_prefix)
     deployed_version = _hook_bundle_version(hook) if hook.is_file() else None
-    if name == "prepare-commit-msg":
-        aligned = state in {"absent", "managed"}
-    else:
-        aligned = state == "managed" and deployed_version == expected_version
+    aligned = state == "managed" and deployed_version == expected_version
+
     return {
         "path": str(hook),
         "state": state,

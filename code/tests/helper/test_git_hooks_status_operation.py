@@ -85,9 +85,9 @@ def test_valid_input_returns_contract_shape() -> None:
     assert domain["status"] in {"aligned", "misaligned"}
     assert isinstance(domain["worktree"], str)
     assert isinstance(domain["common_hooks_dir"], str)
-    assert len(domain["checks"]) == 5
+    assert len(domain["checks"]) == 4
     surfaces = {check["surface"] for check in domain["checks"]}
-    assert surfaces == {"commit-msg", "prepare-commit-msg", "skill", "stop-gate", "worktrees"}
+    assert surfaces == {"commit-msg", "skill", "stop-gate", "worktrees"}
     for check in domain["checks"]:
         assert set(check) == {"surface", "aligned", "detail"}
         assert isinstance(check["aligned"], bool)

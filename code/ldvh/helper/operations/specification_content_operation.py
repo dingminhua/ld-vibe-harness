@@ -127,6 +127,7 @@ SPECIFICATION_CONTENT_IMPLEMENTATION = OperationImplementation(
     evidence=_IMPLEMENTATION_EVIDENCE,
     check_availability=_check_availability,
     call=_call,
+    response_fields=("items",),
 )
 
 __all__ = ["OPERATION_KEY", "SPECIFICATION_CONTENT_IMPLEMENTATION"]

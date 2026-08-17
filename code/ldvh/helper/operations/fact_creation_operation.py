@@ -1249,6 +1249,14 @@ PREPARE_FACT_DRAFT_IMPLEMENTATION = OperationImplementation(
     evidence=(_IMPLEMENTATION_SOURCE, _PREPARE_CONTRACT),
     check_availability=_prepare_availability,
     call=_prepare_execute,
+    response_fields=(
+        "basis",
+        "schema_fingerprint",
+        "worktree_fingerprint",
+        "carrier",
+        "managed_fields",
+        "field_contracts",
+    ),
 )
 
 CREATE_FACT_OBJECT_IMPLEMENTATION = OperationImplementation(
@@ -1257,6 +1265,15 @@ CREATE_FACT_OBJECT_IMPLEMENTATION = OperationImplementation(
     evidence=(_IMPLEMENTATION_SOURCE, _CREATE_CONTRACT),
     check_availability=_create_availability,
     call=_create_execute,
+    response_fields=(
+        "identity",
+        "target_namespace",
+        "created",
+        "actual_ref",
+        "content_fingerprint",
+        "carrier",
+        "fact_object",
+    ),
 )
 
 

@@ -115,6 +115,10 @@ def main() -> int:
                 if operation["implementation"]["present"] is not True:
                     raise ValueError("目标操作没有可投影的实现 metadata")
                 projection = build_example_projection(operation)
+                # 04/05 交互改进: --example 同时暴露 response 字段闭集,
+                # 调用方无需再查阅 spec 的 "领域 result 字段闭集" 小节。
+                projection["response_fields"] = operation.get("response_fields", [])
+                projection["result_contract"] = operation.get("result_contract")
             except (KeyError, TypeError, ValueError):
                 problem = "--example 目标 metadata 不完整，不能形成请求骨架"
             else:
@@ -123,6 +127,66 @@ def main() -> int:
         invalid = invalid_request_result("capabilities", operation_key, (problem,))
         _emit(invalid.response)
         return invalid.exit_code
+
+    if parsed.summary:
+        # 04/05 交互改进: capabilities --summary 提供渐进发现中间档,返回每个操作的
+        # 紧凑投影(operation_key/summary/effect/result_contract/response_fields),
+        # 避免每次发现都拉取全量 capabilities(约 68KB) 再逐项截断。
+        if _alternate_input_conflicts():
+            result = invalid_request_result(
+                request_kind,
+                operation_key,
+                ("--summary 不接受非空标准输入",),
+            )
+            _emit(result.response)
+            return result.exit_code
+        result = handle_request("capabilities", None, "")
+        if result.exit_code != 0 or result.response.get("outcome") != "ok":
+            _emit(result.response)
+            return result.exit_code
+        operations = result.response["result"]["operations"]
+        summary_response = {
+            "contract": result.response["contract"],
+            "response_profile": "compact",
+            "request_kind": "capabilities",
+            "operation_key": None,
+            "outcome": "ok",
+            "summary": "已按 --summary 投影各公开操作的紧凑发现信息",
+            "result": {
+                "mode": "discovery",
+                "operations": [
+                    {
+                        "operation_key": op["operation_key"],
+                        "summary": op["summary"],
+                        "effect": op["effect"],
+                        "result_contract": op.get("result_contract"),
+                        "response_fields": op.get("response_fields", []),
+                    }
+                    for op in operations
+                ],
+            },
+            "scope": {
+                "requested": [],
+                "completed": [],
+                "not_completed": [],
+                "governance_resolution": None,
+            },
+            "sources": result.response.get("sources", []),
+            "disclosure": None,
+            "gaps": [],
+            "changes": [],
+            "verification": [],
+            "diagnostics": [],
+            "follow_up": {
+                "summary": "需要单个操作详情时, 使用 capabilities <operation_key> --example",
+                "required_inputs": [],
+                "required_human_decisions": [],
+                "resume_conditions": [],
+                "suggested_operations": [],
+            },
+        }
+        _emit(summary_response)
+        return result.exit_code
 
     try:
         if parsed.request_path is None:

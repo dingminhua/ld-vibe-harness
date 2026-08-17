@@ -141,6 +141,19 @@ def invalid_request_result(
     details: dict[str, Any] = {"problems": list(problems)}
     if hints:
         details["hints"] = hints
+    # 04/05 交互改进: 当 hints 可用时,将 follow_up 摘要从"无专属后续信息"改为
+    # 指向下一步修复路径。suggested_operations 保持空数组,避免与现有 item schema
+    # 冲突;调用方以 summary 文本获取指引。
+    follow_up: dict[str, Any] | None = None
+    if hints and operation_key is not None:
+        follow_up = {
+            "summary": "请求参数不满足契约; 使用 capabilities --example 获取该操作请求骨架, "
+            "查阅该操作的 result_contract 了解响应字段闭集",
+            "required_inputs": [],
+            "required_human_decisions": [],
+            "resume_conditions": [],
+            "suggested_operations": [],
+        }
     return common_response(
         request_kind=request_kind,
         operation_key=operation_key,
@@ -152,6 +165,7 @@ def invalid_request_result(
         sources=response_sources,
         gaps=[gap(problem, sources=response_sources) for problem in problems],
         diagnostics=[diagnostic("请求解析或校验未通过", **details)],
+        follow_up=follow_up,
     )
 
 
@@ -276,8 +290,10 @@ def _operation_item(
         "summary": declaration.summary,
         "sources": [declaration_source],
         "effect": declaration.effect,
+        "result_contract": declaration.result_contract,
         "required_inputs": [] if implementation is None else list(implementation.required_inputs),
         "optional_inputs": [] if implementation is None else list(implementation.optional_inputs),
+        "response_fields": [] if implementation is None else list(implementation.response_fields),
         "input_examples": [] if implementation is None else list(implementation.input_examples),
         "implementation": {
             "present": implementation is not None,

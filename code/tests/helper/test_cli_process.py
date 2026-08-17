@@ -172,7 +172,7 @@ def test_general_discovery_reports_source_bound_implementation(tmp_path: Path) -
     template_content = operations["read-action-template-content"]
     assert template_content["implementation"]["present"] is True
     assert template_content["required_inputs"] == ["arguments.template_keys"]
-    assert template_content["optional_inputs"] == []
+    assert template_content["optional_inputs"] == ["arguments.heading_path"]
     assert template_content["availability"] is None
     governance = operations["resolve-governance-scope"]
     _assert_working_tree_implementation(
@@ -906,6 +906,8 @@ def test_example_projects_source_bound_write_signature_without_calling_operation
         "required_input_paths",
         "composition_note",
         "source_refs",
+        "response_fields",
+        "result_contract",
     }
     assert projection["operation_key"] == "create-fact-object"
     assert projection["request"]["observed_context"]["signature"] == {
@@ -916,6 +918,10 @@ def test_example_projects_source_bound_write_signature_without_calling_operation
     assert projection["request"]["arguments"]["draft_basis"] is None
     assert projection["request"]["arguments"]["fact_object"] is None
     assert "全为 null 时不可执行" in projection["composition_note"]
+    # 04/05 交互改进: --example 必须暴露 response 字段闭集与结果契约,
+    # 调用方无需再查阅 spec 的 "领域 result 字段闭集" 小节。
+    assert isinstance(projection["response_fields"], list)
+    assert isinstance(projection["result_contract"], str) and projection["result_contract"]
     assert list(tmp_path.iterdir()) == before
 
 
@@ -960,6 +966,46 @@ def test_example_rejects_wrong_entry_combination_and_nonempty_stdin(tmp_path: Pa
         "--example",
         stdin="{}",
     )
+    assert completed.returncode == 2
+    assert response["outcome"] == "invalid_request"
+
+
+def test_summary_projects_compact_discovery_middle_tier(tmp_path: Path) -> None:
+    """capabilities --summary 提供渐进发现中间档,每个操作只暴露紧凑投影。"""
+    completed, response = _run(tmp_path, "capabilities", "--summary")
+
+    assert completed.returncode == 0
+    assert response["outcome"] == "ok"
+    assert response["result"]["mode"] == "discovery"
+    operations = response["result"]["operations"]
+    assert operations, "summary 应返回非空操作列表"
+    expected_keys = {"operation_key", "summary", "effect", "result_contract", "response_fields"}
+    for op in operations:
+        assert set(op) == expected_keys, f"操作 {op.get('operation_key')} 投影字段闭集不符"
+        assert isinstance(op["operation_key"], str) and op["operation_key"]
+        assert isinstance(op["summary"], str) and op["summary"]
+        assert isinstance(op["effect"], str) and op["effect"]
+        assert isinstance(op["result_contract"], str) and op["result_contract"]
+        assert isinstance(op["response_fields"], list)
+    keys = [op["operation_key"] for op in operations]
+    assert len(set(keys)) == len(keys), "operation_key 不应重复"
+    assert "read-fact-objects" in keys
+
+
+def test_summary_rejects_wrong_combinations_and_nonempty_stdin(tmp_path: Path) -> None:
+    invalid_cases = [
+        ("call", "read-fact-objects", "--summary"),
+        ("capabilities", "create-fact-object", "--summary"),
+        ("capabilities", "--summary", "--request", "request.json"),
+        ("capabilities", "--summary", "--example"),
+        ("capabilities", "--summary", "--fields", "outcome"),
+    ]
+    for arguments in invalid_cases:
+        completed, response = _run(tmp_path, *arguments)
+        assert completed.returncode == 2, arguments
+        assert response["outcome"] == "invalid_request", arguments
+
+    completed, response = _run(tmp_path, "capabilities", "--summary", stdin="{}")
     assert completed.returncode == 2
     assert response["outcome"] == "invalid_request"
 

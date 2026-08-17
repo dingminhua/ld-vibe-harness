@@ -28,6 +28,7 @@ from ldvh.specs.action_templates import (
     ActionTemplateSourceInspection,
     inspect_action_template_sources,
 )
+from ldvh.specs.markdown import Heading
 from ldvh.specs.repository import RepositoryInspection
 
 CANDIDATE_OPERATION_KEY = "read-action-template-candidates"
@@ -85,7 +86,7 @@ def _candidate_item(declaration: ActionTemplateDeclaration) -> dict[str, object]
     }
 
 
-def _content(declaration: ActionTemplateDeclaration) -> str:
+def _content(declaration: ActionTemplateDeclaration, heading_path: tuple[str, ...] | None = None) -> str:
     """Deliver the executable template package, without duplicating the source body.
 
     A template's definition starts at its declared H2.  Its following sections contain
@@ -93,8 +94,81 @@ def _content(declaration: ActionTemplateDeclaration) -> str:
     remainder of this same source document.  Full source identity is still exposed by
     the candidate fields and source digest and can be expanded through the existing
     specification reader.
+
+    When heading_path is provided, the content is limited to the section from the
+    matching heading (H2 or H3) up to the next sibling heading (same level or higher)
+    or the definition end.
     """
-    lines = declaration.document.markdown.raw_lines[declaration.definition_start_line - 1 :]
+    if heading_path is None:
+        raw_count = len(declaration.document.markdown.raw_lines)
+        return _content_slice(declaration, declaration.definition_start_line, raw_count)
+    target_level = 2 if len(heading_path) == 1 else 3
+    target = _resolve_heading(declaration, heading_path, target_level)
+    if target is None:
+        raise OperationRequestError(
+            (f"arguments.heading_path 在当前模板定义范围内无法精确匹配: {heading_path!r}",),
+            sources=(_CONTENT_CONTRACT,),
+        )
+    next_sibling = min(
+        (
+            heading.line
+            for heading in declaration.document.markdown.headings
+            if heading.level <= target_level
+            and heading.line > target.line
+            and heading.line <= declaration.definition_end_line
+        ),
+        default=declaration.definition_end_line + 1,
+    )
+    return _content_slice(declaration, target.line, next_sibling - 1)
+
+
+def _resolve_heading(
+    declaration: ActionTemplateDeclaration,
+    heading_path: tuple[str, ...],
+    target_level: int,
+) -> Heading | None:
+    headings = declaration.document.markdown.headings
+    if target_level == 3:
+        h2_title = heading_path[0]
+        h2_matches = [
+            heading
+            for heading in headings
+            if heading.level == 2
+            and heading.title == h2_title
+            and heading.line >= declaration.definition_start_line
+            and heading.line <= declaration.definition_end_line
+        ]
+        if len(h2_matches) != 1:
+            return None
+        h2 = h2_matches[0]
+        h2_end = min(
+            (
+                heading.line
+                for heading in headings
+                if heading.level <= 2 and heading.line > h2.line and heading.line <= declaration.definition_end_line
+            ),
+            default=declaration.definition_end_line + 1,
+        )
+        h3_matches = [
+            heading
+            for heading in headings
+            if heading.level == 3 and h2.line < heading.line < h2_end and heading.title == heading_path[1]
+        ]
+        return h3_matches[0] if len(h3_matches) == 1 else None
+
+    h2_matches = [
+        heading
+        for heading in headings
+        if heading.level == 2
+        and heading.title == heading_path[0]
+        and heading.line >= declaration.definition_start_line
+        and heading.line <= declaration.definition_end_line
+    ]
+    return h2_matches[0] if len(h2_matches) == 1 else None
+
+
+def _content_slice(declaration: ActionTemplateDeclaration, start_line: int, end_line: int) -> str:
+    lines = declaration.document.markdown.raw_lines[start_line - 1 : end_line]
     return "\n".join(lines) + "\n"
 
 
@@ -188,7 +262,7 @@ def _read(
             continue
         item = _candidate_item(declaration)
         if include_content:
-            content = _content(declaration)
+            content = _content(declaration, domain.heading_path)
             source_content = declaration.document.markdown.raw_text
             item["content"] = content
             item["content_sha256"] = hashlib.sha256(content.encode("utf-8")).hexdigest()
@@ -324,6 +398,7 @@ ACTION_TEMPLATE_CANDIDATE_IMPLEMENTATION = OperationImplementation(
     evidence=_IMPLEMENTATION_EVIDENCE,
     check_availability=_candidate_availability,
     call=_candidate_call,
+    response_fields=("items", "unchecked_conditions"),
 )
 ACTION_TEMPLATE_CONTENT_IMPLEMENTATION = OperationImplementation(
     required_inputs=CONTENT_REQUIRED_INPUTS,
@@ -331,6 +406,7 @@ ACTION_TEMPLATE_CONTENT_IMPLEMENTATION = OperationImplementation(
     evidence=_IMPLEMENTATION_EVIDENCE,
     check_availability=_content_availability,
     call=_content_call,
+    response_fields=("items",),
 )
 
 

@@ -137,13 +137,13 @@ ldvh_spec:
 5. 目标为 `governed_single` 时，必须把完整 message 直接作为 `arguments.message` 调用 `precheck-git-commit`，由该操作重新观察同一实际 worktree 的当前真实 Index；只有 Helper 外层 `outcome=ok` 且 `result.mechanical_outcome=passed`，才继续机械合规路径。`result.mechanical_outcome=failed|unverifiable`、外层 `unavailable`、Helper 不可用或调用错误都必须保留诊断并停止本次 commit 创建，不得把能力缺口、未调用或旧结果改写为通过；
 6. AI 必须独立审核主要目的、拆分、简体中文语义、description 真实性、body 充分性以及验证与风险是否据实，不得把 Helper 机械结果、测试通过或 Human 授权当作语义审核；
 7. 完整 message 默认只保留在当前进程内并直接交给 Helper 和 Git，不得在 Git Working Tree 内创建 `.codex-commit-msg.tmp`、`COMMIT_EDITMSG` 副本或其它临时提交消息文件。确有外部工具只接受文件路径时，只能使用 Working Tree 外的系统临时文件并在调用后清理；
-8. 按 `source-of-truth-traceability` §9.5 在创建 commit 前重新核对真实 Index、已声明候选文件、逐文件 staged diff、完整 message、管辖结果、03 来源身份、验证范围，以及当前 common-dir `commit-msg` Hook 的有效、可执行、无冲突状态；任何变化都使先前 Helper 结果和 AI 结论失效，必须回到本阶段重新预检和审核。Hook 缺失、冲突、不可执行或无法确认时停止本次 commit 创建并交还 09 接入缺口，不得在本模板内部署或修复。
+8. 按 `source-of-truth-traceability` §9.5 在创建 commit 前重新核对真实 Index、已声明候选文件、逐文件 staged diff、完整 message、管辖结果、03 来源身份、验证范围，以及当前 common-dir `commit-msg` Hook 的有效、可执行、无冲突状态；任何变化都使先前 Helper 结果和 AI 结论失效，必须回到本阶段重新预检和审核。核对范围覆盖从 B-1 以来所有可能影响候选快照一致性、机械合规性或 Hook 前置条件的项目，包括但不限于原文已列明的各项；核对后状态发生变化时回到本阶段重新预检，不得仅选取部分项核对。Hook 缺失、冲突、不可执行或无法确认时停止本次 commit 创建并交还 09 接入缺口，不得在本模板内部署或修复。
 
 #### C. 创建、回读与验证
 
 1. 只有授权、真实 Index、已声明并审核的候选、来源要求、必需验证、Helper 预检、AI 语义审核和 Hook 静态前置均成立后，才使用与预检相同的完整 message 执行一次不带 `--no-verify` 的原生本地 `git commit`；该真实事件必须实际触发已确认的 `commit-msg` Git Hook，由 Git Gate 重新检查事件自己的 message、真实 Index 与 worktree。Helper 结果、直接调用 Hook 或静态 Hook 检查都不得替代该最终闸门；
 2. 失败、拒绝、无变化、Hook 未触发、Hook 修改或拒绝、部分结果、结果不可观察或 `source-of-truth-traceability` §9.6 所述不合规时，保留实际 Git 状态和诊断，不得重试破坏性操作、扩大路径、禁用既有 Git Hook 或绕过门禁；
-3. commit 返回后，为核对 `source-of-truth-traceability` §§9.3–9.6，重新读取实际 `HEAD`、新 commit 的完整 message、tree 与精确内容范围，核对真实 `commit-msg` Hook 的当次触发证据，并读取剩余 Working Tree 与真实 Index；
+3. commit 返回后，为核对 `source-of-truth-traceability` §§9.3–9.6，重新读取实际 `HEAD`、新 commit 的完整 message、tree 与精确内容范围，核对真实 `commit-msg` Hook 的当次触发证据，并读取剩余 Working Tree 与真实 Index；核对范围包括已创建 commit 的 identity 与 message、触发 Hook 的可观察证据、提交后真实 Index 与 Working Tree 的全部剩余变化，以及提交快照与 AI 已声明候选的一致性。
 4. 只有新历史锚点存在、实际提交快照与 AI 已声明且获授权的候选一致、真实 Hook 已触发，并且全部回读结果支持相应声明时，才报告本地 commit 创建成功；
 5. 提交后仍存在目标相关变化、验证缺口、无关变化或其它未完成事项时，分别交还，不把它们隐藏在成功结论中。
 

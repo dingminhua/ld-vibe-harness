@@ -544,6 +544,126 @@ def test_signature_trailers_must_use_the_shared_normalized_values(contract: Comm
     assert "signature_trailer_not_normalized" in _codes(result)
 
 
+def test_signature_trailer_rejects_literal_null_value(contract: CommitContractProjection) -> None:
+    """03 §9.4: an unobservable field is omitted, never written as a literal null/none.
+
+    A writer confusing JSON `null` with a Git trailer value must be rejected so the
+    placeholder is not recorded as a real identity string.
+    """
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "test: 探查 null 字面量 trailer\n\n关键变更:\n- 拒绝 model_name 写成 null 字面量\n\n"
+                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: null\n"
+                "LDVH-Agent-Runtime-Name: pi"
+            ),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "signature_trailer_literal_null" in _codes(result)
+
+
+def test_signature_trailer_rejects_literal_none_value(contract: CommitContractProjection) -> None:
+    """Every null/placeholder literal is rejected, not only the exact string 'null'."""
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "test: 探查 none 字面量 trailer\n\n关键变更:\n- 拒绝 model_name 写成 none 字面量\n\n"
+                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: none\n"
+                "LDVH-Agent-Runtime-Name: pi"
+            ),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "signature_trailer_literal_null" in _codes(result)
+
+
+def test_signature_trailer_omitted_field_still_accepted(contract: CommitContractProjection) -> None:
+    """03 §9.4: an unobservable field is correctly expressed by omitting its trailer."""
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "docs: 省略不可观察字段\n\n关键变更:\n- model_name 不可观察时省略 trailer\n\n"
+                "LDVH-Product-Name: Cindy\n"
+                "LDVH-Agent-Runtime-Name: pi"
+            ),
+        ),
+    )
+
+    assert result.outcome == "passed", [f"{issue.code}: {issue.message}" for issue in result.issues]
+
+
+@pytest.mark.parametrize("literal", ["n/a", "nil", "N/A", " NULL ", "undefined"])
+def test_signature_trailer_rejects_other_literal_values(
+    contract: CommitContractProjection, literal: str
+) -> None:
+    """03 §9.4: n/a/nil/whitespace/UPPER variants are all rejected, not only 'null'."""
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "test: 探查非 null 字面量 trailer\n\n关键变更:\n- 拒绝 n/a/nil 等字面量值\n\n"
+                f"LDVH-Product-Name: Cindy\nLDVH-Model-Name: {literal}\n"
+                "LDVH-Agent-Runtime-Name: pi"
+            ),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "signature_trailer_literal_null" in _codes(result)
+
+
+def test_signature_trailer_rejects_literal_null_in_product_name(contract: CommitContractProjection) -> None:
+    """The literal-null rejection applies to every LDVH signature trailer, not only model_name."""
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "test: product_name 也拒绝 null 字面量\n\n关键变更:\n- 拒绝 product_name 写成 null\n\n"
+                "LDVH-Product-Name: null\nLDVH-Model-Name: gpt-5.6-luna\n"
+                "LDVH-Agent-Runtime-Name: codex-cli"
+            ),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "signature_trailer_literal_null" in _codes(result)
+
+
+def test_signature_trailer_rejects_literal_na_in_runtime(contract: CommitContractProjection) -> None:
+    """n/a written for agent_runtime_name is rejected too."""
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "test: agent_runtime_name 也拒绝 n/a 字面量\n\n关键变更:\n- 拒绝运行时名写成 n/a\n\n"
+                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\n"
+                "LDVH-Agent-Runtime-Name: n/a"
+            ),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "signature_trailer_literal_null" in _codes(result)
+
+
 @pytest.mark.parametrize(
     ("duplicate_trailer", "duplicate_value"),
     [
