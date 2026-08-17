@@ -432,7 +432,7 @@ def test_close_replaces_same_target_related_to_with_routed_to(
     after["change_log"] = deepcopy(before["change_log"])
     after["change_log"].append(
         {
-            "signature": {"product_name": "gpt-5-caller", "model_name": "gpt-test", "agent_runtime_name": "caller"},
+            "signature": {"product_name": "gpt-5-caller", "model_name": "gpt-test"},
             "at": "2026-07-26T13:10:00+08:00",
             "summary": "由调用方补齐关闭候选流水。",
         }
@@ -3038,7 +3038,6 @@ def _first_log_after(before: dict[str, Any], *, title: str) -> dict[str, Any]:
             "signature": {
                 "product_name": "pytest",
                 "model_name": "test-model",
-                "agent_runtime_name": "pytest-runtime",
             },
             "at": "2000-01-01T00:00:00Z",
             "summary": "首次真实更新建立流水；此前历史未恢复。",
@@ -3098,7 +3097,7 @@ def test_first_log_update_succeeds_when_head_and_wt_lack_log(
     change_log = fields["change_log"]
     assert len(change_log) == 1
     entry = change_log[0]
-    assert set(entry["signature"]) == {"product_name", "model_name", "agent_runtime_name"}
+    assert set(entry["signature"]) == {"product_name", "model_name"}
     assert "session_id" not in entry
     assert entry["at"] == fields["updated_at"]
     assert path.read_text(encoding="utf-8") == result.candidate_text
@@ -3155,6 +3154,6 @@ def test_first_log_correct_closed_succeeds_when_head_lacks_log(
     change_log = fields["change_log"]
     assert len(change_log) == 1
     entry = change_log[0]
-    assert set(entry["signature"]) == {"product_name", "model_name", "agent_runtime_name"}
+    assert set(entry["signature"]) == {"product_name", "model_name"}
     assert "session_id" not in entry
     assert entry["at"] == fields["updated_at"]

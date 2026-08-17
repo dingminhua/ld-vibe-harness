@@ -496,7 +496,7 @@ export type CommitDetailLabels = {
   copiedHash: string;
   signature: string;
   modelName: string;
-  runtimeName: string;
+  environmentName: string;
 };
 
 const COMMIT_DETAIL_LABELS: Record<string, CommitDetailLabels> = {
@@ -505,14 +505,14 @@ const COMMIT_DETAIL_LABELS: Record<string, CommitDetailLabels> = {
     summary: '变更统计', files: '文件', insertions: '新增', deletions: '删除',
     commitBody: '关键变更', changedFiles: '改动文件', noFiles: '没有可展示的文件统计',
     raw: '原始信息', copyHash: '复制提交 hash', copiedHash: '已复制提交 hash',
-    signature: '署名信息', modelName: '署名 AI', runtimeName: '署名环境（运行时）',
+    signature: '署名信息', modelName: '署名 AI', environmentName: '署名环境',
   },
   en: {
     category: 'Category', type: 'Type', scope: 'Scope', commit: 'Commit', time: 'Commit',
     summary: 'Change summary', files: 'Files', insertions: 'Insertions', deletions: 'Deletions',
     commitBody: 'Commit notes', changedFiles: 'Changed files', noFiles: 'No file stat available',
     raw: 'Original info', copyHash: 'Copy commit hash', copiedHash: 'Commit hash copied',
-    signature: 'Signature', modelName: 'Signing AI', runtimeName: 'Signing environment (runtime)',
+    signature: 'Signature', modelName: 'Signing AI', environmentName: 'Signing environment',
   },
 };
 

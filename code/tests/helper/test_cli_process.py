@@ -913,7 +913,6 @@ def test_example_projects_source_bound_write_signature_without_calling_operation
     assert projection["request"]["observed_context"]["signature"] == {
         "product_name": None,
         "model_name": None,
-        "agent_runtime_name": None,
     }
     assert projection["request"]["arguments"]["draft_basis"] is None
     assert projection["request"]["arguments"]["fact_object"] is None
@@ -936,10 +935,9 @@ def test_example_uses_first_source_example_and_commit_trailer_order(tmp_path: Pa
     assert completed.returncode == 0
     assert projection["request"]["work_object_locators"] is None
     message = projection["request"]["arguments"]["message"]
-    assert message.splitlines()[-3:] == [
+    assert message.splitlines()[-2:] == [
         "LDVH-Product-Name: <fill-directly-observed-product-name>",
         "LDVH-Model-Name: <fill-directly-observed-model-name>",
-        "LDVH-Agent-Runtime-Name: <fill-directly-observed-agent-runtime-name>",
     ]
     assert "observed_context" not in projection["request"]
     assert any(

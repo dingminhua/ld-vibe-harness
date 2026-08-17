@@ -734,8 +734,7 @@ def _preflight_rendered_hook(rendered: str, worktree: Path) -> str | None:
                 "test: 验证 Git Hook 预检\n\n"
                 "关键变更:\n- 验证待部署 Hook 的真实 allow 与 block 路径\n\n"
                 "LDVH-Product-Name: localverification\n"
-                "LDVH-Model-Name: ldvh-hook-manager\n"
-                "LDVH-Agent-Runtime-Name: ldvh-hook-manager\n",
+                "LDVH-Model-Name: ldvh-hook-manager\n",
                 encoding="utf-8",
             )
         except OSError as error:

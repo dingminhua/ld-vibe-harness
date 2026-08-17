@@ -102,7 +102,7 @@ def observed_write_signature_required_problem(observed_context: dict[str, Any]) 
     """Require exactly one usable, product-neutral signature snapshot.
 
     New controlled writes never merge caller-supplied attribution with draft
-    content.  The environment supplies all three keys in ``observed_context``;
+    content.  The environment supplies both keys in ``observed_context``;
     each value may be unavailable (``null``), but the snapshot cannot be wholly
     empty.  Historical records are handled only by the read path.
     """
@@ -112,8 +112,8 @@ def observed_write_signature_required_problem(observed_context: dict[str, Any]) 
         return "observed_context 解析失败：" + "；".join(parsed.problems)
     if parsed.signature is None:
         return (
-            "事实写入必须以 observed_context 注入完整 LDVH 三字段署名；"
-            "三项全空或缺少字段时不得保留草稿手填/默认署名"
+            "事实写入必须以 observed_context 注入完整 LDVH 两字段署名；"
+            "两项全空或缺少字段时不得保留草稿手填/默认署名"
         )
     return None
 

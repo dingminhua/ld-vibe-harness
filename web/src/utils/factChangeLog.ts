@@ -19,16 +19,14 @@ export function getLatestFactChangeSignature(value: unknown): CommitSignature | 
     if (!signature || typeof signature !== 'object' || Array.isArray(signature)) continue;
     const signatureRecord = signature as Record<string, unknown>;
 
-    const { productName, modelName, agentRuntimeName } = normalizeSignature({
+    const { productName, modelName } = normalizeSignature({
       productName: signatureRecord.product_name,
       modelName: signatureRecord.model_name,
-      agentRuntimeName: signatureRecord.agent_runtime_name,
     });
-    if (productName || modelName || agentRuntimeName) {
+    if (productName || modelName) {
       return {
         ...(productName ? { productName } : {}),
         ...(modelName ? { modelName } : {}),
-        ...(agentRuntimeName ? { agentRuntimeName } : {}),
       };
     }
   }

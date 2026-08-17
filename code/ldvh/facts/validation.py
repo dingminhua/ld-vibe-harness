@@ -295,8 +295,13 @@ def _validate_change_log_signature(value: object, path: str, issues: list[FactIs
     if set(value) == previous_current and all(
         isinstance(value.get(name), str) and value[name].strip() for name in previous_current
     ):
-        # This was the canonical shape before LDVH's three-field signature.
+        # This was the canonical shape before LDVH's two-field signature.
         # It remains a strictly read-only historical shape.
+        return
+    # The retired three-field shape (product_name, model_name, agent_runtime_name)
+    # is allowed only for legacy read-only entries.  New writes must use exactly
+    # two fields.
+    if set(value) == {"product_name", "model_name", "agent_runtime_name"}:
         return
     _, problems = parse_signature(value)
     for problem in problems:
@@ -446,9 +451,8 @@ def _first_log_issues(current: object, after: Mapping[str, Any]) -> tuple[FactIs
     if not isinstance(signature, dict) or set(signature) != {
         "product_name",
         "model_name",
-        "agent_runtime_name",
     }:
-        return (FactIssue("schema", "首次 change_log 必须使用当前三字段署名", "change_log[0].signature"),)
+        return (FactIssue("schema", "首次 change_log 必须使用当前两字段署名（product_name、model_name 均必填）", "change_log[0].signature"),)
     if "session_id" in entry:
         return (FactIssue("schema", "首次 change_log 不得携带 session_id", "change_log[0].session_id"),)
     if "updated_at" in after and entry.get("at") != after.get("updated_at"):
@@ -779,6 +783,14 @@ def _is_legacy_change_log_signature_issue(fields: Mapping[str, Any], issue: Fact
         frozenset({"model_id", "host_name"}),
         frozenset({"model_id", "agent_workbench"}),
     )
+    three_field_legacy = frozenset({"product_name", "model_name", "agent_runtime_name"})
+    if isinstance(signature, dict) and set(signature) == three_field_legacy:
+        # The retired three-field shape is legacy-readable. product_name and
+        # model_name must be non-empty; agent_runtime_name may be null (it was
+        # written as an unobservable retired member before the two-field cutover).
+        return isinstance(signature.get("product_name"), str) and signature["product_name"].strip() and isinstance(
+            signature.get("model_name"), str
+        ) and signature["model_name"].strip()
     if not (
         isinstance(signature, dict)
         and set(signature) in legacy_shapes
@@ -786,7 +798,7 @@ def _is_legacy_change_log_signature_issue(fields: Mapping[str, Any], issue: Fact
     ):
         return False
     return (
-        match.group(2) in {"agent_id", "host_environment", "model_id", "host_name", "agent_workbench", None}
+        match.group(2) in {"agent_id", "host_environment", "model_id", "host_name", "agent_workbench", "agent_runtime_name", "product_name", "model_name", None}
         or issue.summary == "缺少必填字段"
     )
 

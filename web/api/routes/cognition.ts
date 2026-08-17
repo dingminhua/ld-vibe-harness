@@ -155,11 +155,10 @@ interface SparkHealthBuildItem {
   unparsed_structures: Array<Record<string, unknown>>
 }
 
-/** 面向 Web 的当前三字段事实流水署名；历史字段只读兼容但不投影。 */
+/** 面向 Web 的当前两字段事实流水署名；历史字段只读兼容但不投影。 */
 interface FactChangeSignature {
   productName?: string
   modelName?: string
-  agentRuntimeName?: string
 }
 
 export interface RecentHotspotBuildItem {
@@ -322,16 +321,14 @@ function buildRecentActivityItem(
 function readFactChangeSignature(value: unknown): FactChangeSignature | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
   const record = value as Record<string, unknown>
-  const { productName, modelName, agentRuntimeName } = normalizeSignature({
+  const { productName, modelName } = normalizeSignature({
     productName: record.product_name,
     modelName: record.model_name,
-    agentRuntimeName: record.agent_runtime_name,
   })
-  return productName || modelName || agentRuntimeName
+  return productName || modelName
     ? {
       ...(productName ? { productName } : {}),
       ...(modelName ? { modelName } : {}),
-      ...(agentRuntimeName ? { agentRuntimeName } : {}),
     }
     : undefined
 }
@@ -439,7 +436,7 @@ export function buildRecentActivityView(builds: RecentActivityBuildItem[]): {
     }
     if (build.signature) {
       const { modelName: model } = normalizeSignature(build.signature)
-      const environment = formatAttributionEnvironment(build.signature.productName, build.signature.agentRuntimeName)
+      const environment = formatAttributionEnvironment(build.signature.productName)
       if (model) models.set(model, (models.get(model) ?? 0) + 1)
       if (environment) environments.set(environment, (environments.get(environment) ?? 0) + 1)
     }
@@ -455,14 +452,10 @@ export function buildRecentActivityView(builds: RecentActivityBuildItem[]): {
   }
 }
 
-/** One responsibility environment: product(runtime) when both are observed. */
-function formatAttributionEnvironment(productName?: string, runtimeName?: string): string | undefined {
-  const { productName: normalizedProductName, agentRuntimeName: normalizedRuntimeName } = normalizeSignature({
-    productName,
-    agentRuntimeName: runtimeName,
-  })
-  if (normalizedProductName && normalizedRuntimeName) return `${normalizedProductName}(${normalizedRuntimeName})`
-  return normalizedProductName || normalizedRuntimeName || undefined
+/** One responsibility environment: product name (agent_runtime_name retired). */
+function formatAttributionEnvironment(productName?: string): string | undefined {
+  const { productName: normalizedProductName } = normalizeSignature({ productName })
+  return normalizedProductName || undefined
 }
 
 function silentDays(updatedAt: unknown, observedAt: number): number | null {

@@ -10,72 +10,58 @@ import CommitSignatureMeta from '../../src/components/CommitSignatureMeta';
 const testDir = path.dirname(fileURLToPath(import.meta.url));
 const webRoot = path.resolve(testDir, '../..');
 
-test('compact signature metadata shows model and product(runtime), with field fallbacks', () => {
+test('compact signature metadata shows model and product, with field fallbacks', () => {
   const complete = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
-    productName: 'Cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: 'codex-cli',
+    productName: 'Cindy', modelName: 'gpt-5.6-luna',
   } }));
   assert.match(complete, /gpt-5\.6-luna/);
-  assert.match(complete, /Cindy\(Codex\)/);
+  assert.match(complete, /Cindy/);
 
   const deepSeekHarness = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
-    productName: 'deepseek harness', modelName: 'deepseek-v4-flash', agentRuntimeName: 'Dsh',
+    productName: 'deepseek harness', modelName: 'deepseek-v4-flash',
   } }));
   assert.match(deepSeekHarness, /DeepSeek Harness/);
-  assert.doesNotMatch(deepSeekHarness, /DeepSeek Harness\(Dsh\)/);
 
   const hyphenatedDeepSeekHarness = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
-    productName: 'deepseek-harness', modelName: 'deepseek-v4-flash', agentRuntimeName: 'dsh',
+    productName: 'deepseek-harness', modelName: 'deepseek-v4-flash',
   } }));
   assert.match(hyphenatedDeepSeekHarness, /DeepSeek Harness/);
-  assert.doesNotMatch(hyphenatedDeepSeekHarness, /deepseek-harness|DeepSeek Harness\(Dsh\)/);
-
-  const deepSeekHarnessRuntime = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
-    agentRuntimeName: 'deepseek-harness',
-  } }));
-  assert.match(deepSeekHarnessRuntime, /DeepSeek Harness/);
-  assert.doesNotMatch(deepSeekHarnessRuntime, /Deepseek|deepseek-harness/);
+  assert.doesNotMatch(hyphenatedDeepSeekHarness, /deepseek-harness/);
 
   const codexDesktop = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
-    productName: 'codex-desktop', agentRuntimeName: 'codex',
+    productName: 'codex-desktop',
   } }));
   assert.match(codexDesktop, /Codex/);
-  assert.doesNotMatch(codexDesktop, /codex-desktop|Codex\(Codex\)/);
+  assert.doesNotMatch(codexDesktop, /codex-desktop/);
 
   const trae = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
-    productName: 'Trae Code', agentRuntimeName: 'Dsh',
+    productName: 'Trae Code',
   } }));
   assert.match(trae, /Trae/);
-  assert.doesNotMatch(trae, /Trae Code|Trae\(Dsh\)/);
+  assert.doesNotMatch(trae, /Trae Code/);
 
   const hostedModel = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
     modelName: 'chatgpt/gpt-5.6-terra',
     productName: 'cindy',
-    agentRuntimeName: 'claude-code',
   } }));
   assert.match(hostedModel, /gpt-5\.6-terra/);
   assert.doesNotMatch(hostedModel, /chatgpt\//);
-  assert.match(hostedModel, /Cindy\(Claude\)/);
-  assert.doesNotMatch(hostedModel, /cindy\(claude-code\)/);
+  assert.match(hostedModel, /Cindy/);
+  assert.doesNotMatch(hostedModel, /cindy/);
 
   const duplicateIdentity = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
-    productName: 'Cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: ' c I n d y ',
+    productName: 'Cindy', modelName: 'gpt-5.6-luna',
   } }));
   assert.match(duplicateIdentity, /Cindy/);
-  assert.doesNotMatch(duplicateIdentity, /Cindy\(Cindy\)/);
 
   const claudeCodeIdentity = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: {
-    productName: 'Claude Code', modelName: 'gl m-5.2', agentRuntimeName: 'claude-code',
+    productName: 'Claude Code', modelName: 'gl m-5.2',
   } }));
   assert.match(claudeCodeIdentity, /Claude Code/);
-  assert.doesNotMatch(claudeCodeIdentity, /Claude Code\(Claude\)/);
 
   const productOnly = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: { productName: 'Cindy' } }));
   assert.match(productOnly, /Cindy/);
   assert.doesNotMatch(productOnly, /undefined|null|\\(\\)/);
-
-  const runtimeOnly = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: { agentRuntimeName: 'codex-cli' } }));
-  assert.match(runtimeOnly, /Codex/);
-  assert.doesNotMatch(runtimeOnly, /undefined|null|\\(\\)/);
 
   const modelOnly = renderToStaticMarkup(createElement(CommitSignatureMeta, { signature: { modelName: 'gpt-5.6-luna' } }));
   assert.match(modelOnly, /gpt-5\.6-luna/);

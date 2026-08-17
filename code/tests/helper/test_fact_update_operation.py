@@ -211,7 +211,6 @@ def _append_update_log(fields: dict[str, object]) -> None:
             "signature": {
                 "product_name": "test",
                 "model_name": "test-model",
-                "agent_runtime_name": "pytest",
             },
             "at": "2000-01-01T00:00:00Z",
             "summary": "更新测试事实对象。",
@@ -254,8 +253,7 @@ def _update_payload(
                 "signature": {
                     "product_name": "test",
                     "model_name": "test-model",
-                    "agent_runtime_name": "pytest",
-                }
+                   }
             },
         },
     )
@@ -432,8 +430,7 @@ def test_observed_partial_signature_and_session_survive_real_generic_update_sche
     payload["observed_context"] = {
         "signature": {
             "product_name": "test",
-            "model_name": None,
-            "agent_runtime_name": "pytest",
+            "model_name": "test-model",
         }
     }
 
@@ -445,8 +442,7 @@ def test_observed_partial_signature_and_session_survive_real_generic_update_sche
     newest = response["result"]["fact_object"]["change_log"][-1]
     assert newest["signature"] == {
         "product_name": "test",
-        "model_name": None,
-        "agent_runtime_name": "pytest",
+        "model_name": "test-model",
     }
     assert "session_id" not in newest
     reread = _read(workspace, project)
@@ -460,13 +456,11 @@ def test_observed_partial_signature_and_session_survive_real_generic_update_sche
         {
             "product_name": None,
             "model_name": None,
-            "agent_runtime_name": None,
         },
         {"product_name": "test"},
         {
             "product_name": "test",
             "model_name": None,
-            "agent_runtime_name": "pytest",
             "unknown": "not-allowed",
         },
     )
@@ -543,8 +537,7 @@ def test_generic_helper_preserves_committed_result_when_coordination_release_is_
                 "signature": {
                     "product_name": "test",
                     "model_name": "test-model",
-                    "agent_runtime_name": "pytest",
-                }
+                   }
             },
             (),
             response_profile="diagnostic",
@@ -596,8 +589,7 @@ def test_generic_helper_preserves_candidate_rejection_when_coordination_release_
                 "signature": {
                     "product_name": "test",
                     "model_name": "test-model",
-                    "agent_runtime_name": "pytest",
-                }
+                   }
             },
             (),
             response_profile="diagnostic",
@@ -650,8 +642,7 @@ def test_generic_no_change_release_gap_has_observation_but_no_commit_code(
                 "signature": {
                     "product_name": "test",
                     "model_name": "test-model",
-                    "agent_runtime_name": "pytest",
-                }
+                   }
             },
             (),
             response_profile="diagnostic",
@@ -1213,8 +1204,7 @@ def test_coordination_permission_failure_is_structured_unavailable_with_zero_wri
                         "signature": {
                             "product_name": "test",
                             "model_name": "test-model",
-                            "agent_runtime_name": "pytest",
-                        }
+                                   }
                 },
             }
         ),
@@ -1337,8 +1327,7 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
                     "signature": {
                         "product_name": "test",
                         "model_name": "test-model",
-                        "agent_runtime_name": "pytest",
-                    },
+                           },
                     "at": "2000-01-01T00:00:00Z",
                     "summary": "创建 Study 测试事实对象。",
                 }
@@ -1425,8 +1414,7 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
                     "signature": {
                         "product_name": "test",
                         "model_name": "test-model",
-                        "agent_runtime_name": "pytest",
-                    }
+                           }
                 },
             }
         ),
@@ -1457,7 +1445,6 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
             "signature": {
                 "product_name": "test",
                 "model_name": "test-model",
-                "agent_runtime_name": "pytest",
             },
             "at": "2000-01-01T00:00:00Z",
             "summary": "更新 Study 测试事实对象。",
@@ -1480,8 +1467,7 @@ def test_study_update_preserves_submitted_body_boundary(tmp_path: Path) -> None:
                         "signature": {
                             "product_name": "test",
                             "model_name": "test-model",
-                            "agent_runtime_name": "pytest",
-                        }
+                                   }
                     },
             }
         ),
@@ -1566,7 +1552,6 @@ def test_first_log_generic_update_succeeds_when_head_lacks_log(tmp_path: Path) -
             "signature": {
                 "product_name": "placeholder",
                 "model_name": "placeholder",
-                "agent_runtime_name": "placeholder",
             },
             "at": "2000-01-01T00:00:00Z",
             "summary": "首次真实更新建立流水；此前历史未恢复。",
@@ -1587,7 +1572,7 @@ def test_first_log_generic_update_succeeds_when_head_lacks_log(tmp_path: Path) -
     change_log = after_fields["change_log"]
     assert len(change_log) == 1
     entry = change_log[0]
-    assert set(entry["signature"]) == {"product_name", "model_name", "agent_runtime_name"}
+    assert set(entry["signature"]) == {"product_name", "model_name"}
     assert entry["signature"]["model_name"] == "test-model"
     assert "session_id" not in entry
     assert entry["at"] == after_fields["updated_at"]
@@ -1609,7 +1594,6 @@ def test_first_log_generic_update_rejects_deleted_committed_history(tmp_path: Pa
             "signature": {
                 "product_name": "test",
                 "model_name": "test-model",
-                "agent_runtime_name": "pytest",
             },
             "at": "2000-01-01T00:00:00Z",
             "summary": "首次真实更新建立流水；此前历史未恢复。",

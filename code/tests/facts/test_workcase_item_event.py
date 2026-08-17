@@ -43,7 +43,6 @@ def _fields(status: str = "in_progress") -> dict[str, object]:
                 "signature": {
                     "product_name": "existing",
                     "model_name": "existing",
-                    "agent_runtime_name": "existing",
                 },
                 "at": "2026-08-15T00:30:00Z",
                 "summary": "Existing event",
@@ -77,7 +76,6 @@ def test_start_item_event_changes_only_the_target_checkpoint_and_appends_log() -
     assert set(after["change_log"][-1]["signature"]) == {
         "product_name",
         "model_name",
-        "agent_runtime_name",
     }
 
 

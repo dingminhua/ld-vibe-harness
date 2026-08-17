@@ -353,7 +353,7 @@ def _signed(message: str) -> str:
     return (
         message
         + "\n\n关键变更:\n- 覆盖当前 Git adapter 测试变化"
-        + "\n\nLDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: pytest"
+        + "\n\nLDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna"
     )
 
 

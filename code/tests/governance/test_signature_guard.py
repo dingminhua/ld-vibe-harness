@@ -8,7 +8,7 @@ from ldvh.signature import LDVHSignature
 
 
 def _signature(product_name: str | None) -> LDVHSignature:
-    return LDVHSignature(product_name=product_name, model_name="gpt-5", agent_runtime_name="codex")
+    return LDVHSignature(product_name=product_name, model_name="gpt-5")
 
 
 def test_trimmed_governance_instance_name_collides_with_normalized_product_name() -> None:

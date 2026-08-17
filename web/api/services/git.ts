@@ -27,7 +27,6 @@ export type GitPushStatus = 'pushed' | 'unpushed' | 'incoming' | 'unknown'
 export type GitCommitSignature = {
   productName?: string
   modelName?: string
-  agentRuntimeName?: string
 }
 
 export interface GitLogEntry {
@@ -130,16 +129,16 @@ function getCommitTrailerValue(body: string, key: string): string | undefined {
  * the compact commit identity only exposes the model/agent and host when present.
  */
 export function parseCommitSignature(body: string): GitCommitSignature | undefined {
-  const normalizedSignature = normalizeSignature({
+  const productName = normalizeSignature({
     productName: getCommitTrailerValue(body, 'LDVH-Product-Name'),
     modelName: getCommitTrailerValue(body, 'LDVH-Model-Name'),
-    agentRuntimeName: getCommitTrailerValue(body, 'LDVH-Agent-Runtime-Name'),
-  })
-  const productName = normalizedSignature.productName || undefined
-  const modelName = normalizedSignature.modelName || undefined
-  const agentRuntimeName = normalizedSignature.agentRuntimeName || undefined
-  return productName || modelName || agentRuntimeName
-    ? { productName, modelName, agentRuntimeName }
+  }).productName || undefined
+  const modelName = normalizeSignature({
+    productName: getCommitTrailerValue(body, 'LDVH-Product-Name'),
+    modelName: getCommitTrailerValue(body, 'LDVH-Model-Name'),
+  }).modelName || undefined
+  return productName || modelName
+    ? { productName, modelName }
     : undefined
 }
 

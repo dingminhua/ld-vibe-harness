@@ -437,7 +437,7 @@ def build_example_projection(operation: Mapping[str, Any]) -> dict[str, Any]:
         if not isinstance(observed_context, dict):
             raise ValueError("请求骨架 observed_context 路径冲突")
         observed_context["signature"] = {field_name: None for field_name in FIELD_NAMES}
-        note_parts.append("三字段署名全为 null 时不可执行；调用方必须逐项直接观察，不得缓存、推导或默认填值。")
+        note_parts.append("两字段署名全为 null 时不可执行；调用方必须逐项直接观察，不得缓存、推导或默认填值。")
 
     return {
         "operation_key": operation["operation_key"],

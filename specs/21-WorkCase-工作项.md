@@ -755,7 +755,7 @@ WorkCase 的普通活动期写入必须使用 `update-workcase`；Human 主动�
   - `required=true`（必须执行）
   - `target="fact_object.change_log"`（以当前 before 历史为基准）
   - `count=1`（恰好追加 1 条）
-  - `signature.fields` = `product_name`、`model_name`、`agent_runtime_name`
+  - `signature.fields` = `product_name`、`model_name`（两字段必填）
   - `signature.source` = `close-workcase 请求中的 observed_context.signature`
   - `signature.provider` = `caller`
   - `signature.forbidden_fields` 必须不含 `signer_type`

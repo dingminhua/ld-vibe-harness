@@ -106,7 +106,6 @@ def _request(
                 "signature": {
                     "product_name": "test",
                     "model_name": "test-model",
-                    "agent_runtime_name": "pytest",
                 }
             }
             if observed_context is None

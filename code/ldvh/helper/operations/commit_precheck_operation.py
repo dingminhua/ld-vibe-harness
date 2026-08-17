@@ -43,19 +43,18 @@ _IMPLEMENTATION_EVIDENCE = (
     ),
 )
 _COMMIT_MESSAGE_INPUT_EXAMPLE = {
-    "summary": "Git commit message 的三字段 LDVH trailer 待填写骨架",
+    "summary": "Git commit message 的两字段 LDVH trailer 待填写骨架",
     "arguments_fragment": {
         "message": (
             "feat: <fill-subject>\n\n"
             "LDVH-Product-Name: <fill-directly-observed-product-name>\n"
-            "LDVH-Model-Name: <fill-directly-observed-model-name>\n"
-            "LDVH-Agent-Runtime-Name: <fill-directly-observed-agent-runtime-name>"
+            "LDVH-Model-Name: <fill-directly-observed-model-name>"
         )
     },
     "source_refs": (_INPUT_CONTRACT,),
     "composition_note": (
         "按同一次提交前直接观察逐项替换尖括号占位；不可观察的单项 trailer 应省略并先向 Human 披露，"
-        "三项均不可观察时必须停止。该片段只示例连续 trailer 排列，不证明 message、授权或提交内容有效。"
+        "两项均不可观察时必须停止。该片段只示例连续 trailer 排列，不证明 message、授权或提交内容有效。"
     ),
 }
 

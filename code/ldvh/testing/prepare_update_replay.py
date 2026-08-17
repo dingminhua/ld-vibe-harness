@@ -69,7 +69,6 @@ _DENIED_KEYS = frozenset(
 _SIGNATURE = {
     "product_name": "deterministic-replay",
     "model_name": "fixture-runner",
-    "agent_runtime_name": "pytest-runtime",
 }
 _BODY = (
     "## 研究问题\n\n准备草案是否保持正文。\n\n"
@@ -394,7 +393,6 @@ def _run_strategy(task: dict[str, Any], strategy: str, counter: int) -> dict[str
                     "signature": {
                         "product_name": None,
                         "model_name": None,
-                        "agent_runtime_name": None,
                     }
                 },
             }

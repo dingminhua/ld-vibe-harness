@@ -789,7 +789,6 @@ export type GitPushStatus = 'pushed' | 'unpushed' | 'incoming' | 'unknown';
 export interface CommitSignature {
   productName?: string;
   modelName?: string;
-  agentRuntimeName?: string;
 }
 
 export interface CommitDetailPanelData {

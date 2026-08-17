@@ -98,7 +98,7 @@ def _signed(message: str) -> str:
     return (
         message
         + "\n\n关键变更:\n- 验证 common-dir Hook 对目标工作树生效"
-        + "\n\nLDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: pytest"
+        + "\n\nLDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna"
     )
 
 

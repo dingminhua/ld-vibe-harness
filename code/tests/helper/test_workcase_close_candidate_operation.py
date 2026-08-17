@@ -167,7 +167,7 @@ def test_candidate_operation_returns_complete_nonmanaged_projection_without_read
         "target": "fact_object.change_log",
         "count": 1,
         "signature": {
-            "fields": ["product_name", "model_name", "agent_runtime_name"],
+            "fields": ["product_name", "model_name"],
             "source": "close-workcase 调用请求中的 observed_context.signature",
             "provider": "caller",
             "forbidden_fields": ["signer_type"],

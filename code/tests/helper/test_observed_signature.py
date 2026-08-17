@@ -14,7 +14,6 @@ def _signature(**overrides: str | None) -> dict[str, str | None]:
     return {
         "product_name": "Cindy",
         "model_name": "GLM-5.2",
-        "agent_runtime_name": "Codex CLI",
         **overrides,
     }
 
@@ -40,24 +39,25 @@ def test_parse_normalizes_the_complete_snapshot_without_inference() -> None:
     assert result.signature.as_dict() == {
         "product_name": "Cindy",
         "model_name": "glm-5.2",
-        "agent_runtime_name": "codex-cli",
     }
 
 
-def test_partial_values_are_allowed_but_the_three_keys_are_not_optional() -> None:
-    allowed = parse_observed_write_signature(
-        {"signature": _signature(model_name=None, agent_runtime_name=None)}
+def test_partial_values_are_rejected_under_two_field_contract() -> None:
+    # Both fields must be non-null; model_name=None is now a hard error.
+    rejected = parse_observed_write_signature(
+        {"signature": _signature(model_name=None)}
     )
-    assert allowed.problems == ()
-    assert allowed.signature is not None
-    assert allowed.signature.as_dict()["model_name"] is None
+    assert rejected.problems == (
+        "LDVH 署名.model_name 必须是非空 string（不可观察时必须停止并报告）",
+    )
+    assert rejected.signature is None
 
     missing = parse_observed_write_signature({"signature": {"product_name": "Cindy"}})
     assert any("缺少字段" in problem for problem in missing.problems)
 
 
 def test_an_empty_snapshot_blocks_new_controlled_writes() -> None:
-    observed = {"signature": _signature(product_name=None, model_name=None, agent_runtime_name=None)}
+    observed = {"signature": _signature(product_name=None, model_name=None)}
     assert observed_write_signature_required_problem(observed) is not None
     assert observed_signature_injection_problems(observed, _supplied())
 
@@ -68,7 +68,6 @@ def test_injection_replaces_draft_and_historical_shapes_and_removes_session_id()
     assert newest["signature"] == {
         "product_name": "Cindy",
         "model_name": "glm-5.2",
-        "agent_runtime_name": "codex-cli",
     }
     assert "session_id" not in newest
 

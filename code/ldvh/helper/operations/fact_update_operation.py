@@ -74,7 +74,6 @@ _READ_TO_UPDATE_INPUT_EXAMPLE = {
                     "signature": {
                         "product_name": "existing-product",
                         "model_name": "existing-model",
-                        "agent_runtime_name": "existing-runtime",
                     },
                     "at": "2026-01-01T00:00:00Z",
                     "summary": "既有流水必须按原顺序和原值保留。",

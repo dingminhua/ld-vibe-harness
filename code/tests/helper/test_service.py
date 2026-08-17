@@ -171,7 +171,6 @@ def test_fact_update_publishes_a_source_bound_read_to_update_after_example() -> 
     assert fact_object["change_log"][0]["signature"] == {
         "product_name": "existing-product",
         "model_name": "existing-model",
-        "agent_runtime_name": "existing-runtime",
     }
     assert set(fact_object["change_log"][-1]) == {"summary"}
     assert [source["locator"] for source in example["source_refs"]] == [
@@ -191,15 +190,14 @@ def test_commit_precheck_publishes_a_source_bound_trailer_skeleton() -> None:
     assert len(operation["input_examples"]) == 1
     example = operation["input_examples"][0]
     message = example["arguments_fragment"]["message"]
-    assert message.splitlines()[-3:] == [
+    assert message.splitlines()[-2:] == [
         "LDVH-Product-Name: <fill-directly-observed-product-name>",
         "LDVH-Model-Name: <fill-directly-observed-model-name>",
-        "LDVH-Agent-Runtime-Name: <fill-directly-observed-agent-runtime-name>",
     ]
     assert example["source_refs"][0]["locator"] == (
         "source-of-truth-traceability::9.7 Git commit 候选机械预检输入字段"
     )
-    assert "三项均不可观察时必须停止" in example["composition_note"]
+    assert "两项均不可观察时必须停止" in example["composition_note"]
 
 
 def test_repository_problem_is_not_rewritten_as_empty_discovery(monkeypatch, tmp_path: Path) -> None:

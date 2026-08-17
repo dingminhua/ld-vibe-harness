@@ -41,7 +41,7 @@ _INPUT_EXAMPLE = {
     "source_refs": (_CONTRACT,),
     "composition_note": (
         "该只读请求只返回 caller_completion_required 草案。调用方仍须独立形成真实语义变化、"
-        "恰追加一条真实 change_log、重新观察三字段 signature，并仅在目标入口与实际转换要求时补授权。"
+        "恰追加一条真实 change_log、重新观察两字段 signature，并仅在目标入口与实际转换要求时补授权。"
     ),
 }
 
@@ -144,7 +144,7 @@ def _completion_requirements() -> dict[str, Any]:
             "required": True,
             "provider": "caller",
             "target": "observed_context.signature",
-            "fields": ["product_name", "model_name", "agent_runtime_name"],
+            "fields": ["product_name", "model_name"],
         },
         "authorization_reference": {
             "required": "source_conditioned",
@@ -259,7 +259,6 @@ def _execute(
                     "signature": {
                         "product_name": None,
                         "model_name": None,
-                        "agent_runtime_name": None,
                     }
                 },
             },

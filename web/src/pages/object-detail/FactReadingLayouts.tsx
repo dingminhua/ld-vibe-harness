@@ -37,7 +37,6 @@ type ChangeLogEntry = {
   summary: string;
   productName?: string;
   modelName?: string;
-  agentRuntimeName?: string;
 };
 
 /**
@@ -76,10 +75,10 @@ export function ChangeLogReadingNode({
                   {formatDateTime(entry.at)}
                 </span>
                 {entry.modelName && <><span aria-hidden="true">·</span><span>{entry.modelName}</span></>}
-                {(entry.productName || entry.agentRuntimeName) && (
+                {entry.productName && (
                   <>
                     <span aria-hidden="true">·</span>
-                    <span>{formatSignatureEnvironment(entry.productName, entry.agentRuntimeName)}</span>
+                    <span>{entry.productName}</span>
                   </>
                 )}
               </div>
@@ -90,11 +89,6 @@ export function ChangeLogReadingNode({
       )}
     </ReadingNodeSection>
   );
-}
-
-function formatSignatureEnvironment(productName?: string, runtimeName?: string): string {
-  if (productName && runtimeName) return `${productName}(${runtimeName})`;
-  return productName || runtimeName || '';
 }
 
 function parseChangeLogEntries(value: unknown): ChangeLogEntry[] {
@@ -112,18 +106,15 @@ function parseChangeLogEntries(value: unknown): ChangeLogEntry[] {
     const normalizedSignature = normalizeSignature({
       productName: signatureRecord?.product_name,
       modelName: signatureRecord?.model_name,
-      agentRuntimeName: signatureRecord?.agent_runtime_name,
     });
     const productName = normalizedSignature.productName || undefined;
     const modelName = normalizedSignature.modelName || undefined;
-    const agentRuntimeName = normalizedSignature.agentRuntimeName || undefined;
     return [{
       key: `${index}-${at}`,
       at,
       summary,
       productName,
       modelName,
-      agentRuntimeName,
     }];
   }).reverse();
 }

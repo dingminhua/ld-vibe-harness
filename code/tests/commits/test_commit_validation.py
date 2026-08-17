@@ -47,7 +47,7 @@ def _input(contract: CommitContractProjection, **changes: object) -> CommitValid
         "message": (
             "docs(specs): 明确提交契约\n\n"
             "关键变更:\n- 明确测试中的提交契约\n\n"
-            "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: codex-cli"
+            "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna"
         ),
         "candidate_paths": ("specs/03.md",),
         "git_worktree_root": "/workspace/project",
@@ -69,7 +69,7 @@ def _codes(result: object) -> set[str]:
 def _signed(message: str) -> str:
     if "\n关键变更:" not in message:
         message += "\n\n关键变更:\n- 覆盖当前测试变化"
-    return message + "\n\nLDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: codex-cli"
+    return message + "\n\nLDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna"
 
 
 def test_new_spec_without_human_gate_trailer_fails(contract: CommitContractProjection) -> None:
@@ -89,7 +89,7 @@ def test_new_spec_with_empty_human_gate_trailer_fails(contract: CommitContractPr
     message = (
         "docs(specs): 新增规范文档\n\n"
         "关键变更:\n- 新增独立 spec 文档\n\n"
-        "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: codex-cli\n"
+        "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\n"
         "Human-Gate: "
     )
     result = validate_commit(
@@ -109,7 +109,7 @@ def test_new_spec_with_human_gate_trailer_passes(contract: CommitContractProject
     message = (
         "docs(specs): 新增规范文档\n\n"
         "关键变更:\n- 新增独立 spec 文档\n\n"
-        "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: codex-cli\n"
+        "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\n"
         "Human-Gate: authorized-by-human-20260806"
     )
     result = validate_commit(
@@ -190,7 +190,7 @@ def test_activate_existing_spec_with_human_gate_trailer_passes(contract: CommitC
     message = (
         "docs(specs): 激活独立规范文档\n\n"
         "关键变更:\n- 将 status 转为 active\n\n"
-        "LDVH-Product-Name: Test\nLDVH-Model-Name: test-agent\nLDVH-Agent-Runtime-Name: test-runtime\n"
+        "LDVH-Product-Name: Test\nLDVH-Model-Name: test-agent\n"
         "Human-Gate: authorized-by-human-20260806"
     )
     result = validate_commit(
@@ -244,7 +244,7 @@ def test_governance_instance_name_cannot_be_used_as_product_signature(
             message=(
                 "docs(specs): 明确提交契约\n\n关键变更:\n- 覆盖实例名碰撞\n\n"
                 "LDVH-Product-Name: LDVH Governance\n"
-                "LDVH-Model-Name: gpt-5\nLDVH-Agent-Runtime-Name: codex"
+                "LDVH-Model-Name: gpt-5"
             ),
         ),
     )
@@ -263,7 +263,7 @@ def test_governance_instance_collision_is_case_sensitive_and_nullable(
             message=(
                 "docs(specs): 明确提交契约\n\n关键变更:\n- 覆盖实例名大小写\n\n"
                 "LDVH-Product-Name: ldvh governance\n"
-                "LDVH-Model-Name: gpt-5\nLDVH-Agent-Runtime-Name: codex"
+                "LDVH-Model-Name: gpt-5"
             ),
         ),
     )
@@ -273,7 +273,7 @@ def test_governance_instance_collision_is_case_sensitive_and_nullable(
             contract,
             message=(
                 "docs(specs): 明确提交契约\n\n关键变更:\n- 覆盖产品不可观察\n\n"
-                "LDVH-Model-Name: gpt-5\nLDVH-Agent-Runtime-Name: codex"
+                "LDVH-Model-Name: gpt-5"
             ),
         ),
     )
@@ -293,7 +293,7 @@ def test_invalid_or_duplicate_signature_trailer_keeps_existing_error_priority(
                 "docs(specs): 明确提交契约\n\n关键变更:\n- 覆盖重复 trailer\n\n"
                 "LDVH-Product-Name: LDVH Governance\n"
                 "LDVH-Product-Name: LDVH Governance\n"
-                "LDVH-Model-Name: gpt-5\nLDVH-Agent-Runtime-Name: codex"
+                "LDVH-Model-Name: gpt-5"
             ),
         ),
     )
@@ -325,7 +325,7 @@ def test_crlf_and_leading_comments_are_normalized(contract: CommitContractProjec
     message = (
         "# template\r\n\r\ndocs(specs): 明确提交契约\r\n\r\n"
         "关键变更:\r\n- 明确换行归一化\r\n\r\n"
-            "LDVH-Product-Name: Cindy\r\nLDVH-Model-Name: gpt-5.6-luna\r\nLDVH-Agent-Runtime-Name: codex-cli\r\n"
+            "LDVH-Product-Name: Cindy\r\nLDVH-Model-Name: gpt-5.6-luna\r\n"
     )
 
     result = validate_commit(contract, _input(contract, message=message))
@@ -380,7 +380,7 @@ def test_every_commit_requires_key_changes_list(contract: CommitContractProjecti
             contract,
             message=(
                 "docs: 更新说明\n\n"
-                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: codex-cli"
+                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna"
             ),
         ),
     )
@@ -422,8 +422,7 @@ def test_breaking_without_body_reports_all_minimum_structure_failures(
             message=(
                 "feat!: 调整公开契约\n\n"
                 "LDVH-Product-Name: Cindy\n"
-                "LDVH-Model-Name: gpt-5.6-luna\n"
-                "LDVH-Agent-Runtime-Name: codex-cli"
+                "LDVH-Model-Name: gpt-5.6-luna"
             ),
         ),
     )
@@ -468,7 +467,7 @@ def test_body_heading_and_list_boundaries_fail_closed(
 def test_body_after_trailers_is_not_accepted_as_minimum_body(contract: CommitContractProjection) -> None:
     message = (
         "docs: 错误放置正文\n\n"
-        "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: codex-cli\n\n"
+        "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\n\n"
         "关键变更:\n- trailers 之后的正文无效"
     )
 
@@ -478,7 +477,7 @@ def test_body_after_trailers_is_not_accepted_as_minimum_body(contract: CommitCon
     assert "signature_trailer_missing" in _codes(result)
 
 
-def test_signature_footer_requires_at_least_one_current_signature_field(contract: CommitContractProjection) -> None:
+def test_signature_footer_requires_both_current_signature_fields(contract: CommitContractProjection) -> None:
     result = validate_commit(contract, _input(contract, message="docs: 增加署名"))
 
     assert result.outcome == "failed"
@@ -494,7 +493,7 @@ def test_signature_footer_requires_at_least_one_current_signature_field(contract
     assert with_retired_legacy_trailer.outcome == "failed"
     assert "legacy_signature_trailer_retired" in _codes(with_retired_legacy_trailer)
 
-    with_one_observable_field = validate_commit(
+    with_only_one_field = validate_commit(
         contract,
         _input(
             contract,
@@ -505,11 +504,12 @@ def test_signature_footer_requires_at_least_one_current_signature_field(contract
             ),
         ),
     )
-    assert with_one_observable_field.outcome == "passed"
+    assert with_only_one_field.outcome == "failed"
+    assert "signature_trailer_missing" in _codes(with_only_one_field)
 
 
 def test_new_signature_trailers_are_canonical_footer(contract: CommitContractProjection) -> None:
-    """当前 LDVH 三字段 footer 直接通过。"""
+    """当前 LDVH 两字段 footer 直接通过。"""
 
     result = validate_commit(
         contract,
@@ -518,8 +518,7 @@ def test_new_signature_trailers_are_canonical_footer(contract: CommitContractPro
             message=(
                 "docs(specs): 明确提交契约\n\n"
                 "关键变更:\n- 明确测试中的提交契约\n\n"
-                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\n"
-                "LDVH-Agent-Runtime-Name: codex-cli"
+                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna"
             ),
         ),
     )
@@ -533,9 +532,8 @@ def test_signature_trailers_must_use_the_shared_normalized_values(contract: Comm
         _input(
             contract,
             message=(
-                "docs: 规范署名 trailer\n\n关键变更:\n- 拒绝未归一的模型与运行时名称\n\n"
-                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: DeepSeek-V4-Flash[1m]\n"
-                "LDVH-Agent-Runtime-Name: Codex CLI"
+                "docs: 规范署名 trailer\n\n关键变更:\n- 拒绝未归一的模型名\n\n"
+                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: DeepSeek-V4-Flash[1m]"
             ),
         ),
     )
@@ -557,8 +555,7 @@ def test_signature_trailer_rejects_literal_null_value(contract: CommitContractPr
             contract,
             message=(
                 "test: 探查 null 字面量 trailer\n\n关键变更:\n- 拒绝 model_name 写成 null 字面量\n\n"
-                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: null\n"
-                "LDVH-Agent-Runtime-Name: pi"
+                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: null"
             ),
         ),
     )
@@ -576,8 +573,7 @@ def test_signature_trailer_rejects_literal_none_value(contract: CommitContractPr
             contract,
             message=(
                 "test: 探查 none 字面量 trailer\n\n关键变更:\n- 拒绝 model_name 写成 none 字面量\n\n"
-                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: none\n"
-                "LDVH-Agent-Runtime-Name: pi"
+                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: none"
             ),
         ),
     )
@@ -587,7 +583,12 @@ def test_signature_trailer_rejects_literal_none_value(contract: CommitContractPr
 
 
 def test_signature_trailer_omitted_field_still_accepted(contract: CommitContractProjection) -> None:
-    """03 §9.4: an unobservable field is correctly expressed by omitting its trailer."""
+    """03 §9.4: an unobservable field is correctly expressed by omitting its trailer.
+
+    With the two-field signature, a commit that omits the model_name trailer
+    (model_name unobservable) still fails because both trailers are mandatory;
+    the writer must stop and report rather than submit a partial signature.
+    """
 
     result = validate_commit(
         contract,
@@ -595,13 +596,13 @@ def test_signature_trailer_omitted_field_still_accepted(contract: CommitContract
             contract,
             message=(
                 "docs: 省略不可观察字段\n\n关键变更:\n- model_name 不可观察时省略 trailer\n\n"
-                "LDVH-Product-Name: Cindy\n"
-                "LDVH-Agent-Runtime-Name: pi"
+                "LDVH-Product-Name: Cindy"
             ),
         ),
     )
 
-    assert result.outcome == "passed", [f"{issue.code}: {issue.message}" for issue in result.issues]
+    assert result.outcome == "failed"
+    assert "signature_trailer_missing" in _codes(result)
 
 
 @pytest.mark.parametrize("literal", ["n/a", "nil", "N/A", " NULL ", "undefined"])
@@ -616,8 +617,7 @@ def test_signature_trailer_rejects_other_literal_values(
             contract,
             message=(
                 "test: 探查非 null 字面量 trailer\n\n关键变更:\n- 拒绝 n/a/nil 等字面量值\n\n"
-                f"LDVH-Product-Name: Cindy\nLDVH-Model-Name: {literal}\n"
-                "LDVH-Agent-Runtime-Name: pi"
+                f"LDVH-Product-Name: Cindy\nLDVH-Model-Name: {literal}"
             ),
         ),
     )
@@ -635,27 +635,7 @@ def test_signature_trailer_rejects_literal_null_in_product_name(contract: Commit
             contract,
             message=(
                 "test: product_name 也拒绝 null 字面量\n\n关键变更:\n- 拒绝 product_name 写成 null\n\n"
-                "LDVH-Product-Name: null\nLDVH-Model-Name: gpt-5.6-luna\n"
-                "LDVH-Agent-Runtime-Name: codex-cli"
-            ),
-        ),
-    )
-
-    assert result.outcome == "failed"
-    assert "signature_trailer_literal_null" in _codes(result)
-
-
-def test_signature_trailer_rejects_literal_na_in_runtime(contract: CommitContractProjection) -> None:
-    """n/a written for agent_runtime_name is rejected too."""
-
-    result = validate_commit(
-        contract,
-        _input(
-            contract,
-            message=(
-                "test: agent_runtime_name 也拒绝 n/a 字面量\n\n关键变更:\n- 拒绝运行时名写成 n/a\n\n"
-                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\n"
-                "LDVH-Agent-Runtime-Name: n/a"
+                "LDVH-Product-Name: null\nLDVH-Model-Name: gpt-5.6-luna"
             ),
         ),
     )
@@ -718,8 +698,7 @@ def test_new_signature_footer_tripwires_reject_alias_and_os_suffix(
             message=(
                 "docs(specs): 明确提交契约\n\n"
                 "关键变更:\n- 明确测试中的提交契约\n\n"
-                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna [1m]\n"
-                "LDVH-Agent-Runtime-Name: codex-cli"
+                "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna [1m]"
             ),
         ),
     )
@@ -814,8 +793,7 @@ def test_signature_footer_rejects_retired_session_id(contract: CommitContractPro
                 message=(
                     "docs(specs): 提交署名\n\n"
                     "关键变更:\n- 合法会话标识\n\n"
-                    f"LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\n"
-                    f"LDVH-Agent-Runtime-Name: runtime-{sid}"
+                    f"LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna"
                 ),
             ),
         )
@@ -825,7 +803,7 @@ def test_signature_footer_rejects_retired_session_id(contract: CommitContractPro
 def test_legacy_signature_footer_cannot_replace_current_trailers(
     contract: CommitContractProjection,
 ) -> None:
-    """旧 trailer 不能替代当前 LDVH 三字段 trailer。"""
+    """旧 trailer 不能替代当前 LDVH 两字段 trailer。"""
 
     result = validate_commit(
         contract,
@@ -846,7 +824,7 @@ def test_legacy_signature_footer_cannot_replace_current_trailers(
 def test_missing_signature_footer_messages_point_at_current_trailers(
     contract: CommitContractProjection,
 ) -> None:
-    """缺失引导指向当前 LDVH 三字段，而非任何退休字段。"""
+    """缺失引导指向当前 LDVH 两字段，而非任何退休字段。"""
 
     result = validate_commit(
         contract,
@@ -862,7 +840,8 @@ def test_missing_signature_footer_messages_point_at_current_trailers(
 
     assert result.outcome == "failed"
     messages = [issue.message for issue in result.issues if issue.code == "signature_trailer_missing"]
-    assert any("LDVH 三字段署名" in message for message in messages)
+    assert any("LDVH-Product-Name" in message and "必填" in message for message in messages)
+    assert any("LDVH-Model-Name" in message and "必填" in message for message in messages)
     assert not any("非空 Agent-ID" in message or "非空 Host-Environment" in message for message in messages)
 
 
@@ -939,7 +918,6 @@ def _spark_schema() -> FactSchema:
             field("change_log.signature", "object"),
             field("change_log.signature.product_name"),
             field("change_log.signature.model_name"),
-            field("change_log.signature.agent_runtime_name"),
             field("change_log.at"),
             field("change_log.summary"),
         ),
@@ -958,7 +936,6 @@ _VALID_SPARK = (
     "  - signature:\n"
     "      product_name: Cindy\n"
     "      model_name: gpt-5.6-luna\n"
-    "      agent_runtime_name: codex-cli\n"
     "    at: 2026-07-01T00:00:00+08:00\n"
     "    summary: 建立测试火花\n"
 ).encode()
@@ -994,8 +971,6 @@ def _current_signature_fixture(data: bytes) -> bytes:
             + b"model_name: "
             + match.group("model")
             + b"\n"
-            + match.group("indent")
-            + b"agent_runtime_name: test-runtime\n"
         ),
         data,
     )
@@ -1020,7 +995,6 @@ def _spark_schema_new_signature() -> FactSchema:
             field("change_log.signature", "object"),
             field("change_log.signature.product_name"),
             field("change_log.signature.model_name"),
-            field("change_log.signature.agent_runtime_name"),
             field("change_log.at"),
             field("change_log.summary"),
         ),
@@ -1029,7 +1003,7 @@ def _spark_schema_new_signature() -> FactSchema:
 
 _NEW_SHAPE_SPARK = _VALID_SPARK
 _LEGACY_SHAPE_SPARK = _VALID_SPARK.replace(
-    b"      product_name: Cindy\n      model_name: gpt-5.6-luna\n      agent_runtime_name: codex-cli\n",
+    b"      product_name: Cindy\n      model_name: gpt-5.6-luna\n",
     b"      agent_id: test-agent\n      host_environment: test-environment\n",
 )
 
@@ -1044,8 +1018,7 @@ def test_new_shape_fact_trace_passes_with_same_commit_environment(
         "关键变更:\n"
         "- 覆盖新形状受控写会话\n\n"
         "LDVH-Product-Name: Cindy\n"
-        "LDVH-Model-Name: gpt-5.6-luna\n"
-        "LDVH-Agent-Runtime-Name: codex-cli"
+        "LDVH-Model-Name: gpt-5.6-luna"
     )
 
     result = validate_commit(
@@ -1074,8 +1047,7 @@ def test_workbuddy_fact_trace_passes_when_trae_executes_commit(
                 "docs(specs): 跨环境提交\n\n"
                 "关键变更:\n- 保留写入流水并由 Trae 提交\n\n"
                 "LDVH-Product-Name: TraeCode\n"
-                "LDVH-Model-Name: claude-4.1\n"
-                "LDVH-Agent-Runtime-Name: claude-agent-sdk"
+                "LDVH-Model-Name: claude-4.1"
             ),
             fact_candidates=(_fact_candidate(data=_NEW_SHAPE_SPARK, head_exists=False),),
             fact_schemas=(_spark_schema_new_signature(),),
@@ -1095,8 +1067,7 @@ def test_new_footer_does_not_bind_legacy_shape_entries(
         "关键变更:\n"
         "- 覆盖混合形状流水\n\n"
         "LDVH-Product-Name: Cindy\n"
-        "LDVH-Model-Name: gpt-5.6-luna\n"
-        "LDVH-Agent-Runtime-Name: codex-cli"
+        "LDVH-Model-Name: gpt-5.6-luna"
     )
 
     result = validate_commit(
@@ -1125,7 +1096,6 @@ def test_fact_rename_compares_trace_with_original_head_object_id(
             "  - signature:\n"
             "      product_name: Cindy\n"
             "      model_name: gpt-5.6-luna\n"
-            "      agent_runtime_name: codex-cli\n"
             "    at: 2026-07-01T01:00:00+08:00\n"
             "    summary: 改名事实对象\n"
         ).encode()
@@ -1229,7 +1199,6 @@ def test_new_fact_with_multiple_precommit_change_logs_keeps_writer_history(
             "  - signature:\n"
             "      product_name: Cindy\n"
             "      model_name: gpt-5.6-luna\n"
-            "      agent_runtime_name: codex-cli\n"
             "    at: 2026-07-01T01:00:00+08:00\n"
             "    summary: 补充测试火花\n"
         ).encode()
@@ -1259,7 +1228,6 @@ def test_new_fact_multiple_writer_sessions_do_not_expand_commit_signature(
             "  - signature:\n"
             "      product_name: Cindy\n"
             "      model_name: gpt-5.6-luna\n"
-            "      agent_runtime_name: codex-cli\n"
             "    at: 2026-07-01T01:00:00+08:00\n"
             "    summary: 补充测试火花\n"
         ).encode()
@@ -1368,7 +1336,6 @@ def test_legacy_migration_change_log_passes_when_head_has_no_history(
         "  - signature:\n"
         "      product_name: Cindy\n"
         "      model_name: gpt-5.6-luna\n"
-        "      agent_runtime_name: codex-cli\n"
         "    at: 2026-07-01T01:00:00+08:00\n"
         "    summary: Human授权兼容旧数据：建立可信流水起点\n"
     ).encode()
@@ -1388,7 +1355,7 @@ def test_legacy_migration_change_log_passes_when_head_has_no_history(
 def test_first_real_update_three_field_log_passes_when_head_has_no_history(
     contract: CommitContractProjection,
 ) -> None:
-    """HEAD 无 change_log、Working Tree 建立一条当前三字段首写流水：本次提交事件。"""
+    """HEAD 无 change_log、Working Tree 建立一条当前两字段首写流水：本次提交事件。"""
 
     head_data = _VALID_SPARK.split(b"change_log:\n")[0]
     data = (
@@ -1403,7 +1370,6 @@ def test_first_real_update_three_field_log_passes_when_head_has_no_history(
         "  - signature:\n"
         "      product_name: Cindy\n"
         "      model_name: gpt-5.6-luna\n"
-        "      agent_runtime_name: claude-code\n"
         "    at: 2026-07-01T01:00:00+08:00\n"
         "    summary: 首次真实更新建立流水；此前历史未恢复。\n"
     ).encode()
@@ -1462,7 +1428,6 @@ def test_first_real_update_rejects_time_unbound_first_entry(
         "  - signature:\n"
         "      product_name: Cindy\n"
         "      model_name: gpt-5.6-luna\n"
-        "      agent_runtime_name: claude-code\n"
         "    at: 2026-07-01T01:00:00+08:00\n"
         "    summary: 首写。\n"
     )
@@ -1523,8 +1488,7 @@ def test_new_fact_multiple_writer_sessions_use_one_trae_commit_session(
         "关键变更:\n"
         "- 保留多个受控写会话并由 Trae 提交\n\n"
         "LDVH-Product-Name: TraeCode\n"
-        "LDVH-Model-Name: claude-4.1\n"
-        "LDVH-Agent-Runtime-Name: claude-agent-sdk"
+        "LDVH-Model-Name: claude-4.1"
     )
 
     result = validate_commit(
@@ -1596,8 +1560,7 @@ def test_new_fact_multiple_writers_use_one_trae_commit_signature(
         "关键变更:\n"
         "- 保留多个执行者流水并由 Trae 提交\n\n"
         "LDVH-Product-Name: TraeCode\n"
-        "LDVH-Model-Name: claude-4.1\n"
-        "LDVH-Agent-Runtime-Name: claude-agent-sdk"
+        "LDVH-Model-Name: claude-4.1"
     )
 
     result = validate_commit(
@@ -1636,8 +1599,7 @@ def test_new_fact_writer_environment_need_not_be_declared_by_commit_footer(
         "docs(specs): 未声明执行者\n\n"
         "关键变更:\n- 保留写入环境并由 Trae 提交\n\n"
         "LDVH-Product-Name: TraeCode\n"
-        "LDVH-Model-Name: claude-4.1\n"
-        "LDVH-Agent-Runtime-Name: claude-agent-sdk"
+        "LDVH-Model-Name: claude-4.1"
     )
 
     result = validate_commit(
@@ -1678,8 +1640,7 @@ def test_legacy_migration_multiple_writers_uses_one_commit_signature(
         "关键变更:\n"
         "- 迁移多个写入者的遗留流水并由 Trae 提交\n\n"
         "LDVH-Product-Name: TraeCode\n"
-        "LDVH-Model-Name: claude-4.1\n"
-        "LDVH-Agent-Runtime-Name: claude-agent-sdk"
+        "LDVH-Model-Name: claude-4.1"
     )
 
     result = validate_commit(
@@ -1807,7 +1768,7 @@ def test_platform_affected_integration_through_validate_commit(
     message = (
         "docs(specs): 修改文件系统抽象层\n\n"
         "关键变更:\n- 调整锁实现\n\n"
-        "LDVH-Product-Name: Test\nLDVH-Model-Name: test-agent\nLDVH-Agent-Runtime-Name: test-runtime"
+        "LDVH-Product-Name: Test\nLDVH-Model-Name: test-agent"
     )
     result = validate_commit(
         contract,
@@ -1824,7 +1785,7 @@ def test_platform_affected_integration_with_trailers_passes(
     message = (
         "docs(specs): 修改文件系统抽象层\n\n"
         "关键变更:\n- 调整锁实现\n\n"
-        "LDVH-Product-Name: Test\nLDVH-Model-Name: test-agent\nLDVH-Agent-Runtime-Name: test-runtime\n"
+        "LDVH-Product-Name: Test\nLDVH-Model-Name: test-agent\n"
         "Platform-Affected: macos\nPlatform-Verified: macos"
     )
     result = validate_commit(
@@ -1841,7 +1802,7 @@ def test_platform_affected_integration_non_platform_path_passes(
     message = (
         "docs(specs): 改规范\n\n"
         "关键变更:\n- 修改说明\n\n"
-        "LDVH-Product-Name: Test\nLDVH-Model-Name: test-agent\nLDVH-Agent-Runtime-Name: test-runtime"
+        "LDVH-Product-Name: Test\nLDVH-Model-Name: test-agent"
     )
     result = validate_commit(
         contract,

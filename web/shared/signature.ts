@@ -1,13 +1,11 @@
 export interface SignatureInput {
   productName?: unknown
   modelName?: unknown
-  agentRuntimeName?: unknown
 }
 
 export interface NormalizedSignature {
   productName: string
   modelName: string
-  agentRuntimeName: string
 }
 
 function signatureIdentityKey(name: string): string {
@@ -22,7 +20,7 @@ function normalizeModelName(value: unknown): string {
   return model.replace(/(?:\s*\[[^\[\]]*\]\s*)+$/, '').trim()
 }
 
-/** Product and runtime names retain their spelling after an uppercase initial. */
+/** Product name retains its spelling after an uppercase initial. */
 function normalizeProductName(value: unknown): string {
   if (typeof value !== 'string') return ''
   const trimmed = value.trim()
@@ -33,36 +31,13 @@ function normalizeProductName(value: unknown): string {
   return `${trimmed.charAt(0).toUpperCase()}${trimmed.slice(1)}`
 }
 
-/** Runtime display uses only its family name before the first connector. */
-function normalizeAgentRuntimeName(value: unknown): string {
-  if (typeof value !== 'string') return ''
-  const trimmed = value.trim()
-  if (signatureIdentityKey(trimmed) === 'deepseekharness') return 'DeepSeek Harness'
-  return normalizeProductName(trimmed.split('-', 1)[0])
-}
-
 /**
- * One presentation dispatcher for all three LDVH signature fields. It never
- * infers a missing field, and makes cards, commit metadata, and aggregates
- * consume identical display identities.
+ * One presentation dispatcher for the two LDVH signature fields.
+ * agent_runtime_name retired per workcase-01M08D6XAKF3FSTMETTGKEK7T7.
  */
 export function normalizeSignature(value: SignatureInput): NormalizedSignature {
-  const productName = normalizeProductName(value.productName);
-  const rawAgentRuntimeName = typeof value.agentRuntimeName === 'string'
-    ? value.agentRuntimeName.trim()
-    : '';
-  const agentRuntimeName = normalizeAgentRuntimeName(rawAgentRuntimeName);
-  const sameIdentity = Boolean(
-    productName
-      && rawAgentRuntimeName
-      && signatureIdentityKey(productName) === signatureIdentityKey(rawAgentRuntimeName),
-  );
-  const isDeepSeekHarness = signatureIdentityKey(productName) === 'deepseekharness';
-  const isTrae = signatureIdentityKey(productName) === 'trae';
-
   return {
-    productName,
+    productName: normalizeProductName(value.productName),
     modelName: normalizeModelName(value.modelName),
-    agentRuntimeName: sameIdentity || isDeepSeekHarness || isTrae ? '' : agentRuntimeName,
   };
 }

@@ -641,7 +641,6 @@ def test_first_log_transition_accepts_exactly_one_current_entry() -> None:
                 "signature": {
                     "product_name": "Cindy",
                     "model_name": "gpt-5.6-sol",
-                    "agent_runtime_name": "claude-code",
                 },
                 "at": "2026-08-03T11:00:00+08:00",
                 "summary": "首次真实更新建立流水；此前历史未恢复。",
@@ -673,7 +672,7 @@ def test_first_log_transition_accepts_exactly_one_current_entry() -> None:
             lambda after: after["change_log"][0].update(
                 {"signature": {"agent_id": "codex", "host_environment": "Cindy"}}
             ),
-            "三字段署名",
+            "两字段署名",
         ),
     ],
 )
@@ -687,7 +686,6 @@ def test_first_log_transition_rejects_malformed_first_entries(mutate, summary: s
                 "signature": {
                     "product_name": "Cindy",
                     "model_name": "gpt-5.6-sol",
-                    "agent_runtime_name": "claude-code",
                 },
                 "at": "2026-08-03T11:00:00+08:00",
                 "summary": "首次真实更新建立流水；此前历史未恢复。",

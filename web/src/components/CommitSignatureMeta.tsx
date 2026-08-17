@@ -7,17 +7,14 @@ function isBlank(value: string): boolean {
   return !value || value === 'null' || value === 'undefined';
 }
 
-/** Compactly display the optional product/runtime signature identity. */
+/** Compactly display the product + model signature identity. */
 export default function CommitSignatureMeta({
   signature,
 }: {
   signature?: CommitSignature;
 }) {
-  const { modelName, productName, agentRuntimeName: runtimeName } = normalizeSignature(signature ?? {});
-  const environment = productName && runtimeName
-    ? `${productName}(${runtimeName})`
-    : productName || runtimeName;
-  const values = [modelName, environment].filter((v) => !isBlank(v));
+  const { modelName, productName } = normalizeSignature(signature ?? {});
+  const values = [modelName, productName].filter((v) => !isBlank(v));
   if (values.length === 0) return null;
 
   return (

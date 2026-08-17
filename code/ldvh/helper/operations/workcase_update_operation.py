@@ -101,7 +101,7 @@ _UPDATE_ITEM_EVENT_INPUT_EXAMPLE = {
     },
     "source_refs": (_CONTRACTS["update"],),
     "composition_note": (
-        "另行补入刚精确读取的 fact_ref、expected_content_fingerprint 和当前三字段 signature；"
+        "另行补入刚精确读取的 fact_ref、expected_content_fingerprint 和当前两字段 signature；"
         "不要同时提交 fact_object。"
     ),
 }
@@ -644,7 +644,6 @@ def _recovery_fact_object(
         "signature": {
             "product_name": None,
             "model_name": None,
-            "agent_runtime_name": None,
         },
         "at": event_at,
         "summary": (

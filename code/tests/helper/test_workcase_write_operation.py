@@ -236,7 +236,7 @@ def test_helper_adapter_passes_complete_correct_request_to_core_without_reconstr
             "status": "closed",
             "change_log": [
                 {
-                    "signature": {"product_name": "legacy", "model_name": None, "agent_runtime_name": None},
+                    "signature": {"product_name": "legacy", "model_name": None},
                     "at": "2026-07-26T15:00:00+08:00",
                     "summary": "占位流水",
                 }
@@ -259,7 +259,7 @@ def test_helper_adapter_passes_complete_correct_request_to_core_without_reconstr
 
     supplied = workcase_update_operation.inject_observed_write_signature(
         dict(domain.fact_object),
-        {"signature": {"product_name": "Cindy", "model_name": "gpt-5.6-luna", "agent_runtime_name": "codex-cli"}},
+        {"signature": {"product_name": "Cindy", "model_name": "gpt-5.6-luna"}},
     )
     result = workcase_update_operation._apply_core_workcase_write(
         "correct",
@@ -278,7 +278,7 @@ def test_helper_adapter_passes_complete_correct_request_to_core_without_reconstr
     assert command.supplied != domain.fact_object
     latest = command.supplied["change_log"][-1]
     assert latest["signature"]["product_name"] == "Cindy"
-    assert latest["signature"]["agent_runtime_name"] == "codex-cli"
+    assert latest["signature"]["model_name"] == "gpt-5.6-luna"
     # supplied 其余字段原样保留
     assert command.supplied["title"] == "Corrected"
     assert command.supplied["status"] == "closed"
@@ -320,11 +320,7 @@ def test_workcase_update_rejects_instance_signature_before_backend_or_core(
             {},
             None,
             {
-                "signature": {
-                    "product_name": "Test Workspace",
-                    "model_name": "gpt-5",
-                    "agent_runtime_name": "codex",
-                }
+                "signature": {"product_name": "Test Workspace", "model_name": "gpt-5"},
             },
             (),
             response_profile="diagnostic",
@@ -386,7 +382,7 @@ def test_correct_closed_accepts_uid_route_target_without_name_error(monkeypatch:
             (),
             {},
             None,
-            {"signature": {"product_name": "pytest", "model_name": "test-model", "agent_runtime_name": "pytest"}},
+            {"signature": {"product_name": "pytest", "model_name": "test-model"}},
             (),
             response_profile="diagnostic",
         ),
@@ -464,7 +460,6 @@ def _event_current(fingerprint: str) -> FactReadResult:
                     "signature": {
                         "product_name": "existing",
                         "model_name": "existing",
-                        "agent_runtime_name": "existing",
                     },
                     "at": "2026-07-26T15:00:00+08:00",
                     "summary": "Existing checkpoint.",
@@ -488,7 +483,6 @@ def _event_request() -> CommonRequest:
             "signature": {
                 "product_name": "pytest",
                 "model_name": "test-model",
-                "agent_runtime_name": "pytest",
             }
         },
         (),
@@ -630,7 +624,6 @@ def test_helper_preserves_committed_result_when_coordination_release_is_uncertai
             "signature": {
                 "product_name": "pytest",
                 "model_name": "test-model",
-                "agent_runtime_name": "pytest",
             }
         },
         (),
@@ -706,7 +699,6 @@ def test_workcase_helper_preserves_candidate_rejection_when_coordination_release
             "signature": {
                 "product_name": "pytest",
                 "model_name": "test-model",
-                "agent_runtime_name": "pytest",
             }
         },
         (),
@@ -810,7 +802,6 @@ def test_no_change_release_gap_keeps_observation_time_without_using_commit_code(
             "signature": {
                 "product_name": "pytest",
                 "model_name": "test-model",
-                "agent_runtime_name": "pytest",
             }
         },
         (),
@@ -1173,7 +1164,6 @@ def test_valid_0093_recovery_request_parses_with_shared_scope_and_audit_scope() 
             "signature": {
                 "product_name": "test",
                 "model_name": "test-model",
-                "agent_runtime_name": "pytest",
             }
         },
         authorization_reference=references,

@@ -107,7 +107,6 @@ def _create(workspace: Path, project: Path, fact_type_key: str, fields: dict[str
                 "signature": {
                     "product_name": "pytest",
                     "model_name": "pytest-model",
-                    "agent_runtime_name": "pytest",
                 },
                 "at": "2000-01-01T00:00:00Z",
                 "summary": "Created by the candidate test fixture.",
@@ -137,7 +136,6 @@ def _create(workspace: Path, project: Path, fact_type_key: str, fields: dict[str
                     "signature": {
                         "product_name": "pytest",
                         "model_name": "pytest-model",
-                        "agent_runtime_name": "pytest",
                     }
                 },
             }

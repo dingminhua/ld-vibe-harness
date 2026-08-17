@@ -445,7 +445,7 @@ test('recent activity accepts only explicit windows and groups fact change-log e
       assert.match(String(item.occurredAt), RFC3339)
       if (item.signature !== undefined) {
         const signature = item.signature as Record<string, unknown>
-        const presentValues = [signature.productName, signature.modelName, signature.agentRuntimeName]
+        const presentValues = [signature.productName, signature.modelName]
           .filter((value) => value !== undefined)
         assert.ok(presentValues.length > 0)
         for (const value of presentValues) assert.equal(typeof value, 'string')
@@ -472,12 +472,12 @@ test('recent activity aggregation retains the newest fact event and counts compl
     {
       type: 'spark', object_id: 'spark-0001', title: 'A', activity: 'created', occurred_at: '2026-08-01T00:00:00Z',
       status: 'open', read_status: 'readable', field_issues: [], unparsed_structures: [],
-      signature: { productName: 'cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: 'claude-code' },
+      signature: { productName: 'cindy', modelName: 'gpt-5.6-luna' },
     },
     {
       type: 'spark', object_id: 'spark-0001', title: 'A', activity: 'updated', occurred_at: '2026-08-01T02:00:00Z',
       status: 'open', read_status: 'readable', field_issues: [], unparsed_structures: [],
-      signature: { productName: 'cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: 'claude-code' },
+      signature: { productName: 'cindy', modelName: 'gpt-5.6-luna' },
     },
     {
       type: 'adr', object_id: 'adr-0001', title: 'B', activity: 'updated', occurred_at: '2026-08-01T01:00:00Z',
@@ -490,7 +490,7 @@ test('recent activity aggregation retains the newest fact event and counts compl
     'adr-0001:1:2026-08-01T01:00:00Z',
   ])
   assert.deepEqual(view.modelUsage, [{ value: 'gpt-5.6-luna', count: 2 }, { value: 'reviewer-model', count: 1 }])
-  assert.deepEqual(view.environmentUsage, [{ value: 'Cindy(Claude)', count: 2 }, { value: 'Ci', count: 1 }])
+  assert.deepEqual(view.environmentUsage, [{ value: 'Cindy', count: 2 }, { value: 'Ci', count: 1 }])
 })
 
 test('recent activity environment usage applies platform signature normalization', async () => {
@@ -500,8 +500,8 @@ test('recent activity environment usage applies platform signature normalization
     status: 'open', read_status: 'readable', field_issues: [], unparsed_structures: [],
   }
   const view = buildRecentActivityView([
-    { ...base, object_id: 'spark-deepseek', occurred_at: '2026-08-01T00:00:00Z', signature: { productName: 'DeepSeek Harness', agentRuntimeName: 'Dsh' } },
-    { ...base, object_id: 'spark-trae', occurred_at: '2026-08-01T01:00:00Z', signature: { productName: 'Trae Code', agentRuntimeName: 'Dsh' } },
+    { ...base, object_id: 'spark-deepseek', occurred_at: '2026-08-01T00:00:00Z', signature: { productName: 'DeepSeek Harness' } },
+    { ...base, object_id: 'spark-trae', occurred_at: '2026-08-01T01:00:00Z', signature: { productName: 'Trae Code' } },
   ])
   assert.deepEqual(view.environmentUsage, [{ value: 'DeepSeek Harness', count: 1 }, { value: 'Trae', count: 1 }])
 })
@@ -512,7 +512,7 @@ test('recent activity environment usage normalizes a runtime-only DeepSeek Harne
     type: 'spark' as const, object_id: 'spark-deepseek-runtime-only', title: 'Runtime-only platform',
     activity: 'updated' as const, occurred_at: '2026-08-01T00:00:00Z', status: 'open',
     read_status: 'readable', field_issues: [], unparsed_structures: [],
-    signature: { agentRuntimeName: 'deepseek-harness' },
+    signature: { productName: 'deepseek-harness' },
   }])
   assert.deepEqual(view.environmentUsage, [{ value: 'DeepSeek Harness', count: 1 }])
 })
@@ -533,7 +533,7 @@ test('recent activity environment usage merges Codex Desktop and Codex into one 
       signature: { agentRuntimeName: 'codex' },
     },
   ])
-  assert.deepEqual(view.environmentUsage, [{ value: 'Codex', count: 2 }])
+  assert.deepEqual(view.environmentUsage, [{ value: 'Codex', count: 1 }])
 })
 
 test('duplicate object UIDs never merge distinct activity objects', async () => {
@@ -585,11 +585,11 @@ test('recent activity accepts current change-log signatures and ignores legacy f
     }],
   }
   const builds = buildFactActivityItems(raw, 'spark', Date.parse('2026-07-31T00:00:00Z'), Date.parse('2026-08-02T00:00:00Z'))
-  assert.deepEqual(builds.find((build) => build.occurred_at === '2026-08-01T00:00:00Z')?.signature, { productName: 'Cindy', modelName: 'gpt-5.6-terra', agentRuntimeName: 'Codex' })
+  assert.deepEqual(builds.find((build) => build.occurred_at === '2026-08-01T00:00:00Z')?.signature, { productName: 'Cindy', modelName: 'gpt-5.6-terra' })
 
   const view = buildRecentActivityView(builds)
   assert.deepEqual(view.modelUsage, [{ value: 'gpt-5.6-terra', count: 1 }])
-  assert.deepEqual(view.environmentUsage, [{ value: 'Cindy(Codex)', count: 1 }])
+  assert.deepEqual(view.environmentUsage, [{ value: 'Cindy', count: 1 }])
 })
 
 test('recent activity retains a current partial signature without inventing a model name', async () => {
@@ -602,11 +602,11 @@ test('recent activity retains a current partial signature without inventing a mo
     }],
   }
   const builds = buildFactActivityItems(raw, 'spark', Date.parse('2026-07-31T00:00:00Z'), Date.parse('2026-08-02T00:00:00Z'))
-  assert.deepEqual(builds[0]?.signature, { productName: 'Cindy', agentRuntimeName: 'Codex' })
+  assert.deepEqual(builds[0]?.signature, { productName: 'Cindy' })
 
   const view = buildRecentActivityView(builds)
   assert.deepEqual(view.modelUsage, [])
-  assert.deepEqual(view.environmentUsage, [{ value: 'Cindy(Codex)', count: 1 }])
+  assert.deepEqual(view.environmentUsage, [{ value: 'Cindy', count: 1 }])
 })
 
 test('Spark health reuses the newest complete change-log signature for its card-equivalent attribution', async () => {
@@ -620,7 +620,7 @@ test('Spark health reuses the newest complete change-log signature for its card-
       { at: '2026-08-01T03:00:00Z', signature: { product_name: 'Cindy', model_name: 'gpt-5.6-luna', agent_runtime_name: 'codex-cli' } },
     ],
   }], Date.parse('2026-08-08T00:00:00Z'))
-  assert.deepEqual(health.openItems[0]?.signature, { productName: 'Cindy', modelName: 'gpt-5.6-luna', agentRuntimeName: 'Codex' })
+  assert.deepEqual(health.openItems[0]?.signature, { productName: 'Cindy', modelName: 'gpt-5.6-luna' })
   assert.equal(health.openItems[0]?.activity_count, 3)
 })
 

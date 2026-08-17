@@ -1,0 +1,20 @@
+title: 三字段署名精简为二字段：移除 agent_runtime_name，统一为两字段必填
+status: open
+priority: P1
+intent: 当前三字段署名在 change_log 和 Git footer 中要求不一致。agent_runtime_name 的可观察性要求仅对 Cindy 环境适用。为简化，将三字段精简为两字段，统一要求两者都必须填写，获取不到则停止。
+summary: "## 当前状态\n\n当前三字段署名（product_name / model_name / agent_runtime_name）存在以下问题：\n\n1. change_log 与 Git footer 要求不一致：change_log 要求三字段全部存在（可为 null），Git footer 要求至少一个非空即可。\n2. agent_runtime_name 可观察性不均：仅对 Cindy 环境适用（spark-01M064X95Q 已确认），其他产品环境不要求。\n3. Web 显示层已有去重逻辑（normalizeSignature 中对 DeepSeek Harness / Trae 清空 agentRuntimeName）。\n\n## 目标\n\n将三字段精简为两字段：\n- product_name：外层产品名，必填，不可获取时停止并报告\n- model_name：模型名，必填，不可获取时停止并报告\n- agent_runtime_name：彻底移除\n\n## 影响范围\n\n### 规范\n- 03 9.4：Git footer 署名 trailer 从三个减为两个，均必填\n- 05 11.0：change_log.signature 字段从三个减为两个\n- 05.Att.01 事实字段登记表：移除 agent_runtime_name 登记\n\n### Code\n- code/ldvh/signature.py：FIELD_NAMES 从三个减为两个\n- code/ldvh/commits/validation.py：SIGNATURE_TRAILERS 从三个减为两个\n- code/ldvh/facts/validation.py：change_log 签名校验从三字段调整为两字段\n\n### Web\n- web/shared/signature.ts：normalizeSignature 从三字段减为两个\n- web/api/services/git.ts：parseCommitSignature 从三个 trailer 减为两个\n- web/src/components/CommitSignatureMeta.tsx：显示逻辑调整\n\n## 边界\n\n- 不改变管辖配置 governance_instance_name 字段\n- 不改变历史已有 change_log 记录\n- 不改变历史已有 Git commit 的 footer\n- product_name 或 model_name 不可观察时停止并报告"
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a00c4e-a4b7-72b5-b09c-3c3881b22892
+change_log:
+- summary: 受控创建 Spark：三字段署名精简为二字段（移除 agent_runtime_name，product_name 与 model_name 均必填，获取不到停止并报告）。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+  at: '2026-08-17T17:30:00.675547Z'
+object_uid: 01a010c5-ed28-751e-9c99-aa99e403bc56
+object_id: spark-01M08CBV98EMF9S6DAK7J07F2P
+fact_type_key: spark
+created_at: '2026-08-17T17:30:00.675547Z'
+updated_at: '2026-08-17T17:30:00.675547Z'

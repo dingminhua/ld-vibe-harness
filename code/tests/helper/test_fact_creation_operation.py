@@ -728,7 +728,6 @@ def _create_payload(
                 "signature": {
                     "product_name": "pytest",
                     "model_name": "test-model",
-                    "agent_runtime_name": "pytest-runtime",
                 },
                 "at": (datetime.now().astimezone() - timedelta(minutes=1)).isoformat(),
                 "summary": "由受控测试夹具创建。",
@@ -755,7 +754,6 @@ def _create_payload(
                 "signature": {
                     "product_name": "pytest",
                     "model_name": "test-model",
-                    "agent_runtime_name": "pytest-runtime",
                 }
             },
         },
@@ -864,8 +862,7 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
     create_payload["observed_context"] = {
         "signature": {
             "product_name": "Cindy",
-            "model_name": None,
-            "agent_runtime_name": "codex-cli",
+            "model_name": "gpt-5.6-luna",
         }
     }
 
@@ -877,8 +874,7 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
     created_log = created_object["change_log"][-1]
     assert created_log["signature"] == {
         "product_name": "Cindy",
-        "model_name": None,
-        "agent_runtime_name": "codex-cli",
+        "model_name": "gpt-5.6-luna",
     }
     assert "session_id" not in created_log
     assert "session_id" not in created_log["signature"]
@@ -907,7 +903,6 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
                 "signature": {
                     "product_name": "Placeholder Product",
                     "model_name": "placeholder-model",
-                    "agent_runtime_name": "placeholder-runtime",
                 },
             "at": datetime.now().astimezone().isoformat(),
             "summary": "更新真实 WorkCase 测试夹具。",
@@ -929,7 +924,6 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
                     "signature": {
                         "product_name": "Cindy",
                         "model_name": None,
-                        "agent_runtime_name": "codex-cli",
                     }
                 },
             }
@@ -940,7 +934,6 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
     assert updated_log["signature"] == {
         "product_name": "Cindy",
         "model_name": None,
-        "agent_runtime_name": "codex-cli",
     }
     assert "session_id" not in updated_log
     reread = handle_request(
@@ -969,7 +962,6 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
             "signature": {
                 "product_name": "Placeholder Product",
                 "model_name": "placeholder-model",
-                "agent_runtime_name": "placeholder-runtime",
             },
             "at": datetime.now().astimezone().isoformat(),
             "summary": "Attempt an update with a wholly unavailable signer snapshot.",
@@ -979,13 +971,11 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
         {
             "product_name": None,
             "model_name": None,
-            "agent_runtime_name": None,
         },
         {"product_name": "Cindy"},
         {
             "product_name": "Cindy",
             "model_name": None,
-            "agent_runtime_name": "codex-cli",
             "unknown": "not-allowed",
         },
     )
@@ -1017,13 +1007,11 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
         {
             "product_name": None,
             "model_name": None,
-            "agent_runtime_name": None,
         },
         {"product_name": "Cindy"},
         {
             "product_name": "Cindy",
             "model_name": None,
-            "agent_runtime_name": "codex-cli",
             "unknown": "not-allowed",
         },
     ],
@@ -1146,7 +1134,6 @@ def test_helper_create_read_and_update_accept_ignored_current_fact(tmp_path: Pat
             "signature": {
                 "product_name": "pytest",
                 "model_name": "test-model",
-                "agent_runtime_name": "pytest-runtime",
             },
             "at": datetime.now().astimezone().isoformat(),
             "summary": "由受控测试夹具完成更新。",
@@ -1168,7 +1155,6 @@ def test_helper_create_read_and_update_accept_ignored_current_fact(tmp_path: Pat
                     "signature": {
                         "product_name": "pytest",
                         "model_name": "test-model",
-                        "agent_runtime_name": "pytest-runtime",
                     }
                 },
             }

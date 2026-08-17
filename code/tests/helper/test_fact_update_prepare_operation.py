@@ -25,7 +25,6 @@ _WORKCASE_UID = "0198f1c7-8a2b-7c3d-9e4f-123456789abe"
 _SIGNATURE = {
     "product_name": "pytest",
     "model_name": "test-model",
-    "agent_runtime_name": "pytest-runtime",
 }
 
 
@@ -220,7 +219,6 @@ def test_prepare_spark_returns_exact_incomplete_draft_without_writing(tmp_path: 
         "signature": {
             "product_name": None,
             "model_name": None,
-            "agent_runtime_name": None,
         }
     }
     requirements = result["completion_requirements"]
@@ -417,7 +415,6 @@ def test_uncompleted_or_invalid_signature_drafts_never_write(tmp_path: Path) -> 
     invalid["observed_context"]["signature"] = {
         "product_name": None,
         "model_name": None,
-        "agent_runtime_name": None,
     }
     invalid_response = handle_request("call", "update-fact-object", json.dumps(invalid)).response
     assert invalid_response["outcome"] == "unavailable"

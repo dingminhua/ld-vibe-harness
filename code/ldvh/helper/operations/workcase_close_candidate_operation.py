@@ -48,7 +48,7 @@ _CLOSE_WORKCASE_CHANGE_LOG_APPEND = {
     "count": 1,
     "target": "fact_object.change_log",
     "signature_policy": "caller_close_request_observed_signature",
-    "signature_fields": ["product_name", "model_name", "agent_runtime_name"],
+    "signature_fields": ["product_name", "model_name"],
     "signature_forbidden": ["signer_type"],
 }
 

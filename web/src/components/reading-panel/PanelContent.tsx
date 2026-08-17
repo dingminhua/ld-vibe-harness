@@ -375,13 +375,10 @@ function CommitSignatureSection({
   signature: CommitSignature;
   labels: CommitDetailLabels;
 }) {
-  const { productName, modelName, agentRuntimeName: runtimeName } = normalizeSignature(signature);
-  const environment = productName && runtimeName
-    ? `${productName}(${runtimeName})`
-    : productName || runtimeName;
+  const { productName, modelName } = normalizeSignature(signature);
   const identityEntries = [
     { label: labels.modelName, value: modelName },
-    { label: labels.runtimeName, value: environment },
+    { label: labels.environmentName, value: productName },
   ].filter((entry): entry is { label: string; value: string } => Boolean(entry.value));
   if (identityEntries.length === 0) return null;
 

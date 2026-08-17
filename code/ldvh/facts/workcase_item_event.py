@@ -92,7 +92,6 @@ def project_workcase_item_event(
             "signature": {
                 "product_name": None,
                 "model_name": None,
-                "agent_runtime_name": None,
             },
             "at": event_at,
             "summary": event.change_summary,

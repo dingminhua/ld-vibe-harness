@@ -23,7 +23,6 @@ _TRAILER = re.compile(r"(?P<name>[A-Za-z][A-Za-z-]*): (?P<value>.*)\Z")
 _SIGNATURE_TRAILERS = (
     "LDVH-Product-Name",
     "LDVH-Model-Name",
-    "LDVH-Agent-Runtime-Name",
 )
 # 03 §9.4: an unobservable field is expressed by *omitting* its trailer, not by writing a
 # placeholder. These literals are almost always a writer confusing JSON `null` with a Git
@@ -244,8 +243,10 @@ def _signature_trailer_issues(
             issues.append(_issue("signature_trailer_empty", f"footer 的 {name}: 不得为空"))
         elif len(values) != 1:
             issues.append(_issue("signature_trailer_multiple", f"footer 的 {name}: 必须恰好声明一次"))
-    if present == 0:
-        issues.append(_issue("signature_trailer_missing", "footer 至少需要一个非空 LDVH 三字段署名 trailer"))
+    # Both trailers are mandatory: a missing product_name or model_name is a hard error.
+    for name in _SIGNATURE_TRAILERS:
+        if not trailers.get(name):
+            issues.append(_issue("signature_trailer_missing", f"footer 的 {name}: 必填，不可观察时必须停止并报告"))
     # 03 §9.4: a trailer value that is a null/placeholder literal is rejected. An
     # unobservable field must be *omitted*, never written as a literal. This catches the
     # common JSON-null-to-Git-trailer mistake before parse_signature records it as an
@@ -264,19 +265,18 @@ def _signature_trailer_issues(
             _issue(
                 "legacy_signature_trailer_retired",
                 "footer 已禁止旧署名 trailer；新提交必须使用 LDVH-Product-Name、"
-                "LDVH-Model-Name、LDVH-Agent-Runtime-Name",
+                "LDVH-Model-Name",
             )
         )
     trailer_fields = {
         "LDVH-Product-Name": "product_name",
         "LDVH-Model-Name": "model_name",
-        "LDVH-Agent-Runtime-Name": "agent_runtime_name",
     }
     snapshot = {
         field: trailers[name][0] if len(trailers.get(name, [])) == 1 else None
         for name, field in trailer_fields.items()
     }
-    if present and not any(
+    if present == 2 and not any(
         len(trailers.get(name, [])) != 1 or not trailers[name][0].strip()
         for name in trailer_fields
         if trailers.get(name)
@@ -586,14 +586,19 @@ def _fact_trace_issues(
         if any(
             isinstance(entry.get("signature"), dict)
             and set(entry["signature"])
-            in ({"agent_id", "host_environment"}, {"model_id", "host_name"}, {"model_id", "agent_workbench"})
+            in (
+                {"agent_id", "host_environment"},
+                {"model_id", "host_name"},
+                {"model_id", "agent_workbench"},
+                {"product_name", "model_name", "agent_runtime_name"},
+            )
             for entry in appended
         ):
             failures.append(
                 _issue(
                     "legacy_signature_write_retired",
-                    "事实新增流水不得使用历史署名形状；"
-                    f"新写入必须使用 product_name/model_name/agent_runtime_name: {candidate.path}",
+                    "事实新增流水不得使用历史或已退役署名形状；"
+                    f"新写入必须使用 product_name/model_name: {candidate.path}",
                 )
             )
             continue
@@ -601,8 +606,8 @@ def _fact_trace_issues(
             failures.append(
                 _issue(
                     "fact_trace_first_entry_invalid",
-                    "缺失 change_log 的 HEAD 基线只能由当前三字段受控写入建立流水；"
-                    f"每条必须使用 product_name/model_name/agent_runtime_name、无 session_id，"
+                    "缺失 change_log 的 HEAD 基线只能由当前两字段受控写入建立流水；"
+                    f"每条必须使用 product_name/model_name、无 session_id，"
                     f"且最后一条 at 必须等于 updated_at: {candidate.path}",
                 )
             )
@@ -628,7 +633,6 @@ def _valid_legacy_first_entries(appended: list[object], after_fields: dict[str, 
         if not isinstance(signature, dict) or set(signature) != {
             "product_name",
             "model_name",
-            "agent_runtime_name",
         }:
             return False
         if "session_id" in entry:

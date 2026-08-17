@@ -96,7 +96,7 @@ def _signed(message: str) -> str:
     return (
         message
         + "\n\n关键变更:\n- 覆盖当前提交预检测试变化"
-        + "\n\nLDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: pytest"
+        + "\n\nLDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna"
     )
 
 
@@ -104,7 +104,7 @@ def _trae_signed(message: str) -> str:
     return (
         message
         + "\n\n关键变更:\n- 由 Trae 提交其它环境已完成的事实写入"
-        + "\n\nLDVH-Product-Name: Trae\nLDVH-Model-Name: claude-4.1\nLDVH-Agent-Runtime-Name: pytest"
+        + "\n\nLDVH-Product-Name: Trae\nLDVH-Model-Name: claude-4.1"
     )
 
 
@@ -143,7 +143,7 @@ def test_single_path_without_minimum_body_fails_identically_in_helper_and_native
     workspace, project = _fixture(tmp_path)
     message = (
             "test: 验证单文件最低正文\n\nLDVH-Product-Name: Cindy\n"
-            "LDVH-Model-Name: gpt-5.6-luna\nLDVH-Agent-Runtime-Name: pytest"
+            "LDVH-Model-Name: gpt-5.6-luna"
     )
     payload = json.dumps(
         {
@@ -401,7 +401,6 @@ _VALID_SPARK = (
     "  - signature:\n"
     "      product_name: Cindy\n"
     "      model_name: gpt-5.6-luna\n"
-    "      agent_runtime_name: pytest\n"
     "    at: '2026-07-01T00:00:00+08:00'\n"
     "    summary: 建立测试火花\n"
 )
