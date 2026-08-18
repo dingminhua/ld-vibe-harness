@@ -1,0 +1,210 @@
+status: closed
+title: 触发边界校准验证实验 v6：动作语义触发对激活质量的校准效应
+goal: 在 v5 已证有效的呈现层（激活投影）基础上，验证「动作语义触发」是否能在保持激活质量的同时修复 v5 的触发精度回退。v5 结论：激活投影显著改善正确激活率（7/9->9/9）、行为改变、strong_reuse、漏检、false F3，但宽触发召回导致过度触发（trigger_correct 16->14、unnecessary F2 2->4），误触发集中在 gold=false 的 tempting-no-trigger / pure-non-use 任务（A5/P4/P5/S4/S5 的 enhanced 臂），联合门槛失败。v6 假设：触发判定不应只问「任务是否提及 family 信号词」（信号词宽触发），而应问「该任务是否有一个可被该知识改变的具体行动/决策点」（动作语义触发）；对 gold=false 任务虽提及信号词但无可改变行动，不应触发。设计：呈现层固定为 v5 激活投影（隔离变量），召回层从宽触发改为动作语义触发，复用 v5 的 18 个冻结任务/gold 与激活投影卡，按预注册门槛得出 supports-action-semantic-trigger 或 do-not-support-action-semantic-trigger 的严格结论并写回 spark-01KZXN5TXNEKMANG1WTFBKT5FW。
+scope: 仅新增 code/ldvh/testing/knowledge_precheck_v6.py、code/ldvh/testing/knowledge_precheck_v6_trial.py、code/tests/testing/test_knowledge_precheck_v6.py、code/tests/testing/test_knowledge_precheck_v6_trial.py 与 docs/metrics/knowledge-precheck-v6/；v5 代码只允许作为只读剪裁/复用依据，v3/v4/v5 sealed bundle、compiled artifacts 与 docs/metrics/knowledge-precheck-v5 不得修改。复用 v5 的 18 个 task/gold（A1-S6、6 情形、9 applicable/9 non-use/6 no-trigger gold）与激活投影双卡集（family_cards_baseline/family_cards_activation）。双臂共享同一 task/gold、盲评 rubric 与呈现层（激活投影卡）：calibration-baseline = 宽触发召回 + 激活投影（即 v5 activation-enhanced 臂的召回与呈现）；calibration-enhanced = 动作语义触发召回 + 激活投影（唯一差异为召回层触发边界）。动作语义触发仅存在于实验 Gateway 与证据 bundle，不写入生产 F2 投影、不修改事实 Schema/05.Att.01/Helper contract/Specs。只允许真实 Helper F2/F3 只读调用及字段闭集证据留存；source-complete 报告成立后允许经 Helper CAS 更新 spark-01KZXN5TXNEKMANG1WTFBKT5FW（object_uid 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc，保持 open/P1）。排除：生产 L1/L0 接入实现、Specs/Helper contract/事实 Schema/Web 修改、v2/v3/v4/v5 代码或证据改写、Git commit/push/PR/release、部署和网络发布、本 WorkCase 与该 Spark 写回以外的其它事实对象创建。
+success_criterion_definitions:
+- criterion_id: criterion-frozen-v6-protocol
+  statement: 冻结 v6 protocol（schema_version=ldvh-knowledge-precheck-v6/1）：动作语义触发机制规格、18 个 task/gold 复用（A1-S6）、双条件（calibration-baseline/calibration-enhanced）、9/9 条件首发顺序平衡、模型/runner 身份策略与盲评 rubric（含 action_bridge_score 0-3）、artifact denylist 与 ceilings（18 pairs/21 attempts/3 replacements/42 launches/42 scorer/600s/6h）。预注册采用门槛全部可机械判定：trigger_correct 增强臂 >= 基线；unnecessary_f2 增强臂 <= 基线；正确激活率（applicable 任务上 triggered 且 strong_reuse 且 action_bridge_score>=2）增强臂 >= 基线（基线即 v5 的 9/9，校准不得牺牲已证有效的激活质量）；behavior_change_rate、strong_reuse、missed_detection_rate 增强臂 >= 基线；correct_non_use 增强臂 >= 基线；policy_capacity 与 source_complete_replay 成立。任一门槛失败即 do-not-support-action-semantic-trigger。
+- criterion_id: criterion-action-semantic-spec
+  statement: 动作语义触发规格冻结并实现于实验 Gateway：触发判定从「family 信号词宽触发」改为「任务存在可被该知识改变的具体行动/决策点」+ 类型化信号（ADR 决策问题触达、Pitfall 失败机制匹配、Study 新领域依赖）；对 gold=false 的 tempting-no-trigger/pure-non-use 任务（仅提及信号词、无行动锚点）不得触发；与 v5 宽触发（无 veto）及 v0.3 L1-specific 精确 veto 的差异在 protocol 中显式说明（v6 不是 veto——它改变触发判定的正条件，而非事后排除）。
+- criterion_id: criterion-presentation-layer-fixed
+  statement: 呈现层固定为 v5 激活投影（两段式 action-guidance：activation_means/suggested_action + knowledge_body），两臂使用相同投影卡集，确保 v6 隔离的是「触发边界校准」的独立效应而非呈现层变化；投影仅存在于实验 Gateway 与证据 bundle。
+- criterion_id: criterion-v6-source-complete-replay
+  statement: 独立 sealed evidence bundle 从 protocol/task/gold、source snapshot（含基线卡集与激活投影卡集）、raw Helper exchanges、模型结构化输出、盲评 packet/评分、效用留痕及 adjudication ledger 字节一致重建 records、results 与 report；主指标与全部诊断指标由 frozen gold 加 raw response/trace 确定性重算；缺失、额外、篡改、hash drift、score/packet 不绑定或 post-hoc override 均被拒绝。
+- criterion_id: criterion-v6-automated-verification
+  statement: v6 focused tests 实际覆盖 protocol 闭集与双条件结构、action-semantic gateway 的触发判定/漂移拒绝/条件泄漏拒绝、真实只读 fixture、byte replay、盲评脱敏（packet 无 arm 标识）、fresh context/scorer 唯一性、attempt/replacement/launch/time ceiling 与 technical-exclusion 闭集；同时重跑 v5 non-live-source focused tests 证明 sealed v5 行为与产物未被改变。
+- criterion_id: criterion-v6-paired-measurement
+  statement: 实际取得恰 18 retained pairs；最多 21 个 pair attempts、3 个仅由预注册技术排除触发的整对 replacements、42 个 member launches 与 42 个 scorer contexts，每个 member 最多 600 秒、无单臂重试、总运行不超过 6 小时。报告逐 family/情形及总体的 trigger confusion matrix、unnecessary F2、正确激活率、行为改变率、strong_reuse、correct_non_use、false F3、action_bridge_score 分布、Helper 调用数及可观察成本，并严格按冻结联合门槛给出 supports-action-semantic-trigger 或 do-not-support-action-semantic-trigger；错误、null、负效应和不利 family 结果不得排除。
+- criterion_id: criterion-v6-trigger-precision-recovery
+  statement: 动作语义触发必须恢复触发精度：增强臂 trigger_correct 绝对 >= 15/18 且相对 v5 enhanced 臂（14/18）净增 >= +1，unnecessary_f2 增强臂绝对 <= 2；该 criterion 直接检验 v6 是否修复 v5 的过度触发（针对 A5/P4/P5/S4/S5 类 gold=false 误触发）——若动作语义触发未能降低误触发则触发校准无效。
+- criterion_id: criterion-spark-v6-writeback
+  statement: 仅在 v6 source-complete 报告成立后（机械前置条件，非 Human Gate），spark-01KZXN5TXNEKMANG1WTFBKT5FW 的公开精确回读包含报告绑定、实测指标、各门槛通过/失败、运行时可观察性与因果限制，以及严格结论；写后 check-fact-integrity 外层 outcome=ok、领域结果 result.status=complete 且 scope.not_completed 为空。
+success_criterion_results:
+- criterion_id: criterion-frozen-v6-protocol
+  outcome: satisfied
+  summary: v6 protocol 已冻结（schema_version=ldvh-knowledge-precheck-v6/1）：动作语义触发机制规格、18 task/gold（A1-S6）、双条件（calibration-baseline/calibration-enhanced）与 9/9 首发顺序平衡、模型/runner 身份策略与盲评 rubric（含 action_bridge_score 0-3）、artifact denylist 与 ceilings（18 pairs/21 attempts/3 replacements/42 launches/42 scorer/600s/6h）；预注册联合门槛全部机械可判定，并据实际测量得出严格结论。
+- criterion_id: criterion-action-semantic-spec
+  outcome: satisfied
+  summary: 动作语义触发规格冻结并实现于实验 Gateway：触发公式 triggered = signal_hit AND action_anchor_hit AND NOT explicit_exclusion；对 v5 误触任务（tempting-no-trigger/pure-non-use）实测抑制（enhanced unnecessary F2 6->1），对照正例不漏检；与 v0.3 veto 及 v5 宽触发的差异已在 protocol 中显式声明（v6 改变触发正条件而非事后排除）。
+- criterion_id: criterion-presentation-layer-fixed
+  outcome: satisfied
+  summary: 呈现层固定为 v5 激活投影（activation_means/suggested_action + knowledge_body），两臂使用相同投影卡集，v6 隔离的是触发边界校准的独立效应；投影仅存在于实验 Gateway 与证据 bundle，未写入生产 F2 投影。
+- criterion_id: criterion-v6-source-complete-replay
+  outcome: satisfied
+  summary: 独立 sealed evidence bundle 从 protocol/task/gold、source snapshot（基线卡集与激活投影卡集）、raw Helper exchanges、模型结构化输出、盲评 packet/评分、效用留痕及 adjudication ledger 字节一致重建 records/results/report（两次 byte-identical）；缺失/额外/篡改/hash drift/score 不绑定/post-hoc override 均被拒绝。
+- criterion_id: criterion-v6-automated-verification
+  outcome: satisfied
+  summary: v6 focused tests 64 项全部通过（protocol 闭集/action-semantic gateway 触发判定/漂移与条件泄漏拒绝/真实只读 fixture/byte replay/盲评脱敏/fresh context 与 scorer 唯一性/attempt/replacement/launch/time ceiling/technical-exclusion 闭集）；v5 回归 50 项通过证明 sealed v5 行为与产物未改变；ruff format/check 与 py_compile 通过。
+- criterion_id: criterion-v6-paired-measurement
+  outcome: satisfied
+  summary: 实际取得恰 18 retained pairs（38 member launches、36 member runs + 36 scorer contexts、1 次整对技术 replacement、零 scorer 技术失败），全部在 ceilings 内（42 launches/42 scorer/600s/6h）；报告逐 family/情形及总体 trigger confusion matrix、unnecessary F2、正确激活率、行为改变率、strong_reuse、correct_non_use、false F3、action_bridge_score 分布、Helper 调用数与可观察成本，并严格按冻结联合门槛给出 do-not-support-action-semantic-trigger；错误/null/负效应/不利 family 结果均未排除。
+- criterion_id: criterion-v6-trigger-precision-recovery
+  outcome: satisfied
+  summary: 动作语义触发恢复触发精度：增强臂 trigger_correct=15/18（绝对 >=15/18）且相对 v5 enhanced 臂（14/18）净增 +1，unnecessary_f2=1（<=2）；对 A5/P4/P5/S4/S5 类 gold=false 误触发的抑制经实测确认，触发校准有效。
+- criterion_id: criterion-spark-v6-writeback
+  outcome: satisfied
+  summary: spark-01KZXN5TXNEKMANG1WTFBKT5FW 的公开精确回读包含报告绑定、实测指标、各门槛通过/失败、运行时可观察性与因果限制，以及严格结论 do-not-support-action-semantic-trigger；写后 check-fact-integrity 外层 outcome=ok、领域 result.status=complete 且 scope.not_completed 为空。
+result_summary: v6 触发边界校准验证实验完整执行并得到严格结论 do-not-support-action-semantic-trigger。动作语义触发成功修复触发精度（trigger_correct 12->15、unnecessary F2 6->1、trigger_precision_recovery 绝对/净增门槛全过），但以牺牲激活质量为代价：正确激活率 6/9->3/9、strong_reuse（applicable）6->3，correct_activation_rate 与 strong_reuse 联合门槛失败；f2-no-f3（A6/S6 enhanced）漏检 F2 与 study applicable（S1/S2）强复用不足为主要代价。全部 8 项成功标准满足；18 retained pairs、1 次整对技术 replacement、source-complete 回放 byte-identical；spark-01KZXN5TXNEKMANG1WTFBKT5FW 已受控写回并保持 open/P1。
+validation_summary: 验证实际执行：seal 通过（manifest 391 文件闭合、SHA-256 全部校验通过、evidence manifest 98b74eab...）；source-complete 回放两次 byte-identical 重建 records/results/report；v6 focused tests 64 项与 v5 回归 50 项全部通过；ruff format/check 与 py_compile 通过；v5 sealed bundle hash 不变；check-fact-integrity 外层 outcome=ok、领域 result.status=complete、scope.not_completed 为空。
+closure_outcome: completed
+disposition_summary: v6 触发边界校准验证实验 scope 全部完成，8 项成功标准均 satisfied，严格结论 do-not-support-action-semantic-trigger （动作语义触发修复触发精度但以牺牲激活质量为代价：正确激活率 6/9->3/9、strong_reuse 6->3，联合门槛失败）已由 source-complete sealed evidence bundle 支撑并受控写入 open spark-01KZXN5TXNEKMANG1WTFBKT5FW（保持 open/P1）。后续更细粒度行动锚点建模方向（区分「需 F2 索引核验」与「需 F3 全文应用」）已由该 open Spark 稳定承载，不属于本 WorkCase 剩余责任；本 WorkCase 无未完成 scope 责任、无 accepted-stop 责任、无 route_existing 转交。证据产物全部保留在当前 working tree（docs/metrics/knowledge-precheck-v6/），不涉及 Git 提交或生产变更。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc
+change_log:
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:28:15.508625Z'
+  summary: 受控创建：触发边界校准验证实验 v6 WorkCase 初态形成（动作语义触发计划、预注册门槛、执行授权包与创建方案复核记录），等待 Human Gate 1 执行决定。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:30:32.130204Z'
+  summary: Human Gate 1 批准：写 execution_approval（subject_version=1，baseline_fingerprint=a5d255e86a828f8680b45ff53e39c8c3548b46763d45762f61999cade6f49519），phase human_plan_confirming -> executing，移除 Human waiting。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:31:12.534295Z'
+  summary: 启动 item-design-action-semantic：动作语义触发规格设计开始。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:32:46.848657Z'
+  summary: 完成 item-design-action-semantic：动作语义触发规格草案已落地。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:33:13.046373Z'
+  summary: 启动 item-freeze-v6-protocol。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:33:56.020393Z'
+  summary: 完成 item-freeze-v6-protocol。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:34:21.851210Z'
+  summary: 启动 item-reuse-v6-snapshot。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:35:34.281220Z'
+  summary: 完成 item-reuse-v6-snapshot。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:36:02.577304Z'
+  summary: 启动 item-implement-v6-runner。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:43:01.535620Z'
+  summary: 完成 item-implement-v6-runner。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:43:29.571993Z'
+  summary: 启动 item-write-v6-tests。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:50:23.022732Z'
+  summary: 完成 item-write-v6-tests。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:50:51.053465Z'
+  summary: 启动 item-run-v6-experiment。
+- signature:
+    product_name: TRAE
+    model_name:
+    agent_runtime_name: traecode
+  at: '2026-08-17T21:24:20.346892Z'
+  summary: v6 实验运行完成：36 member runs + 18 对盲评，ledger 完整。
+- signature:
+    product_name: TRAE
+    model_name:
+    agent_runtime_name: traecode
+  at: '2026-08-17T21:25:05.891795Z'
+  summary: 启动 item-compile-v6-bundle。
+- signature:
+    product_name: TRAE
+    model_name:
+    agent_runtime_name: traecode
+  at: '2026-08-17T21:25:09.816230Z'
+  summary: v6 sealed bundle compile 完成：source-complete 回放 byte-identical 通过。
+- signature:
+    product_name: TRAE
+    model_name:
+    agent_runtime_name: traecode
+  at: '2026-08-17T21:25:13.605796Z'
+  summary: 启动 item-spark-v6-writeback。
+- signature:
+    product_name: TRAE
+    model_name:
+    agent_runtime_name: traecode
+  at: '2026-08-17T21:25:37.950955Z'
+  summary: 记录 item-spark-v6-writeback 工作已完成，check-fact-integrity 通过；保持 in_progress 待 Gate 2 生命周期承接关闭。
+- signature:
+    product_name: TRAE
+    model_name:
+    agent_runtime_name: traecode
+  at: '2026-08-17T21:32:13.593042Z'
+  summary: 全部 work item terminal，executing -> controller_checking：写 result_version=1 并形成完整结果投影（success_criterion_results 8 项全 satisfied、result_summary、controller_check_summary、validation_summary）。
+- signature:
+    product_name: TRAE
+    model_name:
+    agent_runtime_name: traecode
+  at: '2026-08-17T21:40:08.604894Z'
+  summary: 完整结果投影已形成、校验并回读，controller_checking -> independent_reviewing：进入独立结果复核。
+- signature:
+    product_name: TRAE
+    model_name:
+    agent_runtime_name: traecode
+  at: '2026-08-17T21:40:44.768254Z'
+  summary: 在 independent_reviewing 内形成首条 result review（subagent-read-only，pass_with_followups，6 项 feedback），绑定 result_version=1。
+- signature:
+    product_name: TRAE
+    model_name:
+    agent_runtime_name: traecode
+  at: '2026-08-17T21:41:08.412375Z'
+  summary: Reviewer feedback 全部由 Controller 处置，independent_reviewing -> closure_preparing：开始形成完整关闭提案。
+- signature:
+    product_name: TRAE
+    model_name:
+    agent_runtime_name: traecode
+  at: '2026-08-17T21:41:38.295408Z'
+  summary: 形成完整 closure_proposal（proposed_outcome=completed、proposed_disposition_summary、无 residual_decisions/spark_suggestions）。
+- signature:
+    product_name: TRAE
+    model_name:
+    agent_runtime_name: traecode
+  at: '2026-08-17T21:42:01.864003Z'
+  summary: 完整质量链与 closure proposal 冻结，closure_preparing -> human_closure_confirming：写 Human Gate 2 waiting。
+- signature:
+    product_name: TRAE
+    model_name:
+    agent_runtime_name: traecode
+  at: '2026-08-18T04:33:19.736734Z'
+  summary: Human Gate 2 批准关闭提案：close-workcase 归档，status=closed，closure_outcome=completed，disposition_summary 与提案一致；related-to -> spark 保留。
+object_uid: 01a01132-2e79-72a0-938b-265004c6e0bf
+object_id: workcase-01M08K4BKSEAG972S6A02CDR5Z
+fact_type_key: workcase
+created_at: '2026-08-17T19:28:15.508625Z'
+updated_at: '2026-08-18T04:33:19.736734Z'
