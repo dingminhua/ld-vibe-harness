@@ -644,6 +644,50 @@ def test_signature_trailer_rejects_literal_null_in_product_name(contract: Commit
     assert "signature_trailer_literal_null" in _codes(result)
 
 
+@pytest.mark.parametrize("reserved", ["LDVH", "ldvh", "Ldvh", "  LDVH  "])
+def test_signature_trailer_rejects_framework_name_as_product(
+    contract: CommitContractProjection, reserved: str
+) -> None:
+    """The framework's own name (any case) must never be an outer-product name.
+
+    This is the mechanical guard for the recurring mistake of writing
+    ``LDVH-Product-Name: LDVH``: ``LDVH`` is the management framework's name,
+    not the outer product declared by the hosting prompt.  Case-insensitive
+    comparison keeps unexpected spellings from slipping through.
+    """
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "test: 拒绝框架名作为产品名\n\n关键变更:\n- 拒绝 LDVH 作为 product_name\n\n"
+                f"LDVH-Product-Name: {reserved}\nLDVH-Model-Name: gpt-5.6-luna"
+            ),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "signature_trailer_reserved_framework_name" in _codes(result)
+
+
+def test_signature_trailer_allows_real_product_name(contract: CommitContractProjection) -> None:
+    """A real product display name must not trip the reserved-framework guard."""
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "test: 真实产品名放行\n\n关键变更:\n- 产品名使用宿主声明\n\n"
+                "LDVH-Product-Name: DeepSeek Harness\nLDVH-Model-Name: gpt-5.6-luna"
+            ),
+        ),
+    )
+
+    assert "signature_trailer_reserved_framework_name" not in _codes(result)
+
+
 @pytest.mark.parametrize(
     ("duplicate_trailer", "duplicate_value"),
     [

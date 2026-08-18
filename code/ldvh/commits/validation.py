@@ -12,7 +12,10 @@ from ldvh.commits.contract_source import CommitContractProjection
 from ldvh.facts.content import validate_fact_content
 from ldvh.facts.contracts import LAYOUTS, is_legacy_spark_object
 from ldvh.facts.schema import FactSchema
-from ldvh.governance.signature_guard import signature_governance_instance_collision
+from ldvh.governance.signature_guard import (
+    signature_governance_instance_collision,
+    signature_trailer_reserved_framework_name,
+)
 from ldvh.signature import parse_signature
 
 _HEADER = re.compile(r"^(?P<type>[a-z]+)(?:\((?P<scope>[a-z]+(?:-[a-z]+)*)\))?(?P<breaking>!)?: (?P<description>.+)$")
@@ -327,6 +330,9 @@ def _signature_trailer_issues(
             collision = signature_governance_instance_collision(governance_instance_name, signature)
             if collision is not None:
                 issues.append(_issue(collision.code, collision.message))
+            reserved = signature_trailer_reserved_framework_name(signature)
+            if reserved is not None:
+                issues.append(_issue(reserved.code, reserved.message))
     return issues
 
 
