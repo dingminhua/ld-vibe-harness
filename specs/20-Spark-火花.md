@@ -198,7 +198,7 @@ Web 不创建 Spark。Spark 只可依 31 的受控创建行动形成，并由类
 
 ### 行动入口
 
-新建 Spark 使用 `fact-object-controlled-creation`（31）；既有 Spark 的内容更正、状态变化或承接处置使用 `fact-object-lifecycle-change`（32）。模板只帮助定位和组织行动，不替代本文的类型条件、Human Gate 或事实回读。
+新建 Spark 使用 `fact-object-controlled-creation`（31）；既有 Spark 的内容更正、状态变化或承接处置使用 `fact-object-lifecycle-change`（32）；Spark 议题驱动（召回、对象化判断、创建/更新选择与消费）使用 `spark-driven`（35）。模板只帮助定位和组织行动，不替代本文的类型条件、Human Gate 或事实回读。
 
 ### 主动召回与消费时机
 
