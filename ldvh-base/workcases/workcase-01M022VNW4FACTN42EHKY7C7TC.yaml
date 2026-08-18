@@ -30,19 +30,6 @@ success_criterion_results:
   summary: 结果区分 ldvh-prepared、harness-delivered、host-received unavailable 与 frozen-corpus behavior。selection 只描述 source identity/content/instruction 不可分的 combined package nominal scoring difference，不声称 knowledge/reuse improvement、broad causal effect 或 multiplicity-adjusted discovery；不关闭 broad Spark、不授权 Phase3/MCP。
 result_summary: WC-D 完成 12 个固定模型 fresh-context 配对（24 members，0 replacements，0 写 Helper）。在 selected frozen corpus 中，combined source-identity-plus-content package 的 selection_correct nominal difference 为 +0.666667（95% CI 0.416667–0.916667；unadjusted exact p=0.0078125）；source identity、content 与 instruction 不可分，六质量指标未做 multiplicity adjustment，其它质量结果 null/mixed。treatment 每 pair 增加 2 candidate expansions、约 194.75 prompt chars、230.75 packet/material chars 与 56.33 response chars；usage/latency unavailable。四项标准满足；records-only source-complete reproduction 原标准未满足。
 validation_summary: 'Artifacts: protocol 1197e337f2964e3e427e4024c74a0a839e68d79f40b929094bf629638c9a5f1f; results 0773ebf7e920872c0f1d024f0848216822870f71902c919da8b1736aea6e0e3a; records 98653684a1b2b7873878447f982ea0360ca76f24387b2031540d57547f44a472; report a6f9a02d46fb25d230131ab214a5a469305e60737c203bc5dc8340528f5f0cac; module ff1feb09d13fa80da23e12698e3ae38384b3a22d59614c690bac346303f5255d; tests 9a1807d0d2119b8485b78bb4348301216bc1fdbca435a7adf2c835e32b54435e. Focused 12 passed; Ruff passed; git diff --check clean; ldvh check passed with existing 7/67 disclosures; fact integrity complete/259/0. Validator recomputes hashes/sizes/sequence/fixed runtime/zero-write/unavailable/context-hash uniqueness. Derived-field replay from existing results+protocol is byte stable but not source-complete records-only reconstruction; full suite not triggered because no production import/public contract/shared core change. Host receipt, tokens/cache/wall/queue unavailable.'
-relations:
-- relation_key: related-to
-  target:
-    object_uid: 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc
-- relation_key: related-to
-  target:
-    object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
-- relation_key: related-to
-  target:
-    object_uid: 01a0038b-e990-7648-a886-df98559d26cf
-- relation_key: related-to
-  target:
-    object_uid: 01a00342-b1a9-7814-9827-8ac7b11fbd74
 change_log:
 - signature:
     product_name: DeepSeek Harness
@@ -170,6 +157,11 @@ change_log:
     agent_runtime_name: deepseek-harness
   at: '2026-08-15T08:01:22.616869Z'
   summary: Human Gate 2 接受 reviewed result v2 与 partial proposal；原子关闭 WC-D，保留四项 satisfied 结果，并接受 records-only source-complete reproduction residual 在本 WC 停止；无 route、无 Spark suggestion。
+- summary: 受控更正：移除 4 个 dangling related-to 关系目标（目标 UID 文件已被历史归档删除），恢复 mechanically_valid 状态
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+  at: '2026-08-18T06:04:00Z'
 status: closed
 closure_outcome: partial
 disposition_summary: 建议以 partial 停止 WC-D：保留四项满足标准、12-pair nominal combined-package 结果、成本与全部证据边界；接受 records-only source-complete reproduction 未满足这一明确 residual 在本 WC 停止，不路由现有事实、不建议新 Spark。若 Human 日后认为完整 scorer provenance archive 有独立净价值，应在本 WC 关闭后由新 WorkCase/Gate1 决定，不能在当前 Gate2 倒写为已完成。
@@ -180,4 +172,4 @@ object_uid: 01a0042d-d784-7a99-aa90-4e8cfc761f4c
 object_id: workcase-01M022VNW4FACTN42EHKY7C7TC
 fact_type_key: workcase
 created_at: '2026-08-15T06:48:27.208490Z'
-updated_at: '2026-08-15T08:01:22.616869Z'
+updated_at: '2026-08-18T06:06:00Z'
