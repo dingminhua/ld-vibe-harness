@@ -1,0 +1,125 @@
+status: closed
+title: WorkCase 执行阶段设计缺口改进落实：item_event 扩展与阶段 Goal 观察字段
+goal: 落实 6 项改进清单，完成规范正文修订与 Code 实现，通过测试验证
+scope: 修改 21 §6.4/§7 item_event 闭集、34 §5.2、workcase_projection.py、transitions.py、study 行为清单、04 契约；不改 WorkCase 状态机/Schema/基本投影设计；不引入新 Human Gate 类型
+success_criterion_definitions:
+- criterion_id: criterion-1
+  statement: 改进1(complete-work-item 同事务投影 executing到controller_checking)规范正文修订加Code实现加测试通过
+- criterion_id: criterion-2
+  statement: 改进2(cancel-work-item 事件)规范正文修订加Code实现加测试通过
+- criterion_id: criterion-3
+  statement: 改进3(stage_goal_status 观察字段)加改进6(pending item 观察字段)规范正文修订加Code实现加测试通过
+- criterion_id: criterion-4
+  statement: 改进4(行为清单条目)加改进5(34 5.2 行为约束升级)两项行为层文字修订落实
+success_criterion_results:
+- criterion_id: criterion-1
+  outcome: satisfied
+  summary: 改进1 complete-work-item同事务投影：规范+Code+验证通过
+- criterion_id: criterion-2
+  outcome: satisfied
+  summary: 改进2 cancel-work-item事件：规范+Code+验证通过
+- criterion_id: criterion-3
+  outcome: satisfied
+  summary: 改进3+6 观察字段：规范+Code+验证通过
+- criterion_id: criterion-4
+  outcome: satisfied
+  summary: 改进4+5 行为层文字修订落实
+result_summary: 6项改进清单全部落实：改进1 complete-work-item同事务投影(高)；改进2 cancel-work-item事件(中)；改进3+6 stage_goal_status与pending_item_observation观察字段(中)；改进4行为清单条目(中)；改进5 31/34阶段Goal由may升级为应尝试建立并记录缺口(低)。规范21/31/34+Code+测试+Study全部修订，2110测试通过。
+validation_summary: 机械校验：21 7 item_event闭集、21 9.3投影字段、34 5.2、31 5.2.2 均已对照修订。全量测试2110通过。
+closure_outcome: completed
+disposition_summary: 6项改进清单全部落实完成。改进1(complete-work-item同事务投影)：21 §7修订+workcase_item_event.py实现+验证通过。改进2(cancel-work-item事件)：21 §7修订+workcase_item_event.py实现+验证通过。改进3+6(stage_goal_status+pending_item_observation观察字段)：21 §9.3修订+workcase_presentation.py实现+验证通过。改进4(行为清单条目)：study-01M09ZNYA更新。改进5(31/34阶段Goal行为约束)：31 §5.2.2与34 §5.2由may升级为应尝试建立并记录缺口。全量测试2110通过。改进1在生产路径上经item-4的complete-work-item自动触发AllTerminal→controller_checking得到验证。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a015b9-341d-7ccc-ab2c-63cd217c199f
+change_log:
+- summary: 受控创建：承接 closed workcase-01M0AVJD0XFK6APB33SMGQR6CZ 的 6 项统一改进清单，落实规范正文与 Code 修订——item_event 扩展与阶段 Goal 观察字段
+  at: '2026-08-18T18:30:21.962226Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- summary: Gate1 批准：Human 接受当前计划与执行授权基线，phase 由 human_plan_confirming 推进至 executing
+  at: '2026-08-18T18:38:36.870292Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+  at: '2026-08-18T18:40:42.949587Z'
+  summary: item-1 开始执行：改进1 complete-work-item 同事务投影
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+  at: '2026-08-18T18:46:29.268696Z'
+  summary: item-1 完成：改进1 complete-work-item 同事务投影
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+  at: '2026-08-18T18:46:53.554135Z'
+  summary: item-2 开始执行：改进2 cancel-work-item 事件
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+  at: '2026-08-18T18:54:51.312858Z'
+  summary: item-2 完成：改进2 cancel-work-item 事件
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+  at: '2026-08-18T18:55:33.773591Z'
+  summary: item-3 开始执行：改进3+6 观察字段
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+  at: '2026-08-18T19:12:09.342417Z'
+  summary: item-3 完成：改进3+6 stage_goal_status + pending 观察字段
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+  at: '2026-08-18T19:12:43.845282Z'
+  summary: item-4 开始执行：改进4+5 行为层
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+  at: '2026-08-18T19:17:20.826190Z'
+  summary: item-4 完成：改进4+5 行为层约束升级
+- summary: controller_checking同phase形成完整结果投影(result_version=1)
+  at: '2026-08-18T19:19:41.893781Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- summary: 完整结果投影已形成并冻结，phase由controller_checking推进至independent_reviewing
+  at: '2026-08-18T19:20:38.460556Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- summary: 独立结果复核verdict=pass无followup，同phase写入result_reviews
+  at: '2026-08-18T19:41:56.349097Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- summary: feedback处置完成(pass无followup)，projection未变，phase由independent_reviewing推进至closure_preparing
+  at: '2026-08-18T19:42:28.117771Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- summary: closure proposal在closure_preparing同phase形成(proposed_outcome=completed，无后续建议)
+  at: '2026-08-18T19:43:12.368756Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- summary: proposal已冻结，phase由closure_preparing推进至human_closure_confirming，等待Human Gate 2
+  at: '2026-08-18T19:43:45.197724Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- summary: Gate 2 批准关闭：Human 同意关闭，WorkCase closed (completed)
+  at: '2026-08-18T19:51:00.244835Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+object_uid: 01a01623-8a25-77d4-ac05-c317513f8651
+object_id: workcase-01M0B272H5EZAAR1E32X8KZ1JH
+fact_type_key: workcase
+created_at: '2026-08-18T18:30:21.962226Z'
+updated_at: '2026-08-18T19:51:00.244835Z'

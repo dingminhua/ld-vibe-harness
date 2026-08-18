@@ -9,10 +9,13 @@ from typing import Literal
 
 from ldvh.facts.update_application import MANAGED_FIELDS
 
+_TERMINAL_ITEM_STATUSES = frozenset({"completed", "cancelled"})
+
 WorkCaseItemEventKey = Literal[
     "start-work-item",
     "update-work-item-checkpoint",
     "complete-work-item",
+    "cancel-work-item",
 ]
 
 
@@ -40,6 +43,29 @@ def _event_item(fields: Mapping[str, object], item_id: str) -> dict[str, object]
     if len(matches) != 1:
         raise WorkCaseItemEventError("item_event.item_id 必须在当前 WorkCase 中精确命中一项")
     return matches[0]
+
+
+def _project_all_terminal_phase_transition(supplied: dict[str, object]) -> None:
+    """When an item becomes terminal and leaves no non-terminal item, transition
+    executing -> controller_checking in the same transaction (21 §6.3.3).
+
+    The event projector performs the same phase projection the fact_object path would;
+    publication still flows through the shared WorkCase publish function, which
+    re-validates the full transition including AllTerminal -> controller_checking.
+    """
+    work_items = supplied.get("work_items")
+    if not isinstance(work_items, list):
+        return
+    if not all(
+        isinstance(_item, dict) and _item.get("status") in _TERMINAL_ITEM_STATUSES
+        for _item in work_items
+    ):
+        return
+    if supplied.get("phase") == "executing":
+        supplied["phase"] = "controller_checking"
+        # First result projection for this plan version starts at 1 (21 §6.3.3).
+        if "result_version" not in supplied:
+            supplied["result_version"] = 1
 
 
 def project_workcase_item_event(
@@ -76,13 +102,26 @@ def project_workcase_item_event(
             raise WorkCaseItemEventError("update-work-item-checkpoint 与当前值相同，是禁止写入的 no-op")
         item["current_summary"] = event.current_summary
         item["resume_from"] = event.resume_from
-    else:
+    elif event.event_key == "complete-work-item":
         if status != "in_progress":
             raise WorkCaseItemEventError("complete-work-item 的目标 item 必须为 in_progress")
         item["status"] = "completed"
         item.pop("current_summary", None)
         item.pop("resume_from", None)
+        item.pop("blocking_summary", None)
         item["result_summary"] = event.result_summary
+        _project_all_terminal_phase_transition(supplied)
+    elif event.event_key == "cancel-work-item":
+        if status not in ("in_progress", "blocked"):
+            raise WorkCaseItemEventError("cancel-work-item 的目标 item 必须为 in_progress 或 blocked")
+        item["status"] = "cancelled"
+        item.pop("current_summary", None)
+        item.pop("resume_from", None)
+        item.pop("blocking_summary", None)
+        item["result_summary"] = event.result_summary
+        _project_all_terminal_phase_transition(supplied)
+    else:
+        raise WorkCaseItemEventError(f"未知 item_event event_key: {event.event_key}")
 
     change_log = supplied.get("change_log")
     if not isinstance(change_log, list):

@@ -157,10 +157,67 @@ def derive_handoff_verdict(status: object, phase: object) -> dict[str, object]:
     return {"handoff_allowed": True, "handoff_reason": "unresolved"}
 
 
+_STAGE_GOAL_STATUSES = (
+    "established",
+    "not_attempted",
+    "unavailable",
+    "conflict",
+)
+
+_PENDING_ITEM_OBSERVATION_STATUSES = (
+    "no_pending_items",
+    "has_pending_items",
+    "unavailable",
+)
+
+
+def _derive_stage_goal_status(fields: Mapping[str, object] | None) -> str:
+    """Project a non-blocking observation of whether a non-persistent stage Goal
+    has been declared by the Controller.
+
+    The WorkCase fact object never persists a stage Goal (it is a host-side
+    non-persistent concern), so the projection can only surface what the
+    Controller has declared in the object's ``summary`` or a dedicated
+    ``stage_goal_status`` field if one is ever introduced.  For now this stays
+    ``not_attempted`` unless the fields carry an explicit declaration.  This
+    field is purely observational; it never changes ``handoff_allowed``.
+    """
+
+    if not isinstance(fields, Mapping):
+        return "not_attempted"
+    declared = fields.get("stage_goal_status")
+    if isinstance(declared, str) and declared in _STAGE_GOAL_STATUSES:
+        return declared
+    return "not_attempted"
+
+
+def _derive_pending_item_observation(fields: Mapping[str, object] | None) -> str:
+    """Project a non-blocking observation of whether the executing phase still
+    has pending items alongside work that may have been done.
+
+    This is an observational field only; it never changes ``handoff_allowed``
+    or any transition verdict.  It surfaces the gap (Spark 缺口一方向 3)
+    that the fact_object path does not detect "should-have-changed-but-didn't"
+    item drift — making the gap visible without blocking.
+    """
+
+    if not isinstance(fields, Mapping):
+        return "unavailable"
+    work_items = fields.get("work_items")
+    if not isinstance(work_items, list):
+        return "unavailable"
+    has_pending = any(
+        isinstance(item, Mapping) and item.get("status") == "pending"
+        for item in work_items
+    )
+    return "has_pending_items" if has_pending else "no_pending_items"
+
+
 def derive_workcase_presentation(
     status: object,
     phase: object,
     source_content_fingerprint: object,
+    fields: Mapping[str, object] | None = None,
 ) -> dict[str, object]:
     """Project a just-read WorkCase snapshot without making semantic judgments."""
 
@@ -185,6 +242,8 @@ def derive_workcase_presentation(
             resolution="resolved",
             source_content_fingerprint=fingerprint,
             blocking_overlay=False,
+            stage_goal_status=_derive_stage_goal_status(fields),
+            pending_item_observation=_derive_pending_item_observation(fields),
             **derive_handoff_verdict(status, phase),
         )
         return projected
@@ -208,6 +267,8 @@ def derive_workcase_presentation(
         resolution="resolved",
         source_content_fingerprint=fingerprint,
         blocking_overlay=blocked,
+        stage_goal_status=_derive_stage_goal_status(fields),
+        pending_item_observation=_derive_pending_item_observation(fields),
         **derive_handoff_verdict(status, phase),
     )
     return projected

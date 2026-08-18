@@ -53,11 +53,16 @@ change_log:
     product_name: Cindy
     model_name: gpt-5
   at: '2026-08-18T08:40:08.319002Z'
+- summary: 受控更新 Study：增加「完成后同事务更新item状态」行为清单条目，更新与并行Study关系（承接workcase-01M0B272H5EZAAR1E32X8KZ1JH改进4）。
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+  at: '2026-08-18T08:40:09.319003Z'
 object_uid: 01a013fa-f948-78e6-87f0-3b5b7daf758b
 object_id: study-01M09ZNYA8F3K8FW1VBDYTYXCB
 fact_type_key: study
 created_at: '2026-08-18T08:26:48.966320Z'
-updated_at: '2026-08-18T08:40:08.319002Z'
+updated_at: '2026-08-18T08:40:09.319003Z'
 ---
 
 ## 研究问题
@@ -124,6 +129,8 @@ updated_at: '2026-08-18T08:40:08.319002Z'
 
 **对后续项目工作的直接影响**：在 executing 外的 phase 尝试 item_event 会被机械拒绝；phase 转换时若误用 item_event 会造成状态卡死。建议执行者区分两种路径的使用边界。
 
+**行为清单新增条目（承接 spark-01M09PNH9CEAVBMQS4JXNC74W6 缺口一改进4）**：完成 item 实际工作后，必须同事务用 `item_event`（`start-work-item` / `complete-work-item` / `cancel-work-item`）或 `fact_object` 路径推进 item 状态，不得留下 `pending` item 与已执行工作并存。`complete-work-item` 在最后一项 terminal 时会同事务投影 `executing → controller_checking`，无需另发完整 after。该条目压缩"忘记更新 item 状态"的发生率，不替代机械保障——`pending_item_observation` 投影字段让该缺口可见但不阻断。
+
 ### 发现六：跨类型流转主要经由关系与处置字段
 
 | 流转场景 | 源→目标 | 机制 |
@@ -173,4 +180,4 @@ updated_at: '2026-08-18T08:40:08.319002Z'
 
 4. **定时复核**：当 specs/20~24 或 specs/31/32/34 发生实质修订（commit 变化 + 状态闭集/专属操作变化）时，复核本清单并同步修订；若规范无实质变化，无需对象化，本清单继续有效。
 
-5. **与并行 Study 的关系**：spark-01M09PNH9CEAVBMQS4JXNC74W6（WorkCase 执行阶段两个设计缺口）与本清单交集部分（item_event 路径 vs 完整 after），待其研究结论形成后可由本清单吸收或链接。
+5. **与并行 Study 的关系**：spark-01M09PNH9CEAVBMQS4JXNC74W6（WorkCase 执行阶段两个设计缺口）已由 workcase-01M0AVJD0XFK6APB33SMGQR6CZ 完成分析并关闭（closure_outcome=completed），其结论已由本清单吸收：item_event 闭集扩展（cancel-work-item + complete-work-item 同事务投影）已落实，阶段 Goal 行为约束（34 §5.2 升级为应尝试并记录缺口）已落实。

@@ -26,6 +26,8 @@ def test_open_phase_matrix_is_resolved(phase: str, expected: dict[str, str | Non
         "resolution": "resolved",
         "source_content_fingerprint": FINGERPRINT,
         "blocking_overlay": False,
+        "stage_goal_status": "not_attempted",
+        "pending_item_observation": "unavailable",
         **PHASE_HANDOFF[phase],
     }
 
