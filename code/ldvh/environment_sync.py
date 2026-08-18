@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
@@ -54,6 +55,11 @@ __all__ = [
 ]
 
 _LDVH_FRONTMATTER_NAME = "ldvh"
+
+# Runtime skill-name grammar shared by the DSH loaders (`dsh-skillport` spec.js:
+# /^[a-z0-9]+(?:-[a-z0-9]+)*$/u).  A frontmatter name that does not match is
+# silently dropped by the loaders, so the validation gate must agree exactly.
+_SKILL_NAME_GRAMMAR = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 
 
 @dataclass(frozen=True, slots=True)
@@ -152,18 +158,30 @@ def validate_skill_frontmatter(path: Path) -> tuple[bool, str | None]:
     and ``description``.  A file that fails here is *silently dropped* by the
     loaders, so the check must be part of every skill deployment/sync gate.
 
+    The closing fence is matched line-by-line (``---`` alone on a line), the
+    same way the runtime loaders scan it, instead of a substring search that
+    would accept ``---extra`` or ``--- `` variants the loaders reject.  The
+    ``name`` value must also satisfy the runtime skill-name grammar
+    (lowercase letters, digits and single hyphens) so a name that passes here
+    can never be silently dropped by a loader that validates the grammar.
+
     Returns ``(valid, error)``; ``error`` is ``None`` when the file is valid.
     """
     try:
         text = path.read_text(encoding="utf-8")
     except (OSError, UnicodeError):
         return False, "unreadable"
-    if not text.startswith("---"):
+    lines = text.splitlines()
+    if not lines or lines[0].strip() != "---":
         return False, "缺少 frontmatter 起始 `---` 围栏"
-    end = text.find("\n---", 3)
-    if end == -1:
+    end_index: int | None = None
+    for index, line in enumerate(lines[1:], start=1):
+        if line.strip() == "---":
+            end_index = index
+            break
+    if end_index is None:
         return False, "缺少 frontmatter 结束 `---` 围栏"
-    frontmatter = text[3:end]
+    frontmatter = "\n".join(lines[1:end_index])
     try:
         parsed = ruamel.yaml.YAML(typ="safe").load(frontmatter)
     except Exception as error:  # noqa: BLE001 - report any parser failure verbatim
@@ -171,8 +189,13 @@ def validate_skill_frontmatter(path: Path) -> tuple[bool, str | None]:
     if not isinstance(parsed, dict):
         return False, "frontmatter 必须是单个 YAML mapping"
     name = parsed.get("name")
-    if not isinstance(name, str) or name.strip() != _LDVH_FRONTMATTER_NAME:
-        return False, f'frontmatter "name" 必须是非空字符串且为 "{_LDVH_FRONTMATTER_NAME}"'
+    if not isinstance(name, str) or not _SKILL_NAME_GRAMMAR.fullmatch(name):
+        return False, (
+            f'frontmatter "name" 必须符合 skill 名称语法（小写字母/数字/单个连字符）'
+            f'且为 "{_LDVH_FRONTMATTER_NAME}"，收到 {name!r}'
+        )
+    if name != _LDVH_FRONTMATTER_NAME:
+        return False, f'frontmatter "name" 必须为 "{_LDVH_FRONTMATTER_NAME}"'
     description = parsed.get("description")
     if not isinstance(description, str) or not description.strip():
         return False, 'frontmatter "description" 必须是非空字符串'

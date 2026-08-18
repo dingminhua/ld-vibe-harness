@@ -775,6 +775,42 @@ class TestMergeProtectedFiles:
         )
         assert "merge_conflict_marker_residue" in _codes(result)
 
+    def test_merge_marker_without_trailing_space_detected(
+        self, contract: CommitContractProjection, tmp_path: Path
+    ) -> None:
+        """Markers without a trailing space or with leading indentation must
+        still be caught (line-anchored detection)."""
+        (tmp_path / "README.md").write_text(
+            "**Version: v4.1.0**\n<<<<<<<HEAD\nline a\n=======\nline b\n>>>>>>>feature\n",
+            encoding="utf-8",
+        )
+        message = self._merge_signed("README.md")
+        result = validate_commit(
+            contract,
+            self._merge_input(
+                contract, tmp_path, message=message, candidate_paths=("README.md",)
+            ),
+        )
+        assert "merge_conflict_marker_residue" in _codes(result)
+
+    def test_merge_markdown_heading_underline_not_reported(
+        self, contract: CommitContractProjection, tmp_path: Path
+    ) -> None:
+        """A standalone `=======` line is a legal Markdown heading underline;
+        without a `<<<<<<<`/`>>>>>>>` sibling it must not be reported."""
+        (tmp_path / "README.md").write_text(
+            "**Version: v4.1.0**\nHeading\n=======\nbody\n",
+            encoding="utf-8",
+        )
+        message = self._merge_signed("README.md")
+        result = validate_commit(
+            contract,
+            self._merge_input(
+                contract, tmp_path, message=message, candidate_paths=("README.md",)
+            ),
+        )
+        assert "merge_conflict_marker_residue" not in _codes(result)
+
     def test_merge_skill_frontmatter_invalid_fails(
         self, contract: CommitContractProjection, tmp_path: Path
     ) -> None:

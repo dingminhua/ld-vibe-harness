@@ -435,17 +435,50 @@ _MERGE_PROTECTED_PATHS = (
     "skill/SKILL.md",
     "README.md",
 )
-_MERGE_CONFLICT_MARKERS = (
-    b"<<<<<<< ",
-    b"=======",
-    b">>>>>>> ",
-)
 _MERGE_TOUCHED_TRAILER = "Merge-Touched"
 # README version line pattern: a Markdown line starting with `**Version:`.
 _README_VERSION_LINE = re.compile(r"^\*\*Version:\s*(\S+)")
 # CHANGELOG version heading pattern; kept mechanical and narrow so the gate
 # reports drift without parsing full SemVer.
 _CHANGELOG_VERSION_HEADING = re.compile(r"^##\s+\[?v?([0-9][^\s\]]*)")
+
+
+def _merge_conflict_residue(raw: bytes) -> tuple[str, ...]:
+    """Line-wise conflict-marker residue detection.
+
+    Git conflict markers are ``<<<<<<< <branch>``, ``=======`` and
+    ``>>>>>>> <branch>`` each on their own line.  Detecting them line-wise
+    with a leading-space-tolerant pattern avoids two failure modes of a bare
+    substring search:
+
+    * ``=======`` alone is a legal Markdown level-1 heading underline in
+      README.md; it is only reported as residue when the same file already
+      carries a ``<<<<<<<`` or ``>>>>>>>`` line, which a heading underline
+      never does.
+    * markers with no trailing space (``>>>>>>>HEAD``) or a leading space
+      after conflict resolution are still caught, because the pattern anchors
+      the marker at the start of a line and only requires the branch name
+      suffix when present.
+
+    Returns the unique marker spellings found, in first-seen order.
+    """
+
+    found: list[str] = []
+    saw_bracket_marker = False
+    for line in raw.split(b"\n"):
+        stripped = line.lstrip(b" ")
+        if stripped.startswith(b"<<<<<<<") or stripped.startswith(b">>>>>>>"):
+            saw_bracket_marker = True
+            marker = stripped.split(b" ", 1)[0].decode("ascii", "replace")
+            if marker not in found:
+                found.append(marker)
+    if not saw_bracket_marker:
+        return tuple(found)
+    for line in raw.split(b"\n"):
+        if line.lstrip(b" ") == b"=======" and "=======" not in found:
+            found.append("=======")
+            break
+    return tuple(found)
 
 
 def _merge_protected_files_issues(value: CommitValidationInput) -> list[CommitValidationIssue]:
@@ -492,7 +525,7 @@ def _merge_protected_files_issues(value: CommitValidationInput) -> list[CommitVa
         except OSError:
             issues.append(_issue("merge_protected_unreadable", f"merge 触及 {path} 但文件不可读"))
             continue
-        residue = [marker.decode("ascii", "replace") for marker in _MERGE_CONFLICT_MARKERS if marker in raw]
+        residue = _merge_conflict_residue(raw)
         if residue:
             issues.append(
                 _issue(

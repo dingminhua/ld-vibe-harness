@@ -344,6 +344,42 @@ class TestFrontmatterValidationGate:
         assert valid is False
         assert "围栏" in (error or "")
 
+    def test_fence_variant_with_suffix_rejected(self, tmp_path: Path) -> None:
+        """A closing fence must be a standalone `---` line; `---extra` must not
+        be accepted (the runtime loaders scan for an exact standalone line)."""
+        broken = tmp_path / "SKILL.md"
+        broken.write_text(
+            "---\nname: ldvh\ndescription: 合法\n---extra\n> Skill 版本：2026-08-12 00:00\n",
+            encoding="utf-8",
+        )
+        valid, error = validate_skill_frontmatter(broken)
+        assert valid is False
+        assert "围栏" in (error or "")
+
+    def test_fence_ignores_leading_spaces(self, tmp_path: Path) -> None:
+        """The runtime loaders strip the line before comparing to `---`; the
+        gate must accept the same standalone-line shape."""
+        good = tmp_path / "SKILL.md"
+        good.write_text(
+            "---\nname: ldvh\ndescription: 合法\n---\n> Skill 版本：2026-08-12 00:00\n",
+            encoding="utf-8",
+        )
+        valid, error = validate_skill_frontmatter(good)
+        assert valid is True
+        assert error is None
+
+    def test_uppercase_name_rejected(self, tmp_path: Path) -> None:
+        """DSH grammar requires lowercase letters/digits/hyphens; `LDVH` would
+        pass a bare strip comparison but be silently dropped by loaders."""
+        broken = tmp_path / "SKILL.md"
+        broken.write_text(
+            "---\nname: LDVH\ndescription: 合法\n---\n> Skill 版本：2026-08-12 00:00\n",
+            encoding="utf-8",
+        )
+        valid, error = validate_skill_frontmatter(broken)
+        assert valid is False
+        assert "name" in (error or "")
+
     def test_update_refuses_broken_source_even_with_gate(self, tmp_path: Path) -> None:
         broken_source = tmp_path / "source" / "SKILL.md"
         _write_broken_frontmatter(broken_source, version="2026-08-13 00:00")
