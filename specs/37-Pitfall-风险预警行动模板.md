@@ -96,7 +96,8 @@ AI 在长期项目中会反复遇到相似的失败模式——环境配置错�
 1. 经 Helper `find-fact-object-candidates`（card_layer=F2, fact_type_keys=["pitfall"]）发现候选；
 2. 按 23 定义的 F2 投影字段评估：object_uid, object_id, title, status, symptoms, trigger_conditions, scope_of_impact, applicability, validation_summary, updated_at；
 3. 按症状、触发条件、环境、版本或 applicability 与当前情形的可能相容性缩小候选范围；
-4. 默认候选只包含 active Pitfall；draft 和 discarded 不进入普通经验召回。
+4. 默认候选只包含 active Pitfall；draft 和 discarded 不进入普通经验召回；
+5. Helper 在 F2 卡附加 `trigger_reason`、`matched_fields` 与 `anchor_type`：`anchor_type` 为 `observed_symptom` 时表示失败已发生、经验可直接参考；为 `potential_risk` 时表示即将执行有风险的操作、需评估当前情形是否落入触发条件。若 `anchor_type` 为空（仅非触发字段命中），则不触发经验消费，保留为参考但不调整行动。
 
 #### C. F3 展开与经验核对
 
