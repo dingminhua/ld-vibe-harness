@@ -743,6 +743,15 @@ def _card(
     }
     if fact_type_key in ("adr", "pitfall") and domain.card_layer == "F2":
         result["trigger_reason"] = _compute_trigger_reason(fact_type_key, reasons)
+        result["matched_fields"] = _compute_matched_fields(reasons)
+        if fact_type_key == "adr":
+            exclusion = _compute_exclusion_candidates(fact_type_key, reasons)
+            if exclusion:
+                result["exclusion_candidates"] = exclusion
+        if fact_type_key == "pitfall":
+            anchor = _compute_anchor_type(fact_type_key, reasons)
+            if anchor is not None:
+                result["anchor_type"] = anchor
     return result
 
 
@@ -763,8 +772,70 @@ def _compute_trigger_reason(fact_type_key: str, reasons: list[dict[str, object]]
     primary = matched_fields[0]
     if fact_type_key == "adr":
         return f"signal_hit:{primary}_match"
+    # Pitfall: anchor type based on which field matched
+    # "symptoms" match → observed_symptom (failure already happened)
+    # other trigger fields → potential_risk (about to execute risky operation)
     anchor = "observed_symptom" if "symptoms" in matched_fields else "potential_risk"
     return f"signal_hit:{primary}_match AND anchor:{anchor}"
+
+
+def _compute_matched_fields(reasons: list[dict[str, object]]) -> list[str]:
+    """Extract all field paths that matched via text_match from reasons."""
+    return [
+        r["field_path"]
+        for r in reasons
+        if r.get("kind") == "field-text"
+    ]
+
+
+def _compute_exclusion_candidates(fact_type_key: str, reasons: list[dict[str, object]]) -> list[str]:
+    """For ADR: suggest potential light_exclusion scenarios based on match pattern.
+
+    light_exclusion applies when the match is NOT on a core decision field
+    (decision_question, decision, applicability, trigger_signal) — suggesting
+    the match is incidental rather than a genuine decision boundary触达.
+    """
+    if fact_type_key != "adr":
+        return []
+    matched_trigger = [
+        r["field_path"]
+        for r in reasons
+        if r.get("kind") == "field-text" and r.get("field_path") in _ADR_TRIGGER_FIELDS
+    ]
+    matched_non_trigger = [
+        r["field_path"]
+        for r in reasons
+        if r.get("kind") == "field-text" and r.get("field_path") not in _ADR_TRIGGER_FIELDS
+    ]
+    candidates: list[str] = []
+    if matched_non_trigger and not matched_trigger:
+        # Only non-trigger fields matched (e.g., title only) — potential exclusion
+        candidates.append("non-trigger-field-only-match")
+    if matched_trigger and "applicability" in matched_trigger and len(matched_trigger) == 1:
+        # Only applicability matched — may need exclusion check
+        candidates.append("applicability-only-match")
+    return candidates
+
+
+def _compute_anchor_type(fact_type_key: str, reasons: list[dict[str, object]]) -> str | None:
+    """For Pitfall: classify the anchor type based on which field matched.
+
+    - "observed_symptom": symptoms field matched → failure already occurred
+    - "potential_risk": trigger_conditions/applicability/scope_of_impact matched → about to execute
+    - None: no trigger field matched (relation/status only)
+    """
+    if fact_type_key != "pitfall":
+        return None
+    matched_fields = [
+        r["field_path"]
+        for r in reasons
+        if r.get("kind") == "field-text" and r.get("field_path") in _PITFALL_TRIGGER_FIELDS
+    ]
+    if not matched_fields:
+        return None
+    if "symptoms" in matched_fields:
+        return "observed_symptom"
+    return "potential_risk"
 
 
 def _query_fingerprint(domain: FactCandidateRequest, root: Path, common_dir: Path) -> str:
