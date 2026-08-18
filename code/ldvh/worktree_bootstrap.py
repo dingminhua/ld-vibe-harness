@@ -18,6 +18,8 @@ from pathlib import Path
 from typing import Any
 
 CONTRACT = "ldvh-worktree-bootstrap/1"
+_BOOTSTRAP_COMMAND = "./ldvh worktree-bootstrap"
+_CHECK_COMMAND = "./ldvh worktree-bootstrap --check"
 PROJECT_PYTHON = (3, 11)
 REQUIREMENT_IMPORTS = {
     "pytest-xdist": "xdist",
@@ -255,6 +257,17 @@ def _check(worktree: Path) -> dict[str, Any]:
         "missing_packages": missing,
         "checks": checks,
         "diagnostics": diagnostics,
+        "recovery": {
+            "available": True,
+            "kind": "bootstrap",
+            "command": _BOOTSTRAP_COMMAND,
+            "verification_command": _CHECK_COMMAND,
+            "requires_human": False,
+        }
+        if status == "not_ready"
+        else {"kind": "human_intervention"}
+        if status == "unavailable"
+        else {"kind": "none"},
     }
 
 
@@ -312,6 +325,7 @@ def run(source_root: Path, arguments: list[str] | None = None) -> int:
             "missing_packages": [],
             "checks": [{"check": "git_worktree", "status": "unavailable"}],
             "diagnostics": [error],
+            "recovery": {"kind": "human_intervention"},
         }
     else:
         if not parsed.check:
@@ -319,6 +333,7 @@ def run(source_root: Path, arguments: list[str] | None = None) -> int:
             if bootstrap_error is not None:
                 response = _check(worktree)
                 response["status"] = "unavailable"
+                response["recovery"] = {"kind": "human_intervention"}
                 response["diagnostics"].append(bootstrap_error)
             else:
                 response = _check(worktree)
