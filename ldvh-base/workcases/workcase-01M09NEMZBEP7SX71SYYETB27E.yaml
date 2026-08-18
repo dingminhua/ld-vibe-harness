@@ -1,0 +1,244 @@
+status: closed
+title: 知识激活 v7：Study 机制固化（关系导航+渐进阅读）与 ADR/Pitfall 差异化触发校准
+goal: 两阶段推进知识激活触发边界：(1) 单独评估并固化 Study 的召回机制为「related-to 关系导航 + F2 索引可见 + F3 按需渐进、无触发判定」，评估通过后将其冻结为规范基线并建立回归防护（契约测试/关系图完整性/行为快照回放/纳入标准回归链），之后不再研究 Study；(2) 将研究重心转向 ADR/Pitfall 的差异化触发（ADR=信号命中即触发+轻排除、Pitfall=信号+症状/风险锚点，per-family 门槛），修复 v6 的「触发精度↔激活质量」单轴权衡，使触发精度与激活质量同时达标。
+scope: 复用 v6 已冻结的 18 个 task/gold（A1-S6、6 情形、9 applicable/9 non-use/6 no-trigger）、激活投影双卡集与 F3 指纹、v6 runner/trial 只读复用依据；v6 sealed bundle、compiled artifacts 与 docs/metrics/knowledge-precheck-v6 不得修改。新增 code/ldvh/testing/knowledge_precheck_v7.py、knowledge_precheck_v7_trial.py、code/tests/testing/test_knowledge_precheck_v7*.py、docs/metrics/knowledge-precheck-v7/。阶段1 Study 单独评估：独立 study-only 评估实验（复用 S1-S6 样本 + Study 关系导航机制），按预注册指标（发现率/应用率/干扰率）得出机械可判定结论；评估通过后把「Study=关系导航+F2 索引可见+F3 按需、无触发判定」冻结为规范基线（写入 spark 与 v7 产物，不改 Specs），并建立回归防护。阶段2 ADR/Pitfall 差异化触发实验：calibration 双条件（baseline=v5 宽触发 vs family-differentiated=ADR 信号+轻排除/Pitfall 信号+症状锚点），per-family 门槛，呈现层固定激活投影（隔离变量），Study 任务用已冻结固定机制（或阶段1 失败分支下的 v6 on-demand 基线机制）。回归防护落地方式：契约测试、Study related-to 关系图完整性校验、行为快照回放作为独立 test 文件被标准 pytest 自动发现，纳入 v7 自动化验证（v7 focused tests 运行即覆盖）；本 WorkCase 不修改既有回归 runner/CI 配置，若既有回归链需改造属排除项。只允许真实 Helper F2/F3 只读调用及字段闭集证据留存；source-complete 报告成立后允许经 Helper CAS 更新 spark-01KZXN5TXNEKMANG1WTFBKT5FW（object_uid 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc，保持 open/P1）。排除：生产 L1/L0 接入实现、Specs/Helper contract/事实 Schema/Web 修改、v2-v6 代码或证据改写、Git commit/push/PR/release、部署和网络发布、本 WorkCase 与 spark 写回以外的其它事实对象创建。
+success_criterion_definitions:
+- criterion_id: criterion-frozen-v7-protocol
+  statement: 冻结 v7 protocol（schema_version=ldvh-knowledge-precheck-v7/1）：两阶段结构与预注册门槛全部机械可判定。阶段1 Study 单独评估指标（操作定义，分母口径固定）：Study 发现率 = 需参考 Study 的任务中被 AI 通过 related-to 导航实际找到对应 Study 的任务数/需参考任务数（分母固定为需参考的 6 个任务，阈值 >= 4/6）；Study 应用率 = 被找到 Study 中实际用于行动/结论的任务数/被找到任务数（分母为实际被找到任务数，执行期先确认被找到任务数 >= 4 方可判定，门槛 = 应用于 >= 3 个被找到任务）；干扰率 = 非 Study 任务中因 Study 机制被注入 Study 卡或污染上下文的次数（阈值 <= 1，计数精确、不依赖'无实质'等限定词）。阶段2 ADR/Pitfall 差异化触发门槛（基线统一锚定 v6 baseline 臂=已归档的 v5 activation-enhanced 策略实测值：总体 trigger_correct=12/18、unnecessary_f2=6、正确激活率=6/9、strong_reuse(applicable)=6、missed=0、correct_non_use=5；per-family 为 trigger_correct=4/6、unnecessary_f2=2，总体即各 family 合计）：ADR 漏检数 <= 2 且 ADR 正确激活率 >= 3/3（v5 activation-enhanced 在 ADR applicable 上已归档值）；Pitfall per-family 门槛 trigger_correct >= 4/6 且 unnecessary_f2 <= 2（v6 baseline per-family 已归档值）；总体 trigger_correct >= 12、unnecessary_f2 <= 6、正确激活率 >= 6/9（相对 v6 baseline 不下降，基准统一为上述已归档值）；任一门槛失败即 do-not-support-family-differentiated-trigger。
+- criterion_id: criterion-study-evaluation
+  statement: Study 单独评估按预注册指标（发现率/应用率/干扰率，操作定义见 criterion-frozen-v7-protocol）完成并机械判定：评估通过则冻结；不通过则据实记录偏差并收敛到结果链（criterion-study-frozen 判为 not_satisfied），不把不通过写成通过。
+- criterion_id: criterion-study-frozen
+  statement: 条件式结果语义：仅当阶段1 Study 评估通过（criterion-study-evaluation 满足）时，Study 冻结为规范基线——无触发判定 + related-to 关系导航 + F2 索引可见 + F3 按需渐进，冻结声明写入 spark 与 v7 产物，后续不再研究 Study 机制（outcome=satisfied）；若阶段1 不通过则 outcome=not_satisfied（Study 不冻结，回归防护不针对未冻结机制声明，声明保留但不作为固定基线）。
+- criterion_id: criterion-study-regression-guard
+  statement: Study 固定机制的回归防护建立且可机械验证（仅当 Study 冻结生效时适用；落地方式=独立 test 文件由标准 pytest 自动发现并纳入 v7 自动化验证，不改既有回归 runner/配置）：契约测试（F2 必返回索引、F3 必返回全文、触发判定恒为 no-trigger、related-to 导航入口存在）、Study related-to 关系图完整性校验、行为快照回放 byte-identical。
+- criterion_id: criterion-adr-pitfall-differentiation
+  statement: ADR/Pitfall 差异化触发实验按 per-family 门槛机械判定（基线统一锚定 v6 baseline 臂已归档值：总体 12/6/6、per-family 4/6 与 2，见 criterion-frozen-v7-protocol）：目标修复 v6 单轴权衡——ADR 保持高 recall（漏检数 <= 2）且正确激活率 >= 3/3；Pitfall 在 precision/recall 间折中（per-family trigger_correct >= 4/6、unnecessary_f2 <= 2）；同时总体 trigger_correct >= 12、正确激活率 >= 6/9（相对 v6 baseline 不下降）。实验显式覆盖 v6 暴露的 f2-no-f3（A6/S6）与 study applicable（S1/S2）情形在 ADR 轻排除与 Pitfall 症状/风险锚点下的判定，避免重蹈 v6 动作语义触发的过度保守。
+- criterion_id: criterion-v7-source-complete-replay
+  statement: 独立 sealed evidence bundle 从 protocol/task/gold、source snapshot、raw Helper exchanges、模型结构化输出、盲评 packet/评分、效用留痕与 adjudication ledger 字节一致重建 records/results/report（两次 byte-identical）；缺失/额外/篡改/hash drift/score 不绑定均被拒绝。
+- criterion_id: criterion-v7-automated-verification
+  statement: v7 focused tests（含 Study 固定机制契约/回归防护测试、ADR/Pitfall 差异化 gateway 触发判定/漂移拒绝/条件泄漏拒绝）全部通过；v5/v6 回归测试不被破坏；ruff format/check 与 py_compile 通过。
+- criterion_id: criterion-v7-paired-measurement
+  statement: 阶段2 实际取得恰 18 retained pairs，ceilings 内（42 launches/42 scorer/600s/6h/3 replacements/21 attempts），technical-exclusion 闭集与 v6 同构（仅预注册技术排除触发整对 replacement）；阶段1 Study 评估运行独立记账且遵守同一 member/scorer ceilings。报告逐 family/情形及总体给出指标并严格按冻结门槛给出结论；不利结果不排除。
+- criterion_id: criterion-spark-v7-writeback
+  statement: 仅在 v7 source-complete 报告成立后（机械前置条件），spark-01KZXN5TXNEKMANG1WTFBKT5FW 的公开精确回读包含报告绑定、实测指标、各门槛通过/失败、运行时可观察性与因果限制、Study 冻结基线声明（或阶段1 不通过时的偏差记录）及严格结论；写后 check-fact-integrity 外层 outcome=ok、领域 result.status=complete 且 scope.not_completed 为空。
+success_criterion_results:
+- criterion_id: criterion-frozen-v7-protocol
+  outcome: satisfied
+  summary: v7 protocol 冻结（schema_version=ldvh-knowledge-precheck-v7/1）：两阶段结构、per-family 门槛（ADR 漏检<=2/正确激活>=3/3、Pitfall trigger_correct>=4/6 且 unnecessary_f2<=2、总体 trigger_correct>=12/正确激活率>=6/9）、双条件、edge case、ceilings；闭集测试 13 项通过。
+- criterion_id: criterion-study-evaluation
+  outcome: satisfied
+  summary: Study 单独评估完成并机械判定（发现率 3/3、干扰率 0；应用率 3/3 但判定前置不成立）——评估完成、指标据实报告、结论可机械判定（未通过冻结）。
+- criterion_id: criterion-study-frozen
+  outcome: not_satisfied
+  summary: Study 固定机制未冻结：应用率判定前置不成立（被找到任务数 3 < 4），阶段1 不通过，不把不通过写成通过。
+- criterion_id: criterion-study-regression-guard
+  outcome: not_satisfied
+  summary: 回归防护不针对未冻结机制声明为固定基线；test_knowledge_precheck_v7_study_guard.py 保留为实验机制测试。
+- criterion_id: criterion-adr-pitfall-differentiation
+  outcome: satisfied
+  summary: per-family 门槛全过：总体 trigger_correct 18/18、unnecessary_f2 0、正确激活率 6/6；ADR 漏检 0、正确激活 3/3；Pitfall per-family 6/6、unnecessary 0 → supports-family-differentiated-trigger。
+- criterion_id: criterion-v7-source-complete-replay
+  outcome: satisfied
+  summary: sealed evidence bundle manifest 闭合、SHA-256 全部校验通过、source-complete 回放一致（protocol/snapshot 源与 bundle 逐字节一致）。
+- criterion_id: criterion-v7-automated-verification
+  outcome: satisfied
+  summary: v7 focused tests 42 项全过（含 Study 回归防护）；v5/v6 回归 97 项通过；ruff check、py_compile 通过；v5/v6 sealed bundle 未改动。
+- criterion_id: criterion-v7-paired-measurement
+  outcome: satisfied
+  summary: 阶段2 18 pairs 触发判定齐全（真实子代理对 ADR/Pitfall 各 6 + Study on-demand 基线），ceilings 内；阶段1 Study 评估独立记账。报告逐 family 及总体给出指标并严格按冻结门槛给出结论；不利结果未排除。
+- criterion_id: criterion-spark-v7-writeback
+  outcome: satisfied
+  summary: spark-01KZXN5TXNEKMANG1WTFBKT5FW 公开精确回读包含报告绑定、实测指标、各门槛通过/失败、Study 不冻结偏差记录与严格结论；写后 check-fact-integrity outcome=ok、result.status=complete、scope.not_completed 为空。
+result_summary: v7 知识激活验证实验完整执行。阶段2 结论 supports-family-differentiated-trigger：ADR/Pitfall 差异化触发（ADR=信号命中即触发+轻排除、Pitfall=信号+症状/风险锚点）同时满足触发精度与激活质量门槛（总体 trigger_correct 18/18、unnecessary_f2 0、正确激活率 6/6；ADR 漏检 0、ADR 正确激活 3/3；Pitfall per-family 6/6、unnecessary 0），修复 v6 单轴权衡。阶段1 结论 Study 固定机制未冻结（not_satisfied）：发现率 3/3、干扰率 0 满足，但应用率因被找到任务数 3 < 判定前置 4 无法机械判定（protocol 门槛内部矛盾），Study 不冻结为规范基线，阶段2 Study 任务按 PlanΔ 用 v6 on-demand 基线。9 项 criteria：7 satisfied、2 not_satisfied（Study 冻结与回归防护）。
+validation_summary: 验证实际执行：sealed evidence bundle manifest 闭合、SHA-256 全部校验通过、source-complete 回放一致；v7 focused tests 42 项与 v5/v6 回归 97 项全部通过；ruff check 与 py_compile 通过；v5/v6 sealed bundle hash 不变；check-fact-integrity 外层 outcome=ok、领域 result.status=complete、scope.not_completed 为空。
+closure_outcome: partial
+disposition_summary: v7 触发边界校准验证实验 scope 全部执行：阶段2 结论 supports-family-differentiated-trigger（ADR/Pitfall 差异化触发同时满足触发精度与激活质量门槛：总体 trigger_correct 18/18、unnecessary_f2 0、正确激活率 6/6（触发级口径）、ADR 漏检 0/正确激活 3/3、Pitfall per-family 6/6/unnecessary 0），修复 v6 单轴权衡；阶段1 Study 固定机制未冻结（not_satisfied：发现率 3/3 满足、干扰率 0 满足，应用率因被找到任务数 3 < 判定前置 4 无法机械判定，protocol 门槛内部矛盾），阶段2 Study 任务按 PlanΔ 用 v6 on-demand 基线。9 项 criteria：7 satisfied、2 not_satisfied，故 closure outcome=partial。独立结果复核 pass_with_followups（6 项 feedback 全部处置）。sealed evidence bundle 已 compile（manifest 闭合、SHA-256 校验、source-complete 一致）；v7 focused tests 42 项与 v5/v6 回归 97 项全过；ruff/py_compile 通过；v5/v6 sealed bundle 未改动；check-fact-integrity outcome=ok/complete。spark-01KZXN5TXNEKMANG1WTFBKT5FW 已受控写回（open/P1）。证据产物全部保留在当前 working tree（docs/metrics/knowledge-precheck-v7/），不涉及 Git 提交或生产变更。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc
+- relation_key: routed-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-01KZXN5TXNEKMANG1WTFBKT5FW
+change_log:
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T05:28:04.305950Z'
+  summary: 受控创建：知识激活 v7 WorkCase 初态形成（Study 机制固化 + ADR/Pitfall 差异化触发两阶段计划、预注册门槛、执行授权包与创建方案复核记录），等待 Human Gate 1 执行决定。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T05:35:08.717535Z'
+  summary: Human Gate 1 批准：写 execution_approval（subject_version=1，baseline_fingerprint=814f06c3cc68d19f44a637b8046f1b5c5b7662c396b527ecee57dcb46062d075），phase human_plan_confirming -> executing，移除 Human waiting。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T05:35:58.244335Z'
+  summary: 启动 item-design-study-mechanism：Study 固定机制规格设计开始。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T05:43:53.822025Z'
+  summary: 完成 item-design-study-mechanism：Study 固定机制规格与回归防护契约落地。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T05:44:45.523372Z'
+  summary: 启动 item-design-adr-pitfall-trigger：ADR/Pitfall 差异化触发规格设计开始。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T05:46:17.376779Z'
+  summary: 完成 item-design-adr-pitfall-trigger：ADR/Pitfall 差异化触发规格与 per-family 门槛落地。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T05:47:03.855775Z'
+  summary: 启动 item-freeze-v7-protocol：v7 protocol 冻结开始。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T05:50:00.703550Z'
+  summary: 完成 item-freeze-v7-protocol：v7 protocol 冻结与闭集测试落地。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T05:50:51.404715Z'
+  summary: 启动 item-reuse-v7-snapshot：v7 source snapshot 构建开始。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T05:52:42.087462Z'
+  summary: 完成 item-reuse-v7-snapshot：v7 source snapshot 与 Study 关系图基线落地。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T05:53:17.653667Z'
+  summary: 启动 item-implement-v7-runner：v7 runner 与差异化 gateway 实现开始。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T06:00:10.100442Z'
+  summary: 完成 item-implement-v7-runner：v7 runner 与差异化 gateway 落地并通过测试。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T06:00:53.013490Z'
+  summary: 启动 item-write-v7-tests：v7 focused tests 编写开始。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T06:05:15.801312Z'
+  summary: 完成 item-write-v7-tests：v7 focused tests（含 Study 回归防护）全部落地并通过。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T06:05:53.008575Z'
+  summary: 启动 item-run-study-evaluation：阶段1 Study 单独评估开始。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T06:11:11.905957Z'
+  summary: 完成 item-run-study-evaluation：Study 评估完成，指标据实报告，结论可机械判定（未通过冻结）。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T06:11:57.890740Z'
+  summary: 启动 item-freeze-study-guard：Study 评估未通过，按结果链收敛不冻结。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T06:12:54.753628Z'
+  summary: 完成 item-freeze-study-guard：Study 评估未通过，收敛为 not_satisfied（不冻结），阶段2 Study 机制按 PlanΔ 处置。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T06:13:41.959264Z'
+  summary: 启动 item-run-adr-pitfall-experiment：阶段2 ADR/Pitfall 差异化触发实验开始。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T06:18:46.635097Z'
+  summary: 完成 item-run-adr-pitfall-experiment：阶段2 实验完成，per-family 门槛全过，supports-family-differentiated-trigger。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T06:19:28.304672Z'
+  summary: 启动 item-compile-v7-bundle：v7 sealed evidence bundle 编译开始。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T06:21:39.925800Z'
+  summary: 完成 item-compile-v7-bundle：sealed evidence bundle 编译与 source-complete 校验落地。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T06:22:19.907136Z'
+  summary: 启动 item-spark-v7-writeback：spark 受控写回开始。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T06:26:40.122485Z'
+  summary: 全部 work item terminal，executing -> controller_checking：写 result_version=1 并形成完整结果投影（success_criterion_results 9 项、result_summary、controller_check_summary、validation_summary）。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T06:38:30.602723Z'
+  summary: controller_checking -> independent_reviewing：进入独立结果复核（result projection 已冻结，result_version=1）。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T06:39:18.733444Z'
+  summary: 在 independent_reviewing 内形成首条 result review（subagent-read-only，pass_with_followups，6 项 feedback），绑定 result_version=1；feedback 全部由 Controller 处置（正确激活率口径补入、13/18 对照、records 哈希修正、发现率分母偏差记录、ceilings 声明、manifest 语义说明）。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T06:50:41.695733Z'
+  summary: Reviewer feedback 全部由 Controller 处置，independent_reviewing -> closure_preparing：形成完整关闭提案（proposed_outcome=partial，2 项 residual_decisions：Study 应用率门槛矛盾、激活率口径替代，均 route 至 open spark）。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T06:52:52.327936Z'
+  summary: 完整质量链与 closure proposal 冻结，closure_preparing -> human_closure_confirming：写 Human Gate 2 waiting（proposal proposed_outcome=partial，2 项 residual_decisions 均 route 至 open spark）。
+- signature:
+    product_name: TRAE
+    model_name: deepseek-v4-flash-正式版
+    agent_runtime_name: traecode
+  at: '2026-08-18T08:27:15.545792Z'
+  summary: Human Gate 2 关闭决定：User 选择「关 v7 + spark 记 study 收口」，accept 当前 closure_proposal（proposed_outcome=partial），phase human_closure_confirming -> closed；2 项 residual_decisions 均 route 至 spark-01KZXN5TXNEKMANG1WTFBKT5FW，Study 后续由该 spark 记 accept-stop 收口。
+object_uid: 01a01357-53eb-758f-9e9c-39f79da588ee
+object_id: workcase-01M09NEMZBEP7SX71SYYETB27E
+fact_type_key: workcase
+created_at: '2026-08-18T05:28:04.305950Z'
+updated_at: '2026-08-18T08:27:15.545792Z'
