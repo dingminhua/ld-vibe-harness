@@ -159,7 +159,6 @@ _F2_FIELDS = {
         "abstract",
         "research_intent",
         "recommendation_summary",
-        "action_relevance",
         "relations",
         "updated_at",
     ),
