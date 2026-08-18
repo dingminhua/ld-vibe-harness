@@ -104,6 +104,24 @@ AI 不得自行猜测或传递路径。若自动发现返回 `missing`，如实�
 
 此纪律不改变 Code 行为，只约束 AI 审核责任；机械测试无法替代。
 
+## 合并纪律
+
+本文件、`specs/00-理念与构成.md` 与 `README.md` 在合并（merge）时受 00 §10.4
+特别对待。落入 merge 且触及上述任一文件时：
+
+1. 合并两侧各自对 canonical Skill 的修改必须已先经 Human Gate 并形成只含
+   Skill 的独立 commit（00 §10.1 第 13 项 g），不得把未经批准的修改随 merge
+   批量带入；
+2. merge 冲突不得静默选一侧或拼接本文件内容；必须逐段展示合并结果并经
+   Human 明确同意后才算完成；
+3. merge 结果必须仍满足 frontmatter 可解析（不得因拼接重新引入 YAML 语法
+   错误）；机械层以 `merge_skill_frontmatter_invalid` 拦截，AI 不得以
+   `--no-verify` 绕过；
+4. merge commit 的 footer 必须用 `Merge-Touched:` trailer 逐项声明触及的
+   受保护文件（稳定码 `merge_touched_trailer_missing` / `merge_touched_trailer_mismatch`）；
+5. 机械检查只拦截可判定不合格，不替代 Human 对 merge 语义与逐段审核的判断；
+   未被机械拦截的 merge 仍需按 00 §10.4 完成 Human 审核与逐段同意。
+
 ## 如实报告
 
 区分并报告：**已验证**（当次实际跑通并有输出）、**未验证**（需要真实会话或
