@@ -56,9 +56,8 @@ def _runtime_unavailable_message() -> str:
     lines.extend(
         (
             "status: unavailable",
-            "Prepare declared third-party dependencies without installing LDVH itself:",
-            "1. ./ldvh worktree-bootstrap",
-            "2. ./ldvh worktree-bootstrap --check",
+            "Prepare declared third-party dependencies without installing LDVH itself, then run "
+            "./ldvh worktree-bootstrap --check.",
         )
     )
     return "\n".join(lines) + "\n"

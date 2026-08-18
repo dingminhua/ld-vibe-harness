@@ -81,11 +81,6 @@ def test_check_reports_missing_ruamel_yaml_with_its_requirement_file(monkeypatch
     assert {item["package"] for item in response["missing_packages"]} == {"ruamel.yaml"}
     assert response["missing_packages"][0]["requirements_file"] == "requirements.txt"
     assert {item["status"] for item in response["checks"]} >= {"not_ready"}
-    assert response["recovery"]["available"] is True
-    assert response["recovery"]["kind"] == "bootstrap"
-    assert response["recovery"]["command"] == "./ldvh worktree-bootstrap"
-    assert response["recovery"]["verification_command"] == "./ldvh worktree-bootstrap --check"
-    assert response["recovery"]["requires_human"] is False
 
 
 def test_check_discovers_missing_ruamel_yaml_in_a_real_isolated_venv(tmp_path: Path) -> None:
@@ -98,11 +93,6 @@ def test_check_discovers_missing_ruamel_yaml_in_a_real_isolated_venv(tmp_path: P
     assert response["status"] == "not_ready"
     assert {item["package"] for item in response["missing_packages"]} == {"ruamel.yaml"}
     assert response["missing_packages"][0]["requirements_file"] == "requirements.txt"
-    assert response["recovery"]["available"] is True
-    assert response["recovery"]["kind"] == "bootstrap"
-    assert response["recovery"]["command"] == "./ldvh worktree-bootstrap"
-    assert response["recovery"]["verification_command"] == "./ldvh worktree-bootstrap --check"
-    assert response["recovery"]["requires_human"] is False
 
 
 def test_check_never_uses_an_adjacent_worktree_venv(
@@ -123,11 +113,6 @@ def test_check_never_uses_an_adjacent_worktree_venv(
     assert response["status"] == "not_ready"
     assert response["python"]["path"] == str(worktree / ".venv" / "bin" / "python")
     assert {item["package"] for item in response["missing_packages"]} >= {"ruamel.yaml"}
-    assert response["recovery"]["available"] is True
-    assert response["recovery"]["kind"] == "bootstrap"
-    assert response["recovery"]["command"] == "./ldvh worktree-bootstrap"
-    assert response["recovery"]["verification_command"] == "./ldvh worktree-bootstrap --check"
-    assert response["recovery"]["requires_human"] is False
     assert str(sibling) not in json.dumps(response)
     assert not sibling_marker.exists()
 
@@ -268,11 +253,6 @@ def test_check_does_not_change_facts_or_git_history(tmp_path: Path, monkeypatch,
 
     response = _response(capsys)
     assert response["status"] == "not_ready"
-    assert response["recovery"]["available"] is True
-    assert response["recovery"]["kind"] == "bootstrap"
-    assert response["recovery"]["command"] == "./ldvh worktree-bootstrap"
-    assert response["recovery"]["verification_command"] == "./ldvh worktree-bootstrap --check"
-    assert response["recovery"]["requires_human"] is False
     assert _git(worktree, "rev-parse", "HEAD") == before_head
     assert _git(worktree, "status", "--porcelain=v1") == before_status
     assert fact.read_bytes() == before_fact

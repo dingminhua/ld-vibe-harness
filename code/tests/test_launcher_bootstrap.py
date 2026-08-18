@@ -136,5 +136,4 @@ def test_launcher_reports_preflight_when_doctor_cannot_import_runtime(tmp_path: 
     assert "missing_package: ruamel.yaml" in completed.stderr
     assert "requirements_file: requirements.txt" in completed.stderr
     assert "status: unavailable" in completed.stderr
-    assert "./ldvh worktree-bootstrap" in completed.stderr
     assert "./ldvh worktree-bootstrap --check" in completed.stderr
