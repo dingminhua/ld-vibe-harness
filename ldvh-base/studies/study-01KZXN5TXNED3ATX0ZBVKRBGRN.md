@@ -12,12 +12,6 @@ research_intent: 调研 WorkBuddy 专家团团队交互模式，分析 LDVH 后�
 research_question: WorkBuddy 的专家团团队交互模式对 LDVH 有什么学习价值？LDVH 应如何吸收其角色契约、任务编排和结果整合能力？
 abstract: WorkBuddy 值得学习的不是"多开几个 Agent"，而是把专家角色、方法论、工具链、团队席位、共享任务列表、成员状态、直接沟通、计划审批、后台任务和结果整合显性化。LDVH 应吸收为"团队编排层"的设计方向：角色契约、任务卡、计划门禁、成员消息、状态投影、质量复核和成本/权限边界都应成为可追踪结构；但 WorkBuddy 的专家团运行状态、截图 UI 或外部工具输出不能替代 LDVH 的事实源。
 recommendation_summary: LDVH 应把 WorkBuddy 式团队交互作为下一阶段行动编排和 Web 表达的重要参考。优先学习方向包括 Role Contract、Team Session/Task List、Result Review、TaskOutput 状态投影、专家/Skill/MCP 组合边界、Human Gate 与权限分层。正式落地前应先形成 WorkCase 或 ADR，避免把外部产品的专家团直接写成 LDVH 事实模型规则。
-object_id: study-01KZXN5TXNED3ATX0ZBVKRBGRN
-object_uid: 019ffb52-ebb5-7346-ad74-1f5ee785c315
-fact_type_key: study
-created_at: '2026-07-24T13:30:00+08:00'
-updated_at: '2026-08-16T21:42:45.620720Z'
-action_relevance: 设计或评估团队协作模式时，区分专家团（独立判断+汇总）与流水线（分步交接），不对应固定 WorkCase 结构
 change_log:
 - signature:
     product_name: Cindy
@@ -36,7 +30,18 @@ change_log:
     product_name: Cindy
     model_name: glm-5.2
     agent_runtime_name: claude-code
-  at: 2026-08-16T21:30:34.415045Z
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:01:52.606848Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
+object_uid: 019ffb52-ebb5-7346-ad74-1f5ee785c315
+object_id: study-01KZXN5TXNED3ATX0ZBVKRBGRN
+fact_type_key: study
+created_at: '2026-07-24T13:30:00+08:00'
+updated_at: '2026-08-17T13:01:52.606848Z'
 ---
 
 ## 研究问题

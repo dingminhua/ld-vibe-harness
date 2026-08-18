@@ -43,7 +43,6 @@ relations:
 - relation_key: informs
   target:
     object_uid: 019ffb52-ebb5-7ea7-8303-b58b6d99eccd
-action_relevance: 评估 WC 完成后的证据与事实库分流策略时，确认后续责任已按类型归口到正确对象，不遗留未承接的审计发现
 change_log:
 - signature:
     product_name: DeepSeek Harness
@@ -56,12 +55,18 @@ change_log:
     product_name: Cindy
     model_name: glm-5.2
     agent_runtime_name: claude-code
-  at: 2026-08-16T21:30:34.415045Z
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:06:41.317403Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
 object_uid: 01a0038b-e990-7648-a886-df98559d26cf
 object_id: study-01M01RQTCGES4AH1PZK1AST9PF
 fact_type_key: study
 created_at: '2026-08-15T03:51:35.016614Z'
-updated_at: '2026-08-16T21:42:45.620720Z'
+updated_at: '2026-08-17T13:06:41.317403Z'
 ---
 
 ## 研究问题

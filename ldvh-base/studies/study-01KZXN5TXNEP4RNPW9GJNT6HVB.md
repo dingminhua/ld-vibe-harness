@@ -23,7 +23,6 @@ research_question: LDVH 能否声称支持 Windows？在 09 §6.3 将 Windows �
 abstract: 本文汇总 2026-08-07 在 Windows 目标平台对 ldvh 受控写入与环境接入的实测证据。native_atomic_fact_writes_supported() 在 Windows 返回 True；11 个 native_windows 标记测试（原子写入、六进程分配器连续 ID、跨 worktree 共享计数器、条件更新单赢、file-only 边界、worktree 隔离、junction/symlink/UNC 拒绝、msvcrt 锁串行化）全绿；经 Helper 服务层 prepare→create→read 端到端写入 spark 成功并读回一致、磁盘无 CRLF；14 个 commit-msg Git Hook 测试在 Windows 经 Git Bash 真实调起并全部通过（含真实 git commit 被钩子拦截/放行）。据此，09 §6.3 §8 未验证清单各项已在目标平台实测通过，满足 §6.3.1「在目标平台实际执行范围匹配的测试并全部通过，且测试结果绑定到当前 worktree」的恢复门槛。
 research_intent: 为「把 09 §6.3 中 Windows 从『未验证范围』翻为『已验证平台』」这一 Human Gate 决策留存可回指证据；不替代 Human 决定，仅如实交还实测范围与未验证范围。
 recommendation_summary: 建议经 Human Gate 后将 09 §6.3 的 Windows 声明由「未验证范围」更新为「已验证平台（受控写入，file_only 耐久，仅限 NTFS fixed drive）」，并保留 05 §11.8 的授权范围与残留风险声明不变。完整接入的其它平台（非 Windows）仍按未验证范围处理。
-action_relevance: 设计或评估 Windows 平台受控写入能力时，确认 file_only 耐久与 NTFS fixed drive 边界已覆盖
 change_log:
 - signature:
     agent_id: hy3
@@ -60,12 +59,18 @@ change_log:
     product_name: Cindy
     model_name: glm-5.2
     agent_runtime_name: claude-code
-  at: 2026-08-16T21:30:34.415045Z
-object_id: study-01KZXN5TXNEP4RNPW9GJNT6HVB
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:02:29.677292Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
 object_uid: 019ffb52-ebb5-7589-8adb-8984aba3476b
+object_id: study-01KZXN5TXNEP4RNPW9GJNT6HVB
 fact_type_key: study
 created_at: '2026-08-07T18:56:39.522746+08:00'
-updated_at: '2026-08-16T21:42:45.620720Z'
+updated_at: '2026-08-17T13:02:29.677292Z'
 ---
 
 ## 研究问题

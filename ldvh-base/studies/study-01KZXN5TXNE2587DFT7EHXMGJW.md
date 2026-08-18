@@ -71,7 +71,6 @@ relations:
 - relation_key: informs
   target:
     object_uid: 019ffb52-ebb5-79a1-9fed-fa91fab7f6fc
-action_relevance: 设计或审核授权边界时，确保授权决策外部化（人类在环、最小权限凭据）而非依赖 AI 自检
 change_log:
 - signature:
     agent_id: hy3
@@ -114,12 +113,18 @@ change_log:
     product_name: Cindy
     model_name: glm-5.2
     agent_runtime_name: claude-code
-  at: 2026-08-16T21:30:34.415045Z
-object_id: study-01KZXN5TXNE2587DFT7EHXMGJW
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:01:14.703726Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
 object_uid: 019ffb52-ebb5-708a-83b5-fa3ba3da425c
+object_id: study-01KZXN5TXNE2587DFT7EHXMGJW
 fact_type_key: study
 created_at: '2026-08-09T00:34:04.998975+08:00'
-updated_at: '2026-08-16T21:42:45.620720Z'
+updated_at: '2026-08-17T13:01:14.703726Z'
 ---
 
 ## 研究问题
