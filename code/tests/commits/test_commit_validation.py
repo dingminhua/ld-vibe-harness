@@ -688,6 +688,161 @@ def test_signature_trailer_allows_real_product_name(contract: CommitContractProj
     assert "signature_trailer_reserved_framework_name" not in _codes(result)
 
 
+class TestMergeProtectedFiles:
+    """Merge discipline for specs/00, skill/SKILL.md and README.md."""
+
+    def _merge_input(self, contract: CommitContractProjection, worktree: Path, **changes: object):
+        return _input(
+            contract,
+            is_merge_commit=True,
+            git_worktree_root=str(worktree),
+            **changes,
+        )
+
+    def _merge_signed(self, touched: str, *, body: str = "- 合并分支") -> str:
+        """Body plus a contiguous footer: Merge-Touched immediately followed by
+        the two LDVH signature trailers (no blank line between them, so the
+        whole block is parsed as one trailer block)."""
+        return (
+            f"merge: 合并分支\n\n关键变更:\n{body}\n\n"
+            f"Merge-Touched: {touched}\n"
+            "LDVH-Product-Name: Cindy\n"
+            "LDVH-Model-Name: gpt-5.6-luna"
+        )
+
+    def test_non_merge_commit_skips_gate(self, contract: CommitContractProjection, tmp_path: Path) -> None:
+        (tmp_path / "README.md").write_text("**Version: v4.1.0**\n", encoding="utf-8")
+        result = validate_commit(
+            contract,
+            _input(
+                contract,
+                is_merge_commit=False,
+                git_worktree_root=str(tmp_path),
+                candidate_paths=("README.md",),
+            ),
+        )
+        assert "merge_touched_trailer_missing" not in _codes(result)
+
+    def test_merge_touching_readme_requires_declaration(
+        self, contract: CommitContractProjection, tmp_path: Path
+    ) -> None:
+        (tmp_path / "README.md").write_text("**Version: v4.1.0**\n", encoding="utf-8")
+        result = validate_commit(
+            contract,
+            self._merge_input(contract, tmp_path, candidate_paths=("README.md",)),
+        )
+        assert result.outcome == "failed"
+        assert "merge_touched_trailer_missing" in _codes(result)
+
+    def test_merge_declared_readme_passes_when_consistent(
+        self, contract: CommitContractProjection, tmp_path: Path
+    ) -> None:
+        (tmp_path / "README.md").write_text("**Version: v4.1.0**\n", encoding="utf-8")
+        message = self._merge_signed("README.md", body="- 合并 feature 分支")
+        result = validate_commit(
+            contract,
+            self._merge_input(
+                contract, tmp_path, message=message, candidate_paths=("README.md",)
+            ),
+        )
+        assert "merge_touched_trailer_missing" not in _codes(result)
+        assert "merge_version_declaration_drift" not in _codes(result)
+
+    def test_merge_trailer_mismatch_fails(self, contract: CommitContractProjection, tmp_path: Path) -> None:
+        (tmp_path / "README.md").write_text("**Version: v4.1.0**\n", encoding="utf-8")
+        message = self._merge_signed("skill/SKILL.md")
+        result = validate_commit(
+            contract,
+            self._merge_input(
+                contract, tmp_path, message=message, candidate_paths=("README.md",)
+            ),
+        )
+        assert "merge_touched_trailer_mismatch" in _codes(result)
+
+    def test_merge_conflict_marker_residue_fails(
+        self, contract: CommitContractProjection, tmp_path: Path
+    ) -> None:
+        (tmp_path / "README.md").write_text(
+            "**Version: v4.1.0**\n<<<<<<< HEAD\nline a\n=======\nline b\n>>>>>>> branch\n",
+            encoding="utf-8",
+        )
+        message = self._merge_signed("README.md")
+        result = validate_commit(
+            contract,
+            self._merge_input(
+                contract, tmp_path, message=message, candidate_paths=("README.md",)
+            ),
+        )
+        assert "merge_conflict_marker_residue" in _codes(result)
+
+    def test_merge_skill_frontmatter_invalid_fails(
+        self, contract: CommitContractProjection, tmp_path: Path
+    ) -> None:
+        skill_dir = tmp_path / "skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: ldvh\ndescription: `status: unavailable` 恢复时使用\n---\n",
+            encoding="utf-8",
+        )
+        message = self._merge_signed("skill/SKILL.md")
+        result = validate_commit(
+            contract,
+            self._merge_input(
+                contract, tmp_path, message=message, candidate_paths=("skill/SKILL.md",)
+            ),
+        )
+        assert "merge_skill_frontmatter_invalid" in _codes(result)
+
+    def test_merge_skill_valid_frontmatter_passes(
+        self, contract: CommitContractProjection, tmp_path: Path
+    ) -> None:
+        skill_dir = tmp_path / "skill"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text(
+            "---\nname: ldvh\ndescription: 合法描述\n---\n",
+            encoding="utf-8",
+        )
+        message = self._merge_signed("skill/SKILL.md")
+        result = validate_commit(
+            contract,
+            self._merge_input(
+                contract, tmp_path, message=message, candidate_paths=("skill/SKILL.md",)
+            ),
+        )
+        assert "merge_skill_frontmatter_invalid" not in _codes(result)
+
+    def test_merge_version_declaration_drift_fails(
+        self, contract: CommitContractProjection, tmp_path: Path
+    ) -> None:
+        (tmp_path / "README.md").write_text("**Version: v4.1.0**\n", encoding="utf-8")
+        (tmp_path / "CHANGELOG.md").write_text("## [4.2.0] - 2026-08-19\n", encoding="utf-8")
+        web = tmp_path / "web"
+        web.mkdir()
+        (web / "package.json").write_text('{"name": "x", "version": "4.2.0"}\n', encoding="utf-8")
+        message = self._merge_signed("README.md")
+        result = validate_commit(
+            contract,
+            self._merge_input(
+                contract, tmp_path, message=message, candidate_paths=("README.md",)
+            ),
+        )
+        assert "merge_version_declaration_drift" in _codes(result)
+
+    def test_merge_specs_00_requires_declaration(
+        self, contract: CommitContractProjection, tmp_path: Path
+    ) -> None:
+        spec_dir = tmp_path / "specs"
+        spec_dir.mkdir()
+        (spec_dir / "00-理念与构成.md").write_text("# 理念与构成\n", encoding="utf-8")
+        result = validate_commit(
+            contract,
+            self._merge_input(
+                contract, tmp_path, candidate_paths=("specs/00-理念与构成.md",)
+            ),
+        )
+        assert "merge_touched_trailer_missing" in _codes(result)
+
+
 @pytest.mark.parametrize(
     ("duplicate_trailer", "duplicate_value"),
     [

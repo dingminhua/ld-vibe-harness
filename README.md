@@ -225,6 +225,23 @@ LDVH 核心是环境无关的——它不绑定任何特定 AI 开发环境。�
 
 ---
 
+## 合并纪律
+
+`specs/00-理念与构成.md`（根规范）、`skill/SKILL.md`（canonical Skill）与本文件
+（对外门面）在合并时受 [00 §10.4](specs/00-理念与构成.md) 特别对待：
+
+- 合并触及上述任一文件时，两侧各自的修改必须已先经 Human Gate 并独立提交；
+- merge 冲突不得静默选一侧或拼接，必须逐段展示合并结果并经 Human 明确同意；
+- merge 结果必须保持 Skill frontmatter 可解析、版本声明点（本文件 / CHANGELOG /
+  `web/package.json`）一致；
+- merge commit 的 footer 必须用 `Merge-Touched:` trailer 逐项声明触及的受保护
+  文件；机械层以稳定码 `merge_conflict_marker_residue`、
+  `merge_skill_frontmatter_invalid`、`merge_version_declaration_drift`、
+  `merge_touched_trailer_missing` / `merge_touched_trailer_mismatch` 拦截可判定
+  不合格。
+
+---
+
 ## 版本与发布
 
 - 版本号遵循语义化版本（SemVer）：含新功能升 MINOR、只修 bug 升 PATCH；pre-release 用 `-alpha`/`-beta`/`-rc.N` 后缀。

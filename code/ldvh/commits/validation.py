@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import fnmatch
+import json
 import re
 from dataclasses import dataclass
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 from typing import Literal
 
 from ldvh.commits.contract_source import CommitContractProjection
@@ -421,6 +422,176 @@ def _platform_affected_issues(
     return issues
 
 
+# Files that need special care when a merge brings changes in.  ``specs/00``
+# is the root spec (00 §10.1 第 11 项 Human Gate), ``skill/SKILL.md`` is the
+# canonical Skill (00 §10.1 第 13 项 Human Gate, and 13g requires a dedicated
+# commit that is never mixed with other changes), and ``README.md`` is the
+# external facade whose version declarations must stay consistent (03 §9.x).
+# A merge is the highest-risk way to touch them: conflict resolution can
+# silently pick one side, splice fragments, or leave markers behind — all of
+# which would bypass the per-change Human Gate the files require.
+_MERGE_PROTECTED_PATHS = (
+    "specs/00-理念与构成.md",
+    "skill/SKILL.md",
+    "README.md",
+)
+_MERGE_CONFLICT_MARKERS = (
+    b"<<<<<<< ",
+    b"=======",
+    b">>>>>>> ",
+)
+_MERGE_TOUCHED_TRAILER = "Merge-Touched"
+# README version line pattern: a Markdown line starting with `**Version:`.
+_README_VERSION_LINE = re.compile(r"^\*\*Version:\s*(\S+)")
+# CHANGELOG version heading pattern; kept mechanical and narrow so the gate
+# reports drift without parsing full SemVer.
+_CHANGELOG_VERSION_HEADING = re.compile(r"^##\s+\[?v?([0-9][^\s\]]*)")
+
+
+def _merge_protected_files_issues(value: CommitValidationInput) -> list[CommitValidationIssue]:
+    """Mechanical merge-discipline gate for specs/00, skill/SKILL.md and README.md.
+
+    Runs only for merge commits (MERGE_HEAD present).  It checks three things
+    that are mechanically decidable without reading the merge's semantics:
+
+    1. conflict-marker residue in any touched protected file — an unresolved or
+       badly resolved merge must not be committed as clean;
+    2. the canonical Skill's frontmatter must still parse (a spliced merge is
+       the classic way to reintroduce the plain-scalar breakage);
+    3. a merge touching ``README.md`` must declare the touch in a
+       ``Merge-Touched:`` trailer so the Human reviewer knows the facade
+       changed inside a merge, and version declarations must not drift.
+
+    The gate deliberately does not judge whether a merge *should* have touched
+    these files: that semantic call stays with the Human reviewer.  It only
+    fails closed on mechanically detectable residue and asks for an explicit
+    declaration so the review step cannot be skipped silently.
+    """
+
+    issues: list[CommitValidationIssue] = []
+    if not value.is_merge_commit:
+        return issues
+    paths = value.candidate_paths or ()
+    touched = [path for path in paths if path in _MERGE_PROTECTED_PATHS]
+    if not touched:
+        return issues
+    worktree = value.git_worktree_root
+    if worktree is None:
+        issues.append(
+            _issue(
+                "merge_protected_unverifiable",
+                "merge 触及受保护文件但缺少 worktree 根，无法机械检查冲突残留与 frontmatter",
+            )
+        )
+        return issues
+
+    for path in touched:
+        file_path = Path(worktree) / path
+        try:
+            raw = file_path.read_bytes()
+        except OSError:
+            issues.append(_issue("merge_protected_unreadable", f"merge 触及 {path} 但文件不可读"))
+            continue
+        residue = [marker.decode("ascii", "replace") for marker in _MERGE_CONFLICT_MARKERS if marker in raw]
+        if residue:
+            issues.append(
+                _issue(
+                    "merge_conflict_marker_residue",
+                    f"merge 结果中的 {path} 残留冲突标记: {', '.join(residue)}；"
+                    "不得把未解决或半拼接的合并提交为干净",
+                )
+            )
+        if path == "skill/SKILL.md":
+            from ldvh.environment_sync import validate_skill_frontmatter  # local import avoids cycles
+
+            valid, error = validate_skill_frontmatter(file_path)
+            if not valid:
+                issues.append(
+                    _issue(
+                        "merge_skill_frontmatter_invalid",
+                        f"merge 后的 skill/SKILL.md frontmatter 非法: {error}",
+                    )
+                )
+        if path == "README.md":
+            version_issues = _merge_readme_version_issues(worktree, file_path)
+            issues.extend(version_issues)
+
+    trailers = _footer_trailers(value.message.splitlines() if value.message else [])
+    declared = trailers.get(_MERGE_TOUCHED_TRAILER, [])
+    if not declared or any(not item.strip() for item in declared):
+        issues.append(
+            _issue(
+                "merge_touched_trailer_missing",
+                "merge 触及受保护文件 (specs/00、skill/SKILL.md 或 README.md)，footer 必须含非空 "
+                f"{_MERGE_TOUCHED_TRAILER}: trailer 逐项声明，供 Human 审核；"
+                f"已触及: {', '.join(touched)}",
+            )
+        )
+    elif len(declared) != len(touched) or sorted(item.strip() for item in declared) != sorted(touched):
+        issues.append(
+            _issue(
+                "merge_touched_trailer_mismatch",
+                f"{_MERGE_TOUCHED_TRAILER}: trailer 必须与本次 merge 实际触及的受保护文件逐一对应 "
+                f"(声明 {sorted(item.strip() for item in declared)} vs 实际 {sorted(touched)})",
+            )
+        )
+    return issues
+
+
+def _merge_readme_version_issues(worktree: str, readme_path: Path) -> list[CommitValidationIssue]:
+    """Narrow version-drift check for a merge that touches README.md.
+
+    Compares the README ``**Version:`` line against the CHANGELOG's newest
+    version heading and ``web/package.json``'s ``version`` field.  Only
+    mechanically exact, whitespace-trimmed comparisons are made; any mismatch
+    is reported so the Human reviewer reconciles the facade before release.
+    """
+
+    issues: list[CommitValidationIssue] = []
+    try:
+        readme_text = readme_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        return issues
+    readme_line = next(
+        (line for line in readme_text.splitlines() if line.strip().startswith("**Version:")), None
+    )
+    if readme_line is None:
+        return issues
+    readme_match = _README_VERSION_LINE.match(readme_line.strip())
+    if readme_match is None:
+        return issues
+    readme_version = readme_match.group(1).rstrip("*").strip()
+
+    candidates: dict[str, str] = {"README": readme_version}
+    changelog = Path(worktree) / "CHANGELOG.md"
+    if changelog.is_file():
+        try:
+            for line in changelog.read_text(encoding="utf-8").splitlines():
+                heading = _CHANGELOG_VERSION_HEADING.match(line.strip())
+                if heading is not None:
+                    candidates["CHANGELOG"] = heading.group(1).strip()
+                    break
+        except (OSError, UnicodeError):
+            pass
+    package_json = Path(worktree) / "web" / "package.json"
+    if package_json.is_file():
+        try:
+            data = json.loads(package_json.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, ValueError):
+            data = {}
+        version = data.get("version")
+        if isinstance(version, str):
+            candidates["web/package.json"] = version.strip()
+    if len(candidates) >= 2 and len({v.lstrip("v") for v in candidates.values()}) > 1:
+        issues.append(
+            _issue(
+                "merge_version_declaration_drift",
+                "merge 触及 README.md 但版本声明不一致: " + ", ".join(f"{k}={v}" for k, v in candidates.items()),
+            )
+        )
+    return issues
+
+
 def _human_gate_trailer_issues(
     lines: list[str],
     candidate_paths: tuple[str, ...],
@@ -795,6 +966,7 @@ def validate_commit(contract: CommitContractProjection, value: CommitValidationI
             )
         )
         failures.extend(_platform_affected_issues(value.candidate_paths, _footer_trailers(body_lines)))
+        failures.extend(_merge_protected_files_issues(value))
     # A mechanically invalid after-image remains a failure even when a separate
     # candidate cannot be observed completely.  The Gate must preserve the
     # decisive rejection rather than downgrade it to an observation gap.
