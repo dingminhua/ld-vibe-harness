@@ -50,7 +50,6 @@ relations:
 - relation_key: informs
   target:
     object_uid: 019ffb52-ebb5-73ad-9cd1-c86b8ae7b93c
-action_relevance: 进行规范-代码-实践三轴对齐审计时，按发现优先级排序，先修复阻塞性缺口再处理结构性改进
 change_log:
 - signature:
     agent_id: glm-5.2
@@ -87,12 +86,18 @@ change_log:
     product_name: Cindy
     model_name: glm-5.2
     agent_runtime_name: claude-code
-  at: 2026-08-16T21:30:34.415045Z
-object_id: study-01KZXN5TXNF7SBYR5AYF73SGTT
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:04:48.723547Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
 object_uid: 019ffb52-ebb5-79f2-bf60-aaf3ce3cc35a
+object_id: study-01KZXN5TXNF7SBYR5AYF73SGTT
 fact_type_key: study
 created_at: '2026-08-05T16:40:00+08:00'
-updated_at: '2026-08-16T21:42:45.620720Z'
+updated_at: '2026-08-17T13:04:48.723547Z'
 ---
 
 ## 研究问题

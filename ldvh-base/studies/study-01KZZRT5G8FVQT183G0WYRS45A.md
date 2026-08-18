@@ -32,7 +32,6 @@ relations:
 - relation_key: informs
   target:
     object_uid: 019ffb52-ebb5-7ea7-8303-b58b6d99eccd
-action_relevance: 进行 LDVH 全面评估时，对照 00 的设计质量与兑现度标准逐项评分，不因整体版本号跳过具体缺口
 change_log:
 - signature:
     product_name: Kimi
@@ -45,12 +44,18 @@ change_log:
     product_name: Cindy
     model_name: glm-5.2
     agent_runtime_name: claude-code
-  at: 2026-08-16T21:30:34.415045Z
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:06:16.590994Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
 object_uid: 019fff8d-1608-7eef-a0a0-70073d8c90aa
 object_id: study-01KZZRT5G8FVQT183G0WYRS45A
 fact_type_key: study
 created_at: '2026-08-14T09:14:23.199215Z'
-updated_at: '2026-08-16T21:42:45.620720Z'
+updated_at: '2026-08-17T13:06:16.590994Z'
 ---
 
 ## 研究问题

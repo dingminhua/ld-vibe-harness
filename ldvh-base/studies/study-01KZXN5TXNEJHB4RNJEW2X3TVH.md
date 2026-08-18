@@ -39,7 +39,6 @@ relations:
 - relation_key: informs
   target:
     object_uid: 019ffb52-ebb5-71da-8f50-223f834fad25
-action_relevance: 评估新增规范、字段或机制时，对照 00 的价值标准（V1-V8/HV1-HV5）做净价值判断，避免过度设计
 change_log:
 - signature:
     agent_id: kimi
@@ -76,12 +75,18 @@ change_log:
     product_name: Cindy
     model_name: glm-5.2
     agent_runtime_name: claude-code
-  at: 2026-08-16T21:30:34.415045Z
-object_id: study-01KZXN5TXNEJHB4RNJEW2X3TVH
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:02:04.732458Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
 object_uid: 019ffb52-ebb5-74a2-b262-b27705d1eb71
+object_id: study-01KZXN5TXNEJHB4RNJEW2X3TVH
 fact_type_key: study
 created_at: '2026-08-05T15:49:52.936666+08:00'
-updated_at: '2026-08-16T21:42:45.620720Z'
+updated_at: '2026-08-17T13:02:04.732458Z'
 ---
 
 ## 研究问题

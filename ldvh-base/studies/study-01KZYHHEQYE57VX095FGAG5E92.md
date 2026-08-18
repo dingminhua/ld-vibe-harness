@@ -18,7 +18,6 @@ relations:
 - relation_key: inspired-by
   target:
     object_uid: 019ffb52-ebb5-74ea-a2f9-9f309e85d013
-action_relevance: 分析或比较不同会话日志的可比性时，标注各环境的事件观察面差异，不假设字段对称
 change_log:
 - signature:
     product_name: DeepSeek Harness
@@ -31,12 +30,18 @@ change_log:
     product_name: Cindy
     model_name: glm-5.2
     agent_runtime_name: claude-code
-  at: 2026-08-16T21:30:34.415045Z
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:06:04.244925Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
 object_uid: 019ffd18-bafe-714f-be81-257c1502b922
 object_id: study-01KZYHHEQYE57VX095FGAG5E92
 fact_type_key: study
 created_at: '2026-08-13T21:48:03.167269Z'
-updated_at: '2026-08-16T21:42:45.620720Z'
+updated_at: '2026-08-17T13:06:04.244925Z'
 ---
 
 ## 研究问题

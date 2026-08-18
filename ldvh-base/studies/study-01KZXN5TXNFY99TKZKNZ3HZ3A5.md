@@ -27,7 +27,6 @@ input_refs:
   locator: ./ldvh work-context --help
   version: 当前 working tree
   observed_at: '2026-08-05T15:05:00+08:00'
-action_relevance: 清理宿主生命周期事件取消后的文本残留时，确保实现说明与规范声明一致，不遗留无来源支撑的声称
 change_log:
 - signature:
     agent_id: kimi
@@ -64,12 +63,18 @@ change_log:
     product_name: Cindy
     model_name: glm-5.2
     agent_runtime_name: claude-code
-  at: 2026-08-16T21:30:34.415045Z
-object_id: study-01KZXN5TXNFY99TKZKNZ3HZ3A5
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:05:39.863916Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
 object_uid: 019ffb52-ebb5-7f92-9d4f-f3afc71f8d45
+object_id: study-01KZXN5TXNFY99TKZKNZ3HZ3A5
 fact_type_key: study
 created_at: '2026-08-05T15:41:03.043451+08:00'
-updated_at: '2026-08-16T21:42:45.620720Z'
+updated_at: '2026-08-17T13:05:39.863916Z'
 ---
 
 ## 研究问题

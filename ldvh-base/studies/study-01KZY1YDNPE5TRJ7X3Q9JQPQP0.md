@@ -29,7 +29,6 @@ relations:
 - relation_key: inspired-by
   target:
     object_uid: 019ffbfb-5be6-7a5f-9aa0-7125159435c6
-action_relevance: 设计或评估规则精确读取方法时，按上下文合同三变体判断读取边界，确保 L3 切片不遗漏强制要求
 change_log:
 - signature:
     product_name: Cindy
@@ -42,12 +41,18 @@ change_log:
     product_name: Cindy
     model_name: glm-5.2
     agent_runtime_name: claude-code
-  at: 2026-08-16T21:30:34.415045Z
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:05:52.121308Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
 object_uid: 019ffc1f-36b6-7175-891f-a3ba657b5ec0
 object_id: study-01KZY1YDNPE5TRJ7X3Q9JQPQP0
 fact_type_key: study
 created_at: '2026-08-13T17:15:30.864608Z'
-updated_at: '2026-08-16T21:42:45.620720Z'
+updated_at: '2026-08-17T13:05:52.121308Z'
 ---
 
 ## 研究问题

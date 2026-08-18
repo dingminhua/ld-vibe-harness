@@ -24,7 +24,6 @@ relations:
 - relation_key: informs
   target:
     object_uid: 019ffb52-ebb5-75f4-888d-2d7c6df0e8e2
-action_relevance: 分析或优化 Helper 调用模式时，基于会话日志的结构化统计识别高频调用、异常路径和优化方向
 change_log:
 - signature:
     product_name: TraeCode
@@ -55,12 +54,18 @@ change_log:
     product_name: Cindy
     model_name: glm-5.2
     agent_runtime_name: claude-code
-  at: 2026-08-16T21:30:34.415045Z
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:06:28.836612Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
 object_uid: 01a00246-3d5b-77d6-b6fa-e44c05db9aab
 object_id: study-01M014CFAVEZBBDYQ49G2XQ6NB
 fact_type_key: study
 created_at: '2026-08-14T21:55:51.666073Z'
-updated_at: '2026-08-16T21:42:45.620720Z'
+updated_at: '2026-08-17T13:06:28.836612Z'
 ---
 
 ## 研究问题

@@ -65,7 +65,6 @@ input_refs:
   locator: code/tests/platform/test_native_windows.py
   version: cb03dc809
   observed_at: '2026-08-06T01:05:00+08:00'
-action_relevance: 设计或评估跨平台变更传播方案时，确保验证纪律与规则落点机制已同时覆盖多平台
 change_log:
 - signature:
     agent_id: glm-5.2
@@ -102,12 +101,18 @@ change_log:
     product_name: Cindy
     model_name: glm-5.2
     agent_runtime_name: claude-code
-  at: 2026-08-16T21:30:34.415045Z
-object_id: study-01KZXN5TXNEW59FX77VA3G8FPM
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:02:42.299605Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
 object_uid: 019ffb52-ebb5-770a-97f4-e7da87043ed4
+object_id: study-01KZXN5TXNEW59FX77VA3G8FPM
 fact_type_key: study
 created_at: '2026-08-06T01:29:48.505010+08:00'
-updated_at: '2026-08-16T21:42:45.620720Z'
+updated_at: '2026-08-17T13:02:42.299605Z'
 ---
 
 ## 研究问题
