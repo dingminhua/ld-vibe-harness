@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 
-from ldvh.environment_sync import inspect_skill, update_skill
+from ldvh.environment_sync import inspect_skill, update_skill, validate_skill_frontmatter
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[3]
 CANONICAL_SKILL = REPOSITORY_ROOT / "skill" / "SKILL.md"
@@ -44,6 +44,17 @@ def _write_ldvh_skill(path: Path, version: str) -> None:
 def _write_unknown_file(path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("this is not an LDVH skill at all\n", encoding="utf-8")
+
+
+def _write_broken_frontmatter(path: Path, version: str = "2026-08-12 00:00") -> None:
+    """A skill whose frontmatter is byte-identical to a legal one except for a
+    plain-scalar `: ` inside the description — the exact shape that runtime
+    loaders silently drop (see validate_skill_frontmatter)."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        f"---\nname: ldvh\ndescription: `status: unavailable` 恢复时使用\n---\n\n> Skill 版本：{version}\n",
+        encoding="utf-8",
+    )
 
 
 def _environment() -> dict[str, str]:
@@ -292,6 +303,88 @@ class TestUnknownFileConflict:
         assert outcome.aligned is False
         assert outcome.conflict is False
         assert target.read_bytes() == original
+
+
+class TestFrontmatterValidationGate:
+    """validate_skill_frontmatter is the deployment gate that byte-alignment
+    cannot provide: a broken YAML frontmatter makes runtime loaders silently
+    drop the whole skill file."""
+
+    def test_legal_canonical_passes(self) -> None:
+        valid, error = validate_skill_frontmatter(CANONICAL_SKILL)
+        assert valid is True
+        assert error is None
+
+    def test_plain_scalar_colon_is_rejected(self, tmp_path: Path) -> None:
+        broken = tmp_path / "SKILL.md"
+        _write_broken_frontmatter(broken)
+        valid, error = validate_skill_frontmatter(broken)
+        assert valid is False
+        assert error is not None
+        assert "解析失败" in error
+
+    def test_missing_name_rejected(self, tmp_path: Path) -> None:
+        broken = tmp_path / "SKILL.md"
+        broken.write_text("---\ndescription: 无 name\n---\n\n> Skill 版本：2026-08-12 00:00\n", encoding="utf-8")
+        valid, error = validate_skill_frontmatter(broken)
+        assert valid is False
+        assert "name" in (error or "")
+
+    def test_missing_description_rejected(self, tmp_path: Path) -> None:
+        broken = tmp_path / "SKILL.md"
+        broken.write_text("---\nname: ldvh\n---\n\n> Skill 版本：2026-08-12 00:00\n", encoding="utf-8")
+        valid, error = validate_skill_frontmatter(broken)
+        assert valid is False
+        assert "description" in (error or "")
+
+    def test_missing_fence_rejected(self, tmp_path: Path) -> None:
+        broken = tmp_path / "SKILL.md"
+        broken.write_text("name: ldvh\ndescription: x\n", encoding="utf-8")
+        valid, error = validate_skill_frontmatter(broken)
+        assert valid is False
+        assert "围栏" in (error or "")
+
+    def test_update_refuses_broken_source_even_with_gate(self, tmp_path: Path) -> None:
+        broken_source = tmp_path / "source" / "SKILL.md"
+        _write_broken_frontmatter(broken_source, version="2026-08-13 00:00")
+        target = tmp_path / "target" / "SKILL.md"
+        _write_ldvh_skill(target, "2026-08-12 00:00")
+        original = target.read_bytes()
+        outcome = update_skill(
+            platform="p",
+            skill_path=str(target),
+            source_path=broken_source,
+            human_gate_confirmed=True,
+        )
+        assert outcome.replaced is False
+        assert outcome.created is False
+        assert outcome.aligned is False
+        assert "frontmatter 非法" in outcome.detail
+        assert target.read_bytes() == original
+
+    def test_update_refuses_broken_source_when_absent(self, tmp_path: Path) -> None:
+        broken_source = tmp_path / "source" / "SKILL.md"
+        _write_broken_frontmatter(broken_source, version="2026-08-13 00:00")
+        target = tmp_path / "target" / "SKILL.md"
+        outcome = update_skill(
+            platform="p",
+            skill_path=str(target),
+            source_path=broken_source,
+            human_gate_confirmed=True,
+        )
+        assert outcome.created is False
+        assert outcome.replaced is False
+        assert outcome.aligned is False
+        assert "frontmatter 非法" in outcome.detail
+        assert not target.exists()
+
+    def test_inspect_reports_frontmatter_validity(self, tmp_path: Path) -> None:
+        broken = tmp_path / "SKILL.md"
+        _write_broken_frontmatter(broken)
+        skill = inspect_skill(platform="p", skill_path=str(broken), source_path=CANONICAL_SKILL)
+        assert skill.source_frontmatter_valid is True
+        assert skill.target_frontmatter_valid is False
+        assert skill.frontmatter_error is not None
 
 
 class TestAtomicUpgrade:

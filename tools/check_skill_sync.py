@@ -59,6 +59,7 @@ from ldvh.environment_sync import (  # noqa: E402
     _read_skill_version,
     inspect_hook_surface,
     update_skill,
+    validate_skill_frontmatter,
 )
 
 CONTRACT = "ldvh-skill-sync-check/1"
@@ -115,6 +116,37 @@ def check_skill_copy(*, skill_path: str, platform: str, sync: bool, confirm_huma
         detail["synced"] = outcome.replaced or outcome.created
         detail["aligned"] = outcome.aligned
     return bool(detail["aligned"]), detail
+
+
+def check_skill_frontmatter(*, skill_path: str) -> tuple[bool, dict]:
+    """Frontmatter legality gate: both the project canonical source and the
+    named target must pass strict YAML validation.
+
+    This is the check that a byte-alignment-only check cannot catch: runtime
+    skill loaders silently DROP a SKILL.md whose frontmatter does not parse
+    (e.g. a plain-scalar `: ` inside the description), so an otherwise
+    byte-identical copy can be deployed-but-invisible.  A failed frontmatter
+    here must block deployment/sync even when every byte matches.
+    """
+    project_exists = PROJECT_SKILL.is_file()
+    target = Path(skill_path)
+    target_exists = target.is_file()
+    project_valid, project_error = (
+        validate_skill_frontmatter(PROJECT_SKILL) if project_exists else (False, "项目源不存在")
+    )
+    target_valid, target_error = (
+        validate_skill_frontmatter(target) if target_exists else (False, "目标不存在")
+    )
+    aligned = project_valid and target_valid
+    return aligned, {
+        "project_path": str(PROJECT_SKILL),
+        "project_exists": project_exists,
+        "project_frontmatter_valid": project_valid,
+        "target_path": str(target),
+        "target_exists": target_exists,
+        "target_frontmatter_valid": target_valid,
+        "error": project_error if project_error is not None else target_error,
+    }
 
 
 def check_hook_surface(common_hooks: Path) -> dict[str, dict]:
@@ -216,6 +248,7 @@ def main() -> int:
         sync=args.sync,
         confirm_human_gate=args.confirm_human_gate,
     )
+    fm_ok, fm_detail = check_skill_frontmatter(skill_path=args.skill_path)
     hooks = check_hook_surface(common_hooks)
     hook_ok = bool(hooks["commit-msg"]["aligned"])
     stop_ok, stop_detail = check_stop_gate()
@@ -223,6 +256,7 @@ def main() -> int:
 
     checks = [
         ("skill", skill_ok, skill_detail),
+        ("frontmatter", fm_ok, fm_detail),
         ("commit-msg", hook_ok, hooks["commit-msg"]),
         ("stop-gate", stop_ok, stop_detail),
         ("worktrees", wt_ok, wt_detail),

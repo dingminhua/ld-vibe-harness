@@ -98,6 +98,39 @@ class TestCheckSkillCopy:
         assert target.read_bytes() == (PROJECT_ROOT / "skill" / "SKILL.md").read_bytes()
 
 
+class TestSkillFrontmatterCheck:
+    def test_aligned_when_both_legal(self) -> None:
+        aligned, detail = tool_module.check_skill_frontmatter(skill_path=SKILL_PATH)
+        assert aligned is True
+        assert detail["project_frontmatter_valid"] is True
+        assert detail["target_frontmatter_valid"] is True
+        assert detail.get("error") is None
+
+    def test_broken_target_fails(self, tmp_path: Path) -> None:
+        target = tmp_path / "SKILL.md"
+        target.write_text(
+            "---\nname: ldvh\ndescription: `status: unavailable` 恢复时使用\n---\n\n> Skill 版本：2026-08-12 07:17\n",
+            encoding="utf-8",
+        )
+        aligned, detail = tool_module.check_skill_frontmatter(skill_path=str(target))
+        assert aligned is False
+        assert detail["project_frontmatter_valid"] is True
+        assert detail["target_frontmatter_valid"] is False
+        assert detail["error"] is not None
+
+    def test_broken_target_fails_main_exit_one(self, tmp_path: Path) -> None:
+        target = tmp_path / "SKILL.md"
+        target.write_text(
+            "---\nname: ldvh\ndescription: `status: unavailable` 恢复时使用\n---\n\n> Skill 版本：2026-08-12 07:17\n",
+            encoding="utf-8",
+        )
+        completed = _run_main("--platform", PLATFORM, "--skill-path", str(target), "--json")
+        assert completed.returncode == 1
+        report = __import__("json").loads(completed.stdout)
+        frontmatter = next(c for c in report["checks"] if c["surface"] == "frontmatter")
+        assert frontmatter["aligned"] is False
+
+
 class TestStopGate:
     def test_wrapper_delegates_to_implementation(self) -> None:
         aligned, detail = tool_module.check_stop_gate()

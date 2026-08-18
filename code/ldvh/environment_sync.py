@@ -29,6 +29,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+import ruamel.yaml
+
 from ldvh.git_hooks.commit_msg import (
     _MANAGED_MARKER_PREFIX,
     HOOK_BUNDLE_VERSION,
@@ -47,6 +49,7 @@ __all__ = [
     "inspect_skill",
     "update_skill",
     "skill_digest",
+    "validate_skill_frontmatter",
     "_SKILL_FILENAME",
 ]
 
@@ -65,6 +68,9 @@ class SkillInspection:
     source_version: str | None
     byte_aligned: bool
     version_aligned: bool
+    source_frontmatter_valid: bool
+    target_frontmatter_valid: bool
+    frontmatter_error: str | None
 
 
 @dataclass(frozen=True, slots=True)
@@ -137,6 +143,42 @@ def _has_ldvh_frontmatter(path: Path) -> bool:
     return _read_skill_version(path) is not None
 
 
+def validate_skill_frontmatter(path: Path) -> tuple[bool, str | None]:
+    """Strict YAML validation of one skill file's frontmatter block.
+
+    Mirrors what the runtime skill loaders (`dsh-skill-filesystem`,
+    `dsh-skillport`) actually require: the block between the leading ``---``
+    fences must parse as a single YAML mapping carrying a non-empty ``name``
+    and ``description``.  A file that fails here is *silently dropped* by the
+    loaders, so the check must be part of every skill deployment/sync gate.
+
+    Returns ``(valid, error)``; ``error`` is ``None`` when the file is valid.
+    """
+    try:
+        text = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError):
+        return False, "unreadable"
+    if not text.startswith("---"):
+        return False, "缺少 frontmatter 起始 `---` 围栏"
+    end = text.find("\n---", 3)
+    if end == -1:
+        return False, "缺少 frontmatter 结束 `---` 围栏"
+    frontmatter = text[3:end]
+    try:
+        parsed = ruamel.yaml.YAML(typ="safe").load(frontmatter)
+    except Exception as error:  # noqa: BLE001 - report any parser failure verbatim
+        return False, f"frontmatter YAML 解析失败: {error}"
+    if not isinstance(parsed, dict):
+        return False, "frontmatter 必须是单个 YAML mapping"
+    name = parsed.get("name")
+    if not isinstance(name, str) or name.strip() != _LDVH_FRONTMATTER_NAME:
+        return False, f'frontmatter "name" 必须是非空字符串且为 "{_LDVH_FRONTMATTER_NAME}"'
+    description = parsed.get("description")
+    if not isinstance(description, str) or not description.strip():
+        return False, 'frontmatter "description" 必须是非空字符串'
+    return True, None
+
+
 def inspect_skill(*, platform: str, skill_path: str, source_path: Path) -> SkillInspection:
     """Read-only alignment check; never writes and never creates."""
     label = _validate_platform(platform)
@@ -148,6 +190,10 @@ def inspect_skill(*, platform: str, skill_path: str, source_path: Path) -> Skill
     version_aligned = bool(
         exists and source_version is not None and target_version is not None and target_version == source_version
     )
+    source_frontmatter_valid, source_error = (
+        validate_skill_frontmatter(source_path) if source_path.is_file() else (False, "canonical 源不存在")
+    )
+    target_frontmatter_valid, target_error = validate_skill_frontmatter(target) if exists else (False, "目标不存在")
     return SkillInspection(
         platform=label,
         skill_path=str(target),
@@ -157,6 +203,9 @@ def inspect_skill(*, platform: str, skill_path: str, source_path: Path) -> Skill
         source_version=source_version,
         byte_aligned=byte_aligned,
         version_aligned=version_aligned,
+        source_frontmatter_valid=source_frontmatter_valid,
+        target_frontmatter_valid=target_frontmatter_valid,
+        frontmatter_error=source_error if source_error is not None else target_error,
     )
 
 
@@ -190,6 +239,19 @@ def update_skill(
         )
     source_bytes = source_path.read_bytes()
     source_version = _read_skill_version(source_path)
+    source_frontmatter_valid, source_frontmatter_error = validate_skill_frontmatter(source_path)
+    if not source_frontmatter_valid:
+        return SkillUpdate(
+            platform=label,
+            skill_path=str(target),
+            created=False,
+            replaced=False,
+            conflict=False,
+            aligned=False,
+            target_version=_read_skill_version(target) if target.is_file() else None,
+            source_version=source_version,
+            detail=f"canonical 源 Skill frontmatter 非法，拒绝同步: {source_frontmatter_error}",
+        )
 
     if not human_gate_confirmed:
         return SkillUpdate(
