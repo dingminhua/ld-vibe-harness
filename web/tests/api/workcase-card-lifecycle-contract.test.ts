@@ -194,11 +194,11 @@ test('termination cleanup is presented with closed cards and only its terminal r
 
 test('terminal status labels remain type-specific across fact types', () => {
   assert.equal(getObjectStatusLocale('workcase', 'discarded', 'zh'), '已废弃');
-  assert.equal(getObjectStatusLocale('adr', 'retired', 'zh'), '已退出');
+  assert.equal(getObjectStatusLocale('adr', 'retired', 'zh'), '已废弃');
   assert.equal(getObjectStatusLocale('pitfall', 'draft', 'zh'), '待确认');
   assert.equal(getObjectStatusLocale('pitfall', 'active', 'zh'), '活跃');
   assert.equal(getObjectStatusLocale('pitfall', 'discarded', 'zh'), '已废弃');
-  assert.equal(getObjectStatusLocale('study', 'retired', 'zh'), '已退出');
+  assert.equal(getObjectStatusLocale('study', 'retired', 'zh'), '已废弃');
 });
 
 test('closure proposals are labelled as proposals instead of established terminal outcomes', () => {

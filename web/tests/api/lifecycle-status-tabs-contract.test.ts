@@ -23,7 +23,7 @@ test('retired has an explicit lifecycle status label', () => {
   const locales = source('src/i18n/locales.ts')
   const colors = source('src/utils/statusColors.ts')
 
-  assert.match(locales, /retired: \{ zh: '已退出', en: 'Retired' \}/)
+  assert.match(locales, /retired: \{ zh: '已废弃', en: 'Retired' \}/)
   assert.match(locales, /implemented: \{ zh: '已关闭', en: 'Implemented' \}/)
   assert.match(colors, /implemented: \{ light: '#64748b', dark: '#94a3b8' \}/)
   assert.match(colors, /closed: \{ light: '#64748b', dark: '#94a3b8' \}/)

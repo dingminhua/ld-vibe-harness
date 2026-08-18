@@ -7,7 +7,7 @@ export const STATUS_LOCALES: Record<string, { zh: string; en: string }> = {
   draft: { zh: '草稿', en: 'Draft' },
   proposed: { zh: '已提议', en: 'Proposed' },
   accepted: { zh: '已采纳', en: 'Accepted' },
-  retired: { zh: '已退出', en: 'Retired' },
+  retired: { zh: '已废弃', en: 'Retired' },
   rejected: { zh: '已拒绝', en: 'Rejected' },
   deprecated: { zh: '已废弃', en: 'Deprecated' },
   archived: { zh: '已归档', en: 'Archived' },
@@ -71,7 +71,7 @@ const OBJECT_STATUS_LOCALES: Record<string, Record<string, { zh: string; en: str
     discarded: { zh: '已废弃', en: 'Discarded' },
   },
   adr: {
-    retired: { zh: '已退出', en: 'Retired' },
+    retired: { zh: '已废弃', en: 'Retired' },
   },
   spark: {
     open: { zh: '待处理', en: 'Pending' },
@@ -84,7 +84,7 @@ const OBJECT_STATUS_LOCALES: Record<string, Record<string, { zh: string; en: str
     discarded: { zh: '已废弃', en: 'Discarded' },
   },
   study: {
-    retired: { zh: '已退出', en: 'Retired' },
+    retired: { zh: '已废弃', en: 'Retired' },
   },
 };
 
