@@ -1,0 +1,20 @@
+title: WorkCase 执行阶段两个设计缺口：item 状态更新易遗漏与阶段 Goal 未有效防中途停下
+status: open
+priority: P2
+intent: Human 观察到两个重复出现的执行阶段问题：(1) 推进 WorkCase 时 item 状态（pending/in_progress/completed）容易被忘记更新，导致 WorkCase 的 work_items 不反映实际进展，而完整 fact_object 替代式写入不检测 item 状态是否已变，item_event 路径又太窄且只限 executing 阶段；(2) 虽已在 specs/31 和 specs/34 中定义了非持久化环境阶段 Goal 概念，但规范用「可」(may) 而非「必须」(must)，且无 Code 自动创建阶段 Goal，导致 Gate 1 获批后 AI 仍可在中途停下而不被阻止。需要系统分析两个缺口的设计遗漏并确定改进方向。
+summary: "## 当前状态\n\nLDVH 的 WorkCase 执行阶段经过多次迭代，已形成完整的状态机、item_event 事件路径和阶段 Goal 概念，但 Human 在实践中观察到两个反复出现的缺口：\n\n### 缺口一：item 状态更新易遗漏\n\n- `update-workcase` 有两条路径——完整 `fact_object`（默认）和 `item_event`（严格 XOR）。完整对象路径下，item 状态变化与「实际做了工作」完全解耦，AI 手工拼 after 时漏改 item 状态不会被机械校验发现。\n- `item_event` 路径（start-work-item / update-work-item-checkpoint / complete-work-item）只接受 `status=open, phase=executing`，缺 cancel/block/unblock 事件，且无「最后一个 item 完成时同事务自动进入 controller_checking」的投影——AI 仍需另发一次完整 after 来改 phase。\n- 机械校验只在「开始/解阻/直接完成前」检查 depends_on 目标为 completed，不阻止「应该 terminal 但仍 pending」的 item。\n- 34 5.2 的「开始控制点」「单项终结控制点」是行为规则，没有强制触发点，全部依赖 AI 自觉。\n\n### 缺口二：阶段 Goal 未有效防中途停下\n\n- specs/31 5.2.2 和 specs/34 5.2 定义了「非持久化环境阶段 Goal」概念，但均使用「Controller **可**建立一个」(may)，非必须。\n- 契约测试（test_environment_stage_goal_contract.py）明确测试 `create_goal`、`get_goal`、`update_goal` 等宿主 API 名**不在**规范中，保持「宿主中立」。结果是零 Code 在 Gate 1 获批后自动创建阶段 Goal。\n- 规范还写明「能力不可用、不可观察、存在冲突或调用失败时，保留该缺口并原样继续当前 LDVH 流程」，即 fail-open——不创建 Goal 也不影响推进。\n- Stop gate（workcase_stop.py, 09 5.8）是负向防御（机械拦截 Stop 事件），阶段 Goal 是正向引导（注意力续跑），两者完全解耦，没有联动。\n- 恢复机制（34 5.5）只恢复 WorkCase 事实，不恢复非持久化的阶段 Goal。\n\n## 待判断问题\n\n1. 缺口一的改进方向：\n   - 是否把 item_event 闭集扩展为包括 cancel/block/unblock 事件？\n   - 是否让 complete-work-item 在「最后一项 terminal」时同事务自动投影 executing 到 controller_checking？\n   - 是否在机械校验中增加 after 有 pending 但实际变化暗示应已推进的检测？\n   - 是否靠行为清单和流程固化（spark-01M09NA4WEFQD8JN8PDYXB50RT）来弥补？\n\n2. 缺口二的改进方向：\n   - 是否在 34 5.2 和 31 5.2.2 中把「可」改为「必须」？\n   - 是否在 `check-workcase-handoff` 投影中增加阶段 Goal 是否存活/有效的字段？\n   - 是否在 `executing` 到 `controller_checking` 转换边增加「阶段 Goal 存在且有效」的预检？\n   - 是否让 Stop gate 与阶段 Goal 联动（Goal 有效时才允许 controller_owned 的 block 语义）？\n\n3. 两个缺口是否有公共根因，可以统一解决？\n\n## 排除项\n\n- 不修改 WorkCase 状态机、事实 Schema 或投影的基本设计\n- 不引入新的 Human Gate 类型\n- 不改变 Gate 1/Gate 2 的两次 Human 确认设计\n- 不满仓或全量处理已有对象的 item 状态\n- 不要求宿主专用 API 名称进入规范正文（保持宿主中立）\n\n## 已知关系\n\n- 承接 spark-01M03P4VXYEZPB8K2ZB7MS34SW（以 Gate 1 与 Gate 2 为阶段目标能否降低 WorkCase 中途停下）的后续分析\n- 与 spark-01M09NA4WEFQD8JN8PDYXB50RT（LDVH 常用行为清单与并行摩擦记录框架）有交集"
+change_log:
+- summary: 受控创建：记录 WorkCase 执行阶段两个设计缺口的分析请求——item 状态更新易遗漏与阶段 Goal 未有效防中途停下
+  at: '2026-08-18T05:49:18.331584Z'
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a00762-6fbe-77ec-b44c-5f59e991933c
+object_uid: 01a0136a-c52c-72b6-ba5f-24976ac39386
+object_id: spark-01M09PNH9CEAVBMQS4JXNC74W6
+fact_type_key: spark
+created_at: '2026-08-18T05:49:18.331584Z'
+updated_at: '2026-08-18T05:49:18.331584Z'
