@@ -1,6 +1,6 @@
 ---
 name: ldvh
-description: 项目待办/工作项/进展、技术决策/决策记录、踩坑经验、调研/研究报告、项目议题/火花、规范修订、受控提交、环境接入、生命周期流转/状态推进、WorkCase 执行/Git 提交署名、Skill 更新检查、worktree-bootstrap 自举修复、`ldvh check`/`capabilities` 入口发现、`status: unavailable` 恢复时使用——这些是 LDVH（LD Vibe Harness）管辖事项，对应事实对象 WorkCase、ADR、Pitfall、Study、Spark 的创建、更新与读取，或需要取得 LDVH 规则引导与行动模板时。本技能只负责把会话路由到 LDVH CLI；全部规则、模板与事实权威由 CLI 从当前规则源现取。
+description: 项目待办/工作项/进展、技术决策/决策记录、踩坑经验、调研/研究报告、项目议题/火花、规范修订、受控提交、环境接入、生命周期流转/状态推进、WorkCase 执行/Git 提交署名、Skill 更新检查、worktree-bootstrap 自举修复、`ldvh check`/`capabilities` 入口发现、`status：unavailable` 恢复时使用——这些是 LDVH（LD Vibe Harness）管辖事项，对应事实对象 WorkCase、ADR、Pitfall、Study、Spark 的创建、更新与读取，或需要取得 LDVH 规则引导与行动模板时。本技能只负责把会话路由到 LDVH CLI；全部规则、模板与事实权威由 CLI 从当前规则源现取。
 ---
 
 <!-- 修改保护：本文件受 specs/00-理念与构成.md §10.1 第 13 项保护——修改治理与 00 第 1–8 章同级。任何修改须经 Human Gate。详见 00。-->
