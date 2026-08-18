@@ -733,6 +733,69 @@ test('UID-only WorkCase route targets resolve to readable locators when the UID 
   })
 });
 
+test('closure confirmation accepts legacy triple route targets with UID-native Base32 locators', () => {
+  const projected = projectCurrentCard({
+    object_id: 'workcase-0114',
+    fact_type_key: 'workcase',
+    title: '等待关闭确认',
+    status: 'open',
+    phase: 'human_closure_confirming',
+    updated_at: '2026-07-27T00:00:00+08:00',
+    goal: '保留 Base32 分流目标。',
+    closure_proposal: {
+      proposed_outcome: 'partial',
+      proposed_disposition_summary: '路由剩余责任。',
+      residual_decisions: [{
+        residual_id: 'residual-base32',
+        summary: '继续跟进',
+        proposed_disposition: 'route_existing',
+        route_target: {
+          governed_project_id: 'ldvh',
+          fact_type_key: 'spark',
+          object_id: 'spark-01KZXN5TXNEKMANG1WTFBKT5FW',
+          content_fingerprint: 'a'.repeat(64),
+        },
+      }],
+    },
+  });
+
+  const closureProposal = projected.closureProposal as { residualDecisions: Array<{ routeTarget?: Record<string, string> }> };
+  assert.deepEqual(closureProposal.residualDecisions[0].routeTarget, {
+    governedProjectId: 'ldvh',
+    factTypeKey: 'spark',
+    objectId: 'spark-01KZXN5TXNEKMANG1WTFBKT5FW',
+  });
+});
+
+test('closure confirmation rejects legacy triple route targets whose locator prefix mismatches the fact type', () => {
+  const projected = projectCurrentCard({
+    object_id: 'workcase-0115',
+    fact_type_key: 'workcase',
+    title: '等待关闭确认',
+    status: 'open',
+    phase: 'human_closure_confirming',
+    updated_at: '2026-07-27T00:00:00+08:00',
+    goal: '类型前缀必须匹配。',
+    closure_proposal: {
+      proposed_outcome: 'partial',
+      proposed_disposition_summary: '路由剩余责任。',
+      residual_decisions: [{
+        residual_id: 'residual-mismatch',
+        summary: '继续跟进',
+        proposed_disposition: 'route_existing',
+        route_target: {
+          governed_project_id: 'ldvh',
+          fact_type_key: 'spark',
+          object_id: 'workcase-01M09NEMZBEP7SX71SYYETB27E',
+          content_fingerprint: 'a'.repeat(64),
+        },
+      }],
+    },
+  });
+
+  assert.equal('closureProposal' in projected, false);
+});
+
 test('closure confirmation rejects route targets without an exact fingerprint and proposals with unknown members', () => {
   const base = {
     object_id: 'workcase-0115',
