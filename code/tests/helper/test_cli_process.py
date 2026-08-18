@@ -360,10 +360,14 @@ def test_action_template_operations_discover_and_read_five_current_sources(tmp_p
     assert all(set(item) == candidate_fields for item in candidate_items)
     assert all(item["activation_hint"] for item in candidate_items)
     assert [item["template_key"] for item in candidate_items] == [
+        "adr-decision-reference",
         "environment-integration-installation-verification",
         "fact-object-controlled-creation",
         "fact-object-lifecycle-change",
         "git-commit",
+        "pitfall-risk-warning",
+        "spark-driven",
+        "study-knowledge-activation",
         "workcase-approved-plan-execution",
     ]
     assert candidate_response["result"]["unchecked_conditions"]
