@@ -121,7 +121,7 @@ Code 不判断自然语言是否属于生命周期关口；Controller 与 Review
 
 在不代替 Skill 创建前语义查重的前提下，WorkCase 受控创建还必须由 Code 在同一实际 Git Working Tree 内提供活跃标题精确冲突防线：在 WorkCase 类型锁内完整读取 canonical 集合，仅对机械有效对象将已解析顶层 `title` 作严格 string 相等比较，不作 trim、Unicode normalize、casefold 或空白折叠。严格同标题的 `open` / `blocked` 对象阻断，`closed` 不阻断；命中一项或多项时使用 `active_workcase_title_conflict` 拒绝且零写入，并按稳定引用顺序返回全部 `existing_refs` 与 `ambiguous`。扫描、载体、机械有效性或状态判定不完整时 fail closed，不得从部分视图继续创建。该防线不使用模糊或 LLM 语义判断，不清理已有重复，不声称 linked worktree 之间、不同 common-dir 或配置级的全局唯一。
 
-创建复核首先由 Controller 在自身当前会话完整发现工具面，并实际尝试创建只读 Subagent。Subagent 是唯一独立审核方式，具体模型由宿主选择，LDVH 不维护模型目录或选择规则。只有 Controller 自身的工具发现与实际创建结果能够判断是否无法创建；Subagent 对自身或 Controller 工具能力的陈述不得作为该判断证据。无法创建时，Controller 必须先向 Human 披露将改用同一 AI 切换只读 Reviewer 视角及其保证差距，然后直接执行 `same-ai-switched-role-read-only`，不增加确认、不等待接受，也不新增 Human Gate。创建 review 必须据实记录实际方法；same-AI 还必须记录 Controller 证据、披露摘要、披露时间和保证差距。
+创建复核首先由 Controller 在自身当前会话完整发现工具面，并实际尝试创建只读 Subagent。Subagent 是唯一独立审核方式，具体模型由宿主选择，LDVH 不维护模型目录或选择规则。只有 Controller 自身的工具发现与实际创建结果能够判断是否无法创建；Subagent 对自身或 Controller 工具能力的陈述不得作为该判断证据。无法创建时，Controller 必须先向 Human 报告停止并询问是否采用切换视角的方案，然后按 Human 决定执行；不新增授权 Gate、不等待正式接受，也不新增 Human Gate。创建 review 必须据实记录实际方法；same-AI 还必须记录 Controller 证据、披露摘要、披露时间和保证差距。
 
 ### 4.5 审核方法与保证边界
 
@@ -131,7 +131,7 @@ WorkCase review 是 Reviewer 对计划版本或结果版本提供的只读第二
 
 1. **Controller 自判**：每次需要 review 时，由 Controller 在自身当前会话完成可用工具的完整发现，并实际尝试创建只读 Subagent。仅凭入口列表缺失、未知权限、历史记录或推测，不得判定不可创建。
 2. **证据边界**：能力证据必须来自 Controller 自身上下文的工具发现和实际创建失败/不可用结果。Subagent 只能执行被委派的 review；其关于自身或 Controller 能力的结论不得用作不可创建证据。
-3. **只披露、不确认**：Controller 确认无法创建 Subagent 后，必须先告知 Human 将改用同一 AI 切换只读视角，并明确保证差距；告知后直接执行，不等待 Human 确认，不形成新的 Gate，也不暂停 Controller-owned 执行链。
+3. **报告停止并询问 Human**：Controller 确认无法创建 Subagent 后，必须先向 Human 报告当前无法创建独立审核体，并停止当前执行链，然后询问 Human 是否采用切换视角的方案；Human 选择后按决定执行。此询问不形成新的 Human Gate，也不改变已有 Gate1/Gate2 的授权边界。
 4. **最小记录**：每项 review 都必须记录 `actual_method`。same-AI review 还必须记录 Controller 的 `capability_evidence`、`assurance_gap`、`human_disclosure_summary` 和 `human_disclosed_at`；这些字段只证明已据实记录，不使该方法成为独立审核。
 5. **只读与职责分离**：Reviewer 不修改文件、事实对象或状态，不替 Controller 处置 feedback，也不替 Human 作 Gate 决定。checklist、Helper 检查和测试不能代替实际 review conclusion。
 6. **轮次边界**：创建方案复核最多 2 轮、结果复核最多 3 轮、PlanΔ 复核最多 2 轮；达到上限后由 Controller 如实记录分歧并收敛，不追加 Human Gate。
@@ -141,7 +141,7 @@ WorkCase review 是 Reviewer 对计划版本或结果版本提供的只读第二
 | 执行方式 | 适用场景 | 记录与保证 |
 |---|---|---|
 | 委派一个或多个只读 Subagent | Controller 实际能够创建 Subagent | `actual_method=subagent-read-only`；这是唯一独立审核方法；Subagent 数量由 Controller 按当前任务需要决定，模型只由宿主选择，LDVH 不保存模型路由 |
-| 同一 AI 切换只读 Reviewer 视角 | Controller 完整发现工具并实际无法创建 Subagent，且已向 Human 披露 | `actual_method=same-ai-switched-role-read-only`；必须完整记录 Controller 证据、保证差距、披露摘要与时间；披露后直接执行 |
+| 同一 AI 切换只读 Reviewer 视角 | Controller 完整发现工具并实际无法创建 Subagent，已向 Human 报告停止并询问，且 Human 同意采用切换视角 | `actual_method=same-ai-switched-role-read-only`；必须完整记录 Controller 证据、保证差距、披露摘要与时间；仅在 Human 同意后执行 |
 
 #### 4.5.3 不可接受行为
 
@@ -149,7 +149,7 @@ WorkCase review 是 Reviewer 对计划版本或结果版本提供的只读第二
 - 使用其它协作执行体、平台专用执行体、模型目录或多层路由决定 WorkCase review
 - 让 Subagent 判断 Controller 是否具有创建 Subagent 的能力
 - 未完整发现 Controller 工具面并实际尝试创建就声称 Subagent 不可用
-- same-AI fallback 未先披露，或缺少 Controller 证据、保证差距、披露摘要、披露时间
+- same-AI fallback 未先报告停止并询问 Human，或缺少 Controller 证据、保证差距、披露摘要、披露时间
 - 披露后新增确认、等待接受或创建第三个 Human Gate
 - 虚假声称已委派 Subagent，或以测试/工具成功代替 review conclusion
 - Reviewer 修改被审内容、事实或状态
@@ -325,7 +325,7 @@ WorkCase 只有本文与 05.Att.01 共同定义的当前字段和结构。任何
 | `workcase-review-actual-method` | `actual_method` | string | 当次 review 实际采用的方法 | 不表示 Code 已证明实际执行方式或两种方法保证等价 | 必填；活动期闭集 `subagent-read-only`、`same-ai-switched-role-read-only`；历史 closed 对象中的旧值只读兼容，不得用于新建或活动写入 |
 | `workcase-review-capability-evidence` | `capability_evidence` | array | Controller 自身工具发现与实际创建 Subagent 失败/不可用的当前证据 | 不表示 Subagent 能判断 Controller 能力或 Code 已验证证据语义 | 只随 same-AI 出现；非空唯一 string 数组；不得以 Subagent 结论作为证据 |
 | `workcase-review-assurance-gap` | `assurance_gap` | string | same-AI 相对 Subagent 独立审核的保证差距 | 不表示风险已消失、Human 已批准或等价独立 | 只随 same-AI 出现且必填非空 |
-| `workcase-review-human-disclosure-summary` | `human_disclosure_summary` | string | 切换前已向 Human 告知的方法与保证差距摘要 | 不表示请求确认、形成授权或新增 Human Gate | 只随 same-AI 出现且必填非空；披露后直接执行 |
+| `workcase-review-human-disclosure-summary` | `human_disclosure_summary` | string | 切换前已向 Human 告知的方法与保证差距摘要 | 不表示请求确认、形成授权或新增 Human Gate | 只随 same-AI 出现且必填非空；Human 同意后执行 |
 | `workcase-review-human-disclosed-at` | `human_disclosed_at` | string | 上述披露实际发生的时间 | 不表示批准时间或 review 完成时间 | 只随 same-AI 出现且必填带时区 RFC 3339 date-time |
 | `workcase-criterion-id` | `criterion_id` | string | 成功标准在本对象内稳定唯一的身份 | 不表示数组位置、优先级或 work item | 匹配 `criterion-[a-z0-9][a-z0-9-]*`；创建后稳定 |
 | `workcase-criterion-statement` | `statement` | string | 可在 canonical result projection 形成前独立检查的一项成功条件 | 不表示步骤、证据、测试命令、结果，或 Controller/Reviewer/Human 后置关口及其完成、通过或确认 | 必填非空；应能区分满足、未满足和未验证；服从 §4.3 的 criterion 边界 |
@@ -591,7 +591,7 @@ Code 必须把该结构编码为 UTF-8 canonical JSON：object keys 按 Unicode 
 2. Gate1 必须一次向 Human 呈现完整 plan projection、work items、creation reviews 与 execution authorization baseline；若 creation review 实际使用 same-AI，还必须呈现该次 Controller 证据、保证差距、披露摘要与披露时间，且不得把它追认为独立审核。Human 的批准表示接受当前计划与执行授权，不冻结未来复核方法，也不替代后续每次复核前由 Controller 重新完成工具发现和实际 Subagent 创建判断。`human_plan_confirming → executing` 在同一事务写 `execution_approval`：`subject_version` 是 Gate1 当时呈现的 plan version，`baseline_fingerprint` 精确绑定 Human 所见基线，`source_refs` 必须回指真实 Human 输入；移除 Human waiting，不移除 creation reviews；
 3. authorization 字段、fingerprint 或 AI 摘要都不等于 Human approval。没有真实可回指的 Gate1 决定时不得补造 approval/source refs，只能按 `SafeConvergenceShape` 收敛已有事实；
 4. Gate1 前可按 feedback 完整修改计划或授权基线、完成 fresh current creation review 并继续在 `human_plan_confirming` 取得一次最终决定；若该 review 使用 same-AI，必须在该 review 自身完整记录 Controller 证据、保证差距、披露摘要和披露时间，不要求尚未存在的 approval。Gate1 完成后 goal、scope、criteria 与 execution authorization baseline 在本次运行中冻结，不再回到 `human_plan_confirming`；
-5. Gate1 后的 `PlanΔ` 只有同时满足以下条件才可自动推进：baseline projection 精确不变；新旧动作都处于 `authorized_actions`、`action_ceiling`、`allowed_adjustments` 范围且不命中 `prohibited_actions`；全部已有执行事实被无损保留；完整候选计划与 fresh creation review 已经形成。每次 fresh review 前由 Controller 在自身当前上下文完成完整工具发现并实际尝试创建只读 Subagent；实际无法创建时先向 Human 披露保证差距，再直接使用 same-AI 切换只读视角，并在该 review 记录 Controller 证据、保证差距、披露摘要与披露时间，不新增确认关口。AI 负责语义与当前证据判断，Code 负责结构、引用与 fingerprint 检查；
+5. Gate1 后的 `PlanΔ` 只有同时满足以下条件才可自动推进：baseline projection 精确不变；新旧动作都处于 `authorized_actions`、`action_ceiling`、`allowed_adjustments` 范围且不命中 `prohibited_actions`；全部已有执行事实被无损保留；完整候选计划与 fresh creation review 已经形成。每次 fresh review 前由 Controller 在自身当前上下文完成完整工具发现并实际尝试创建只读 Subagent；实际无法创建时先向 Human 报告停止并询问是否采用切换视角方案，说明非独立保证差距；Human 选择后按决定执行，并在该 review 记录 Controller 证据、保证差距、披露摘要与披露时间，不新增授权 Gate。AI 负责语义与当前证据判断，Code 负责结构、引用与 fingerprint 检查；
 6. 合法 `PlanΔ` 在 `plan_revising → executing` 的单一事务精确 `plan_version + 1`，完整替换 plan/work items，以 fresh `creation_reviews` 替换旧 reviews；`execution_approval` 的全部成员保持精确不变，不因当前 plan version 高于其 `subject_version` 而失效。projection 完全相同时禁止升版；
 7. `plan_revising` 不是 Human Gate：只能承载 Gate1 后的基线内自动调整，不能把 Human 写入 waiting；超过基线、命中禁止项、需要接受新风险或需要 Gate1 后新 Human 决定时，不改授权、不执行该动作、不请求第三次确认，而是据实取消受影响 item，全部 item terminal 后进入结果链；
 8. Gate1 后不得撤回、扩展或重建本次运行的 execution authorization/approval。Human 主动给出改变基线的新要求时，也先让当前运行按已有事实安全收敛；新要求只能在当前关闭后由新的 WorkCase/Gate1 承接；

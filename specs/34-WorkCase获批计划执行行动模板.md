@@ -39,7 +39,7 @@ ldvh_spec:
 
 当前 WorkCase 已精确读取、Gate 1 已经完成，并有当前冻结 `execution_authorization`、`baseline_fingerprint` 匹配该基线且 `source_refs` 可回指真实 Human 输入的 `execution_approval` 时，本文可在 `executing`、包内 `plan_revising`、Controller/独立结果复核、关闭准备和 Gate 2 等 21 允许的后续阶段组织执行与收敛；Human 在任一活动位置明确主动中止后，本文也只组织 21 的 `termination_preparing` 善后分支。approval 的 `subject_version` 记录 Gate 1 当时版本；包内 PlanΔ 可以形成新的当前 `plan_version` 与 fresh current plan review，不要求或允许把 approval 改写成当前版本。Human 尚在审阅 Gate 1 材料、当前对象/指纹/授权包/批准不可确定，或工作实质是普通只读调查时，不使用普通执行分支。授权包逐项列明的事实对象创建、事实变更或本地 Git commit 仍分别由 31、32、30 承接，但不因此离开本模板的 WorkCase 执行组织或重复请求授权。模板候选、approval 字段存在或行动模板 key 都不单独代表适用、能力或授权覆盖。
 
-**审核方法与保证边界**：全部方案、结果和关键 item review 遵循 21 §4.5。Controller 在自身当前会话完整发现工具并实际尝试创建只读 Subagent；Subagent 是唯一独立审核方式，其模型由宿主决定。Controller 无法创建时，先向 Human 披露将使用 same-AI 切换只读视角及保证差距，然后直接执行，不请求确认、不新增 Gate。Subagent 对 Controller 工具能力的结论不得作为不可创建证据。
+**审核方法与保证边界**：全部方案、结果和关键 item review 遵循 21 §4.5。Controller 在自身当前会话完整发现工具并实际尝试创建只读 Subagent；Subagent 是唯一独立审核方式，其模型由宿主决定。Controller 无法创建时，先向 Human 报告当前无法创建独立审核体并停止，说明将使用 same-AI 切换只读视角及保证差距，然后询问 Human 是否采用该方案；Human 选择后按决定执行。Subagent 对 Controller 工具能力的结论不得作为不可创建证据。
 
 ## 5. WorkCase 获批计划执行行动模板定义
 
@@ -59,7 +59,7 @@ ldvh_spec:
 
 1. Controller 在自身当前会话完整发现全部可调用工具及延迟发现入口，并实际尝试创建只读 Subagent；不能以初始工具摘要、历史记录、未知状态或子上下文结论代替。
 2. 创建成功即使用 `subagent-read-only`。执行体数量由 Controller 按当前任务需要决定，模型只由宿主选择；LDVH 不查询、冻结或映射模型。
-3. 实际无法创建时，Controller 形成自身工具发现与创建失败证据，先向 Human 披露 same-AI 方法和非独立保证差距，随后直接执行 `same-ai-switched-role-read-only`；不请求确认、不等待回复、不新增 phase 或 Human Gate。
+3. 实际无法创建时，Controller 形成自身工具发现与创建失败证据，先向 Human 报告停止并询问是否采用 same-AI 切换只读视角方案，说明非独立保证差距；Human 选择后按决定执行；不新增 phase 或 Human Gate。
 4. same-AI review 必须记录 `capability_evidence`、`assurance_gap`、`human_disclosure_summary`、`human_disclosed_at`。Subagent 关于能力的陈述不是 Controller 证据。
 5. 被审版本变化时旧 review 失效，按 21 的轮次边界重新执行上述判断和 fresh review。
 
@@ -97,7 +97,7 @@ Gate 1 后出现新的 Human 决策需求，不构成 blocked 或 unresolved，�
 
 终止善后中的每个稳定检查点同样先写完整 after、CAS、回读与完整性审计。检查点必须区分 retained、discarded、unverified 与 relationship impacts，并据实更新 cleanup summary/status；未执行的删除、回滚、验证或复核不得写成已完成。complete 前还要再次核对入向 `depends-on`，并以 criterion results 决定实际 closure outcome，而不是以 Human 要求中止推定结果分类。
 
-全部 item terminal 后，Controller 按 21/32 连续形成 Controller 检查、完整结果投影、实际结果复核、feedback 处置、关闭提案与 Human 关闭确认。结果复核先实际创建只读 Subagent；无法创建时按 §5.1 披露后直接使用 same-AI 并完整记录。Reviewer pass 只是一项实际 review 输入，不等于 Gate 2；Controller 仍须处置反馈并继续合法 phase，以完整 after、CAS、精确回读与完整性审计，直至真实快照进入 Human 关闭确认；不能只输出聊天总结。
+全部 item terminal 后，Controller 按 21/32 连续形成 Controller 检查、完整结果投影、实际结果复核、feedback 处置、关闭提案与 Human 关闭确认。结果复核先实际创建只读 Subagent；无法创建时按 §5.1 先向 Human 报告停止并询问是否采用切换视角方案，按决定执行。Reviewer pass 只是一项实际 review 输入，不等于 Gate 2；Controller 仍须处置反馈并继续合法 phase，以完整 after、CAS、精确回读与完整性审计，直至真实快照进入 Human 关闭确认；不能只输出聊天总结。
 
 受控写入调用的失败处置：任一 21 专属 Helper 写入操作返回 `invalid_request`、`rejected`、`unavailable` 或其它非成功外层结果时，Controller 必须当场读取该响应的 `gaps` 与 `diagnostics`，修正请求形状、指纹或内容后重试；无法修复、连续失败或写入结果不可观察时，停在最后合法状态，按 §5.4 只经真实 blocked 或读取缺口交还。不得静默跳过失败的写入并继续后续控制步骤、形成成功声明或任何 phase/status 宣称。修复与重试受 Gate1 冻结的 `allowed_adjustments` 约束，不构成扩权。
 
@@ -123,7 +123,7 @@ Gate 1 后出现新的 Human 决策需求，不构成 blocked 或 unresolved，�
 |---|---|---|---|---|---|---|
 | 模板身份与边界 | 新建、修改或发现模板时 | 声明唯一、只组织执行、不复制 21/32 规则 | 06、21、32、本文 | 声明解析、来源回读 | 当前模板定义 | 修正来源，不消费模板 |
 | item、success criterion 与生命周期关口边界 | 计划获批后准备消费任一 item，以及形成 canonical result projection 前 | item 可实施并形成局部结果；criterion 可在 projection 形成前据实判断；两者均未吸收 Controller 自检、独立结果复核、feedback 处置、受控提交、关闭准备或 Human Gate | 当前 WorkCase、21 §4.3、本文 | AI 逐 item / criterion 语义审核；契约测试只检查当前来源持续交付该边界 | 当次已读计划与来源文本；不证明 Code 能理解任意自然语言 | Gate1 前返修；Gate1 后 item 按基线内 PlanΔ 或取消收敛，误建模 criterion 据实 `not_verified` 并经 validation、residual decision 与既有结果链继续到 Gate2；不新增 Human Gate |
-| Gate 1 授权消费 | 每项行动、委派、事实写入和本地 commit 前 | 当前授权、批准和来源有效；same-AI 时 Controller 已完成工具发现与实际创建失败判断，并已披露 | 当前 WorkCase、21、30–32、Human Gate 1 来源 | AI 语义审核、Controller 能力证据与 21 结构校验 | 当次授权与实际 review 方法；Code 不证明证据语义或独立性 | 超界行动不执行；review 优先创建 Subagent，失败则披露后直接 same-AI，不请求扩权 |
+| Gate 1 授权消费 | 每项行动、委派、事实写入和本地 commit 前 | 当前授权、批准和来源有效；same-AI 时 Controller 已完成工具发现与实际创建失败判断，已报告停止并询问 Human 且 Human 同意 | 当前 WorkCase、21、30–32、Human Gate 1 来源 | AI 语义审核、Controller 能力证据与 21 结构校验 | 当次授权与实际 review 方法；Code 不证明证据语义或独立性 | 超界行动不执行；review 优先创建 Subagent，失败则报告停止并询问 Human，按决定执行，不请求扩权 |
 | 开始与直接完成边界 | 实施前后 | 跨检查点工作先按 §5.2 开始控制点完成 `pending → in_progress` 写回（含 `current_summary`、`resume_from`），再经 CAS、回读与完整性审计后才执行；同检查点结果才直接 `pending → completed` | 当前 WorkCase、21、完整 after | WorkCase 转换测试与完整 after 回读 | 当次 item 转换 | 停在当前稳定检查点，重新判断 |
 | fresh 投影与执行循环 | 每次执行、恢复和事实写回后 | projection resolved 且 source fingerprint 匹配刚回读内容；AI 重新判断语义、依赖、授权和能力，Code 与结构提示不替代判断 | 当前 WorkCase、21、Helper 回读 | 指纹/投影负矩阵、source-contract 与 AI 对照审核 | 当次刚回读快照和结构提示；不证明 AI 跨会话遵从 | 重新精确读取；仍 unresolved 时只交还读取缺口，不猜测位置或行动 |
 | 阻塞、稳定检查点与阶段收敛 | 每个稳定检查点 | 合法 item/phase/authorization/approval/依赖形状与专属操作路由均成立；每步有完整 after、CAS、精确回读和独立完整性审计；Reviewer pass 后继续至真实关闭确认位置 | 21、32、Helper 回读与完整性审计 | 21 机械校验、Helper 回读、全量事实完整性检查与 source-contract | 当次 WorkCase 写回链；不证明自然语言授权充分或结果正确 | 保持最后合法状态；blocked 等待真实恢复条件，授权超界按结果链收敛，不新增 Human Gate |
@@ -131,10 +131,10 @@ Gate 1 后出现新的 Human 决策需求，不构成 blocked 或 unresolved，�
 
 ## 7. Human Gate
 
-本文不新增 Human Gate。正常运行只消费 Gate 1 与 Gate 2；Human 主动中止仍走专属终止链。Gate 1 后授权包内的动作和只读 review 直接消费当前批准。Subagent 无法创建时的告知只是保证披露，不是确认请求或授权 Gate；Controller 告知后直接使用 same-AI 视角继续。
+本文不新增 Human Gate。正常运行只消费 Gate 1 与 Gate 2；Human 主动中止仍走专属终止链。Gate 1 后授权包内的动作和只读 review 直接消费当前批准。Subagent 无法创建时的报告停止与询问 Human 是保证披露和确认，不是新增授权 Gate；Controller 报告停止并询问 Human 后，按 Human 决定执行。
 
 Gate 1 不授权未列明行动、对象或影响，不授权范围/风险扩大，也不因一般实施授权扩张为 push、PR、发布、外部消息、破坏性历史操作或其它禁止副作用。执行中遇到这些情况时不得询问扩权；按 §5.2 取消或收敛受影响 item 后继续结果链。Human 主动撤回或改变目标仍按 21 处理，但正常模板不得主动制造第三次确认。
 
 ## 8. Stop Conditions
 
-出现以下任一情况时停止受影响动作但不停止安全收敛：当前对象、指纹、授权、批准或依赖不可确认；生命周期关口被错误建模为 item/criterion；CAS 写后未回读；动作超界；Reviewer 修改被审内容；实际方法未知或被错误标成 Subagent；Controller 未完整发现工具并实际尝试创建；same-AI 缺少 Controller 证据、保证差距、披露摘要或披露时间。能够确认 Subagent 创建失败时不得硬等或请求第三个 Human Gate，而应披露后直接 same-AI；其它情况按 21、32 与 00 安全收敛。
+出现以下任一情况时停止受影响动作但不停止安全收敛：当前对象、指纹、授权、批准或依赖不可确认；生命周期关口被错误建模为 item/criterion；CAS 写后未回读；动作超界；Reviewer 修改被审内容；实际方法未知或被错误标成 Subagent；Controller 未完整发现工具并实际尝试创建；same-AI 缺少 Controller 证据、保证差距、披露摘要或披露时间。能够确认 Subagent 创建失败时不得硬等或请求第三个 Human Gate，而应按 §5.1 报告停止并询问 Human，按决定执行；其它情况按 21、32 与 00 安全收敛。
