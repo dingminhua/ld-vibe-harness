@@ -211,7 +211,7 @@ def _qualification_gaps(
     unique_conditions = tuple(dict.fromkeys(conditions))
     if not unique_conditions:
         return []
-    if response_profile == "compact":
+    if response_profile in {"compact", "lean"}:
         return [
             gap(
                 "当前 Code 尚未自动证明来源或契约资格条件；请求 diagnostic 档可读取逐项明细",
@@ -591,7 +591,7 @@ def _handle_request(request_kind: RequestKind, operation_key: str | None, raw_in
     declaration_sources = [_declaration_source(declaration) for declaration in declarations]
     repository_sources = _issue_sources(repository.issues)
     operation_keys = [declaration.operation_key for declaration in declarations]
-    if response_profile == "compact":
+    if response_profile in {"compact", "lean"}:
         qualification_gaps = [
             *_qualification_gaps(
                 unchecked_conditions,

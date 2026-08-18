@@ -79,8 +79,10 @@ def common_response(
 ) -> ServiceResult:
     if outcome not in EXIT_CODES:
         raise ValueError(f"unsupported Helper outcome: {outcome}")
-    if response_profile not in {"compact", "diagnostic"}:
+    if response_profile not in {"compact", "diagnostic", "lean"}:
         raise ValueError(f"unsupported Helper response profile: {response_profile}")
+    # lean profile 省略 sources 与 verification 段，适合调用方只关
+    # 注领域 result 且不需要溯源与验证证据的高频只读盘点场景。
     response = {
         "contract": CONTRACT,
         "response_profile": response_profile,
@@ -95,11 +97,11 @@ def common_response(
             "not_completed": [] if not_completed_scope is None else not_completed_scope,
             "governance_resolution": governance_resolution,
         },
-        "sources": [] if sources is None else sources,
+        "sources": [] if (sources is None or response_profile == "lean") else sources,
         "disclosure": disclosure,
         "gaps": [] if gaps is None else gaps,
         "changes": [] if changes is None else changes,
-        "verification": [] if verification is None else verification,
+        "verification": [] if (verification is None or response_profile == "lean") else verification,
         "diagnostics": [] if diagnostics is None else diagnostics,
         "follow_up": (
             {

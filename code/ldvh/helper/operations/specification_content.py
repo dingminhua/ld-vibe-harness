@@ -469,7 +469,7 @@ def read_specification_content(
 
     if completed_scope:
         unchecked = tuple(dict.fromkeys(repository.unchecked_conditions))
-        if unchecked and response_profile == "compact":
+        if unchecked and response_profile in {"compact", "lean"}:
             gaps.append(
                 {
                     "summary": (
@@ -488,7 +488,7 @@ def read_specification_content(
                 }
                 for condition in unchecked
             )
-        if response_profile == "compact":
+        if response_profile in {"compact", "lean"}:
             verification.append(
                 {
                     "check": (

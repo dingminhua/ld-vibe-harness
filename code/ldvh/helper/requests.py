@@ -93,8 +93,8 @@ def parse_common_request(raw: str, *, general_discovery: bool) -> RequestParseRe
         problems.append("requested_disclosure 只允许 L0、L1、L2、L3、L4 或 null")
 
     response_profile = value.get("response_profile", "compact")
-    if not isinstance(response_profile, str) or response_profile not in {"compact", "diagnostic"}:
-        problems.append("response_profile 只允许 compact 或 diagnostic")
+    if not isinstance(response_profile, str) or response_profile not in {"compact", "diagnostic", "lean"}:
+        problems.append("response_profile 只允许 compact、diagnostic 或 lean")
 
     observed = value.get("observed_context", {})
     if not _is_object(observed):

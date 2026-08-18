@@ -269,6 +269,22 @@ def test_diagnostic_profile_expands_qualification_details(tmp_path: Path) -> Non
     assert all("member_count" not in item for item in response["gaps"])
 
 
+def test_lean_profile_omits_sources_and_verification(tmp_path: Path) -> None:
+    completed, response = _run(
+        tmp_path,
+        "capabilities",
+        stdin=json.dumps({"response_profile": "lean"}),
+    )
+
+    assert completed.returncode == 0
+    assert response["response_profile"] == "lean"
+    assert response["sources"] == []
+    assert response["verification"] == []
+    # domain result must still be present and unchanged
+    assert response["result"] is not None
+    assert response["outcome"] == "ok"
+
+
 def test_defined_operation_check_and_call_return_actual_l0_results(tmp_path: Path) -> None:
     checked, check_response = _run(tmp_path, "capabilities", "read-specification-candidates")
     called, call_response = _run(tmp_path, "call", "read-specification-candidates")

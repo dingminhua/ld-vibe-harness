@@ -62,6 +62,14 @@ def test_accepts_diagnostic_response_profile() -> None:
     assert result.request.response_profile == "diagnostic"
 
 
+def test_accepts_lean_response_profile() -> None:
+    result = parse_common_request('{"response_profile": "lean"}', general_discovery=True)
+
+    assert result.problems == ()
+    assert result.request is not None
+    assert result.request.response_profile == "lean"
+
+
 def test_source_reference_rejects_every_whitespace_only_string_member() -> None:
     problems = source_reference_problems(
         {"kind": "   ", "locator": "\t", "version": "\n", "observed_at": "\r\n"},

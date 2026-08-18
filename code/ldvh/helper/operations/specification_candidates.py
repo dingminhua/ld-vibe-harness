@@ -318,7 +318,7 @@ def read_specification_candidates(
     qualification_scope = list(completed)
     if qualification_scope:
         unchecked = tuple(dict.fromkeys(repository.unchecked_conditions))
-        if unchecked and response_profile == "compact":
+        if unchecked and response_profile in {"compact", "lean"}:
             gaps.append(
                 {
                     "summary": (
@@ -338,7 +338,7 @@ def read_specification_candidates(
                 for condition in unchecked
             )
         overlaps = tuple(overlap for overlap in repository.basis_reachability_overlaps if overlap.spec_key in completed)
-        if overlaps and response_profile == "compact":
+        if overlaps and response_profile in {"compact", "lean"}:
             gaps.append(
                 {
                     "summary": f"发现 {len(overlaps)} 项直接 basis 可经其它路径到达，直接必要性仍需语义复核",
@@ -360,7 +360,7 @@ def read_specification_candidates(
             )
 
     compact_source: JsonObject | None = None
-    if completed and response_profile == "compact":
+    if completed and response_profile in {"compact", "lean"}:
         compact_source = source_reference(
             "rule",
             "specs/",
@@ -371,7 +371,7 @@ def read_specification_candidates(
         for layer in _LAYERS[: _LAYERS.index(disclosure) + 1]:
             level_sources[layer].append(compact_source)
 
-    if response_profile == "compact":
+    if response_profile in {"compact", "lean"}:
         verification = (
             (
                 {

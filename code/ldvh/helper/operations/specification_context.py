@@ -417,7 +417,7 @@ def read_specification_context(
         completed_scope.append(scope)
         qualification_member_count = (
             len(tuple(dict.fromkeys(repository.unchecked_conditions)))
-            if response_profile == "compact" and repository.unchecked_conditions
+            if response_profile in {"compact", "lean"} and repository.unchecked_conditions
             else None
         )
         gaps.extend(
@@ -438,7 +438,7 @@ def read_specification_context(
                 }
             )
 
-    if completed_scope and response_profile == "compact":
+    if completed_scope and response_profile in {"compact", "lean"}:
         verification.append(
                 {
                     "check": (

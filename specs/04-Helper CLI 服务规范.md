@@ -138,7 +138,7 @@ Helper 使用的规则源视图只由 01 §§6.3–6.4 确定，并固定为当�
 | `work_object_locators` | 当操作涉及项目或对象专属信息时提供 | 语义服从 02；不得由 Helper 猜测未提供的管辖关系 |
 | `arguments` | 按该操作来源契约提供的结构化参数 | 不得通过自由文本绕过领域 Schema 或授权边界 |
 | `requested_disclosure` | 需要规范信息时可指定 01 定义的 L0–L4 | 不要求逐层调用；不得请求低层级后据此宣称没有规则 |
-| `response_profile` | 可选指定 `compact` 或 `diagnostic`；默认为 `compact` | 只改变重复证据与诊断信息的组织粒度，不得改变领域结果、范围、外层结果、规则含义或状态变化 |
+| `response_profile` | 可选指定 `compact`、`diagnostic` 或 `lean`；默认为 `compact` | `compact` 与 `diagnostic` 只改变重复证据与诊断信息的组织粒度；`lean` 额外省略 `sources` 与 `verification` 段（固定为空列表），三者都不得改变领域结果、范围、外层结果、规则含义或状态变化。`lean` 供 AI 只关心领域 `result`、不需要溯源与验证证据的高频只读盘点使用 |
 | `observed_context` | 当次环境、工具或调用方可观察且该操作确有需要的补充输入 | 必须保留输入来源；不直接成为稳定事实 |
 | `authorization_reference` | 状态变更操作在来源规则要求授权时提供 | 只证明所引用决定及其作用范围，不证明技术结果 |
 

@@ -98,6 +98,7 @@ def test_capability_profiles_preserve_domain_result_and_compact_size(monkeypatch
 
     compact = handle_request("capabilities", None, json.dumps({"response_profile": "compact"})).response
     diagnostic = handle_request("capabilities", None, json.dumps({"response_profile": "diagnostic"})).response
+    lean = handle_request("capabilities", None, json.dumps({"response_profile": "lean"})).response
     single_compact = handle_request(
         "capabilities",
         "resolve-governance-scope",
@@ -108,9 +109,16 @@ def test_capability_profiles_preserve_domain_result_and_compact_size(monkeypatch
         "resolve-governance-scope",
         json.dumps({"response_profile": "diagnostic"}),
     ).response
+    single_lean = handle_request(
+        "capabilities",
+        "resolve-governance-scope",
+        json.dumps({"response_profile": "lean"}),
+    ).response
 
     assert compact["result"] == diagnostic["result"]
     assert single_compact["result"] == single_diagnostic["result"]
+    assert lean["result"] == diagnostic["result"]
+    assert single_lean["result"] == single_diagnostic["result"]
     compact_bytes = len(json.dumps(compact, ensure_ascii=False, separators=(",", ":")).encode())
     diagnostic_bytes = len(json.dumps(diagnostic, ensure_ascii=False, separators=(",", ":")).encode())
     assert compact_bytes <= diagnostic_bytes * 0.65

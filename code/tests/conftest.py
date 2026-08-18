@@ -109,7 +109,7 @@ def assert_common_response(response: dict[str, Any]) -> None:
         "follow_up",
     }
     assert response["contract"] == "ldvh-helper-cli/2"
-    assert response["response_profile"] in {"compact", "diagnostic"}
+    assert response["response_profile"] in {"compact", "diagnostic", "lean"}
     assert response["request_kind"] in {"capabilities", "call"}
     assert response["outcome"] in {
         "ok",
@@ -163,7 +163,7 @@ def assert_common_response(response: dict[str, Any]) -> None:
         if "code" in item:
             assert isinstance(item["code"], str) and item["code"]
         if "member_count" in item:
-            assert response["response_profile"] == "compact"
+            assert response["response_profile"] in {"compact", "lean"}
             assert isinstance(item["member_count"], int) and not isinstance(item["member_count"], bool)
             assert item["member_count"] > 0
     assert isinstance(response["changes"], list)

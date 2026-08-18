@@ -1,14 +1,14 @@
 title: sources/verification 固定 tax 优化
-status: open
-priority: P2
-intent: 保留 Helper 每次响应都无条件携带 sources 与 verification 段（合计约 2.6-4.1KB/次）是否存在稳定过量传输的交互摩擦，判断是否应引入 compact profile 或轻量引用机制，而不依赖固定模型统计对比。
-summary: "## 来源\n\n从 spark-01M05X08QQE09TVT8EVXAP6ZMM「Helper 读交互优化」中分离出的独立出口。该 Spark 的 P2 候选「sources/verification 固定 tax」经审核确定与写回链路读取过重（P1）是两件事，共享 common_response() 代码点但问题本质不同，应单独跟踪。\n\n## 当前状态\n\n每次只读操作无条件携带 2.6-4.1KB sources + verification 段，即使调用方不需要。\n\n## 实测量化\n\n| 操作 | 总响应 | sources | verification | 无用比例 |\n|---|---|---|---|---|\n| read-action-template-candidates | 11.9KB | 4.1KB | 4.4KB | 71% |\n| read-action-template-content | 20.9KB | 1.8KB | 0.8KB | 12% |\n| capabilities --summary | 20.6KB | 11.5KB | 0 | 56% |\n\n最极端情况：read-action-template-candidates 的 verification（4.1KB）比 result（2.8KB）还大。\n\n## 代码位置\n\n`code/ldvh/helper/responses.py` L72-102（`common_response()` 恒带 sources/verification，即使调用方不需要）。\n\n## 候选方向\n\n1. **批量/盘点场景用轻量 source_refs**：仅引用 key，不展开 details；单卡 F3 读时带全量溯源\n2. **新增 compact profile 参数**：调用方请求 compact 时省略 sources/verification；默认保持现状\n3. **按需延迟生成**：只在调用方明确请求时才填充 sources/verification（风险高，改变现有契约行为）\n\n## 当前状态\n\n待证据积累。P2 门槛需要跨多个真实任务统计「调用方不需要溯源段」的频率，目前仅有单次体积分解的实测数据。\n\n## 与原 Spark 的关系\n\n与 spark-01M05X08QQE09TVT8EVXAP6ZMM 共享 common_response() 代码点，但问题本质不同：\n- 原 Spark Step 4 是「写回链路的三次读取太重」（读什么的问题）\n- 本 Spark 是「所有只读响应固定带 tax」（包装层的问题）\n\n两者独立解决。如果先做 compact profile 机制，原 Spark 的 capabilities 校验子项会顺带受益。"
+status: implemented
+intent: 新增 `lean` response_profile，使调用方可以在请求中选择省略 `sources` 与 `verification` 段（均返回空列表），减小高频只读盘点场景的响应体积。默认行为不变（`compact`），零风险 opt-in 方案。
+summary: "## 来源\n\n从 spark-01M05X08QQE09TVT8EVXAP6ZMM「Helper 读交互优化」中分离出的独立出口。该 Spark 的 P2 候选「sources/verification 固定 tax」经审核确定与写回链路读取过重（P1）是两件事，共享 common_response() 代码点但问题本质不同，应单独跟踪。\n\n## 当前状态\n\n每次只读操作无条件携带 2.6-4.1KB sources + verification 段，即使调用方不需要。\n\n## 实测量化\n\n| 操作 | 总响应 | sources | verification | 无用比例 |\n|---|---|---|---|---|\n| read-action-template-candidates | 11.9KB | 4.1KB | 4.4KB | 71% |\n| read-action-template-content | 20.9KB | 1.8KB | 0.8KB | 12% |\n| capabilities --summary | 20.6KB | 11.5KB | 0 | 56% |\n\n最极端情况：read-action-template-candidates 的 verification（4.1KB）比 result（2.8KB）还大。\n\n## 实施结果\n\n新增 `lean` response_profile，调用方在请求 JSON 中设置 `\"response_profile\": \"lean\"` 即可省略响应中的 `sources` 与 `verification` 段（均固定为空列表），领域 `result`、`outcome`、`scope`、`gaps` 等其它字段不受影响。\n\n**实测效果**（capabilities 全量）：\n- compact：80,197 bytes\n- lean：67,044 bytes（**省约 13KB，约 16.4%**）\n\n**实现范围**：\n- `code/ldvh/helper/responses.py`：`common_response()` 接受 `lean`，省略 sources/verification\n- `code/ldvh/helper/requests.py`：parse 层接受 `lean`\n- `code/ldvh/helper/service.py`：`_qualification_gaps` 等 compact 条件兼容 lean\n- `code/ldvh/helper/operations/specification_candidates.py`、`specification_content.py`、`specification_context.py`：compact 聚合条件兼容 lean\n- `specs/04-Helper CLI 服务规范.md`、`specs/attachments/04.Att.01-Helper CLI 请求与响应字段表.md`：契约文档更新\n- `code/tests/`：新增 & 更新断言\n\n**语义说明（AI 使用场景引导）**：\n`lean` 适用于调用方只关心领域 `result`、不需要溯源与验证证据的高频只读盘点场景，如：\n- 批量扫描事实对象状态（只需 status/priority）\n- 快速发现可用操作（只需 operation_key/summary）\n- 反复检查同一操作的可用性\n- 写回链路中的中间只读检查（capabilities 校验、回读确认）\n\n在需要完整溯源链（如 Human 审核、独立复核、审计追踪）时，仍应使用默认的 `compact` 或 `diagnostic`。\n\n## 代码位置\n\n- `code/ldvh/helper/responses.py` L82-83（profile 校验）、L98-102（sources/verification 省略）\n- `code/ldvh/helper/requests.py` L96-97（parse 校验）\n- `specs/04-Helper CLI 服务规范.md` §5.2（请求共同内容表）\n- `specs/attachments/04.Att.01-Helper CLI 请求与响应字段表.md`（请求/响应字段表）\n\n## 候选方向\n\n1. ~~批量/盘点场景用轻量 source_refs~~（未实施，lean 覆盖了类似场景）\n2. **新增 compact profile 参数**（已实施为 `lean`）\n3. ~~按需延迟生成~~（风险高，未选择）\n\n## 与原 Spark 的关系\n\n与 spark-01M05X08QQE09TVT8EVXAP6ZMM 共享 common_response() 代码点，但问题本质不同：\n- 原 Spark Step 4 是「写回链路的三次读取太重」（读什么的问题）\n- 本 Spark 是「所有只读响应固定带 tax」（包装层的问题）\n\n两者独立解决。compact profile 机制（`lean`）已实现，原 Spark 的 capabilities 校验子项会顺带受益。"
 relations:
 - relation_key: related-to
   target:
     governed_project_id: ldvh
     fact_type_key: spark
     object_id: spark-01M05X08QQE09TVT8EVXAP6ZMM
+disposition_summary: 新增 `lean` response_profile 已在 common_response()、请求解析层、操作层聚合条件、契约文档和测试中落地，helper 全量 610 passed 验证通过，capabilities 全量响应从 80,197 降至 67,044 bytes（约 -16.4%）。本 Spark 入口已直接落实，不表示 WorkCase 或下游工作完成。
 change_log:
 - summary: 受控创建：从 Helper 读交互优化 Spark 中分离出 sources/verification 固定 tax 独立出口；当前 open/P2，待证据积累。
   signature:
@@ -16,8 +16,13 @@ change_log:
     model_name: deepseek-v4-flash
     agent_runtime_name: dsh
   at: '2026-08-17T20:00:21.154003Z'
+- summary: 实施：新增 lean response_profile 并在 spec/实现/测试中落地；实测 capabilities 全量响应从 80,197 降至 67,044 bytes（约 -16.4%），领域 result 不变；Human 明确「不需要证据」，直接执行零风险 opt-in 方案。
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+  at: '2026-08-18T09:30:00.000000Z'
 object_uid: 01a0114f-931c-71d2-8c6e-00b8fccc29cc
 object_id: spark-01M08MZ4RWE798RVG0Q3YCRAEC
 fact_type_key: spark
 created_at: '2026-08-17T20:00:21.154003Z'
-updated_at: '2026-08-17T20:00:21.154003Z'
+updated_at: '2026-08-18T09:30:00.000000Z'
