@@ -79,7 +79,8 @@ _READ_TO_UPDATE_INPUT_EXAMPLE = {
                     "summary": "既有流水必须按原顺序和原值保留。",
                 },
                 {
-                    "summary": "描述本次真实更新（at 与 signature 由写入口按当次 event_at 与 observed_context.signature 托管）。",
+                    "summary": "描述本次真实更新（at 与 signature 由写入口"
+                    "按当次 event_at 与 observed_context.signature 托管）。",
                 },
             ],
         },

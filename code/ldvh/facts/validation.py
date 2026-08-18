@@ -452,7 +452,9 @@ def _first_log_issues(current: object, after: Mapping[str, Any]) -> tuple[FactIs
         "product_name",
         "model_name",
     }:
-        return (FactIssue("schema", "首次 change_log 必须使用当前两字段署名（product_name、model_name 均必填）", "change_log[0].signature"),)
+        return (FactIssue("schema",
+                         "首次 change_log 必须使用当前两字段署名（product_name、model_name 均必填）",
+                         "change_log[0].signature"),)
     if "session_id" in entry:
         return (FactIssue("schema", "首次 change_log 不得携带 session_id", "change_log[0].session_id"),)
     if "updated_at" in after and entry.get("at") != after.get("updated_at"):
@@ -797,7 +799,10 @@ def _is_legacy_change_log_signature_issue(fields: Mapping[str, Any], issue: Fact
     ):
         return False
     return (
-        match.group(2) in {"agent_id", "host_environment", "model_id", "host_name", "agent_workbench", "agent_runtime_name", "product_name", "model_name", None}
+        match.group(2) in {
+            "agent_id", "host_environment", "model_id", "host_name",
+            "agent_workbench", "agent_runtime_name", "product_name", "model_name", None
+        }
         or issue.summary == "缺少必填字段"
     )
 

@@ -793,7 +793,7 @@ def test_signature_footer_rejects_retired_session_id(contract: CommitContractPro
                 message=(
                     "docs(specs): 提交署名\n\n"
                     "关键变更:\n- 合法会话标识\n\n"
-                    f"LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna"
+                    "LDVH-Product-Name: Cindy\nLDVH-Model-Name: gpt-5.6-luna"
                 ),
             ),
         )

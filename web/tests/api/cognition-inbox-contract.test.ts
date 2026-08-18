@@ -526,11 +526,11 @@ test('recent activity environment usage merges Codex Desktop and Codex into one 
   const view = buildRecentActivityView([
     {
       ...common, object_id: 'spark-codex-desktop', occurred_at: '2026-08-01T00:00:00Z',
-      signature: { productName: 'codex-desktop', agentRuntimeName: 'codex' },
+      signature: { productName: 'codex-desktop', agentRuntimeName: 'codex' } as any,
     },
     {
       ...common, object_id: 'spark-codex', occurred_at: '2026-08-01T01:00:00Z',
-      signature: { agentRuntimeName: 'codex' },
+      signature: { agentRuntimeName: 'codex' } as any,
     },
   ])
   assert.deepEqual(view.environmentUsage, [{ value: 'Codex', count: 1 }])
