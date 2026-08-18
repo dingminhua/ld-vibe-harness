@@ -1,0 +1,130 @@
+title: WorkCase 执行阶段设计缺口改进：item 状态更新保障与阶段 Goal 防中途停下
+goal: 针对 WorkCase 执行阶段两个设计缺口完成设计分析与改进方向判定，输出可直接承接规范修订的结构化建议
+scope: 分析 21 §6.4 item_event 闭集与 §6 transition、34 §5.2 与 31 §5.2.2 阶段 Goal、09 §5.8 Stop gate 的交互；不修改规范正文、不写 Code、不改变状态机或 Schema
+success_criterion_definitions:
+- criterion_id: criterion-gap1
+  statement: 缺口一四项改进方向（item_event 闭集扩展、complete-work-item 同事务投影 executing→controller_checking、fact_object 路径 item 漂移检测、行为清单弥补）均已判定并给出采纳/排除理由
+- criterion_id: criterion-gap2
+  statement: 缺口二四项改进方向（31/34 改 may→must、check-workcase-handoff 增加 Goal 存活字段、executing→controller_checking 加 Goal 存在预检、Stop gate 与 Goal 联动）均已判定并给出理由
+- criterion_id: criterion-root
+  statement: 两缺口公共根因判定完成，给出是否统一解决及理由
+closure_outcome: completed
+disposition_summary: WorkCase执行阶段两个设计缺口分析完成。缺口一：建议扩展item_event窄投影(高优先级complete-work-item同事务投影+中优先级cancel事件)。缺口二：建议投影增加stage_goal_status观察字段(中优先级)。公共根因：机械层与行为层覆盖缝隙，不统一但同原则分别补强。统一改进清单6项已形成，可承接后续规范修订WorkCase。分析文档见docs/workcase-design-gap-analysis/。
+spark_suggestions:
+- suggestion_id: suggestion-spec-revision
+  suggestion_kind: follow_up_opportunity
+  summary: 后续规范修订WorkCase：落实统一改进清单6项
+  follow_up_summary: 新建WorkCase或Spark承接6项改进的规范正文与Code修订，按优先级分批落实
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 01a0136a-c52c-72b6-ba5f-24976ac39386
+change_log:
+- summary: 受控创建：承接 spark-01M09PNH9CEAVBMQS4JXNC74W6 的 WorkCase 执行阶段两个设计缺口分析——item 状态更新易遗漏与阶段 Goal 未有效防中途停下
+  at: '2026-08-18T16:34:13.135268Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- summary: Gate1 批准：Human 接受当前计划与执行授权基线，phase 由 human_plan_confirming 推进至 executing
+  at: '2026-08-18T17:09:17.431655Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+  at: '2026-08-18T17:17:23.956545Z'
+  summary: item-gap1 开始执行：缺口一 item 状态更新易遗漏的设计分析
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+  at: '2026-08-18T17:23:55.749350Z'
+  summary: item-gap1 完成：缺口一四项改进方向判定与理由
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+  at: '2026-08-18T17:24:21.381987Z'
+  summary: item-gap2 开始执行：缺口二阶段Goal未有效防中途停下的设计分析
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+  at: '2026-08-18T17:28:43.213465Z'
+  summary: item-gap2 完成：缺口二四项改进方向判定与理由
+- signature:
+    product_name: Cindy
+    model_name: glm-5.2
+  at: '2026-08-18T17:29:23.003563Z'
+  summary: item-root 开始执行：公共根因判定与统一解决结论
+- summary: 全部item terminal，phase由executing推进至controller_checking，形成result_version=1与完整结果投影
+  at: '2026-08-18T17:32:26.702674Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- summary: 完整结果投影已形成并校验，phase由controller_checking推进至independent_reviewing，等待独立结果复核
+  at: '2026-08-18T17:33:23.068117Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- summary: 独立结果复核verdict=pass_with_followups，同phase写入result_reviews，feedback将在离开independent_reviewing前处置
+  at: '2026-08-18T17:43:48.898575Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- summary: 复核followup需要修正projection，phase由independent_reviewing回到controller_checking，projection原样冻结待修正
+  at: '2026-08-18T17:45:11.436062Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- summary: 修正复核followup：controller_check_summary命名统一为root、validation_summary补列31 §5.2.2；result_version升为2，旧result_reviews失效
+  at: '2026-08-18T17:45:40.329189Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- summary: projection已修正(result_version=2)，phase由controller_checking推进至independent_reviewing，等待v2复核
+  at: '2026-08-18T17:46:07.930573Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- summary: v2独立结果复核verdict=pass，同phase写入result_reviews
+  at: '2026-08-18T17:51:17.330324Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- summary: feedback处置完成，projection未变，phase由independent_reviewing推进至closure_preparing
+  at: '2026-08-18T17:52:21.411789Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- summary: closure proposal在closure_preparing同phase形成(proposed_outcome=completed，1项spark suggestion)
+  at: '2026-08-18T17:53:40.176186Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- summary: proposal已冻结，phase由closure_preparing推进至human_closure_confirming，等待Human Gate 2关闭确认
+  at: '2026-08-18T17:54:08.525148Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+- summary: Gate 2 批准关闭：Human 接受 closure proposal(proposed_outcome=completed)，WorkCase 关闭
+  at: '2026-08-18T18:04:33.832464Z'
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+status: closed
+success_criterion_results:
+- criterion_id: criterion-gap1
+  outcome: satisfied
+  summary: 缺口一四项改进方向均已判定并给出采纳/排除理由，分析文档见gap1文档
+- criterion_id: criterion-gap2
+  outcome: satisfied
+  summary: 缺口二四项改进方向均已判定并给出理由，分析文档见gap2文档
+- criterion_id: criterion-root
+  outcome: satisfied
+  summary: 公共根因判定完成，不统一但同原则分别补强，统一改进清单6项已形成
+result_summary: WorkCase 执行阶段两个设计缺口分析完成：缺口一根因为item_event与fact_object路径覆盖不对等，建议扩展窄投影(高优先级)；缺口二根因为阶段Goal作为非持久化能力无法机械强制，建议增加观察字段(中优先级)。公共根因为机械层与行为层覆盖缝隙，不统一解决但同原则分别补强。
+validation_summary: 机械校验：21 §6.4 item_event闭集、§6 transition、34 §5.2 阶段Goal、31 §5.2.2 Gate1阶段Goal、09 §5.8 Stop gate 均已对照Code与规范原文核验。独立结果复核verdict=pass_with_followups，无§4.3反例。
+object_uid: 01a015b9-341d-7ccc-ab2c-63cd217c199f
+object_id: workcase-01M0AVJD0XFK6APB33SMGQR6CZ
+fact_type_key: workcase
+created_at: '2026-08-18T16:34:13.135268Z'
+updated_at: '2026-08-18T18:04:33.832464Z'

@@ -567,6 +567,8 @@ execution_authorization:
         "progress_group": "plan_confirmation",
         "progress_step": None,
         "blocking_overlay": False,
+        "stage_goal_status": "not_attempted",
+        "pending_item_observation": "unavailable",
         "handoff_allowed": True,
         "handoff_reason": "gate1_waiting",
     }

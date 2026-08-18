@@ -199,6 +199,7 @@ def _execute(
         read.fields.get("status"),
         read.fields.get("phase"),
         read.content_fingerprint,
+        fields=read.fields,
     )
     result = {
         "actual_ref": domain.fact_ref.to_json(),
