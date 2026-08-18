@@ -733,7 +733,7 @@ def _card(
             "details": {"view": "Working Tree"},
         },
     ]
-    return {
+    result: dict[str, object] = {
         "fact_ref": _stable_ref(project_id, fact_type_key, read.fields),
         "card_layer": domain.card_layer,
         "fields": fields,
@@ -741,6 +741,30 @@ def _card(
         "match_reasons": reasons,
         "source_refs": sources,
     }
+    if fact_type_key in ("adr", "pitfall") and domain.card_layer == "F2":
+        result["trigger_reason"] = _compute_trigger_reason(fact_type_key, reasons)
+    return result
+
+
+_ADR_TRIGGER_FIELDS = ("decision_question", "decision", "applicability", "trigger_signal")
+_PITFALL_TRIGGER_FIELDS = ("symptoms", "trigger_conditions", "applicability", "scope_of_impact")
+
+
+def _compute_trigger_reason(fact_type_key: str, reasons: list[dict[str, object]]) -> str:
+    """Compute a human-readable trigger reason from match reasons."""
+    trigger_fields = _ADR_TRIGGER_FIELDS if fact_type_key == "adr" else _PITFALL_TRIGGER_FIELDS
+    matched_fields = [
+        r["field_path"]
+        for r in reasons
+        if r.get("kind") == "field-text" and r.get("field_path") in trigger_fields
+    ]
+    if not matched_fields:
+        return "signal_hit:relation_or_status"
+    primary = matched_fields[0]
+    if fact_type_key == "adr":
+        return f"signal_hit:{primary}_match"
+    anchor = "observed_symptom" if "symptoms" in matched_fields else "potential_risk"
+    return f"signal_hit:{primary}_match AND anchor:{anchor}"
 
 
 def _query_fingerprint(domain: FactCandidateRequest, root: Path, common_dir: Path) -> str:

@@ -57,10 +57,14 @@ def test_candidate_operation_discovers_five_real_templates_in_stable_order(
         execution.requested_scope
         == execution.completed_scope
         == (
+            "adr-decision-reference",
             "environment-integration-installation-verification",
             "fact-object-controlled-creation",
             "fact-object-lifecycle-change",
             "git-commit",
+            "pitfall-risk-warning",
+            "spark-driven",
+            "study-knowledge-activation",
             "workcase-approved-plan-execution",
         )
     )
