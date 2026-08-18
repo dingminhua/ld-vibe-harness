@@ -321,9 +321,6 @@ def _study() -> dict[str, object]:
             "recommendation_summary": (
                 "Show the study's core advice before a reader decides whether to open the full report."
             ),
-            "action_relevance": (
-                "When designing the candidate card projection, keep the study abstract bounded and external."
-            ),
         },
         "body": """
 ## 研究问题
@@ -663,7 +660,6 @@ def test_f2_projects_study_frontmatter_without_injecting_report_body(tmp_path: P
         "research_question",
         "abstract",
         "recommendation_summary",
-        "action_relevance",
         "relations",
         "updated_at",
     }
