@@ -75,9 +75,9 @@ AI 在作出技术、流程或方向选择时，若既不知道也不查阅项�
 
 1. **触发与 F1 决策卡召回**。按 §4 判断召回时机成立后，经 Helper 取得该项目全部 `active` ADR 的 F1 决策卡。决策卡可分页，但必须披露全部 `active` 数量、已读数量、未读范围、指纹和后续 cursor。coverage 未完整时，不得声称已恢复全部当前决策约束，也不得在可能受未读 ADR 影响的高影响行动前宣称 ADR 检查完成（22 §7.1）。
 
-2. **F2 候选发现**。逐卡以投影字段筛选可能与当前选择问题相关的候选，投影字段严格为 `object_uid`、`object_id`、`title`、`status`、`decision_question`、`decision`、`applicability`、`updated_at`（22 §7.1 定义的完整最小投影）；不用 AI 临时摘要、索引标签或缓存改写权威字段，也不得先要求 AI 已知 applicability 命中，再决定是否让其看到该 ADR。候选筛选只回答“哪些卡片可能与当前问题相关”，不预判适用。
+2. **F2 候选发现**。逐卡以投影字段筛选可能与当前选择问题相关的候选，投影字段严格为 `object_uid`、`object_id`、`title`、`status`、`decision_question`、`decision`、`applicability`、`updated_at`（22 §7.1 定义的完整最小投影）；不用 AI 临时摘要、索引标签或缓存改写权威字段，也不得先要求 AI 已知 applicability 命中，再决定是否让其看到该 ADR。候选筛选只回答“哪些卡片可能与当前问题相关”，不预判适用。Helper 在 F2 卡附加 `trigger_reason`、`matched_fields` 与 `exclusion_candidates`：`trigger_reason` 形如 `signal_hit:<field>_match`，说明命中字段；`exclusion_candidates` 非空时提示该命中可能是轻排除候选（例如 `non-trigger-field-only-match` 表示仅 title 命中而非 decision/applicability 等核心字段，`applicability-only-match` 表示仅适用性字段命中），需在第 3 步结合当前任务语境判断是否真实触达决策边界。
 
-3. **决策边界触达判断**。将当前动作与候选卡片对照：该动作是否正落入某个 ADR 的决策边界？判断口径是候选的 `decision_question` 是否与当前选择问题匹配、`applicability` 是否覆盖当前情境；`trigger_signal` 描述哪些动作类型会触达该决策边界，是触达提示而非适用范围表述。未触达任何候选时，说明当前行动不在既有决定约束内，直接进入第 6 步并记录该判断。
+3. **决策边界触达判断**。将当前动作与候选卡片对照：该动作是否正落入某个 ADR 的决策边界？判断口径是候选的 `decision_question` 是否与当前选择问题匹配、`applicability` 是否覆盖当前情境；`trigger_signal` 描述哪些动作类型会触达该决策边界，是触达提示而非适用范围表述。若第 2 步 `exclusion_candidates` 提示轻排除候选，具体核对其命中字段是否真正对应当前选择问题或适用性范围：纯 fixture 偏差（任务仅为测试 fixture 调整、无决策缺口）、历史 ADR 不适用当前接口（applicability 指向已废弃接口）、或仅未来假设（任务为纯假设性讨论、未触及实际选择）应判定为轻排除，不展开 F3；真实决策边界触达则继续。未触达任何候选时，说明当前行动不在既有决定约束内，直接进入第 6 步并记录该判断。
 
 4. **F3 展开完整决策**。对可能适用的候选展开全文回读，核对 `decision_question`、`decision`、`applicability`、`rationale`、`consequences`、`created_at` 与当前环境（22 §7.1 的消费核对清单）；不得只凭决策卡字段展开行动或断言适用。
 
