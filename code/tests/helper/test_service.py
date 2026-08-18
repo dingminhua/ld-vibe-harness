@@ -136,7 +136,7 @@ def test_candidate_discovery_publishes_only_the_source_bound_text_match_input_fr
             "update-workcase",
         }
     )
-    assert len(candidate_operation["input_examples"]) == 2
+    assert len(candidate_operation["input_examples"]) == 3
     assert candidate_operation["input_examples"][0] == {
         "summary": "按 Spark 标题进行 F2 文本筛选",
         "arguments_fragment": {
@@ -187,7 +187,7 @@ def test_commit_precheck_publishes_a_source_bound_trailer_skeleton() -> None:
         item for item in response["result"]["operations"] if item["operation_key"] == "precheck-git-commit"
     )
 
-    assert len(operation["input_examples"]) == 1
+    assert len(operation["input_examples"]) == 2
     example = operation["input_examples"][0]
     message = example["arguments_fragment"]["message"]
     assert message.splitlines()[-2:] == [

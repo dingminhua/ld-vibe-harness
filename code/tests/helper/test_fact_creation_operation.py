@@ -923,7 +923,7 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
                 "observed_context": {
                     "signature": {
                         "product_name": "Cindy",
-                        "model_name": None,
+                        "model_name": "gpt-5.6-luna",
                     }
                 },
             }
@@ -933,7 +933,7 @@ def test_observed_signature_survives_real_create_and_workcase_update_schema_vali
     updated_log = updated["result"]["fact_object"]["change_log"][-1]
     assert updated_log["signature"] == {
         "product_name": "Cindy",
-        "model_name": None,
+        "model_name": "gpt-5.6-luna",
     }
     assert "session_id" not in updated_log
     reread = handle_request(

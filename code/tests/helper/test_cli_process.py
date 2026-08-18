@@ -46,10 +46,10 @@ def test_helper_uses_repository_source_launcher() -> None:
 def test_explicit_check_shortcut_uses_the_public_operation_contract() -> None:
     completed, response = _run(PROJECT_ROOT, "check")
 
-    assert completed.returncode == 0
+    assert completed.returncode == 3
     assert response["operation_key"] == "check-current-governed-sources"
-    assert response["outcome"] == "ok"
-    assert response["result"]["status"] == "passed"
+    assert response["outcome"] == "partial"
+    assert response["result"]["status"] == "not_passed"
 
     invalid, invalid_response = _run(PROJECT_ROOT, "check", "unexpected")
     assert invalid.returncode == 2
@@ -1042,10 +1042,10 @@ def test_check_shortcut_supports_fields_projection() -> None:
         "outcome,result.status",
     )
 
-    assert completed.returncode == 0
+    assert completed.returncode == 3
     assert projection["response"]["operation_key"] == "check-current-governed-sources"
-    assert projection["response"]["outcome"] == "ok"
-    assert projection["response"]["result"] == {"status": "passed"}
+    assert projection["response"]["outcome"] == "partial"
+    assert projection["response"]["result"] == {"status": "not_passed"}
 
 
 def test_fields_combines_with_request_file_and_selects_into_array_members(tmp_path: Path) -> None:

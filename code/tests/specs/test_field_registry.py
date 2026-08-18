@@ -153,9 +153,9 @@ def test_change_log_signature_registration_carries_value_convention(
         "change-log-signature",
         "change-log-signature-product-name",
         "change-log-signature-model-name",
-        "change-log-signature-agent-runtime-name",
     ):
         assert registrations[field_key].status == "current"
+    assert registrations["change-log-signature-agent-runtime-name"].status == "retired"
     text = (current_specs_repository / "specs/attachments/05.Att.01-事实对象统一字段登记.md").read_text(
         encoding="utf-8"
     )
