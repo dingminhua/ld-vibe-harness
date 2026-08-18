@@ -1,16 +1,24 @@
 title: 独立审核判断机制：不可独立审核时报告停止并询问Human
-status: open
-priority: P1
+status: implemented
 intent: 保留LDVH在独立审核环节中，当Controller无法创建Subagent或其它可提供独立上下文的审核体时，应从当前规则要求的「披露后直接继续」改为「直接报告并停止，并询问Human是否采用切换视角的方案」这一判断方向，以便后续讨论并形成明确的规则变更提案；若不跨行动保留，该议题会反复在WorkCase创建和结果复核讨论中散落出现，增加重新定位和边界判断成本。
-summary: "## 当前问题\n\n21 §4.5 当前规定（Direct from 21 §4.5.1.3）：Controller确认无法创建Subagent后，必须先告知Human将改用同一AI切换只读视角，并明确保证差距；告知后直接执行，不等待Human确认，不形成新的Gate，也不暂停Controller-owned执行链。\n\n## 提案方向\n\n将上述流程改为：Controller无法创建Subagent或其它可提供独立上下文的审核体时，**直接报告并停止**，然后询问Human是否采用切换视角的方案。\n\n## 关键差异\n\n- 当前规则：披露→直接继续（不等待确认）\n- 提案规则：报告→停止→询问Human决定→按Human决定执行\n\n## 影响范围\n\n- 21 §4.5 审核方法与保证边界\n- 31 §5.2.1 WorkCase 创建前的 Subagent 判断\n- 可能涉及 00 的 Stop Conditions 和 Human Gate 定义\n\n## 待判断问题\n\n1. 停止当前执行链是否影响WorkCase创建效率\n2. 报告停止后Human是否总是需要选择切换视角，还是可以提供其他方案\n3. 是否需要对「可提供独立上下文的审核体」做更宽泛的定义（不仅仅是Subagent）\n4. 与现有「披露后直接继续」规则的兼容过渡方案\n\n## 排除项\n\n- 本Spark不讨论Subagent的具体实现技术\n- 不涉及模型选择或路由策略\n- 不改变已获批WorkCase的执行授权范围"
+summary: "## 已落实\n\n21 §4.5.1.3、31 §5.2.1、34 §5 等规范已修改，Subagent 无法创建时的行为从「披露后直接执行」改为「报告停止并询问 Human，按决定执行」。\n\n## 承接目标\n\n- WorkCase workcase-01M09MH9MPE8C82AHVJAP8DFTK（已 closed/completed）\n\n## 入口结束\n\n本 Spark 入口职责结束。后续若出现新的未处置信息需新建 open Spark。"
 change_log:
 - summary: 受控创建：记录「不可独立审核时报告停止并询问Human」这一规则变更提案方向；当前 open/P1，待讨论。
   signature:
     product_name: DeepSeek Harness
     model_name: deepseek-v4-flash
   at: '2026-08-18T04:30:03.186206Z'
+- summary: 标记为 implemented：规则修改已通过 WorkCase 落地并关闭
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+  at: '2026-08-18T06:15:07.079601Z'
+disposition_summary: 已通过 WorkCase（workcase-01M09MH9MPE8C82AHVJAP8DFTK）落实：21 §4.5.1.3、31 §5.2.1、34 §5 等规范已修改，Subagent 无法创建时的行为从「披露后直接执行」改为「报告停止并询问 Human，按决定执行」；WorkCase 已 closed/completed
+evolution:
+- at: '2026-08-18T06:14:42.830461Z'
+  summary: WorkCase 完成全部 item 执行并经 Gate 2 关闭，规则修改已落地；Spark 入口职责结束，标记为 implemented
 object_uid: 01a01322-35f3-7541-acb4-9f94cd3e81c8
 object_id: spark-01M09J4DFKEN0TSD4ZJK6KX0E8
 fact_type_key: spark
 created_at: '2026-08-18T04:30:03.186206Z'
-updated_at: '2026-08-18T04:30:03.186206Z'
+updated_at: '2026-08-18T06:15:07.079601Z'
