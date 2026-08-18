@@ -26,7 +26,7 @@ Study 保存一轮已经完成、可独立引用且具有跨行动稳定阅读�
 
 报告通过 `report_kind` 区分 `external_research`、`internal_audit`、`technical_assessment` 和 `comparison`。新建或实质更新的 Study 必须记录合法的报告类型和对应输入来源；这不表示内容正确、审批、验收或外部资料作者。
 
-新建 Study 使用 `fact-object-controlled-creation`（31）；既有 Study 的事实更正、内容更新、状态变化或承接处置使用 `fact-object-lifecycle-change`（32）。模板不替代本文的报告类型准入、来源验证闭包或 Human Gate。
+新建 Study 使用 `fact-object-controlled-creation`（31）；既有 Study 的事实更正、内容更新、状态变化或承接处置使用 `fact-object-lifecycle-change`（32）；Study 知识激活（召回、研究相关性判断、报告展开与行动影响评估）使用 `study-knowledge-activation`（38）。模板不替代本文的报告类型准入、来源验证闭包或 Human Gate。
 
 Study 主要服务 V1 快速定位、V2 充分理解、V3 边界识别、V5 据实判断、V7 清晰沟通和 V8 持续积累。审计、评估和外部调研的执行与进度由 WorkCase 和当次计划承担；Study 不承载搜索过程、任务编排、内部设计探索或行动授权。普通文档已经能够自然承载且不需要稳定身份、状态和后续复读价值时，不创建 Study。
 稳定研究报告具有真实需求，但 archived、空关系数组、独立 URL 池、user_intent、conclusion 或旧实例当前性不能仅凭旧 shape 获得稳定价值。当前版本只吸收经全局查重的信息需要，不继承旧 shape 或内容效力。
@@ -116,7 +116,6 @@ AI 负责判断研究是否完成、来源是否充分、推断是否越界、�
 | `study-abstract` | required | `inherit` |
 | `study-research-intent` | conditional | `study-fact-type::5. Study 类型定义` |
 | `study-recommendation-summary` | conditional | `study-fact-type::5. Study 类型定义` |
-| `study-action-relevance` | conditional | `study-fact-type::5. Study 类型定义` |
 
 ### 类型专属字段定义
 
@@ -132,7 +131,6 @@ AI 负责判断研究是否完成、来源是否充分、推断是否越界、�
 | `study-abstract` | `abstract` | string | 不读完整正文即可理解研究问题、证据边界、主要发现和关键限制的报告摘要 | 不表示标题、进行中进展、完整结论、正式决定、规则或外部事实仍当前 | 必填非空；正文实质变化时同步更新；只作快速入口，不复制整段正文 |
 | `study-research-intent` | `research_intent` | string | 当前项目为什么需要这轮外部研究、希望借此澄清或推动什么判断 | 不表示 Human 原话、创建对象指令、执行计划、既有结论、决定或授权 | active 时必填非空；从原始项目语境提炼为可独立阅读的动机与待判断方向；与 `research_question` 分工，前者说明项目为何研究，后者说明外部对象上的具体问题 |
 | `study-recommendation-summary` | `recommendation_summary` | string | 本轮研究最值得项目继续判断、试行或交给 Human 取舍的建议摘要 | 不表示已决定规则、已创建行动、验证通过、事实当前性或完整后续分流 | active 时必填非空；与正文”建议”分工，前者提供首级阅读入口，后者展开建议、条件、边界与分流；建议实质变化时同步更新 |
-| `study-action-relevance` | `action_relevance` | string | 该研究的关键发现对当前项目下一步行动的具体改变：执行者应因此做什么不同的动作 | 不表示研究发现了什么（那是 abstract）、研究建议项目做什么（那是 recommendation_summary） | 必填非空；必须是动作/计划层面的改变描述，而非发现层面的总结 |
 
 ### Schema、Markdown 正文与对象载体
 
@@ -207,7 +205,7 @@ Study 没有统一 TTL；当前消费依赖易变资料时，AI 必须重新检�
 
 ### 主动召回与消费时机
 
-Study 在当前问题需要外部研究、内部审计、技术评估或比较报告启发，或当前输入精确引用报告时产生召回机会。F2 Study 候选卡直接投影条件出现的 `object_uid`、以及 `object_id`、`title`、`status`、`report_kind`、`research_intent`、`research_question`、`abstract`、`recommendation_summary`、`action_relevance`、`relations` 和 `updated_at`，不在候选层解释报告结论当前性，也不内联输入来源。只在关键发现、限制或建议会影响当前判断时展开完整正文，不得因主题相似就向 AI 无差别注入整份报告。
+Study 在当前问题需要外部研究、内部审计、技术评估或比较报告启发，或当前输入精确引用报告时产生召回机会。F2 Study 候选卡直接投影条件出现的 `object_uid`、以及 `object_id`、`title`、`status`、`report_kind`、`research_intent`、`research_question`、`abstract`、`recommendation_summary`、`relations` 和 `updated_at`，不在候选层解释报告结论当前性，也不内联输入来源。只在关键发现、限制或建议会影响当前判断时展开完整正文，不得因主题相似就向 AI 无差别注入整份报告。
 
 `active` Study 可进入当前报告候选，但仍必须按本节时效规则核对版本、观察时点、已知变化和冲突；`retired` Study 只在精确引用、报告历史、来源追溯或比较报告变化时展开。上下文压缩后，已在当次被引用且仍影响判断的 Study 必须重新回读 F3 中的研究问题、关键发现、建议与限制，并恢复需要复核的版本、观察时点和来源范围；Study 被召回不证明外部事实仍当前、建议已采纳或发现取得规则与决定权威。
 

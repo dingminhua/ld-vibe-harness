@@ -24,7 +24,7 @@ ldvh_spec:
 
 Pitfall 保存一个已经实际发生、查明、解决、验证且仍能迁移复用的失败机制，使后续 AI 能识别相似症状与触发条件，理解当前范围内的根因判断，在适用边界内复用实际解决与规避经验，避免重复误判和调试。
 
-新建 Pitfall 使用 `fact-object-controlled-creation`（31）；既有 Pitfall 的更正、draft/promote/discard 等生命周期变化或承接处置使用 `fact-object-lifecycle-change`（32）。模板不替代本文的完整性、逐对象 Human 决定或实际验证条件。
+新建 Pitfall 使用 `fact-object-controlled-creation`（31）；既有 Pitfall 的更正、draft/promote/discard 等生命周期变化或承接处置使用 `fact-object-lifecycle-change`（32）；Pitfall 风险预警（召回、症状匹配、经验适用性判断与规避策略评估）使用 `pitfall-risk-warning`（37）。模板不替代本文的完整性、逐对象 Human 决定或实际验证条件。
 
 Pitfall 主要服务 V1 快速定位、V2 充分理解、V3 边界识别、V5 据实判断、V6 工作接续、V7 清晰沟通和 V8 持续积累。V4 稳定推进由 WorkCase 和行动模板承担；Pitfall 不承载 bug backlog、实施计划或行动授权。新增成本包括发现、查重、维护、Schema、迁移、时效复核和消费；通过只准入已发生且验证的单一失败机制、四个状态、五个专属字段、两个共享语义字段并排除日志与自由标签，维护成本低于重复犯错和错误复用的损耗。普通文档、测试、代码说明或当前规则能够无损承载且不需要独立身份、状态、可复用经验边界和替代历史时，不创建 Pitfall。Pitfall 不设置按对象数量或正文长度形成的硬上限，也不按时间自动过期；对象增长由完整准入、全量查重、单一机制粒度、Human 逐对象确认和本文 Stop Conditions 约束。
 
@@ -131,7 +131,7 @@ AI 负责判断失败是否实际发生、根因判断与解决说明是否同�
 
 ### Schema 与对象载体
 
-Pitfall 对象使用 UTF-8 YAML，一文件一对象；新 UID-native 对象使用 `ldvh-base/pitfalls/pitfall-<uid26>.yaml`，legacy 对象继续从 `ldvh-base/pitfalls/<object_id>.yaml` 双读。legacy `object_id` 必须匹配 `pitfall-[0-9]{4,}`且与旧文件名一致；新建只写 UID 路径，不要求 candidate_object_id 或 counter。具有 `object_uid` 时其权威身份、legacy 缺失兼容和不可变边界统一按 05 §7.3–§7.4，新建 Pitfall 必须由 Code 生成 UID。`title` 只简短识别失败机制，不复制 `symptoms` 或 `root_cause`。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
+Pitfall 对象使用 UTF-8 YAML，一文件一对象；新 UID-native 对象使用 `ldvh-base/pitfalls/pitfall-<uid26>.yaml`，legacy 对象继续从 `ldvh-base/pitfalls/<object_id>.yaml` 双读。legacy `object_id` 必须匹配 `pitfall-[0-9]{4,}`且与旧文件名一致；新建只写 UID 路径，不要求 candidate_object_id 或 counter。具有 `object_uid` 时其权威身份、legacy 缺失兼容和不可变边界统一按 05 §7.3–§7.4，新建 Pitfall 必须由 Code 生成 UID。`title` 只简短识别失败机制，不复制 `symptoms` 或 `root_cause`；当该经验已确定为平台或环境专属问题（而非通用）时，标题需凸显该平台/环境。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
 
 完整 Schema 由统一登记的 `fact-object` 直接字段、本节绑定、跨类型共享定义和类型专属字段定义组合。Pitfall 不得出现 current summary、priority、evolution、tags、`archive_reason`、repeatability、severity、source_objects/source_sparks、related_*、长命令日志字段、实现状态、revision history 或其它未登记内容。
 
