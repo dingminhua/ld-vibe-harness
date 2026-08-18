@@ -2,7 +2,7 @@ title: LDVH 常用行为清单与并行摩擦记录框架
 status: open
 priority: P2
 intent: LDVH 项目目前缺乏一份系统化的常用行为清单，AI 在每次执行时重复探索同一套操作模式，效率低且容易遗漏步骤。同时，执行过程中遇到的各种摩擦（工具限制、契约模糊、信息不足等）也没有被系统化记录，导致同类问题反复出现。需要建立一份结构化的 LDVH 常用行为清单，并以该清单为基础安排并行 subagent 执行，每路 subagent 将执行中遇到的摩擦独立记录，最终由主控 AI 汇总成一份完整的实践沉淀文档。
-summary: "## 当前状态\n\nLDVH 项目经过多次迭代，已形成一套相对稳定的操作流程（创建 Spark/WorkCase、Gate 1 审批、item 执行、result projection、Gate 2 关闭、close-workcase 等），但目前缺乏：\n\n1. **系统化的常用行为清单**：AI 每次执行时从零探索，没有一份可复用的操作步骤参考\n2. **摩擦记录机制**：执行中遇到的工具限制、契约模糊、规范冲突等问题没有被系统化记录，同类问题反复出现\n3. **并行执行框架**：subagent 并行执行时缺少统一的摩擦记录和结果汇总格式\n4. **行为合规观察机制**：没有系统化观察 subagent 执行是否符合 LDVH 的设计与设定\n\n## 目标\n\n本 Spark 的目标是建立一套完整的 **LDVH 行为检验与平行执行框架**：\n\n### 1. 常用行为清单（behavior-list）\n\n分析 LDVH 源码、规范、事实对象，提炼出常用行为清单，存入 `docs/ldvh-behaviors/`。清单应覆盖：\n\n**事实对象操作类：**\n- 创建 Spark（含 intent/summary/evolution 审核）\n- 创建 WorkCase（含 Gate 1 材料：goal/scope/criteria/work_items/execution_authorization/creation_reviews）\n- 创建 ADR / Study / Pitfall\n- 更新事实对象（update-fact-object，含 change_log 追加、CAS、写后回读）\n- 精确读取事实对象（read-fact-objects）\n- 事实对象生命周期变化（lifecycle-change：open→discarded/implemented 等）\n\n**WorkCase 全流程类：**\n- Gate 1 审批（human_plan_confirming → executing，含 execution_approval + baseline_fingerprint）\n- item 执行与 item_event 更新（start-work-item / update-work-item-checkpoint / complete-work-item）\n- result projection 形成（success_criterion_results + result_summary + controller_check_summary + validation_summary）\n- 独立结果复核（subagent-read-only 或 same-ai-switched-role-read-only）\n- Gate 2（human_closure_confirming → closed，含 closure_proposal）\n- close-workcase（原子关闭，绑定 Human authorization_reference）\n\n**规范与模板类：**\n- 规则引导读取（read-specification-content）\n- 行动模板定位与读取（read-action-template-candidates / read-action-template-content）\n- capabilities 发现与 --example 用法\n\n**Git 与提交类：**\n- 受控提交（两字段 footer：LDVH-Product-Name + LDVH-Model-Name，经 Git Gate）\n- platform trailers（Platform-Affected / Platform-Verified）\n\n### 2. 并行执行与摩擦记录\n\n以清单为依据，将可并行的行为项分配给独立 subagent 执行。**每路 subagent 必须：**\n\n- 独立走完各自的行为流程（例如一路 subagent 完整创建一个 WorkCase 并走完 Gate 1→执行→Gate 2→关闭全流程）\n- 将执行每一步时遇到的摩擦独立写入各自的文档（`docs/ldvh-behaviors/frictions/friction-XX-*.md`）\n- 摩擦记录格式：操作、期望行为、实际行为、差异原因（工具限制/契约模糊/规范冲突/信息不足等）、影响、恢复步骤\n\n### 3. 主控观察与汇总\n\n主控 AI 在 subagent 执行过程中**观察其行为是否符合 LDVH 的设计与设定**：\n\n- 观察点：是否正确使用 Helper CLI、是否正确填写 signature、是否遵守 change_log 追加规则、是否正确形成 item_event、是否在 Gate 前后使用正确的操作（close-workcase vs update-workcase）、是否在提交前取得两字段快照等\n- 观察结论写入汇总文档的\"合规性观察\"章节\n\n全部完成后，主控 AI 创建汇总文档 `docs/ldvh-behaviors/summary.md`，包含：\n- 行为清单的完整内容\n- 每路 subagent 的摩擦记录索引\n- 主控对 subagent 行为合规性的观察结论\n- 共性摩擦与改进建议\n\n## 预期产出\n\n```\ndocs/ldvh-behaviors/\n├── behavior-list.md          # 常用行为清单（主控 AI 编写）\n├── frictions/\n│   ├── friction-01-create-spark.md\n│   ├── friction-02-create-workcase.md\n│   ├── friction-03-workcase-lifecycle.md\n│   └── ...\n├── observations/             #（可选）主控对各行为观察点的记录\n└── summary.md                # 主控 AI 创建的汇总文档\n```\n\n## 边界\n\n- 不修改 LDVH 核心源码或规范（除非发现必须修正的机械问题并经受控提交）\n- 摩擦记录只记录事实，不替代正式的规范修订或 WorkCase\n- 行为清单是经验总结，不替代正式规范作为权威来源\n- subagent 执行真实操作时受控写入的生成本身也是检验对象——允许 subagent 创建真实的测试对象（如受控创建的 Spark/WorkCase 草稿），完成后按规范处置（discard 或关闭）\n- 主控只汇总和观察，不重写各 subagent 的摩擦记录"
+summary: "## 当前状态\n\nLDVH 项目经过多次迭代，已形成一套相对稳定的操作流程，但此前缺乏系统化的常用行为清单。\n\n## 最新进展\n\n已通过 WorkCase（workcase-01M09Z1KKFE76RDSTSV99QA841）完成以下工作：\n\n1. **常用行为清单已创建为 Study**：`ldvh-base/studies/study-01M09ZNYA8F3K8FW1VBDYTYXCB.md`，覆盖五类事实对象（Spark/WorkCase/ADR/Pitfall/Study）的创建、更新、状态转换、终态处置四环节\n2. **每条行为步骤标注 Helper CLI 操作**：含具体 bash 命令示例和参数提示\n3. **跨类型交叉引用**：生命周期交互表格说明 6 种流转场景\n4. **符合 24 规范**：研究问题/输入与边界/关键发现/建议/后续分流五段 H2 齐全\n\nWorkCase 当前处于独立结果复核阶段，四条 success criteria 全部满足。\n\n## 剩余问题\n\n- 本 Spark 的并行执行与摩擦记录部分尚未展开，建议后续由 WorkCase 承接\n- 关联 Spark-01M09PNH9CEAVBMQS4JXNC74W6 与本清单交集部分待其结论形成后吸收\n\n## 边界\n\n- 不修改 LDVH 核心源码或规范\n- 摩擦记录只记录事实，不替代正式的规范修订或 WorkCase\n- 行为清单是经验总结，不替代正式规范作为权威来源"
 change_log:
 - summary: 受控创建 Spark：LDVH 常用行为清单与并行摩擦记录框架。
   signature:
@@ -14,8 +14,16 @@ change_log:
     product_name: DeepSeek Harness
     model_name: deepseek-v4-flash
   at: '2026-08-18T05:33:52.779177Z'
+- summary: 'content_update: WorkCase 已执行完毕，Study 行为清单已交付。更新当前状态与剩余问题。'
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:45:03.157883Z'
+evolution:
+- summary: WorkCase 已执行完毕，Study 行为清单已交付。原 Spark 的并行执行与摩擦记录部分尚未展开，保持 open。
+  at: '2026-08-18T08:40:00Z'
 object_uid: 01a01355-138e-7dda-8955-166fbab2831a
 object_id: spark-01M09NA4WEFQD8JN8PDYXB50RT
 fact_type_key: spark
 created_at: '2026-08-18T05:25:36.699233Z'
-updated_at: '2026-08-18T05:33:52.779177Z'
+updated_at: '2026-08-18T08:45:03.157883Z'

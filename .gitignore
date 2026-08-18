@@ -21,3 +21,7 @@ docs/
 
 # uv 包管理器自动生成的锁文件（项目使用独立 venv）
 uv.lock
+
+# LDVH 工作流临时文件
+.MERGE_MSG
+.tmp-action-template-*.json

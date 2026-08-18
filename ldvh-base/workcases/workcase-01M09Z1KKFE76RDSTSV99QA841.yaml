@@ -1,0 +1,159 @@
+title: LDVH 常用行为清单——五类事实对象生命周期流程
+status: closed
+goal: 系统化提炼 LDVH 五类事实对象（Spark, WorkCase, ADR, Pitfall, Study）的完整生命周期常用行为清单，形成一份可独立引用、具有跨行动复读价值的 Study，使 AI 执行者不再从零探索操作模式，减少步骤遗漏和摩擦重复。
+scope: 只分析 LDVH 规范（specs/20-Spark, 21-WorkCase, 22-ADR, 23-Pitfall, 24-Study）、事实对象样例（ldvh-base/ 中的各类型文件）、已实现的 Helper CLI 操作（capabilities 清单），以及行动模板（31/32/34），提炼出五个事实类型各自的完整生命周期行为清单。产出物是一个 Study 文件（ldvh-base/studies/study-<uid>.md）。明确排除：不修改 LDVH 核心源码或规范正文；不创建或修改 WorkCase/Spark/ADR/Pitfall 事实对象（Study 本身除外）；不执行 Git 提交；不涉及环境接入、Git Hook 部署或 Web 修改。
+success_criterion_definitions:
+- criterion_id: criterion-complete
+  statement: Study 中对五类事实对象（Spark, WorkCase, ADR, Pitfall, Study）每一类至少覆盖创建、更新、状态转换、终态处置四个生命周期环节，每环节有可操作的行为步骤说明。
+- criterion_id: criterion-helper-commands
+  statement: 每个行为步骤标注对应的 Helper CLI 操作名（如 create-fact-object, update-fact-object, read-fact-objects, update-workcase, close-workcase 等），以及必要的参数提示。
+- criterion_id: criterion-cross-ref
+  statement: 行为步骤之间有交叉引用，说明何时从某类流转到另一类（如 WorkCase 执行中创建 Pitfall draft、Study 的 informs 指向 WorkCase 等），形成完整的生命周期流动图。
+- criterion_id: criterion-readable
+  statement: Study 以 Markdown 正文组织，符合 specs/24-Study 规范的五段 H2 要求（研究问题、输入与边界、关键发现、建议、后续分流），且 frontmatter 字段完整。
+success_criterion_results:
+- criterion_id: criterion-complete
+  outcome: satisfied
+  summary: Study 中五类事实对象每类均覆盖创建、更新、状态转换、终态处置四环节，WorkCase 额外覆盖终止与更正。
+- criterion_id: criterion-helper-commands
+  outcome: satisfied
+  summary: 每个行为步骤均标注对应的 Helper CLI 操作名，并附参数提示和 bash 命令示例。
+- criterion_id: criterion-cross-ref
+  outcome: satisfied
+  summary: 跨类型生命周期交互表格列出 6 种流转场景，各章节内标注类间流转关系，形成完整生命周期流动图。
+- criterion_id: criterion-readable
+  outcome: satisfied
+  summary: Study 符合 24 规范五段 H2 要求，frontmatter 字段完整，input_refs version 已修正为实际 commit SHA。
+result_summary: 本 WorkCase 已按计划完成全部 7 个 work items，受控创建形成 Study 文档（study-01M09ZNYA8F3K8FW1VBDYTYXCB.md）。四条 success criteria 全部满足。
+validation_summary: Study 已通过 read-fact-objects 回读，check_status=mechanically_valid。四条 success criteria 逐项结果已形成。独立结果复核（subagent-read-only）已完成并处置 feedback。
+closure_outcome: completed
+disposition_summary: 本 WorkCase 已按计划完成全部 7 个 work items，受控创建形成 Study 文档（study-01M09ZNYA8F3K8FW1VBDYTYXCB.md），系统化提炼了五类事实对象（Spark/WorkCase/ADR/Pitfall/Study）的完整生命周期常用行为清单。四条 success criteria 全部满足，独立结果复核已完成并处置全部 feedback。
+spark_suggestions:
+- suggestion_id: suggestion-parallel-execution
+  suggestion_kind: follow_up_opportunity
+  summary: 原 Spark 中规划的并行 subagent 执行与摩擦记录部分尚未展开
+  follow_up_summary: 本 WorkCase 只完成了 Spark 中行为清单部分，建议后续以此为基础，将已形成的 Study 行为清单分配给 subagent 并行执行，逐路记录摩擦，最终由主控 AI 汇总成实践沉淀文档。
+- suggestion_id: suggestion-study-upkeep
+  suggestion_kind: follow_up_opportunity
+  summary: Study 行为清单应随规范更新而维护
+  follow_up_summary: 当 specs/20~24 或 specs/31/32/34 发生实质变化时，本 Study 应同步修订。判断标准：规范状态闭集或专属操作变化后，Study 相应章节内容过时。
+- suggestion_id: suggestion-pitfall-precision
+  suggestion_kind: follow_up_opportunity
+  summary: 将写后未精确回读即声明成功固化为 Pitfall
+  follow_up_summary: 当再次观察到同类失败时，创建 Pitfall 记录该机制。判断标准：出现未 read-fact-objects 回读即把创建/更新响应写成成功的实例。
+change_log:
+- summary: 受控创建 WorkCase：LDVH 常用行为清单——五类事实对象生命周期流程。当前仅形成 plan_version=1 并等待 Human Gate 1，未执行任何实现。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:15:42.462235Z'
+- summary: Human Gate 1 批准 plan_version=1 与完整执行授权；进入 executing，尚未启动任何 work item。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:22:28.464718Z'
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:23:23.359715Z'
+  summary: 开始 item-prepare：通读规范与模板，提取每个事实类型的创建条件、状态转换、必填字段、写回操作、终止条件
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:27:27.833905Z'
+  summary: 完成 item-prepare：通读规范与模板完毕。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:27:52.921891Z'
+  summary: 开始 item-workcase：提炼 WorkCase 行为清单。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:28:08.432905Z'
+  summary: 开始 item-spark
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:29:07.918741Z'
+  summary: 完成 item-spark：Spark 行为清单章节完成。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:29:27.704450Z'
+  summary: 完成 item-workcase：WorkCase 行为清单章节完成。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:29:44.216497Z'
+  summary: 开始 item-adr：提炼 ADR 行为清单。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:30:08.265603Z'
+  summary: 完成 item-adr：ADR 行为清单章节完成。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:30:41.301121Z'
+  summary: 开始 item-pitfall：提炼 Pitfall 行为清单。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:31:01.398210Z'
+  summary: 完成 item-pitfall：Pitfall 行为清单章节完成。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:31:33.823359Z'
+  summary: 开始 item-study：提炼 Study 行为清单。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:31:50.517592Z'
+  summary: 完成 item-study：Study 行为清单章节完成。
+- signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:32:21.850325Z'
+  summary: 开始 item-assemble：汇总成完整 Study 文档。
+- summary: 完成 item-assemble：完整 Study 文档已受控创建并切到 controller_checking。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:33:53.155755Z'
+- summary: 形成完整 result projection：四条 success criteria 全部 satisfied，附 result_summary/controller_check/validation。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:42:27.653246Z'
+- summary: 完整 result projection 已形成，进入 independent_reviewing。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:43:02.342958Z'
+- summary: 独立结果复核完成：Study 交付物经复核发现 3 处规范偏离，已全部处置（关键发现/建议/input_refs version/后续分流）。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:45:33.954082Z'
+- summary: 全部 feedback 已处置，进入 closure_preparing 并形成关闭提案。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:48:37.136698Z'
+- summary: 关闭提案已形成，进入 human_closure_confirming 等待 Human Gate 2 决定。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T08:49:05.145080Z'
+- summary: Human Gate 2 关闭决定：completed。
+  signature:
+    product_name: Cindy
+    model_name: gpt-5
+  at: '2026-08-18T09:02:51.418507Z'
+object_uid: 01a013f0-ce6f-71cd-86e7-59da53752081
+object_id: workcase-01M09Z1KKFE76RDSTSV99QA841
+fact_type_key: workcase
+created_at: '2026-08-18T08:15:42.462235Z'
+updated_at: '2026-08-18T09:02:51.418507Z'
