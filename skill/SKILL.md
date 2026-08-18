@@ -1,13 +1,13 @@
 ---
 name: ldvh
-description: 项目待办/工作项/进展、技术决策/决策记录、踩坑经验、调研/研究报告、项目议题/火花、规范修订、受控提交、环境接入时使用——这些是 LDVH（LD Vibe Harness）管辖事项，对应事实对象 WorkCase、ADR、Pitfall、Study、Spark 的创建、更新与读取，或需要取得 LDVH 规则引导与行动模板时。本技能只负责把会话路由到 LDVH CLI；全部规则、模板与事实权威由 CLI 从当前规则源现取。
+description: 项目待办/工作项/进展、技术决策/决策记录、踩坑经验、调研/研究报告、项目议题/火花、规范修订、受控提交、环境接入、生命周期流转/状态推进、WorkCase 执行/Git 提交署名、Skill 更新检查、worktree-bootstrap 自举修复、`ldvh check`/`capabilities` 入口发现、`status: unavailable` 恢复时使用——这些是 LDVH（LD Vibe Harness）管辖事项，对应事实对象 WorkCase、ADR、Pitfall、Study、Spark 的创建、更新与读取，或需要取得 LDVH 规则引导与行动模板时。本技能只负责把会话路由到 LDVH CLI；全部规则、模板与事实权威由 CLI 从当前规则源现取。
 ---
 
 <!-- 修改保护：本文件受 specs/00-理念与构成.md §10.1 第 13 项保护——修改治理与 00 第 1–8 章同级。任何修改须经 Human Gate。详见 00。-->
 
 # LDVH 接入（薄路由）
 
-> Skill 版本：2026-08-15 00:00
+> Skill 版本：2026-08-18 23:14
 
 LDVH 让长期项目"判断有据、行动可续、结果可验"。本文件不承载规则正文；固定能力边界只作路由提示。
 权威只有一个：LDVH CLI 从当前规则源现取的结果。
@@ -57,6 +57,8 @@ wheel、sdist、editable distribution，也不以 pip 安装 LDVH 本体。源�
 不明 PATH/安装副本。Helper 操作信封与参数以其 capabilities 及 Helper 服务规范
 （04）的当次内容为准；独立入口的信封以环境接入面附件对应入口行的当次内容为准。
 所有公开入口都必须让 stdin 到达 EOF；无 tty 场景使用 `< /dev/null` 或闭合管道，入口挂起时先排查 stdin 未闭合。已确认源码根后，可先用 `capabilities </dev/null` 发现当次公开操作；当前规则源与当前 worktree 的一次性机械检查使用 `ldvh check </dev/null`。该快捷入口是零输入检查，不应猜测或注入 `workspace_root`。
+
+源码 launcher 报告 `status: unavailable` 时，先 `./ldvh worktree-bootstrap` 自举再重试原命令。
 
 事实写入后的精确回读仍是必需步骤；在 merge/pull 后或需要当前完整事实库机械结论时，再按当次 capabilities 与来源契约调用 `check-fact-integrity`。它不是独立 shell 子命令，必须经 `ldvh call check-fact-integrity`，并按当次契约提供实际 worktree locator。`ldvh check`、`check-fact-integrity` 和精确回读的结果只用于各自机械边界，不互相替代。
 
