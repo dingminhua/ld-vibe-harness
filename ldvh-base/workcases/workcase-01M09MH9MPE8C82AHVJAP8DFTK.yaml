@@ -1,0 +1,87 @@
+title: 落实独立审核不可用时的报告停止与询问Human流程
+status: closed
+goal: 修改 21 §4.5 审核方法与保证边界的规则，将 Controller 无法创建 Subagent 时的行为从「披露后直接继续」改为「报告并停止，询问 Human 是否采用切换视角的方案」。
+scope: "1. 修改 21 §4.5.1.3 规则文本：从「告知后直接执行，不等待确认」改为「报告并停止，询问 Human 决定」\n2. 同步修改 31 §5.2.1 对应的 Subagent 判断 fallback 行为，与 21 §4.5 一致\n3. 同步修改 34 §5 第 42 行「不请求确认、不新增 Gate」的旧表述\n4. 更新 00 理念与构成中引用 21 §4.5 的相关部分\n5. 整体验证：机械校验和引用一致性检查\n\n排除边界：\n- 不修改 Subagent 创建机制本身\n- 不修改模型选择或路由策略\n- 不修改已获批 WorkCase 的已有授权\n- 不引入新的 Human Gate 类型（仅改变方法选择确认点的处理方式）"
+success_criterion_definitions:
+- criterion_id: criterion-1
+  statement: 21 §4.5.1.3 已修改为「报告并停止，询问 Human」流程，文本可据实判断
+- criterion_id: criterion-2
+  statement: 31 §5.2.1 和 34 §5 的 fallback 行为表述与 21 §4.5 一致，可通过机械文本对齐检查
+- criterion_id: criterion-3
+  statement: 相关规范间引用精确匹配，无矛盾，可通过机械引用校验
+- criterion_id: criterion-4
+  statement: 所有受影响规范通过 Schema 机械校验
+success_criterion_results:
+- criterion_id: criterion-1
+  outcome: satisfied
+  summary: 21 §4.5.1.3 已改为「报告停止并询问 Human」流程，文本可据实判断
+- criterion_id: criterion-2
+  outcome: satisfied
+  summary: 31 §5.2.1 和 34 §5 的 fallback 行为表述与 21 §4.5 一致
+- criterion_id: criterion-3
+  outcome: satisfied
+  summary: 相关规范间引用一致：00 无直接引用；21/31/34 语义一致
+- criterion_id: criterion-4
+  outcome: satisfied
+  summary: ldvh check 规则源机械读取 passed
+result_summary: 完成对 21 §4.5、31 §5.2.1、34 §5 的规则修改：将 Subagent 无法创建时的行为从「披露后直接执行」改为「报告停止并询问 Human」，并完成一致性验证
+validation_summary: git diff --check 通过；ldvh check 规则源机械读取 passed；事实库完整性 non-complete 因 3 个历史遗留 invalid 对象，非本次修改引入
+closure_outcome: completed
+disposition_summary: 完成 21 §4.5、31 §5.2.1、34 §5 的规则修改，将 Subagent 无法创建时的行为从「披露后直接执行」改为「报告停止并询问 Human，按决定执行」；4 项成功标准全部 satisfied，无 residual responsibilities
+relations:
+- relation_key: related-to
+  target:
+    governed_project_id: ldvh
+    fact_type_key: spark
+    object_id: spark-01M09J4DFKEN0TSD4ZJK6KX0E8
+change_log:
+- summary: 受控创建：依据 spark-01M09J4DFKEN0TSD4ZJK6KX0E8 创建 WorkCase，落实「不可独立审核时报告停止并询问Human」规则变更；当前 phase=human_plan_confirming，等待 Human Gate 1 批准
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+  at: '2026-08-18T05:12:02.463276Z'
+- summary: Human Gate 1：批准 plan_version=1 与完整 execution_authorization baseline；phase 进入 executing
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+  at: '2026-08-18T05:21:03.868286Z'
+- summary: 全部 item terminal，进入 controller_checking：形成 result_version=1 完整结果投影
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+  at: '2026-08-18T05:29:06.097526Z'
+- summary: controller_checking → independent_reviewing：完整 result projection 已形成并校验，等待实际结果复核
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+  at: '2026-08-18T05:45:58.045610Z'
+- summary: Subagent 结果复核完成：返回 changes_required，4 项反馈已全部处置；准备进入 closure_preparing
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+  at: '2026-08-18T05:46:53.397489Z'
+- summary: independent_reviewing → closure_preparing：Subagent 结果复核 feedback 已全部处置，开始形成关闭提案
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+  at: '2026-08-18T05:48:00.701685Z'
+- summary: 形成完整关闭提案：proposed_outcome=completed，无 residual responsibilities
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+  at: '2026-08-18T05:52:49.137367Z'
+- summary: closure_preparing → human_closure_confirming：完整关闭提案已形成，等待 Human Gate 2 决定
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+  at: '2026-08-18T05:53:42.137138Z'
+- summary: Gate 2 关闭：Human 批准关闭，outcome=completed
+  signature:
+    product_name: DeepSeek Harness
+    model_name: deepseek-v4-flash
+  at: '2026-08-18T05:56:04.436127Z'
+object_uid: 01a01348-a696-7218-812a-3b92ac86bf53
+object_id: workcase-01M09MH9MPE8C82AHVJAP8DFTK
+fact_type_key: workcase
+created_at: '2026-08-18T05:12:02.463276Z'
+updated_at: '2026-08-18T05:56:04.436127Z'
