@@ -309,8 +309,10 @@ function projectProposalRouteTarget(value: unknown, uidTargets?: FactUidTargetIn
   const projected = projectRelationTarget(Object.fromEntries(Object.entries(target).filter(([key]) => key !== 'content_fingerprint')), uidTargets)
   if (projected === null) return null
   if ('objectUid' in projected) return projected
-  if (projected.factTypeKey === 'workcase' && !/^workcase-[0-9]{4,}$/.test(projected.objectId)) return null
-  if (projected.factTypeKey === 'spark' && !/^spark-[0-9]{4,}$/.test(projected.objectId)) return null
+  // 与后端 object_id_pattern 保持一致：接受 legacy 纯数字 ID 与 UID-native Base32 locator。
+  const typePrefix = projected.factTypeKey
+  if ((typePrefix === 'workcase' || typePrefix === 'spark')
+    && !new RegExp(`^${typePrefix}-(?:\\d+|[0-7][0-9A-HJKMNP-TV-Z]{25})$`).test(projected.objectId)) return null
   return projected
 }
 
