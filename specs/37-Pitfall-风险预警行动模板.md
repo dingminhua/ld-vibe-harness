@@ -60,20 +60,13 @@ AI 在长期项目中会反复遇到相似的失败模式——环境配置错�
 
 ## 4. 适用范围
 
-当输入中出现以下情形时，本模板产生候选：
+**本文是每个 LDVH 管辖会话的必查入口**——不依赖 AI 判断"当前是否遇到失败"。每个会话在动手前必须先查全部 active Pitfall 的 F2 候选卡，读取后判断哪些经验适用于当前任务。新会话开始、会话恢复或上下文压缩后，必须重新执行本检查步骤。
 
-1. 当前出现可能相似的失败症状（报错、异常、非预期行为）；
-2. 进入已知触发条件（特定环境、版本、工具链组合）；
-3. 准备采用曾有失败风险的方案；
-4. 正在调查、修复、验证一项故障；
-5. 上下文压缩后需恢复已选中且仍影响行动的 Pitfall。
+以下情况仍适用本文：任何涉及执行操作（编码、配置修改、部署、测试、故障排查），无论是否已确认症状与已知经验匹配。
 
-不适用情形：
+本文的适用条件：当前出现可能相似的失败症状（报错、异常、非预期行为）、进入已知触发条件（特定环境、版本、工具链组合）、准备采用曾有失败风险的方案、正在调查或修复故障。
 
-1. 全新领域无历史经验可参考；
-2. 问题已明确且有已验证解法，无需查阅历史经验；
-3. 失败尚未解决、无法形成根因判断——应先调查再判断是否创建 Pitfall；
-4. draft Pitfall 不进入普通经验召回（只在精确引用或审核时展开）。
+不适用情形：全新领域无历史经验可参考；问题已明确且有已验证解法；draft Pitfall 不进入普通经验召回。
 
 ## 5. Pitfall 风险预警行动模板定义
 
@@ -81,7 +74,7 @@ AI 在长期项目中会反复遇到相似的失败模式——环境配置错�
 
 | template_key | summary | activation_hint | definition_ref |
 |---|---|---|---|
-| `pitfall-risk-warning` | 对当前失败症状或风险情境执行经验召回、症状匹配、环境适用性核对与规避策略评估，并在适用时调整行动或建议创建新经验 | 当遇到异常/失败/报错、进入已知触发条件、准备采用高风险方案或调查修复故障时继续读取；全新领域无历史经验、问题已明确有解法或纯当次临时异常时不适用。 | `pitfall-risk-warning-action-template::5. Pitfall 风险预警行动模板定义` |
+| `pitfall-risk-warning` | 每个会话必查：召回全部 active Pitfall、判断经验适用性、评估规避策略、在对话中显式输出预警并调整行动；不定义 Pitfall 类型规则 | 每个 LDVH 管辖会话必须先读取全部 active Pitfall 的 F2 候选卡；命中时在对话中输出踩坑预警并据此调整行动。 | `pitfall-risk-warning-action-template::5. Pitfall 风险预警行动模板定义` |
 
 ### 5.1 行动步骤与分支
 
@@ -93,7 +86,7 @@ AI 在长期项目中会反复遇到相似的失败模式——环境配置错�
 
 #### B. F2 候选发现与初步匹配
 
-1. 经 Helper `find-fact-object-candidates`（card_layer=F2, fact_type_keys=["pitfall"]）发现候选；
+1. 经 Helper `find-fact-object-candidates`（card_layer=F2, fact_type_keys=["pitfall"]）发现**全部** active Pitfall 候选；
 2. 按 23 定义的 F2 投影字段评估：object_uid, object_id, title, status, symptoms, trigger_conditions, scope_of_impact, applicability, validation_summary, updated_at；
 3. 按症状、触发条件、环境、版本或 applicability 与当前情形的可能相容性缩小候选范围；
 4. 默认候选只包含 active Pitfall；draft 和 discarded 不进入普通经验召回；
@@ -113,6 +106,18 @@ AI 在长期项目中会反复遇到相似的失败模式——环境配置错�
 3. **经验不适用**：症状不匹配或环境已变化时，保留该经验为参考但不调整当前行动；
 4. **需要新经验**：当前失败是全新机制或已有经验均不覆盖时，判断是否应在当前行动解决后创建新 Pitfall（走 31 的 fact-object-controlled-creation）；
 5. **WC 执行中 draft**：仅在 23 §6 的 WC 现场保留边界内——失败确在 WC 推进中实际发生、已解决和验证、draft 满足全部准入——才可由执行者创建 draft Pitfall。
+
+D.1 **风险预警声明输出**。当某个 Pitfall 在本次会话中首次被判定为适用时（经验适用或部分适用），AI 必须在对话中显式输出该预警，格式如下：
+   > **⚠️ 踩坑经验命中**：检测到相关踩坑经验 [Pitfall title]。
+   > 已知症状：[symptoms 简述]。
+   > 建议规避：[avoidance 简述]。
+   > 验证环境：[validation_summary 简述]。
+   > 当前行动将据此调整。
+
+   当某个 Pitfall 首次被检查但判定为不适用时，也应简要说明：
+   > **📋 风险检查**：[Pitfall title] 不适用于当前情境，原因：[简述]。
+
+   此预警的作用：让 Human 看到 AI 确实在查阅踩坑经验并据此调整行动，而非重复已知错误。预警后若实际行为违反 avoidance，Human 可直接审计。
 
 #### E. 形成实际结果与交还
 
