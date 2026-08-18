@@ -39,6 +39,20 @@ _RETIRED_SIGNATURE_TRAILERS = (
     "Host-Environment",
     "Signer-Type",
 )
+# Signature shapes whose bias is that a retired write path was used. The
+# three-field shape was the current format until the two-field contract landed.
+# During a merge window (MERGE_HEAD present) it is exempted so that facts
+# authored under the previous contract are not mechanically rejected.  This
+# exemption applies to the *entire merge window* — it cannot distinguish
+# entries brought in from the merged branch from entries freshly written
+# during conflict resolution.  Both are accepted as deliberate policy.
+_PREVIOUS_THREE_FIELD_SIGNATURE = frozenset({"product_name", "model_name", "agent_runtime_name"})
+_RETIRED_SIGNATURE_SHAPES = (
+    frozenset({"agent_id", "host_environment"}),
+    frozenset({"model_id", "host_name"}),
+    frozenset({"model_id", "agent_workbench"}),
+    _PREVIOUS_THREE_FIELD_SIGNATURE,
+)
 _SPEC_PATH_RE = re.compile(r"^specs/[0-9]+-.*\.md$")
 _PLATFORM_AFFECTED_GLOBS = (
     "code/ldvh/filesystem.py",
@@ -105,6 +119,13 @@ class CommitValidationInput:
     fact_candidates: tuple[StagedFactCandidate, ...] = ()
     fact_schemas: tuple[FactSchema, ...] = ()
     temp_file_paths: tuple[str, ...] = ()
+    # Set by the observation layer when the current native Git event is a merge
+    # commit (MERGE_HEAD present).  In that window the staged fact trace may
+    # legitimately contain entries written under the previously current
+    # three-field signature {product_name, model_name, agent_runtime_name} on an
+    # older branch; those are exempted from the retired-shape rejection instead
+    # of forcing --no-verify.  Genuine ancient legacy shapes stay rejected.
+    is_merge_commit: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -594,11 +615,12 @@ def _fact_trace_issues(
         if any(
             isinstance(entry.get("signature"), dict)
             and set(entry["signature"])
-            in (
-                {"agent_id", "host_environment"},
-                {"model_id", "host_name"},
-                {"model_id", "agent_workbench"},
-                {"product_name", "model_name", "agent_runtime_name"},
+            in _RETIRED_SIGNATURE_SHAPES
+            # A merge commit may carry fact files authored under the previously
+            # current three-field signature on an older branch; that shape alone
+            # does not prove a retired write path is being used here.
+            and not (
+                value.is_merge_commit and set(entry["signature"]) == _PREVIOUS_THREE_FIELD_SIGNATURE
             )
             for entry in appended
         ):

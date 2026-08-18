@@ -550,6 +550,33 @@ def _observe_temp_file_paths(
     return tuple(temp_paths), None
 
 
+def _detect_merge_commit(worktree: Path, *, index_file: Path | None = None) -> bool:
+    """Return True when MERGE_HEAD exists, indicating an active merge commit.
+
+    ``MERGE_HEAD`` is a Git file in the common-dir that exists from the moment
+    ``git merge`` starts writing the commit message until the merge commit is
+    finalised.  It is the most reliable indicator of a merge in progress inside
+    a ``commit-msg`` Hook.
+
+    A Git command failure conservatively returns False (no exemption granted)
+    rather than making the whole observation unverifiable, because a non-merge
+    commit should not be penalised for a transient Git read issue.
+    """
+    merge_head = _successful(
+        _run_git(worktree, ("rev-parse", "--path-format=absolute", "--git-path", "MERGE_HEAD"), index_file=index_file),
+        "MERGE_HEAD path",
+    )
+    if isinstance(merge_head, CommitCandidateObservationIssue):
+        return False
+    path = merge_head.strip().decode("utf-8", errors="replace")
+    if not path:
+        return False
+    try:
+        return Path(path).is_file()
+    except OSError:
+        return False
+
+
 def _observe_index(
     *,
     worktree: Path,
@@ -598,6 +625,8 @@ def _observe_index(
     if temp_failure is not None:
         return CommitCandidateObservation("unverifiable", None, (temp_failure,), paths, snapshot_after)
 
+    is_merge = _detect_merge_commit(worktree, index_file=index_file)
+
     value = CommitValidationInput(
         message=message,
         candidate_paths=paths,
@@ -612,6 +641,7 @@ def _observe_index(
         governance_instance_name=governance.governance_instance_name,
         fact_candidates=fact_candidates,
         temp_file_paths=temp_file_paths,
+        is_merge_commit=is_merge,
     )
     return CommitCandidateObservation(
         "observed",

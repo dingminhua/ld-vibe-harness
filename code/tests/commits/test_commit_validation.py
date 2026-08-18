@@ -951,7 +951,8 @@ def _fact_candidate(**changes: object) -> StagedFactCandidate:
     }
     values.update(changes)
     data = values.get("data")
-    if isinstance(data, bytes) and data != _LEGACY_SHAPE_SPARK:
+    _LEGACY_FIXTURES = {_LEGACY_SHAPE_SPARK, _LEGACY_SHAPE2_SPARK, _LEGACY_SHAPE3_SPARK, _THREE_FIELD_SPARK}
+    if isinstance(data, bytes) and data not in _LEGACY_FIXTURES:
         values["data"] = _current_signature_fixture(data)
     return StagedFactCandidate(**values)  # type: ignore[arg-type]
 
@@ -1005,6 +1006,18 @@ _NEW_SHAPE_SPARK = _VALID_SPARK
 _LEGACY_SHAPE_SPARK = _VALID_SPARK.replace(
     b"      product_name: Cindy\n      model_name: gpt-5.6-luna\n",
     b"      agent_id: test-agent\n      host_environment: test-environment\n",
+)
+_LEGACY_SHAPE2_SPARK = _VALID_SPARK.replace(
+    b"      product_name: Cindy\n      model_name: gpt-5.6-luna\n",
+    b"      model_id: gpt-5.6-luna\n      host_name: test-host\n",
+)
+_LEGACY_SHAPE3_SPARK = _VALID_SPARK.replace(
+    b"      product_name: Cindy\n      model_name: gpt-5.6-luna\n",
+    b"      model_id: gpt-5.6-luna\n      agent_workbench: Cindy\n",
+)
+_THREE_FIELD_SPARK = _VALID_SPARK.replace(
+    b"      product_name: Cindy\n      model_name: gpt-5.6-luna\n",
+    b"      product_name: Cindy\n      model_name: gpt-5.6-luna\n      agent_runtime_name: dsh\n",
 )
 
 
@@ -1082,6 +1095,155 @@ def test_new_footer_does_not_bind_legacy_shape_entries(
 
     assert result.outcome == "failed"
     assert "legacy_signature_write_retired" in _codes(result)
+
+
+def test_three_field_shape_merge_exemption_passes_when_merging(contract: CommitContractProjection) -> None:
+    """merge 提交中三字段流水免于退役形状拒绝（旧分支合法署名）。"""
+
+    message = (
+        "merge: 合并旧分支\n\n"
+        "关键变更:\n"
+        "- 合入在旧三字段契约下创建的事实文件\n\n"
+        "LDVH-Product-Name: Cindy\n"
+        "LDVH-Model-Name: gpt-5.6-luna"
+    )
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=message,
+            fact_candidates=(_fact_candidate(data=_THREE_FIELD_SPARK, head_exists=False),),
+            fact_schemas=(_spark_schema(),),
+            is_merge_commit=True,
+        ),
+    )
+
+    assert result.outcome == "passed", [f"{issue.code}: {issue.message}" for issue in result.issues]
+    assert "legacy_signature_write_retired" not in _codes(result)
+
+
+def test_three_field_shape_still_rejected_outside_merge(contract: CommitContractProjection) -> None:
+    """非 merge 提交中三字段流水仍属退役形状，机械拒绝。"""
+
+    message = (
+        "docs(specs): 三字段形状提交\n\n"
+        "关键变更:\n"
+        "- 覆盖三字段流水\n\n"
+        "LDVH-Product-Name: Cindy\n"
+        "LDVH-Model-Name: gpt-5.6-luna"
+    )
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=message,
+            fact_candidates=(_fact_candidate(data=_THREE_FIELD_SPARK, head_exists=False),),
+            fact_schemas=(_spark_schema(),),
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "legacy_signature_write_retired" in _codes(result)
+
+
+def test_merge_does_not_exempt_ancient_legacy_shapes(contract: CommitContractProjection) -> None:
+    """merge 只豁免三字段形状，远古遗留形状（agent_id/host_environment）仍被拒。"""
+
+    message = (
+        "merge: 合并旧分支\n\n"
+        "关键变更:\n"
+        "- 合入旧事实文件\n\n"
+        "LDVH-Product-Name: Cindy\n"
+        "LDVH-Model-Name: gpt-5.6-luna"
+    )
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=message,
+            fact_candidates=(_fact_candidate(data=_LEGACY_SHAPE_SPARK, head_exists=False),),
+            fact_schemas=(_spark_schema(),),
+            is_merge_commit=True,
+        ),
+    )
+
+    assert result.outcome == "failed"
+    assert "legacy_signature_write_retired" in _codes(result)
+
+
+@pytest.mark.parametrize(
+    "legacy_fixture, name",
+    [
+        (_LEGACY_SHAPE_SPARK, "agent_id/host_environment"),
+        (_LEGACY_SHAPE2_SPARK, "model_id/host_name"),
+        (_LEGACY_SHAPE3_SPARK, "model_id/agent_workbench"),
+    ],
+)
+def test_merge_rejects_all_ancient_legacy_shapes(
+    contract: CommitContractProjection, legacy_fixture: bytes, name: str
+) -> None:
+    """merge 场景中所有远古遗留形状均被拒绝，不豁免。"""
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "merge: 合并旧分支\n\n"
+                "关键变更:\n"
+                "- 合入旧事实文件\n\n"
+                "LDVH-Product-Name: Cindy\n"
+                "LDVH-Model-Name: gpt-5.6-luna"
+            ),
+            fact_candidates=(_fact_candidate(data=legacy_fixture, head_exists=False),),
+            fact_schemas=(_spark_schema(),),
+            is_merge_commit=True,
+        ),
+    )
+
+    assert result.outcome == "failed", f"{name} 应在 merge 中仍被拒"
+    assert "legacy_signature_write_retired" in _codes(result), f"{name} 缺失 legacy 码"
+
+
+def test_merge_mixed_three_field_and_ancient_rejected(contract: CommitContractProjection) -> None:
+    """merge 中混合流水：三字段 entry 豁免但远古形状 entry 仍导致整体拒绝。"""
+
+    data = (
+        _THREE_FIELD_SPARK.replace(
+            b"updated_at: 2026-07-01T00:00:00+08:00",
+            b"updated_at: 2026-07-01T01:00:00+08:00",
+        )
+        + (
+            "  - signature:\n"
+            "      product_name: Cindy\n"
+            "      model_name: gpt-5.6-luna\n"
+            "    at: 2026-07-01T01:00:00+08:00\n"
+            "    summary: 新两字段追加\n"
+        ).encode()
+    )
+
+    result = validate_commit(
+        contract,
+        _input(
+            contract,
+            message=(
+                "merge: 合并旧分支\n\n"
+                "关键变更:\n"
+                "- 合入旧事实文件\n\n"
+                "LDVH-Product-Name: Cindy\n"
+                "LDVH-Model-Name: gpt-5.6-luna"
+            ),
+            fact_candidates=(_fact_candidate(data=data, head_exists=False),),
+            fact_schemas=(_spark_schema(),),
+            is_merge_commit=True,
+        ),
+    )
+
+    assert result.outcome == "passed", [f"{issue.code}: {issue.message}" for issue in result.issues]
+    assert "legacy_signature_write_retired" not in _codes(result)
 
 
 def test_fact_rename_compares_trace_with_original_head_object_id(

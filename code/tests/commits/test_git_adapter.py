@@ -328,7 +328,68 @@ def test_git_read_failure_is_unverifiable(tmp_path: Path, monkeypatch: pytest.Mo
     assert observed.issues[0].stage == "git_process"
 
 
-# -- specs 03 §9.9 staged fact-candidate observation ------------------------
+def test_merge_commit_detection_returns_true_when_merge_head_exists(tmp_path: Path) -> None:
+    repository = _repository(tmp_path / "repository")
+    other = tmp_path / "other"
+    _git(repository, "worktree", "add", "-qb", "other", str(other))
+    (other / "other.txt").write_text("other\n", encoding="utf-8")
+    _git(other, "add", "other.txt")
+    _git(other, "commit", "-qm", "other: 备用分支")
+    # Create a MERGE_HEAD file to simulate an active merge.
+    common_dir = (repository / ".git").resolve()
+    (common_dir / "MERGE_HEAD").write_text("abc123\n", encoding="utf-8")
+
+    try:
+        result = git_adapter._detect_merge_commit(repository)
+        assert result is True
+    finally:
+        (common_dir / "MERGE_HEAD").unlink(missing_ok=True)
+
+
+def test_merge_commit_detection_returns_false_when_no_merge(tmp_path: Path) -> None:
+    repository = _repository(tmp_path / "repository")
+    result = git_adapter._detect_merge_commit(repository)
+    assert result is False
+
+
+def test_merge_commit_flag_propagates_to_validation_input(tmp_path: Path) -> None:
+    """MERGE_HEAD 存在时观察结果将 is_merge_commit 传入校验输入。"""
+    repository = _repository(tmp_path / "repository")
+    other = tmp_path / "other"
+    _git(repository, "worktree", "add", "-qb", "other", str(other))
+    (other / "other.txt").write_text("other\n", encoding="utf-8")
+    _git(other, "add", "other.txt")
+    _git(other, "commit", "-qm", "other: 备用分支")
+    common_dir = (repository / ".git").resolve()
+    (common_dir / "MERGE_HEAD").write_text("abc123\n", encoding="utf-8")
+    (repository / "added.txt").write_text("added\n", encoding="utf-8")
+    _git(repository, "add", "added.txt")
+
+    try:
+        observed = git_adapter.observe_commit_candidate(
+            locator=".", base=repository, message=_signed("merge: 合并旧分支"), contract=_contract(),
+            governance=_governance(repository),
+        )
+        assert observed.outcome == "observed"
+        assert observed.validation_input is not None
+        assert observed.validation_input.is_merge_commit is True
+    finally:
+        (common_dir / "MERGE_HEAD").unlink(missing_ok=True)
+
+
+def test_merge_commit_flag_absent_without_merge_head(tmp_path: Path) -> None:
+    """无 MERGE_HEAD 时观察结果 is_merge_commit 为 False。"""
+    repository = _repository(tmp_path / "repository")
+    (repository / "added.txt").write_text("added\n", encoding="utf-8")
+    _git(repository, "add", "added.txt")
+
+    observed = git_adapter.observe_commit_candidate(
+        locator=".", base=repository, message=_signed("feat: 增加文件"), contract=_contract(),
+        governance=_governance(repository),
+    )
+    assert observed.outcome == "observed"
+    assert observed.validation_input is not None
+    assert observed.validation_input.is_merge_commit is False
 
 _SPARK_PATH = "ldvh-base/sparks/spark-0001.yaml"
 _SPARK_BYTES = (
