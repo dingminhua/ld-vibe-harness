@@ -10,7 +10,7 @@ object_id: study-01M0BCG5WTEYX9NCXXP9DC4MWW
 object_uid: 01a016c8-179a-77ba-9ab3-bdb25ac2539c
 fact_type_key: study
 created_at: '2026-08-19T03:30:00+08:00'
-updated_at: '2026-08-19T03:30:00+08:00'
+updated_at: '2026-08-19T04:00:00+08:00'
 urls:
 - ref: https://github.com/yhlooo/dsh-bridges
   title: yhlooo/dsh-bridges
@@ -30,6 +30,11 @@ change_log:
     model_name: kimi-k3
   at: '2026-08-19T03:30:00+08:00'
   summary: 初次创建 Study
+- signature:
+    product_name: Cindy
+    model_name: kimi-k3
+  at: '2026-08-19T04:00:00+08:00'
+  summary: 补充第6节：LDVH 管理生产过程而非技能本身
 ---
 ## 研究问题
 
@@ -75,6 +80,22 @@ Cindy 可挂载 Claude Code/Codex/Pi 等 agent。Stop gate 在 agent 层生效�
 ### 5. Hook 适配层维护模式与 Skill 一致
 
 一份核心逻辑（code/ldvh/hooks/workcase_stop.py）+ 多环境薄 wrapper（.claude/hooks/、.codex/hooks/、.pi/extensions/）。
+
+### 6. 更本质的判断：Hook 注入上下文 ≠ Skill 冗余；LDVH 管理的是生产过程而非技能本身
+
+常见误解：既然能用 hook 把 LDVH 的指令注入上下文，那 skill 路由层就多余了。
+
+这个判断混淆了两个层面：
+
+**Skill 路由层（薄，语义决策）** 解决的是"何时加载什么规则"——它是一层**语义路由**，决策依据是当前任务语义，而非机械触发点。hook 是机械事件（对话结束、文件提交），它只能决定"在 X 时刻注入内容"，不能决定"注入哪一段规则"。即使通过 hook 在对话开始全量注入，注入的也是路由信息本身，AI 仍需在语义层做"当前该用哪条规则"的判断——这判断与 skill 路由是同一回事。
+
+**LDVH 与 Skill 的本质区别** 不在"是否注入上下文"，而在**管辖对象**：
+- Skill = 技能 / 业务能力（怎么写代码、怎么调 API）
+- LDVH = 管理整个生产过程（事实从哪来、谁授权、何时收口、署名是否可追溯、Git 提交是否合格）
+
+LDVH 的产出不是"一段代码技巧"，而是**可审计的生产记录**：WorkCase 的状态机、ADR/Pitfall 的决策沉淀、change_log 的署名链、Git Gate 的提交合格判定。这些**不是上下文里的指令能替代的**——它们是跨会话持久、机械可验证、Human 可审计的状态实体。
+
+**结论**：Hook 是 LDVH 与宿主之间的**机械接口**（注入时机、拦截点），Skill 是 LDVH 向 AI 递达规则内容的**语义通道**。二者正交，不互相替代。LDVH 接入任何产品时，需要的是"机械接口能触达" + "语义通道能递达"，缺一不可。
 
 ## 建议
 
