@@ -10,7 +10,7 @@ object_id: study-01M0C713FPF9DSWP9WEREFW721
 object_uid: 01a01870-8df6-7a5b-9e59-3c761cfe1c41
 fact_type_key: study
 created_at: '2026-08-19T06:00:00+08:00'
-updated_at: '2026-08-19T06:00:00+08:00'
+updated_at: '2026-08-19T07:00:00+08:00'
 urls:
 - ref: https://github.com/yhlooo/dsh-bridges
   title: yhlooo/dsh-bridges
@@ -24,6 +24,11 @@ change_log:
     model_name: kimi-k3
   at: '2026-08-19T06:00:00+08:00'
   summary: 初次创建 Study，综合四视角（ADR/Pitfall 召回、WorkCase 编排、Git Gate 署名、Skill 路由）分析 Hook 对 LDVH 的实际价值
+- signature:
+    product_name: Cindy
+    model_name: kimi-k3
+  at: '2026-08-19T07:00:00+08:00'
+  summary: 补充视角三署名五环保证链与 Git Gate 比 Stop gate 更稳健的根因
 ---
 
 ## 研究问题
@@ -92,6 +97,10 @@ Hook 机制对 LDVH 的生产过程保障（ADR/Pitfall 召回、WorkCase 状态
 **PreToolUse 的正确角色**：能注入署名但不应注入（违反 P4 显式署名不注入、且会形成第二规则源）。正确角色是"缺失即阻塞"的防御纵深——在 AI 跑 git commit 前检查"是否已含合法署名/关键变更区块"，缺失则 block 让其补；且必须复用同一核心（validation.py 的确定性检查），不重实现。
 
 **三层可靠性模型**：L1 Git 原生（权威 fail-closed 锚点）> L2 宿主 PreToolUse（防御纵深，可 fail-open）> L3 AI 自律（Skill/行动模板，降摩擦）。增强建议：① 部署校验自动化（ldvh check 集成 hook 状态）；② PreToolUse 复用同一 validation 核心；③ 纯 Web 宿主必须显式核验 git 路径；④ 署名不可 hook 注入（保持 P4）；⑤ 多产品统一 common-dir 部署文档。
+
+**署名可追溯五环保证链**（视角三核心洞察）：`AI 显式声明两字段署名`(L3 教育) → `PreToolUse 缺失即阻断`(L2 兜底) → `commit-msg Hook 权威 fail-closed`(L1 锚点) → `git_adapter 绑定 actual worktree+Index+message 同一候选`(防伪造) → `governance=governed_single`(防越界)。五环任一缺失即不可宣称"署名可追溯已验证"。
+
+**Git Gate 比 Stop gate 更稳健的根因**：Git Gate 寄生在 Git 原生 commit-msg 契约上（specs/09 §5.7「承接原生 Git commit-msg Git Gate 的受控 Hook 以 Git common-dir 为唯一部署边界」），与宿主 Harness 的生命周期事件解耦；Stop gate 依赖宿主提供 Stop 事件（WorkBuddy/Trae 未调研、DeepSeek 宿主 Stop 零命中）。故 Git Gate 一次性部署即对所有"真触发系统 git commit"的产品生效，而 Stop gate 需逐产品适配。
 
 ### 视角四：Skill 路由与上下文注入——"hook 注入 skill"是范畴错误
 
