@@ -5,17 +5,14 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-import pytest
-
 from ldvh.facts.repository import FactReadResult
 from ldvh.helper.operations.fact_candidate_operation import (
-    _compute_trigger_reason,
-    _compute_matched_fields,
-    _compute_exclusion_candidates,
-    _compute_anchor_type,
     _card,
+    _compute_anchor_type,
+    _compute_exclusion_candidates,
+    _compute_matched_fields,
+    _compute_trigger_reason,
 )
-
 
 # ---------------------------------------------------------------------------
 # _compute_trigger_reason unit tests
@@ -137,8 +134,9 @@ class TestComputeAnchorType:
 # ---------------------------------------------------------------------------
 
 class _MockDomain:
-    def __init__(self, card_layer: str = "F2") -> None:
+    def __init__(self, card_layer: str = "F2", card_fields: list[str] | None = None) -> None:
         self.card_layer = card_layer
+        self.card_fields = card_fields
 
 
 def _make_read(fact_type_key: str, fields: dict[str, Any]) -> FactReadResult:

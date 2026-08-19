@@ -297,6 +297,7 @@ def test_pitfall_uses_natural_language_boundaries_without_reference_fields(
         "root_cause": "In the observed conditions, the runtime could not find its required configuration.",
         "resolution": "Copy the required configuration into the selected runtime data directory and restart.",
         "avoidance": "Check the selected runtime data directory and confirm the observed event before generalizing.",
+        "scope_of_impact": "All installations that rely on the missing configuration.",
     }
 
     assert validate_fact_object("pitfall", fields, schema) == ()
@@ -342,6 +343,7 @@ def test_adr_uses_natural_language_boundaries_without_reference_fields(
         "consequences": (
             "The selected direction does not itself prove implementation, rule effectiveness, or authorization."
         ),
+        "trigger_signal": "Repeated ambiguity in direction selection.",
     }
 
     assert validate_fact_object("adr", fields, schema) == ()

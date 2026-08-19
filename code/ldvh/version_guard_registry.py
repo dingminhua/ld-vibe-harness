@@ -47,11 +47,12 @@ class VersionLine:
 # Keyed by the ``> Skill 版本：<ts>`` marker in ``skill/SKILL.md``.
 SKILL_LINE = VersionLine(
     name="skill",
-    current="2026-08-15 00:00",
+    current="2026-08-18 23:14",
     digests={
         "2026-08-13 00:01": "fe1254762ebe24953d1817278f845b795341a4898085c592eac36d30fe5e0e5a",
         "2026-08-14 00:00": "714b515df0e09aa418558edc4ebb278b50b8d5f1d750867d5e6d2aacc367e4c2",
         "2026-08-15 00:00": "9707cdb9f2f95a830eee29ac2cbb54af07d6af31136e0cccba10bc2a91f50afe",
+        "2026-08-18 23:14": "c9d4c053a6f74b05e8c7a2d0740060b7496d28051360c91e028f1e4115f334cb",
     },
 )
 

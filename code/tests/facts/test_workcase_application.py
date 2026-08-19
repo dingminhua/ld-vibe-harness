@@ -2765,6 +2765,7 @@ def _write_adr(project: _Project, object_id: str) -> Path:
         "applicability": "只适用于当前项目边界。",
         "rationale": "当前决定的实际理由。",
         "consequences": "当前决定的实际后果。",
+        "trigger_signal": "反复出现的选择方向模糊性。",
     }
     path = project.boundary.worktree_root / LAYOUTS["adr"].canonical_path(object_id)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -2787,6 +2788,7 @@ def _write_pitfall(project: _Project, object_id: str, *, status: str = "draft") 
         "avoidance": "以后避免同类问题的具体方法。",
         "applicability": "只适用于当前项目边界。",
         "validation_summary": "已按实际现场完成验证。",
+        "scope_of_impact": "只影响当前项目边界内的局部流程。",
     }
     if status == "discarded":
         fields["disposition_summary"] = "Human 已作出当前生命周期处置。"

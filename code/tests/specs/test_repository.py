@@ -23,11 +23,11 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert inspection.issues == ()
     assert inspection.implemented_checks_complete is True
     checked_documents = inspection.active_documents_passing_implemented_checks
-    assert len(checked_documents) == 33
-    assert sum(document.kind != "attachment" for document in checked_documents) == 20
+    assert len(checked_documents) == 37
+    assert sum(document.kind != "attachment" for document in checked_documents) == 24
 
     assert sum(document.kind == "attachment" for document in checked_documents) == 13
-    assert len(inspection.projections) == 99
+    assert len(inspection.projections) == 111
     assert {projection.layer for projection in inspection.projections} == {"L0", "L1", "L2"}
     field_registry = inspection.document_passing_implemented_checks_by_key("fact-object-field-registry")
     assert field_registry is not None
@@ -131,10 +131,14 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert operations.issues == ()
     assert operations.incomplete_sources == ()
     assert [declaration.template_key for declaration in action_templates.candidate_declarations] == [
+        "adr-decision-reference",
         "environment-integration-installation-verification",
         "fact-object-controlled-creation",
         "fact-object-lifecycle-change",
         "git-commit",
+        "pitfall-risk-warning",
+        "spark-driven",
+        "study-knowledge-activation",
         "workcase-approved-plan-execution",
     ]
     assert {
@@ -144,6 +148,10 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
         )
         for declaration in action_templates.candidate_declarations
     } == {
+        "adr-decision-reference": (
+            "adr-decision-reference-action-template",
+            "5. ADR 决策参考行动模板定义",
+        ),
         "environment-integration-installation-verification": (
             "environment-integration-installation-verification-action-template",
             "5. 环境接入、管辖配置、Git Hook 部署与验证行动模板定义",
@@ -157,6 +165,18 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
             "5. 事实对象生命周期变更与承接处置行动模板定义",
         ),
         "git-commit": ("git-commit-action-template", "5. Git 提交行动模板定义"),
+        "pitfall-risk-warning": (
+            "pitfall-risk-warning-action-template",
+            "5. Pitfall 风险预警行动模板定义",
+        ),
+        "spark-driven": (
+            "spark-driven-action-template",
+            "5. Spark 议题驱动行动模板定义",
+        ),
+        "study-knowledge-activation": (
+            "study-knowledge-activation-action-template",
+            "5. Study 知识激活行动模板定义",
+        ),
         "workcase-approved-plan-execution": (
             "workcase-approved-plan-execution-action-template",
             "5. WorkCase 获批计划执行行动模板定义",
@@ -166,7 +186,7 @@ def test_current_v4_sources_form_the_expected_real_combination(current_specs_rep
     assert action_templates.incomplete_sources == ()
     assert fields.complete is True
     assert len(fields.structures) == 22
-    assert len(fields.registrations) == 172
+    assert len(fields.registrations) == 171
 
 
 def test_mechanically_distinct_spec_does_not_create_a_semantic_duplicate_diagnosis(
@@ -212,8 +232,8 @@ def test_invalid_working_tree_source_is_not_replaced_with_committed_content(
     assert any("YAML title 与 H1" in issue.summary for issue in inspection.issues)
     assert inspection.implemented_checks_complete is False
     assert inspection.document_passing_implemented_checks_by_key("web-presentation-interaction") is None
-    assert len(inspection.active_documents_passing_implemented_checks) == 23
-    assert len(inspection.projections) == 69
+    assert len(inspection.active_documents_passing_implemented_checks) == 27
+    assert len(inspection.projections) == 81
 
 
 def test_invalid_foundation_stops_dependent_current_projection(current_specs_repository: Path) -> None:
