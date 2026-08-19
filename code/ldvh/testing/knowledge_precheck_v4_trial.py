@@ -28,7 +28,6 @@ from ldvh.testing.knowledge_precheck_v4 import (
     canonical_sha256,
     compile_evidence_bundle,
     condition_from_packet,
-    is_valid_structured_response,
     parse_raw_response_evidence,
     subprocess_helper_dispatch,
     validate_f3_decision_response,
@@ -457,7 +456,7 @@ def exclude_pair(
         if raw_exists != trace_exists or raw_exists != has_trigger_evidence:
             raise TrialRunnerError("whole-pair technical exclusion must bind one consistent evidence stage")
 
-    snapshot = _read_object(root / "source-snapshot.json", "source snapshot")
+    _read_object(root / "source-snapshot.json", "source snapshot")
     for attempt_id in attempt_ids:
         packet = _read_object(root / "model-inputs" / f"{attempt_id}.json", "model input")
         validate_model_input_packet(packet, protocol)

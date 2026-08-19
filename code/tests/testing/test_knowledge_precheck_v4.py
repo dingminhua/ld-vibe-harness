@@ -6,17 +6,15 @@ from pathlib import Path
 
 sys.path.insert(0, "code")
 
-from ldvh.testing.knowledge_precheck_v2 import canonical_json_bytes, bytes_sha256
+from ldvh.testing.knowledge_precheck_v2 import bytes_sha256
 from ldvh.testing.knowledge_precheck_v4 import (
     CONDITIONS,
-    EVIDENCE_SCHEMA_VERSION,
     SCHEMA_VERSION,
     KnowledgePrecheckV4Error,
     ReadOnlyKnowledgeGateway,
     _strip_f2_cards,
     build_model_input_packet,
     build_model_input_packet_unchecked,
-    compile_evidence_bundle,
     condition_from_packet,
     validate_model_input_packet,
     validate_protocol,
@@ -124,7 +122,14 @@ def test_fake_gateway_strip():
     )
     exchange = gateway.call(
         "find-fact-object-candidates",
-        {"arguments": {"governed_project_id": "ldvh", "card_layer": "F2", "fact_type_keys": ["adr"], "statuses": ["active"]}},
+        {
+            "arguments": {
+                "governed_project_id": "ldvh",
+                "card_layer": "F2",
+                "fact_type_keys": ["adr"],
+                "statuses": ["active"],
+            }
+        },
         exchange_id="e1",
         attempt_id="a1",
         card_layer="struct-baseline",
@@ -158,7 +163,11 @@ def test_fake_gateway_enhanced():
                     "object_set_fingerprint": "a" * 64,
                 },
                 "cards": [
-                    {"fact_ref": {"object_uid": "1"}, "fields": {"uid": "1", "trigger_signal": "signal", "title": "ADR 1"}, "match_reasons": []},
+                    {
+                        "fact_ref": {"object_uid": "1"},
+                        "fields": {"uid": "1", "trigger_signal": "signal", "title": "ADR 1"},
+                        "match_reasons": [],
+                    },
                 ],
                 "recovery_manifest": {"object_set_fingerprint": "a" * 64},
             },
@@ -171,7 +180,14 @@ def test_fake_gateway_enhanced():
     )
     exchange = gateway.call(
         "find-fact-object-candidates",
-        {"arguments": {"governed_project_id": "ldvh", "card_layer": "F2", "fact_type_keys": ["adr"], "statuses": ["active"]}},
+        {
+            "arguments": {
+                "governed_project_id": "ldvh",
+                "card_layer": "F2",
+                "fact_type_keys": ["adr"],
+                "statuses": ["active"],
+            }
+        },
         exchange_id="e1",
         attempt_id="a1",
         card_layer="struct-enhanced",
@@ -200,7 +216,11 @@ def test_fake_gateway_drift_rejected():
                     "object_set_fingerprint": "a" * 64,
                 },
                 "cards": [
-                    {"fact_ref": {"object_uid": "1"}, "fields": {"uid": "1", "trigger_signal": "DIFFERENT", "title": "ADR 1"}, "match_reasons": []},
+                    {
+                        "fact_ref": {"object_uid": "1"},
+                        "fields": {"uid": "1", "trigger_signal": "DIFFERENT", "title": "ADR 1"},
+                        "match_reasons": [],
+                    },
                 ],
                 "recovery_manifest": {"object_set_fingerprint": "a" * 64},
             },
@@ -213,11 +233,18 @@ def test_fake_gateway_drift_rejected():
     try:
         gateway.call(
             "find-fact-object-candidates",
-            {"arguments": {"governed_project_id": "ldvh", "card_layer": "F2", "fact_type_keys": ["adr"], "statuses": ["active"]}},
+            {
+            "arguments": {
+                "governed_project_id": "ldvh",
+                "card_layer": "F2",
+                "fact_type_keys": ["adr"],
+                "statuses": ["active"],
+            }
+        },
             exchange_id="e1",
             attempt_id="a1",
         )
-        assert False, "expected drift rejection"
+        raise AssertionError("expected drift rejection")
     except KnowledgePrecheckV4Error:
         pass
 
@@ -249,7 +276,11 @@ def test_fake_gateway_stripped_drift_rejected():
                     "object_set_fingerprint": "a" * 64,
                 },
                 "cards": [
-                    {"fact_ref": {"object_uid": "1"}, "fields": {"uid": "1", "trigger_signal": "signal", "title": "ADR 1"}, "match_reasons": []},
+                    {
+                        "fact_ref": {"object_uid": "1"},
+                        "fields": {"uid": "1", "trigger_signal": "signal", "title": "ADR 1"},
+                        "match_reasons": [],
+                    },
                 ],
                 "recovery_manifest": {"object_set_fingerprint": "a" * 64},
             },
@@ -263,12 +294,19 @@ def test_fake_gateway_stripped_drift_rejected():
     try:
         gateway.call(
             "find-fact-object-candidates",
-            {"arguments": {"governed_project_id": "ldvh", "card_layer": "F2", "fact_type_keys": ["adr"], "statuses": ["active"]}},
+            {
+            "arguments": {
+                "governed_project_id": "ldvh",
+                "card_layer": "F2",
+                "fact_type_keys": ["adr"],
+                "statuses": ["active"],
+            }
+        },
             exchange_id="e1",
             attempt_id="a1",
             card_layer="struct-baseline",
         )
-        assert False, "expected stripped drift rejection"
+        raise AssertionError("expected stripped drift rejection")
     except KnowledgePrecheckV4Error:
         pass
 

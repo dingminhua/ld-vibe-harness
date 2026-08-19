@@ -32,7 +32,6 @@ from ldvh.testing.knowledge_precheck_v2 import (
 from ldvh.testing.knowledge_precheck_v3 import (
     ALLOWED_KNOWLEDGE_OPERATIONS,
     CASE_KINDS,
-    EVIDENCE_SCHEMA_VERSION as V3_EVIDENCE_SCHEMA_VERSION,
     MAX_MEMBER_LAUNCHES,
     MAX_PAIR_ATTEMPTS,
     MAX_REPLACEMENTS,
@@ -44,15 +43,12 @@ from ldvh.testing.knowledge_precheck_v3 import (
     TASK_FAMILIES,
     TECHNICAL_EXCLUSION_CODES,
     TOTAL_TIMEOUT_SECONDS,
-    KnowledgePrecheckV3Error,
     build_blind_packet,
     build_raw_response_evidence,
-    is_valid_structured_response,
     parse_raw_response_evidence,
     validate_f3_decision_response,
     validate_score,
     validate_scorer_response,
-    validate_technical_failure_response,
 )
 
 # Build v4-specific trigger trace that uses v4 condition_from_packet
@@ -402,7 +398,7 @@ class ReadOnlyKnowledgeGateway:
                         )
                 # Replace the cards in the response with the stripped version
                 projected_response = []
-                for original_card, projected_fields in zip(cards, projected_cards):
+                for original_card, projected_fields in zip(cards, projected_cards, strict=False):
                     card_copy = deepcopy(original_card)
                     card_copy["fields"] = projected_fields
                     projected_response.append(card_copy)
@@ -1664,8 +1660,8 @@ def _compile_evidence_bundle_v4(
 
     thresholds = protocol["adoption_thresholds"]
     applicable_ids = thresholds["applicable_pair_ids"]
-    non_use_ids = thresholds["non_use_pair_ids"]
-    no_trigger_ids = thresholds["no_trigger_pair_ids"]
+    thresholds["non_use_pair_ids"]
+    thresholds["no_trigger_pair_ids"]
     trigger_sums = _condition_sums(records, "trigger_decision_correct")
     strong_sums = {
         condition: sum(int(by_key[(pair_id, condition)]["strong_reuse"]) for pair_id in applicable_ids)
@@ -1693,7 +1689,8 @@ def _compile_evidence_bundle_v4(
         "false_f3_not_increased": false_f3_gate,
         "unnecessary_f2_not_increased": unnecessary_f2_gate,
         "selection_not_decreased": selection_sums["struct-enhanced"] >= selection_sums.get("struct-baseline", 0),
-        "first_legal_action_not_decreased": first_action_sums["struct-enhanced"] >= first_action_sums.get("struct-baseline", 0),
+        "first_legal_action_not_decreased": first_action_sums["struct-enhanced"]
+        >= first_action_sums.get("struct-baseline", 0),
         "policy_capacity": True,
         "source_complete_replay": True,
     }
