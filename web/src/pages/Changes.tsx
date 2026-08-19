@@ -15,7 +15,6 @@ import PageHeader from '@/components/PageHeader';
 import { useI18n } from '@/i18n/context';
 import {
   getDiffLineClass,
-  getFileName,
   getSplitDiffCellClass,
   type DiffViewMode,
 } from '@/pages/project-files/model';
@@ -230,8 +229,8 @@ export default function Changes() {
                           {entry.status}
                         </span>
                         <span className="group/tooltip relative">
-                          <span className="ldvh-card-title block min-w-0 max-w-40 truncate xl:max-w-60">
-                            {getFileName(entry.path)}
+                          <span className="ldvh-card-title block min-w-0 truncate">
+                            {entry.path}
                           </span>
                           <span className="ldvh-caption pointer-events-none absolute bottom-full left-0 z-50 mb-1 hidden max-w-[calc(100vw-8rem)] break-all rounded-md border border-ldvh-border bg-ldvh-panel px-2 py-1 text-ldvh-text-primary shadow-lg shadow-black/10 group-hover/tooltip:block">
                             {entry.path}
@@ -295,7 +294,7 @@ export default function Changes() {
                                 </span>
                                 <span className="group/tooltip relative min-w-0 flex-1">
                                   <span className="ldvh-meta block min-w-0 truncate text-xs">
-                                    {getFileName(entry.path)}
+                                    {entry.path}
                                   </span>
                                   <span className="ldvh-caption pointer-events-none absolute bottom-full left-0 z-50 mb-1 hidden max-w-[calc(100vw-8rem)] break-all rounded-md border border-ldvh-border bg-ldvh-panel px-2 py-1 text-ldvh-text-primary shadow-lg shadow-black/10 group-hover/tooltip:block">
                                     {entry.path}
