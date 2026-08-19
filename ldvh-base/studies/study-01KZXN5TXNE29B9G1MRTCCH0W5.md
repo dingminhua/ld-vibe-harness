@@ -15,11 +15,6 @@ research_intent: 为 LDVH 未来涉及研究、核验与实现的协作选择一
 research_question: Codex 的子代理和 Git worktree 能如何帮助 LDVH 处理可并行的研究、核验与实现工作，同时避免把产品能力误写为固定流程？
 abstract: 官方资料表明：子代理适合边界清晰、可独立汇总的读密集任务；并行写入需要额外协调；工作树隔离并发改动但不替代环境准备、权限控制或人类决策。对 LDVH 的启发是把并行性视作按任务选择的执行策略，并始终显式保留实际工作树、写入所有者和汇总责任。
 recommendation_summary: 把并行视为按任务可分性选择的工作方式：先写清输出、汇总人与不修改范围；共享写入保留单一所有者；只有在确有需求时，以有界 WorkCase 验证 worktree 准备与交接，并由 Human 决定是否固化为长期默认。
-object_id: study-01KZXN5TXNE29B9G1MRTCCH0W5
-object_uid: 019ffb52-ebb5-7092-b4c0-34c698c88385
-fact_type_key: study
-created_at: '2026-07-23T20:14:44.651335+08:00'
-updated_at: '2026-08-13T15:03:57Z'
 change_log:
 - signature:
     product_name: Cindy
@@ -33,6 +28,23 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:01:27.204915Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
+object_uid: 019ffb52-ebb5-7092-b4c0-34c698c88385
+object_id: study-01KZXN5TXNE29B9G1MRTCCH0W5
+fact_type_key: study
+created_at: '2026-07-23T20:14:44.651335+08:00'
+updated_at: '2026-08-17T13:01:27.204915Z'
 ---
 
 ## 研究问题

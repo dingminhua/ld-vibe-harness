@@ -25,11 +25,23 @@ change_log:
     agent_runtime_name:
   at: '2026-08-13T21:48:03.167269Z'
   summary: 受控创建 technical_assessment：保存 6 个 DSH 会话日志的执行可比性观察面盘点聚合结论；只保存聚合与结构指纹，不保存原始会话内容。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:06:04.244925Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
 object_uid: 019ffd18-bafe-714f-be81-257c1502b922
 object_id: study-01KZYHHEQYE57VX095FGAG5E92
 fact_type_key: study
 created_at: '2026-08-13T21:48:03.167269Z'
-updated_at: '2026-08-13T21:48:03.167269Z'
+updated_at: '2026-08-17T13:06:04.244925Z'
 ---
 
 ## 研究问题

@@ -21,11 +21,6 @@ research_intent: 调研 Codebase Memory MCP 插件的能力和限制，判断 LD
 research_question: Codebase Memory MCP 的本地代码知识图谱能力对 LDVH 的代码探索和事实源组织有什么启发？哪些可以吸收，哪些不应吸收？
 abstract: Codebase Memory MCP 通过 tree-sitter、Hybrid LSP、SQLite 图存储、BM25/语义/结构查询、变更影响分析，把代码探索从文件级 grep/read 转为图谱级结构查询。对 LDVH 的核心启发不是直接引入该工具作为事实源，而是吸收"本地图谱索引 + 查询工具 + 非阻塞发现提醒 + 可提交图谱快照 + 明确事实源边界"的能力形态。
 recommendation_summary: Codebase Memory MCP 适合被视为 AI 代码探索的运行时扩展和 Code 辅助索引，而不是 LDVH 的最终事实源。LDVH 可吸收其结构化代码图谱、跨仓库索引、影响分析、Agent 接入安装、非阻塞 hook、团队共享索引快照、图谱 UI 和本地隐私边界；不应吸收其"运行时索引即事实"的隐含风险，也不应让 MCP 查询结果替代 specs、ldvh-base 工作对象、Git 提交记录或现有 validator。
-object_id: study-01KZXN5TXNE1ZA203F5Y0N1KH4
-object_uid: 019ffb52-ebb5-707e-a100-6f2f8150ce24
-fact_type_key: study
-created_at: '2026-07-24T13:30:00+08:00'
-updated_at: '2026-08-13T15:03:57Z'
 change_log:
 - signature:
     product_name: Cindy
@@ -39,6 +34,23 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:01:01.063967Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
+object_uid: 019ffb52-ebb5-707e-a100-6f2f8150ce24
+object_id: study-01KZXN5TXNE1ZA203F5Y0N1KH4
+fact_type_key: study
+created_at: '2026-07-24T13:30:00+08:00'
+updated_at: '2026-08-17T13:01:01.063967Z'
 ---
 
 ## 研究问题

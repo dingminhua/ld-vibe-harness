@@ -95,15 +95,27 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:02:17.114297Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
 relations:
 - relation_key: informs
   target:
     object_uid: 019ffb52-ebb5-7d9e-b5cc-17beecdc5303
-object_id: study-01KZXN5TXNEME80GDTJAXEDHXW
 object_uid: 019ffb52-ebb5-751c-8041-ba92bae6c7bc
+object_id: study-01KZXN5TXNEME80GDTJAXEDHXW
 fact_type_key: study
 created_at: '2026-08-10T23:54:37.152370Z'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-17T13:02:17.114297Z'
 ---
 
 ## 研究问题

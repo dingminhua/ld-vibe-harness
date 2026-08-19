@@ -39,11 +39,23 @@ change_log:
     agent_runtime_name: kimi-work
   at: '2026-08-14T09:14:23.199215Z'
   summary: 受控创建 technical_assessment：围绕根规范 00《理念与构成》全面评估 LDVH 的文档设计质量与 v4.1.0 系统兑现度；依据 Human 当次会话指令授权，证据来自 00 全文精读、Helper 8 类操作实测、全量机械检查与 1888 项通过测试。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:06:16.590994Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
 object_uid: 019fff8d-1608-7eef-a0a0-70073d8c90aa
 object_id: study-01KZZRT5G8FVQT183G0WYRS45A
 fact_type_key: study
 created_at: '2026-08-14T09:14:23.199215Z'
-updated_at: '2026-08-14T09:14:23.199215Z'
+updated_at: '2026-08-17T13:06:16.590994Z'
 ---
 
 ## 研究问题

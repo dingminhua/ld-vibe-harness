@@ -49,11 +49,23 @@ change_log:
     agent_runtime_name:
   at: '2026-08-14T22:22:24.300028Z'
   summary: content_update（Human 当次授权）：把“更薄 Helper 调用封装”细化为分层优化方案写入建议章节——Phase 1 CLI 机械扩展（P1-1 请求文件化 --request / P1-2 请求骨架 --example / P1-3 结果投影 --fields）、Phase 2 领域契约扩展（P2-1 prepare-update CAS 一体化 / P2-2 成功信号显式化）、Phase 3 MCP 化治理议题（09 修订 Human Gate 先行）；建议 4 升级为验证前置并绑定 session_comparability/replay 对照；recommendation_summary 同步更新，后续分流表逐项保持判断标准；status、report_kind、关系与其余章节不变。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:06:28.836612Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
 object_uid: 01a00246-3d5b-77d6-b6fa-e44c05db9aab
 object_id: study-01M014CFAVEZBBDYQ49G2XQ6NB
 fact_type_key: study
 created_at: '2026-08-14T21:55:51.666073Z'
-updated_at: '2026-08-14T22:22:24.300028Z'
+updated_at: '2026-08-17T13:06:28.836612Z'
 ---
 
 ## 研究问题

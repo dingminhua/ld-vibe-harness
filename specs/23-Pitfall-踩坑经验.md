@@ -24,7 +24,7 @@ ldvh_spec:
 
 Pitfall 保存一个已经实际发生、查明、解决、验证且仍能迁移复用的失败机制，使后续 AI 能识别相似症状与触发条件，理解当前范围内的根因判断，在适用边界内复用实际解决与规避经验，避免重复误判和调试。
 
-新建 Pitfall 使用 `fact-object-controlled-creation`（31）；既有 Pitfall 的更正、draft/promote/discard 等生命周期变化或承接处置使用 `fact-object-lifecycle-change`（32）。模板不替代本文的完整性、逐对象 Human 决定或实际验证条件。
+新建 Pitfall 使用 `fact-object-controlled-creation`（31）；既有 Pitfall 的更正、draft/promote/discard 等生命周期变化或承接处置使用 `fact-object-lifecycle-change`（32）；Pitfall 风险预警（召回、症状匹配、经验适用性判断与规避策略评估）使用 `pitfall-risk-warning`（37）。模板不替代本文的完整性、逐对象 Human 决定或实际验证条件。
 
 Pitfall 主要服务 V1 快速定位、V2 充分理解、V3 边界识别、V5 据实判断、V6 工作接续、V7 清晰沟通和 V8 持续积累。V4 稳定推进由 WorkCase 和行动模板承担；Pitfall 不承载 bug backlog、实施计划或行动授权。新增成本包括发现、查重、维护、Schema、迁移、时效复核和消费；通过只准入已发生且验证的单一失败机制、四个状态、五个专属字段、两个共享语义字段并排除日志与自由标签，维护成本低于重复犯错和错误复用的损耗。普通文档、测试、代码说明或当前规则能够无损承载且不需要独立身份、状态、可复用经验边界和替代历史时，不创建 Pitfall。Pitfall 不设置按对象数量或正文长度形成的硬上限，也不按时间自动过期；对象增长由完整准入、全量查重、单一机制粒度、Human 逐对象确认和本文 Stop Conditions 约束。
 
@@ -116,6 +116,7 @@ AI 负责判断失败是否实际发生、根因判断与解决说明是否同�
 | `pitfall-root-cause` | required | `inherit` |
 | `pitfall-resolution` | required | `inherit` |
 | `pitfall-avoidance` | required | `inherit` |
+| `pitfall-scope-of-impact` | required | `inherit` |
 
 ### 类型专属字段定义
 
@@ -126,10 +127,11 @@ AI 负责判断失败是否实际发生、根因判断与解决说明是否同�
 | `pitfall-root-cause` | `root_cause` | string | 在当前经验范围内能够解释症状与触发的根因判断 | 不表示相关现象、未经说明的普遍因果、ADR 选择理由、来源或验证摘要 | 必填非空；必须与 symptoms、trigger_conditions 和 validation_summary 相容；必要时区分已观察事实、当前根因判断和仍未知的机制环节；不能只凭单次相关性成立；根因判断实质变化通常形成新 Pitfall |
 | `pitfall-resolution` | `resolution` | string | 已经实际采用以解决该失败机制的处理方式及其必要边界 | 不表示提案、WorkCase 目标、实施 todo、规避建议或规则正文 | 必填非空；必须已实际采用；说明适用前提、处理对象或动作及可观察成功信号，且在适用前提不成立或成功信号未出现时不把处理宣称为通用修复；validation_summary 据实说明观察到的结果、覆盖与未知范围；不相容修复形成新对象 |
 | `pitfall-avoidance` | `avoidance` | string | 后续识别、预防或安全复用该经验的方式 | 不表示强制规则、行动授权、已执行修复或通用最佳实践 | 必填非空；说明复用前应核对的关键条件、处理后的确认信号，以及不相容时应继续调查、重新验证或转入正确对象的边界；只在 applicability 内成立；需要强制时转正确规则来源，不在本字段使用 MUST 冒充权威 |
+| `pitfall-scope-of-impact` | `scope_of_impact` | string | 该失败机制在哪些当前活动类型、工具交互或技术栈组合中具有潜在影响；即当前任务可能落入该经验影响范围的位置 | 不表示触发失败的前置条件（那是 trigger_conditions）、经验适用范围（那是 applicability） | 必填非空；必须使用活动/工具/交互类型的描述，而非历史症状 |
 
 ### Schema 与对象载体
 
-Pitfall 对象使用 UTF-8 YAML，一文件一对象；新 UID-native 对象使用 `ldvh-base/pitfalls/pitfall-<uid26>.yaml`，legacy 对象继续从 `ldvh-base/pitfalls/<object_id>.yaml` 双读。legacy `object_id` 必须匹配 `pitfall-[0-9]{4,}`且与旧文件名一致；新建只写 UID 路径，不要求 candidate_object_id 或 counter。具有 `object_uid` 时其权威身份、legacy 缺失兼容和不可变边界统一按 05 §7.3–§7.4，新建 Pitfall 必须由 Code 生成 UID。`title` 只简短识别失败机制，不复制 `symptoms` 或 `root_cause`。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
+Pitfall 对象使用 UTF-8 YAML，一文件一对象；新 UID-native 对象使用 `ldvh-base/pitfalls/pitfall-<uid26>.yaml`，legacy 对象继续从 `ldvh-base/pitfalls/<object_id>.yaml` 双读。legacy `object_id` 必须匹配 `pitfall-[0-9]{4,}`且与旧文件名一致；新建只写 UID 路径，不要求 candidate_object_id 或 counter。具有 `object_uid` 时其权威身份、legacy 缺失兼容和不可变边界统一按 05 §7.3–§7.4，新建 Pitfall 必须由 Code 生成 UID。`title` 只简短识别失败机制，不复制 `symptoms` 或 `root_cause`；当该经验已确定为平台或环境专属问题（而非通用）时，标题需凸显该平台/环境。未知或不适用的条件字段必须省略，不使用 `null`、空字符串、空数组、占位时间、默认状态或默认关系。
 
 完整 Schema 由统一登记的 `fact-object` 直接字段、本节绑定、跨类型共享定义和类型专属字段定义组合。Pitfall 不得出现 current summary、priority、evolution、tags、`archive_reason`、repeatability、severity、source_objects/source_sparks、related_*、长命令日志字段、实现状态、revision history 或其它未登记内容。
 
@@ -175,7 +177,7 @@ Pitfall 不定义 relation_key。新旧 Pitfall 之间的替代或覆盖关系�
 
 ### 主动召回与消费时机
 
-Pitfall 在当前出现可能相似的失败症状、进入已知触发条件、准备采用曾有失败风险的方案，或正在调查、修复、验证一项故障时产生召回机会。F2 Pitfall 候选卡直接投影条件出现的 `object_uid`、以及 `object_id`、`title`、`status`、`symptoms`、`trigger_conditions`、`applicability`、`validation_summary` 和 `updated_at`；可以在允许字段中进行可回指到 field path 与实际文本的精确字面检索，但不生成或写回标签、关键词权重或语义分数。该类型化投影提供当前所需的快速检索；`tags` 不进入事实字段或第二分类权威。
+Pitfall 在当前出现可能相似的失败症状、进入已知触发条件、准备采用曾有失败风险的方案，或正在调查、修复、验证一项故障时产生召回机会。F2 Pitfall 候选卡直接投影条件出现的 `object_uid`、以及 `object_id`、`title`、`status`、`symptoms`、`trigger_conditions`、`scope_of_impact`、`applicability`、`validation_summary` 和 `updated_at`；可以在允许字段中进行可回指到 field path 与实际文本的精确字面检索，但不生成或写回标签、关键词权重或语义分数。该类型化投影提供当前所需的快速检索；`tags` 不进入事实字段或第二分类权威。
 
 默认候选只包含症状、触发条件、环境、版本或 applicability 与当前情形可能相容的 `active` Pitfall；`draft` 和 `discarded` 不进入普通经验召回，也不得被当作已确认规避经验。draft 审核只能由精确引用或来源定义的关系导航定位，不能因标题或文本命中形成批量审核队列。不得因标题、错误文本或某个工具名相同就自动采用规避结论。上下文压缩后必须对当次已经语义选中且仍影响行动的 Pitfall 重新回读 F3，并重新核对当前环境、版本和 applicability；不在会话开始时全量展开全部 Pitfall。
 

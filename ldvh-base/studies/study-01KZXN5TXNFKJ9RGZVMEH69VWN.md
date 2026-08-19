@@ -68,12 +68,18 @@ change_log:
     agent_runtime_name: claude-code
   at: '2026-08-15T19:08:09.219058Z'
   summary: Obsidian 技术价值评估已完成；不引入 Obsidian 技术，现有 Helper 与 Web 能力覆盖当前关联发现需求。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 disposition_summary: Obsidian 技术价值评估已完成；不引入 Obsidian 技术，现有 Helper 与 Web 能力覆盖当前关联发现需求。
 object_uid: 019ffb52-ebb5-7ce4-9c43-fba3a264ef95
 object_id: study-01KZXN5TXNFKJ9RGZVMEH69VWN
 fact_type_key: study
 created_at: '2026-08-08T00:00:00+08:00'
-updated_at: '2026-08-15T19:08:09.219058Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 ---
 
 ## 研究问题

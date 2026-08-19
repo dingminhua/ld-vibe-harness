@@ -39,11 +39,6 @@ research_intent: 深入研究 addyosmani/agent-skills 的实际架构、技能�
 research_question: addyosmani/agent-skills 如何把软件工程实践组织成可发现、可执行、可验证的 AI agent 工作流？其真实优势、证据边界、跨环境限制和治理风险是什么？LDVH 可以有选择地吸收哪些机制而不混淆规则源、事实源、Helper 确定性能力与模型软约束？
 abstract: 在 2026-07-29 对 main 分支 revision 7829ffd 的检查中，agent-skills 是一个以 24 个 Markdown 技能为核心、覆盖 Define—Plan—Build—Verify—Review—Ship 的工程工作流包，并辅以 8 个命令、4 个评审 persona、共享参考资料、宿主适配器和三层评测。其关键价值是把工程纪律写成“触发—步骤—反合理化—红旗—证据门禁”的行为契约，并对目录结构与路由进行机械评测；本次实际运行结构、命令和 Tier-2 路由检查均通过，路由 rank-1 为 86%。但这不证明真实任务质量：Tier 2 只是词法近似，Tier 3 默认按需且依赖模型；不同宿主只共享部分能力；单技能安装可能丢失共享引用；技能文本本身不能强制权限、Human Gate 或完成判断。
 recommendation_summary: LDVH 不应整体复制该项目或把其技能内容提升为规则。最值得吸收的是五个可分离机制：明确的触发/排除契约、步骤与停止条件、反逃避信号、证据化完成门禁、结构/路由/行为分层评测；同时应保留 LDVH 的来源与职责边界，让 Helper/Code 只做确定性检查、Human 保留授权与取舍。建议后续仅在 Human 同意时建立一个小规模 WorkCase，用 3 个代表性行动模板做 A/B 试点，并以规则冲突、误触发、任务正确性、上下文成本和验证证据为验收指标。
-object_id: study-01KZXN5TXNE37BJKNHB51D3E3G
-object_uid: 019ffb52-ebb5-70ce-b94e-b15942d1b870
-fact_type_key: study
-created_at: '2026-07-29T00:21:07.200083+08:00'
-updated_at: '2026-08-13T15:03:57Z'
 change_log:
 - signature:
     product_name: Cindy
@@ -57,6 +52,23 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:01:40.130697Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
+object_uid: 019ffb52-ebb5-70ce-b94e-b15942d1b870
+object_id: study-01KZXN5TXNE37BJKNHB51D3E3G
+fact_type_key: study
+created_at: '2026-07-29T00:21:07.200083+08:00'
+updated_at: '2026-08-17T13:01:40.130697Z'
 ---
 
 ## 研究问题

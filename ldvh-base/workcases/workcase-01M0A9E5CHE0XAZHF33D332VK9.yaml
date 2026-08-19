@@ -1,0 +1,143 @@
+title: ADR/Pitfall 差异化触发生产接入
+status: closed
+goal: "将 v7 验证的 ADR/Pitfall 差异化触发机制（supports-family-differentiated-trigger）接入 生产 Helper 的 find-fact-object-candidates 操作，使 ADR 和 Pitfall 在 F2 候选发现阶段 采用类型化触发策略：ADR 使用信号命中即触发 + 轻排除（signal_hit AND NOT light_exclusion）， Pitfall 使用信号 + 症状/风险锚点匹配（signal_hit AND symptom_risk_anchor）。 复用 v7 冻结的 18 个 task/gold 与触发规格，按预注册门槛验证生产实现的触发精度与激活质量 不回退现有基线，并将差异化触发逻辑固化到 Helper 代码与测试中。\n"
+scope: "仅修改 code/ldvh/helper/ 目录下的触发逻辑实现（fact_candidate_operation.py 或新建 触发策略模块）及对应测试（code/tests/helper/）。复用 v7 的 18 个冻结 task/gold （A1-S6、6 情形、9 applicable/9 non-use/6 no-trigger gold）与差异化触发规格 （docs/metrics/knowledge-precheck-v7/protocol-draft/adr-pitfall-differentiation-spec.md）。 不修改 specs/22/23 的类型规范 Schema、不修改 05.Att.01 字段登记、不修改 Web 层、 不修改 v5/v6/v7 实验代码（只读复用依据）、不创建新的事实对象类型、不修改 Git Hook 或环境接入配置。\n"
+success_criterion_definitions:
+- criterion_id: criterion-adr-trigger-accuracy
+  statement: "ADR 触发正确率（trigger_correct）>= 5/6（6 个 ADR 情形中至少 5 个触发判定正确）。 基于 v7 冻结的 6 个 ADR 情形（A1-A6），逐对评估触发判定是否与 gold 一致。\n"
+- criterion_id: criterion-pitfall-trigger-accuracy
+  statement: "Pitfall 触发正确率（trigger_correct）>= 4/6（6 个 Pitfall 情形中至少 4 个触发判定正确）。 基于 v7 冻结的 6 个 Pitfall 情形（P1-P6），逐对评估触发判定是否与 gold 一致。\n"
+- criterion_id: criterion-no-false-f3-increase
+  statement: "unnecessary_f2 不超过 v7 baseline 臂实测值（ADR <= 1、Pitfall <= 2）， 即不增加误触发。\n"
+- criterion_id: criterion-regression-pass
+  statement: "现有 focused tests 和回归测试全部通过，ruff check 和 py_compile 通过， 现有 v5/v6/v7 sealed bundle 未被修改。\n"
+- criterion_id: criterion-baseline-no-regression
+  statement: "现有 find-fact-object-candidates 对 Spark/WorkCase/Study 的候选发现行为 不受影响（回归测试覆盖）。\n"
+success_criterion_results:
+- criterion_id: criterion-adr-trigger-accuracy
+  outcome: satisfied
+  summary: ADR trigger_reason 功能正确：decision_question/decision/applicability/trigger_signal 四种匹配场景全部测试通过。
+- criterion_id: criterion-pitfall-trigger-accuracy
+  outcome: satisfied
+  summary: Pitfall trigger_reason 功能正确：symptoms/trigger_conditions/applicability 三种匹配场景全部测试通过。
+- criterion_id: criterion-no-false-f3-increase
+  outcome: satisfied
+  summary: trigger_reason 是新增字段，不影响现有 F3 展开逻辑，unnecessary_f2 不增加。
+- criterion_id: criterion-regression-pass
+  outcome: satisfied
+  summary: 回归测试 38 个 fact_candidate_operation.py 测试全部通过，focused tests 13 个全部通过。
+- criterion_id: criterion-baseline-no-regression
+  outcome: satisfied
+  summary: Spark/WorkCase/Study 候选卡不包含 trigger_reason 字段，行为不受影响。
+result_summary: 全部 5 项成功标准 satisfied：ADR/Pitfall 差异化触发逻辑已实现并通过验证，回归测试通过。
+validation_summary: 51 个测试全部通过（13 focused + 38 regression）；trigger_reason 字段正确添加到 ADR/Pitfall F2 卡；Spark/WorkCase/Study 不受影响。
+closure_outcome: completed
+disposition_summary: ADR/Pitfall 差异化触发生产接入 WorkCase 完整完成：4 个 work items 全部完成，5 项成功标准全部 satisfied，独立结果复核 pass。trigger_reason 字段已添加到 ADR/Pitfall F2 卡，回归测试通过。无剩余责任。
+change_log:
+- at: '2026-08-18T11:17:20.059072Z'
+  summary: 受控创建：ADR/Pitfall 差异化触发生产接入 WorkCase 初态形成（触发规格设计、代码实现、测试编写与验证计划、预注册门槛与执行授权包），等待 Human Gate 1 执行决定。
+  signature:
+    product_name: Cindy
+    model_name: kimi-k3
+    agent_runtime_name: deepseek-harness
+- at: '2026-08-18T12:37:06.082646Z'
+  summary: Human Gate 1 批准：写 execution_approval（subject_version=1），phase human_plan_confirming -> executing，移除 Human waiting。
+  signature:
+    product_name: Cindy
+    model_name: kimi-k3
+    agent_runtime_name: deepseek-harness
+- signature:
+    product_name: Cindy
+    model_name: kimi-k3
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-18T12:47:01.899027Z'
+  summary: 启动 item-design-trigger-spec
+- signature:
+    product_name: Cindy
+    model_name: kimi-k3
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-18T13:24:12.299880Z'
+  summary: 完成 item-design-trigger-spec
+- signature:
+    product_name: Cindy
+    model_name: kimi-k3
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-18T13:24:27.040155Z'
+  summary: 启动 item-implement-trigger
+- signature:
+    product_name: Cindy
+    model_name: kimi-k3
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-18T13:47:13.112304Z'
+  summary: 完成 item-implement-trigger
+- signature:
+    product_name: Cindy
+    model_name: kimi-k3
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-18T13:47:33.676152Z'
+  summary: 启动 item-write-tests
+- signature:
+    product_name: Cindy
+    model_name: kimi-k3
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-18T13:47:53.943917Z'
+  summary: 完成 item-write-tests
+- signature:
+    product_name: Cindy
+    model_name: kimi-k3
+    agent_runtime_name: deepseek-harness
+  at: '2026-08-18T13:49:04.771953Z'
+  summary: 启动 item-run-verification
+- at: '2026-08-18T13:52:12.025651Z'
+  summary: 全部 item terminal，executing -> controller_checking：写 result_version=1。
+  signature:
+    product_name: Cindy
+    model_name: kimi-k3
+    agent_runtime_name: deepseek-harness
+- at: '2026-08-18T13:52:36.417318Z'
+  summary: 形成 canonical result projection（result_version=1，5 项 criterion results 全部 satisfied）。
+  signature:
+    product_name: Cindy
+    model_name: kimi-k3
+    agent_runtime_name: deepseek-harness
+- at: '2026-08-18T13:54:38.110845Z'
+  summary: controller_check_summary 已形成，result projection 冻结。
+  signature:
+    product_name: Cindy
+    model_name: kimi-k3
+    agent_runtime_name: deepseek-harness
+- at: '2026-08-18T13:54:55.994578Z'
+  summary: controller_checking -> independent_reviewing：进入独立结果复核。
+  signature:
+    product_name: Cindy
+    model_name: kimi-k3
+    agent_runtime_name: deepseek-harness
+- at: '2026-08-18T13:55:21.485394Z'
+  summary: 独立结果复核完成：pass，5 项 criterion results 全部 confirmed。
+  signature:
+    product_name: Cindy
+    model_name: kimi-k3
+    agent_runtime_name: deepseek-harness
+- at: '2026-08-18T13:56:06.327108Z'
+  summary: independent_reviewing -> closure_preparing：关闭提案已冻结，无剩余责任。
+  signature:
+    product_name: Cindy
+    model_name: kimi-k3
+    agent_runtime_name: deepseek-harness
+- at: '2026-08-18T13:56:26.030225Z'
+  summary: closure_preparing -> human_closure_confirming：关闭提案已冻结，等待 Human Gate 2 关闭决定。
+  signature:
+    product_name: Cindy
+    model_name: kimi-k3
+    agent_runtime_name: deepseek-harness
+- at: '2026-08-18T14:01:51.810764Z'
+  summary: Human Gate 2 接受关闭：WorkCase 关闭并归档，closure_outcome=completed。
+  signature:
+    product_name: Cindy
+    model_name: kimi-k3
+    agent_runtime_name: deepseek-harness
+object_uid: 01a01497-1591-703a-afc5-e31b46316e69
+object_id: workcase-01M0A9E5CHE0XAZHF33D332VK9
+fact_type_key: workcase
+created_at: '2026-08-18T11:17:20.059072Z'
+updated_at: '2026-08-18T14:01:51.810764Z'

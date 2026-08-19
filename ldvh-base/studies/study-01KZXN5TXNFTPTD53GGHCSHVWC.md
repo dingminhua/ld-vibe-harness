@@ -48,11 +48,6 @@ research_intent: 调研主流 AI agent 产品的输出组织方式，为 LDVH �
 research_question: 主流 AI agent 产品如何组织 agent 输出？为什么 Trae 的输出显得更有条理？LDVH 应如何定义自己的输出契约和过程信封？
 abstract: 调研 Trae、Cursor、Claude Code、OpenAI Codex、GitHub Copilot、Windsurf/Cascade、Devin 和 Replit 等主流 agent 产品的输出组织方式。结论是：Trae 输出显得更有条理，主要因为它把 agent 过程渲染成计划、任务、工具面板、命令卡片、阶段状态和结果摘要，而不是只依赖模型自然语言。Codex 可以通过明确输出契约、AGENTS/Skill、plan/progress/final discipline 达到相近的人类可读效果；在 JSONL 事件流、output schema、App Server、structured outputs 和 traces 层，Codex/OpenAI 生态还具备更先进的机器可消费格式。
 recommendation_summary: LDVH 应把 agent 输出分成两层治理：第一层是人类可读的简洁输出契约，用于 Codex 对话、review、handoff 和最终汇报；第二层是机器可读的 Agent Output Envelope，用事件、状态、计划项、工具调用、验证证据、风险、Human Gate 和事实源吸收结果支撑 Web、Code、Hook 和未来编排。
-object_id: study-01KZXN5TXNFTPTD53GGHCSHVWC
-object_uid: 019ffb52-ebb5-7ead-a694-70845998ef8c
-fact_type_key: study
-created_at: '2026-07-24T13:30:00+08:00'
-updated_at: '2026-08-13T15:03:57Z'
 change_log:
 - signature:
     product_name: Cindy
@@ -66,6 +61,23 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:05:14.362981Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
+object_uid: 019ffb52-ebb5-7ead-a694-70845998ef8c
+object_id: study-01KZXN5TXNFTPTD53GGHCSHVWC
+fact_type_key: study
+created_at: '2026-07-24T13:30:00+08:00'
+updated_at: '2026-08-17T13:05:14.362981Z'
 ---
 
 ## 研究问题

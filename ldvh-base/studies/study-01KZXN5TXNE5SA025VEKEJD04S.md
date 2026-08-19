@@ -34,12 +34,18 @@ change_log:
     agent_runtime_name: claude-code
   at: '2026-08-15T19:08:16.228595Z'
   summary: Obsidian 与 LDVH 协作分层调研已完成；不建立外部知识系统桥接，Obsidian 不替代 LDVH 事实源。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 disposition_summary: Obsidian 与 LDVH 协作分层调研已完成；不建立外部知识系统桥接，Obsidian 不替代 LDVH 事实源。
 object_uid: 019ffb52-ebb5-7172-a008-bb74dd268099
 object_id: study-01KZXN5TXNE5SA025VEKEJD04S
 fact_type_key: study
 created_at: '2026-07-24T13:30:00+08:00'
-updated_at: '2026-08-15T19:08:16.228595Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 ---
 
 ## 研究问题

@@ -18,11 +18,6 @@ research_question: 各目标 AI 环境安装或登记一项技能时要求提供
 abstract: 本轮读取 Agent Skills 开放规范与 Trae、Codex、Claude 四方资料，结合 Kimi Work 既有实证（study-0018），梳理技能安装/登记字段：开放标准仅 name/description 必填，license/compatibility/metadata 可选；Trae 创建表单为技能名称/描述/指令三字段并支持导入自动填充；Codex 与 Claude 以目录放置加 frontmatter 为主，私有扩展分别走 agents/openai.yaml 与 Claude 专属 frontmatter；市场卡片的图标与厂商名属提交侧元数据。LDVH 填值分工：name/description/指令正文照抄 skill/SKILL.md 当次内容；license=MIT 与作者=LD Vibe Harness 现取 LICENSE 版权行；版本现取 pyproject（当前 0.1.0）；仓库 URL 现取 git remote origin；图标素材现取 icons/。关键限制：Codex 技能目录存在两种二手说法未读官方一手文档；各环境表单随版本变化，接入时须复核。
 research_intent: 用户将携 LDVH 薄 Skill 前往 Trae、Claude、Codex 等环境接入，要求把各环境技能登记所需字段提前调研并备好填值，使接入方照表填写即可，避免逐环境临时摸索。本研究提供字段级准备清单与照抄/现取/不预填的分工，支撑 README 一句话接入流程在任意环境的可复制，并防止接入方为凑字段而改写 canonical SKILL.md 内容。
 recommendation_summary: 接入任一新环境时先按 33 复核该环境当前官方技能资料，再按分工填值：name、description、指令正文一律照抄 skill/SKILL.md 当次内容（表单自动填充不一致时以 canonical 为准修正）；license、作者、版本、仓库 URL、图标素材按各自权威来源现取；环境私有扩展字段（agents/openai.yaml、Claude 专属 frontmatter 等）首次接入一律不预填，确有需要时在目标环境侧沉淀。SKILL.md frontmatter 维持 name/description 两字段不增补（增补引入版本漂移与重部署负担）。技能市场上架属另一议题，届时另起 Study。
-object_id: study-01KZXN5TXNFNQTBE9VYQ0PKN1Q
-object_uid: 019ffb52-ebb5-7d6f-a5b9-3bf5c169d437
-fact_type_key: study
-created_at: '2026-07-31T19:51:27.592577+08:00'
-updated_at: '2026-08-13T15:03:57Z'
 change_log:
 - signature:
     product_name: Cindy
@@ -36,6 +31,23 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:05:01.376325Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
+object_uid: 019ffb52-ebb5-7d6f-a5b9-3bf5c169d437
+object_id: study-01KZXN5TXNFNQTBE9VYQ0PKN1Q
+fact_type_key: study
+created_at: '2026-07-31T19:51:27.592577+08:00'
+updated_at: '2026-08-17T13:05:01.376325Z'
 ---
 
 ## 研究问题

@@ -22,10 +22,18 @@ LDVH 让长期项目"判断有据、行动可续、结果可验"。本文件不�
    并如实报告所用路径与取得范围。该引导只交付规则，不恢复项目事实
    （facts 恒为 `not_requested`）。
 
-3. **行动模板**：动手落入 LDVH 领域前，先
-   经已解析的源码 Helper 调用 `read-action-template-candidates` 定位，再调用
-   `read-action-template-content` 读取当次适用模板，照模板执行。
-   不得凭记忆或本文件假设模板清单与内容。
+3. **行动模板与知识查核**：动手落入 LDVH 领域前，必须同时完成以下动作：
+   a. 经已解析的源码 Helper 调用 `read-action-template-candidates` 定位，再调用
+      `read-action-template-content` 读取当次适用模板，照模板执行。不得凭记忆
+      或本文件假设模板清单与内容。
+   b. **ADR 必读**：经 Helper `find-fact-object-candidates`（card_layer=F2,
+      fact_type_keys=["adr"]）获取当前项目全部 active ADR 的 F1 决策卡。
+      读取后判断哪些 ADR 的 decision 适用于当前任务；适用的必须在对话中显式
+      输出声明（格式见 36 号模板步骤 5.1），并在后续行动中遵从。
+   c. **Pitfall 必查**：经 Helper `find-fact-object-candidates`（card_layer=F2,
+      fact_type_keys=["pitfall"]）获取当前项目全部 active Pitfall 的 F2 候选卡。
+      读取后判断哪些 Pitfall 的经验适用于当前任务；适用的必须在对话中显式
+      输出预警（格式见 37 号模板步骤 D.1），并据此调整行动。
 
 当当前来源或当次行动模板要求实际操作携带环境署名时，AI 只可使用本次会话中按角色直接声明的信息；没有直接来源的角色如实标为不可得，不得在产品、模型与当前执行 Agent/运行时之间互相推导。每次 `change_log` 写入与每次 Git 提交前，都必须重新取得并判断三字段快照，不得复用先前动作的快照。创建受管辖 Git commit 时，提交方必须把当前契约要求的可观察署名显式写入完整 message，不得依赖环境变量或 Hook 自动注入；字段形状、入口与参数一律以 CLI 当次取得的契约为准。本段只约束 AI 观察与路由，不定义平台获取方式或 Code 行为。
 

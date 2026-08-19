@@ -57,11 +57,23 @@ change_log:
     model_name: glm-5.2
     agent_runtime_name:
   at: '2026-08-15T19:14:14.014271Z'
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:06:54.047797Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
 object_uid: 01a006d8-9f76-7caf-bc26-0199d6db014a
 object_id: study-01M03DH7VPFJQVR9G1K7BDP0AA
 fact_type_key: study
 created_at: '2026-08-15T19:14:14.014271Z'
-updated_at: '2026-08-15T19:14:14.014271Z'
+updated_at: '2026-08-17T13:06:54.047797Z'
 ---
 
 # 知识对象的使用与触发时机：决策、经验与资料的行业实践调研

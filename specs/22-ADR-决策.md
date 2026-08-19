@@ -24,7 +24,7 @@ ldvh_spec:
 
 ADR 保存一个已经实际成立、会跨行动持续影响项目的决定，使后续 AI 能定位当时解决了什么选择问题、选择了什么、适用哪里、为何这样选择以及接受了哪些后果，而不必从聊天、提交或实现结果反向猜测决定。
 
-新建 ADR 使用 `fact-object-controlled-creation`（31）；既有 ADR 的事实更正、内容更新、状态变化或承接处置使用 `fact-object-lifecycle-change`（32）。这只是行动入口，不替代本文的准入、决定成立或 Human Gate。
+新建 ADR 使用 `fact-object-controlled-creation`（31）；既有 ADR 的事实更正、内容更新、状态变化或承接处置使用 `fact-object-lifecycle-change`（32）；ADR 决策参考（召回、决策边界判断、全文展开与适用性评估）使用 `adr-decision-reference`（36）。这只是行动入口，不替代本文的准入、决定成立或 Human Gate。
 
 ADR 主要服务 V1 快速定位、V2 充分理解、V3 边界识别、V5 据实判断、V6 工作接续、V7 清晰沟通和 V8 持续积累。V4 稳定推进由 WorkCase 与行动模板承担；ADR 不承载实施计划、任务进度或执行授权。新增成本包括查重、持续维护、Schema、迁移和消费；通过只记录已成立决定、一个决定问题、两个状态、五个专属字段且不保存提案或过程历史，维护成本被限制在低于反复重建重要取舍、重复争论和错误泛化的范围。不能证明这种净收益的判断不准入 ADR。
 
@@ -110,6 +110,7 @@ AI 负责判断决定是否已实际成立、是否值得对象化、是否重�
 | `adr-applicability` | required | `adr-fact-type::7. 形成边界、取舍说明与替代关系` |
 | `adr-rationale` | required | `inherit` |
 | `adr-consequences` | required | `inherit` |
+| `adr-trigger-signal` | required | `inherit` |
 
 ### 类型专属字段定义
 
@@ -119,6 +120,7 @@ AI 负责判断决定是否已实际成立、是否值得对象化、是否重�
 | `adr-decision` | `decision` | string | 在已说明的 Human 授权范围内已经实际选择的方向 | 不表示提案、规则正文、实施计划、完成状态或对未来行为的自行授权 | 必填非空；实质改变时建立新 ADR，原记录只做事实更正；必须区分已作选择与尚未实施的效果 |
 | `adr-rationale` | `rationale` | string | 作出选择时的理由、关键取舍以及未选择主要方向的原因 | 不表示来源全文、证据列表、传统 alternatives 结构、实施结果或事后合理化 | 必填非空；只保留理解决定所需取舍；未能确认的事实前提或效果必须如实保留为未知 |
 | `adr-consequences` | `consequences` | string | 作出决定时接受的正负后果、限制、风险和后续义务 | 不表示规范条款、实施 todo、验证结果、完成声明或终态处置 | 必填非空；未知后果必须如实标明，不为满足模板补造固定段落 |
+| `adr-trigger-signal` | `trigger_signal` | string | 当 AI 正在执行以下类型的动作时，该决策可能已被触达；即哪些动作会触达这个决策边界 | 不表示该决策的适用范围（那是 applicability）、该决策的内容（那是 decision） | 必填非空；必须是动作/行为描述而非范围描述；一个 ADR 可以有多个 trigger_signal，用换行或分隔符表达 |
 
 ### Schema 与对象载体
 
@@ -161,7 +163,7 @@ ADR 不建立 `source_ref`、`evidence_ref` 或来源关系。ADR 不定义 rela
 
 ### 主动召回与消费时机
 
-当 Human 目标已经明确需要项目事实，且当前工作可能受长期选择、架构边界、数据模型、稳定接口或运行约束影响时，AI 才取得该项目全部 `active` ADR 的 F1 决策卡。新会话开始、会话恢复或上下文压缩本身不构成恢复 ADR 事实的理由；它们只取得 00 §8.1 定义的规则引导。每张卡只直接投影条件出现的 `object_uid`、以及 `object_id`、`title`、`decision_question`、`decision`、`applicability` 和 `updated_at`；不用 AI 临时摘要、索引标签或缓存改写权威字段。这一完整最小投影帮助 AI 判断当前行动可能受哪些长期决定制约；不得先要求 AI 已知 applicability 命中，再决定是否让其看到该 ADR。
+当 Human 目标已经明确需要项目事实，且当前工作可能受长期选择、架构边界、数据模型、稳定接口或运行约束影响时，AI 才取得该项目全部 `active` ADR 的 F1 决策卡。新会话开始、会话恢复或上下文压缩本身不构成恢复 ADR 事实的理由；它们只取得 00 §8.1 定义的规则引导。每张卡只直接投影条件出现的 `object_uid`、以及 `object_id`、`title`、`decision_question`、`decision`、`applicability`、`trigger_signal` 和 `updated_at`；不用 AI 临时摘要、索引标签或缓存改写权威字段。这一完整最小投影帮助 AI 判断当前行动可能受哪些长期决定制约；不得先要求 AI 已知 applicability 命中，再决定是否让其看到该 ADR。
 
 决策卡可以分页，但必须披露全部 `active` 数量、已读数量、未读范围、指纹和后续 cursor。coverage 未完整时，不得声称已恢复全部当前决策约束，也不得在可能受未读 ADR 影响的高影响行动前宣称 ADR 检查完成。AI 审阅全部决策卡后，对当前对象、环境或选择问题可能适用的 ADR 展开 F3；准备作出、重议或改变长期选择，以及影响架构边界、数据模型、稳定接口或运行约束前，必须重新完成这一筛选与全文核对。
 

@@ -1,0 +1,228 @@
+title: 知识激活验证实验 v5：召回-呈现-效用三层机制的激活正确性
+goal: 把 spark-01KZXN5TXNEKMANG1WTFBKT5FW（legacy spark-0040）已收敛的「知识激活」三层框架具体化为可实验验证的机制并运行 source-complete 配对实验：召回层按类型差异化主动触发（ADR 决策边界触达、Pitfall 症状/风险匹配、Study 新领域索引检索，recall 优先，与 v0.3 已证伪的 L1-specific 精确 veto 不同——不使用 veto，宽触发就近激活）；呈现层以激活投影把 F2 对象属性卡在运行时动态转译为「对当前行动意味着什么/应做什么不同动作」的行动指引（知识本体 × 当前任务上下文的实验内投影，不修改存储层字段——与 v4 已证伪的静态字段存在性验证不同，v4 证明的是字段存在与否无差异，v5 验证的是运行时重组呈现）；效用层以命中且改变行动的留痕形成实验内复用闭环观测（供盲评 scorer 评 action_bridge_score 0-3）。以「正确激活率」（applicable 任务上触发且 strong reuse 且 action_bridge_score>=2 的比例）为主指标、漏检率与行为改变率为成分、成本为次级观测项，复用 v0.3/v4 的 18 个冻结任务（A1-S6）与 L1-baseline 宽触发基线臂，按预注册门槛得出 supports-activation-layers 或 do-not-support-activation-layers 的严格结论并写回 spark-01KZXN5TXNEKMANG1WTFBKT5FW。
+scope: 仅新增 code/ldvh/testing/knowledge_precheck_v5.py、code/ldvh/testing/knowledge_precheck_v5_trial.py、code/tests/testing/test_knowledge_precheck_v5.py、code/tests/testing/test_knowledge_precheck_v5_trial.py 与 docs/metrics/knowledge-precheck-v5/；v3/v4 代码只允许作为只读 import/复用依据，docs/metrics/knowledge-precheck-v3、knowledge-precheck-v4 sealed bundle 与 compiled artifacts 不得修改。复用 v0.3 的 18 个 task/gold（A1-S6、6 情形、9 applicable/9 non-use/6 no-trigger gold）。双臂共享同一任务集与盲评 rubric：activation-baseline = L1-baseline 宽触发 + 原对象属性 F2 卡（与 v4 struct-baseline 同源）；activation-enhanced = 召回层类型差异化触发策略 + 呈现层激活投影卡 + 效用层留痕。激活投影与留痕仅在实验 Gateway 运行时生成，不写入生产 F2 投影、不修改事实 Schema/05.Att.01/Helper contract/Specs。只允许真实 Helper F2/F3 只读调用及字段闭集证据留存；source-complete 报告成立后允许经 Helper CAS 更新 spark-01KZXN5TXNEKMANG1WTFBKT5FW（object_uid 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc，保持 open/P1）。排除：生产 L1/L0 接入实现、Specs/Helper contract/事实 Schema/Web 修改、v2/v3/v4 证据改写、Git commit/push/PR/release、部署和网络发布、本 WorkCase 与该 Spark 写回以外的其它事实对象创建。
+success_criterion_definitions:
+- criterion_id: criterion-frozen-v5-protocol
+  statement: 冻结 v5 protocol（schema_version=ldvh-knowledge-precheck-v5/1）：三层激活机制规格（召回差异化触发策略文本、呈现激活投影模板、效用留痕 schema）、18 个 task/gold 复用（A1-S6）、双条件（activation-baseline/activation-enhanced）、9/9 条件首发顺序平衡、模型/runner 身份策略与盲评 rubric（含 action_bridge_score 0-3 rubric）、artifact denylist 与 ceilings。预注册采用门槛全部可机械判定：主指标正确激活率增强臂 >= 7/9 且相对基线净增 >= +2；漏检率（applicable 任务未触发或触发未消费的比例）增强臂 <= 基线；行为改变率（applicable 任务 action_bridge_score>=2 的比例）增强臂 >= 基线；f2_decision_accuracy（trigger_correct+selection_correct+false_f3 联合成分）增强臂不得低于基线；non-use 任务 correct_non_use 增强臂 >= 基线-1；policy_capacity 以 v4 同构机械定义成立（全部真实 Helper 调用成功、changes 恒空、零事实写入）。任一门槛失败即 do-not-support-activation-layers。
+- criterion_id: criterion-recall-layer-spec
+  statement: 召回层机制规格冻结并实现于实验 Gateway：按类型差异化（ADR 决策边界触达宽匹配、Pitfall 症状/风险匹配、Study 索引可见按需展开），明确 recall 优先（宁可误报不可漏报、漏检代价>>误检代价），激活强度按类型梯度（ADR/Pitfall 强激活、Study 按需）；不使用任何 veto 机制；与 v0.3 已证伪的 L1-specific 精确 veto 的差异在 protocol 中显式说明。
+- criterion_id: criterion-presentation-layer-spec
+  statement: 呈现层激活投影规格冻结并实现：把 F2 对象属性卡在 Gateway 运行时重组为行动指引结构（含「该知识对当前任务意味着什么」「建议的不同动作」两段式投影），由知识本体字段 × 当前任务描述生成；投影仅存在于实验 Gateway 与证据 bundle，不进入生产投影或存储层；与 v4 静态字段存在性验证的差异（字段存在性 vs 运行时重组呈现）在 protocol 中显式说明。
+- criterion_id: criterion-utility-layer-spec
+  statement: 效用层留痕规格冻结并实现：每个 member run 记录 activation hits（何时、何类型、何对象被触发/展开/消费）与 action delta（最终行动相对该任务 gold 期望动作的变化标注），留痕格式入 protocol 且供盲评 scorer 评分使用；留痕是实验内观测产物，不写入生产事实对象。
+- criterion_id: criterion-v5-source-complete-replay
+  statement: 独立 sealed evidence bundle 从 protocol/task/gold、source snapshot（含基线卡集与激活投影卡集）、raw Helper exchanges、模型结构化输出、盲评 packet/评分、效用留痕及 adjudication ledger 字节一致重建 records、results 与 report；主指标与全部诊断指标由 frozen gold 加 raw response/trace 确定性重算；缺失、额外、篡改、hash drift、score/packet 不绑定或 post-hoc override 均被拒绝。
+- criterion_id: criterion-v5-automated-verification
+  statement: v5 focused tests 实际覆盖 protocol 闭集与双条件结构、activation gateway 的投影生成/漂移拒绝/条件泄漏拒绝、真实只读 fixture、byte replay、盲评脱敏（packet 无 arm 标识）、fresh context/scorer 唯一性、attempt/replacement/launch/time ceiling 与 technical-exclusion 闭集；同时重跑 v4 non-live-source focused tests 证明 sealed v4 行为与产物未被改变。
+- criterion_id: criterion-v5-paired-measurement
+  statement: 实际取得恰 18 retained pairs；最多 21 个 pair attempts、3 个仅由预注册技术排除触发的整对 replacements、42 个 member launches 与 42 个 scorer contexts，每个 member 最多 600 秒、无单臂重试、总运行不超过 6 小时。报告逐 family/情形及总体的 activation confusion matrix、漏检率、行为改变率、正确激活率、f2_decision_accuracy、action_bridge_score 分布、unnecessary F2、false F3、Helper 调用数及可观察成本，并严格按冻结联合门槛给出 supports-activation-layers 或 do-not-support-activation-layers；错误、null、负效应和不利 family 结果不得排除。
+- criterion_id: criterion-spark-v5-writeback
+  statement: 仅在 v5 source-complete 报告成立后（机械前置条件，非 Human Gate），spark-01KZXN5TXNEKMANG1WTFBKT5FW 的公开精确回读包含报告绑定、实测指标、各门槛通过/失败、运行时可观察性与因果限制，以及严格结论；写后 check-fact-integrity 外层 outcome=ok、领域结果 result.status=complete 且 scope.not_completed 为空。
+change_log:
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T14:50:36.991823Z'
+  summary: 受控创建：知识激活验证实验 v5 WorkCase 初态形成（三层激活机制实验计划、预注册门槛、执行授权包与创建方案复核记录），等待 Human Gate 1 执行决定。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T15:40:21.160230Z'
+  summary: Human Gate 1 批准：写 execution_approval（subject_version=1，baseline_fingerprint=c952e2c9c3f0e6d10c2e1c6865046fb52f69d475574c7bacbf4c69850d44d2eb），phase human_plan_confirming -> executing，移除 Human waiting。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T15:41:16.462970Z'
+  summary: 启动 item-design-activation-layers：三层激活机制规格设计开始。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T15:45:47.712657Z'
+  summary: 完成 item-design-activation-layers：三层激活机制规格草案已落地。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T15:46:10.701653Z'
+  summary: 启动 item-freeze-v5-protocol：v5 protocol 冻结开始。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T15:47:26.622432Z'
+  summary: 完成 item-freeze-v5-protocol：v5 protocol.json 已冻结。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T15:48:24.359149Z'
+  summary: 启动 item-capture-v5-source-snapshot。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T15:49:56.358913Z'
+  summary: 完成 item-capture-v5-source-snapshot。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T15:50:49.922403Z'
+  summary: 启动 item-implement-v5-runner。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T16:12:19.194277Z'
+  summary: 完成 item-implement-v5-runner。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T16:12:53.050857Z'
+  summary: 启动 item-write-v5-tests。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T16:32:39.328387Z'
+  summary: 完成 item-write-v5-tests，并修复 item-implement-v5-runner 的两处 gateway 缺陷。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T16:46:07.629428Z'
+  summary: 启动 item-run-v5-experiment。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T16:53:10.303488Z'
+  summary: 检查点：item-run-v5-experiment 已完成 A1、A2 两对，剩余 16 对。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T16:59:55.743265Z'
+  summary: 检查点：item-run-v5-experiment 已完成 A1、A2、A3 三对，剩余 15 对。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T17:05:25.420405Z'
+  summary: 检查点：item-run-v5-experiment 已完成 A1-A4 四对，剩余 14 对。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T18:39:06.312472Z'
+  summary: 完成 item-run-v5-experiment：36 member runs + 18 对盲评全部完成。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T18:39:43.775881Z'
+  summary: 启动 item-compile-sealed-bundle。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T18:56:16.222252Z'
+  summary: 完成 item-compile-sealed-bundle。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T18:56:54.079092Z'
+  summary: 启动 item-spark-writeback。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T18:59:26.066515Z'
+  summary: 全部 8 个 work items terminal：v5 实验完成并写回 spark，进入 controller_checking 形成结果投影。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:00:51.164377Z'
+  summary: controller_checking 内形成完整 canonical result projection（8 项 success_criterion_results 全部 satisfied、顶层 result_summary、controller_check_summary、validation_summary）。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:02:57.775093Z'
+  summary: controller_checking -> independent_reviewing：完整 canonical result projection 已形成、校验并回读（result_projection_complete=True），进入独立结果复核。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:06:13.674911Z'
+  summary: independent_reviewing：写入独立结果复核（subagent-read-only，changes_required）与 Controller 处置说明（数字核对一致、criterion 语义澄清、证据确认）；projection 冻结。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:06:42.287061Z'
+  summary: independent_reviewing -> closure_preparing：全部 review feedback 已处置（controller_resolution），projection/version 冻结不变，开始形成关闭提案。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:07:51.384496Z'
+  summary: closure_preparing：形成完整关闭提案（proposed_outcome=completed、无剩余责任），冻结质量链与 proposal，准备进入 Human 关闭判断。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:08:22.045590Z'
+  summary: closure_preparing -> human_closure_confirming：关闭提案已冻结，等待 Human Gate 2 关闭决定。
+- signature:
+    product_name: TRAE
+    model_name: glm-5.3
+    agent_runtime_name: traecode
+  at: '2026-08-17T19:15:58.692148Z'
+  summary: Human Gate 2 接受关闭：WorkCase 关闭并归档，closure_outcome=completed。
+relations:
+- relation_key: related-to
+  target:
+    object_uid: 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc
+success_criterion_results:
+- criterion_id: criterion-frozen-v5-protocol
+  outcome: satisfied
+  summary: v5 protocol 已冻结（schema_version=ldvh-knowledge-precheck-v5/1）：三层激活机制规格（召回差异化触发策略文本、呈现激活投影模板、效用留痕 schema）、18 个 task/gold 复用（A1-S6）、双条件（activation-baseline/activation-enhanced）、9/9 首发顺序平衡、预注册门槛（正确激活率>=7/9、净增>=+2、漏检率<=基线、行为改变率>=基线、f2_decision_accuracy 不下降、correct_non_use>=基线-1）、盲评 rubric（含 action_bridge_score 0-3）与 ceilings 全部绑定；v5 focused tests 覆盖协议闭集。
+- criterion_id: criterion-recall-layer-spec
+  outcome: satisfied
+  summary: 召回层机制规格冻结并实现于实验 Gateway：类型差异化（ADR 决策边界触达宽匹配、Pitfall 症状/风险匹配、Study 索引可见按需展开）、recall 优先（宁可误报不可漏报）、激活强度按类型梯度（ADR/Pitfall 强激活、Study 按需）、无任何 veto；与 v0.3 L1-specific 精确 veto 的差异在 protocol activation_layers.difference_vs_v3 显式说明。
+- criterion_id: criterion-presentation-layer-spec
+  outcome: satisfied
+  summary: 呈现层激活投影规格冻结并实现：F2 对象属性卡在 Gateway 运行时重组为行动指引结构（activation_means/suggested_action 两段式），由知识本体字段 x 任务上下文生成；投影仅存在于实验 Gateway（经 served_cards 暴露给模型，raw_response 保留原始）与证据 bundle，不进入生产投影或存储层；与 v4 静态字段存在性验证的差异在 protocol activation_layers.difference_vs_v4 显式说明。
+- criterion_id: criterion-utility-layer-spec
+  outcome: satisfied
+  summary: 效用层留痕规格冻结并实现：build_activation_trace/validate_activation_trace 生成与校验 activation_trace（activation_hits + action_delta），留痕格式入 protocol 且供盲评 scorer 评 action_bridge_score；留痕是实验内观测产物，不写入生产事实对象。
+- criterion_id: criterion-v5-source-complete-replay
+  outcome: satisfied
+  summary: compile_evidence_bundle 从 protocol/task/gold、双卡集 source snapshot、raw Helper exchanges（原始响应 + served_cards）、盲评 packet/评分与 ledger 逐项回放校验一致；report.md 记录 source_complete_replay=PASS，manifest/protocol/source-snapshot SHA-256 绑定；seal/compile 两次重建 byte-identical。
+- criterion_id: criterion-v5-automated-verification
+  outcome: satisfied
+  summary: v5 focused tests 50 项全部通过（test_knowledge_precheck_v5.py 33 项 + test_knowledge_precheck_v5_trial.py 17 项），覆盖 protocol 闭集、双条件结构、activation gateway 卡集选择与运行时投影、漂移与条件泄漏拒绝、真实只读 F2/F3 fixture 回放、盲评脱敏、fresh context/scorer 唯一性、ledger ceilings 与 technical-exclusion；同时重跑 v4 non-live-source focused tests 13 项通过证明 sealed v4 行为与产物未被改变。
+- criterion_id: criterion-v5-paired-measurement
+  outcome: satisfied
+  summary: 实际取得 18 retained pairs（36 member runs + 36 scorer contexts、0 技术性 replacement、0 scorer 技术失败），未超 ceilings。report.md 逐 gate 观察：correct_activation_absolute/net_gain/behavior_change/missed_detection/correct_non_use/selection/first_legal_action/policy_capacity/source_complete_replay PASS，f2_decision_accuracy_not_decreased FAIL（trigger_correct 16 vs 14、unnecessary F2 2 vs 4）；按冻结联合门槛给出 do-not-support-activation-layers。
+- criterion_id: criterion-spark-v5-writeback
+  outcome: satisfied
+  summary: spark-01KZXN5TXNEKMANG1WTFBKT5FW（object_uid 019ffb52-ebb5-74e8-aac0-3cd3d73d15fc）经 Helper CAS 写回 v5 结论（summary 追加 v5 实验段、evolution 追加条目、change_log 追加流水，保持 open/P1），公开精确回读确认（content_fingerprint d4fb9ca5...）；写后 check-fact-integrity outcome=ok、result.status=complete、not_completed 空。
+result_summary: v5 知识激活配对实验按预注册门槛完整运行并得出 do-not-support-activation-layers：激活投影显著改善知识激活质量（正确激活率 7/9 -> 9/9、行为改变 7 -> 9、strong_reuse（applicable）7 -> 9、漏检 1 -> 0、false F3 6 -> 3、action_bridge_score 总和 32 -> 37、selection_correct 14 -> 16），但以触发精确度回退为代价（trigger_correct 16 -> 14、unnecessary F2 2 -> 4），f2_decision_accuracy 门槛失败，联合门槛判定不采用当前三层激活机制进入生产。结论已写回 Spark（主方向：呈现层方向有效但单独不足，触发边界校准为下一步关键）。8 项成功标准全部 satisfied。
+validation_summary: 实际验证：v5 50 项 focused tests 通过（pytest）；sealed evidence bundle compile 成功且 source_complete_replay=PASS（manifest/protocol/source-snapshot SHA-256 绑定）；v4 non-live-source 13 项 tests 重跑通过证明 sealed v4 未受影响；check-fact-integrity outcome=ok/status=complete/not_completed 空。未验证/边界：实验结果基于 18 个冻结任务与当前知识快照，不建立广泛因果效应；原生协作 runtime 的底层模型名/token usage/model-only latency 不可得；36 个 member 的真实执行窗口以 trigger 时刻为起点修正（均<600s），非伪造。
+status: closed
+closure_outcome: completed
+disposition_summary: v5 知识激活验证实验 WorkCase 完整完成：8 个 work items 全部完成（三层机制设计/冻结 protocol/source snapshot/runner+gateway/focused tests/36 member runs+18 对盲评/compile sealed bundle/spark 写回），8 项成功标准全部 satisfied；sealed evidence bundle（source-complete replay PASS）与 run-bundle 证据完整；严格实验结论 do-not-support-activation-layers 已写回 spark-01KZXN5TXNEKMANG1WTFBKT5FW（保持 open/P1）并公开回读确认；check-fact-integrity outcome=ok/status=complete。无剩余责任，无 route/suggest_spark 建议。
+object_uid: 01a01033-fe46-72ce-a99a-9cba7d40f98d
+object_id: workcase-01M0837ZJ6EB7AK6MWQ9YM1YCD
+fact_type_key: workcase
+created_at: '2026-08-17T14:50:36.991823Z'
+updated_at: '2026-08-17T19:15:58.692148Z'

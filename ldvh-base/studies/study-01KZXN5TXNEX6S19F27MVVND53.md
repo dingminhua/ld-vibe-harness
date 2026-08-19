@@ -71,12 +71,18 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: 2026-08-16T21:30:34.415045Z
 disposition_summary: 本报告保留为仅讨论事实源局部补丁的历史研究。其后续调研已将规则源与五类事实对象的不同编辑、治理和发布边界独立展开为 study-0030；旧报告不通过 supersedes 关系替代该新研究。
 object_id: study-01KZXN5TXNEX6S19F27MVVND53
 object_uid: 019ffb52-ebb5-774d-90a5-e23d37bab4a3
 fact_type_key: study
 created_at: '2026-08-10T19:43:14.082563Z'
-updated_at: '2026-08-13T15:03:57Z'
+updated_at: '2026-08-16T21:42:45.620720Z'
 ---
 
 ## 研究问题

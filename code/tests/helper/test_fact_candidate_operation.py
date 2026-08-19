@@ -272,6 +272,7 @@ def _adr() -> dict[str, object]:
         "applicability": "Stage 5 fact recall implementation.",
         "rationale": "A direct scan avoids a second authority.",
         "consequences": "Large repositories use a fixed scan budget.",
+        "trigger_signal": "Implementing or modifying fact candidate discovery for the first time.",
     }
 
 
@@ -283,6 +284,7 @@ def _pitfall() -> dict[str, object]:
         "validation_summary": "Changed object sets reject the old cursor.",
         "symptoms": "Cards from two different snapshots are combined.",
         "trigger_conditions": "A fact changes between candidate pages.",
+        "scope_of_impact": "Fact candidate pagination when object set may change between pages.",
         "root_cause": "The cursor was not bound to the object-set fingerprint.",
         "resolution": "Bind every cursor to the current query and object set.",
         "avoidance": "Restart from page one after a stale cursor response.",

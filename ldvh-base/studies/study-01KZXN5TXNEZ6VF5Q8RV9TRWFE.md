@@ -48,11 +48,6 @@ research_intent: 调研 Vibe Coding 从 demo 到产品级需要哪些变化，�
 research_question: Vibe Coding 做 demo 和做产品级开发的本质差异是什么？从 demo 到产品级需要补齐哪些软件工程能力？LDVH 当前已经做了规范和基础流程，未来若面向产品级开发还需要增强哪些环节？
 abstract: Vibe Coding 从 demo 到产品级的核心变化不是"让 AI 多写代码"，而是把 AI 生成代码纳入产品工程闭环。产品级要求需求、架构、质量、安全、供应链、发布、运行、观测、事故、用户反馈和成本都可管理、可验证、可追溯。LDVH 当前已经有规范、工作模型、基础流程、Code 和 Web 的底盘，但仍需要增强产品需求层、架构治理、质量门禁、DevSecOps、生产就绪、运行观测、发布治理、AI 评测和 Human-facing 驾驶舱。
 recommendation_summary: LDVH 下一阶段应从"规范和基础事实源治理"升级为"AI 原生产品工程治理"。建议优先增强三条主线：产品级事实源（需求、用户旅程、架构、接口、数据、质量属性、发布对象）、产品级门禁（测试策略、安全审查、供应链、生产就绪、SLO、回滚、事故复盘）、AI 原生执行保障（角色契约、子 Agent 审查、代码评测、上下文包、风险仪表盘、自动化校验）。
-object_id: study-01KZXN5TXNEZ6VF5Q8RV9TRWFE
-object_uid: 019ffb52-ebb5-77cd-b796-e8c6d3ac71ee
-fact_type_key: study
-created_at: '2026-07-24T13:30:00+08:00'
-updated_at: '2026-08-13T15:03:57Z'
 change_log:
 - signature:
     product_name: Cindy
@@ -66,6 +61,23 @@ change_log:
     agent_runtime_name: codex
   at: '2026-08-13T15:03:57Z'
   summary: 将事实对象物理定位符迁移为完整 UUIDv7 的 Crockford Base32 编码。
+- summary: 补 action_relevance 字段值（规范修订：24/05 新增必填字段定义与登记）
+  signature:
+    product_name: Cindy
+    model_name: glm-5.2
+    agent_runtime_name: claude-code
+  at: '2026-08-16T21:30:34.415045Z'
+- at: '2026-08-17T13:04:35.942171Z'
+  summary: 字段减法迁移：删除 action_relevance 字段（规范修订配套迁移）
+  signature:
+    product_name: WorkBuddy
+    model_name:
+    agent_runtime_name: codebuddy
+object_uid: 019ffb52-ebb5-77cd-b796-e8c6d3ac71ee
+object_id: study-01KZXN5TXNEZ6VF5Q8RV9TRWFE
+fact_type_key: study
+created_at: '2026-07-24T13:30:00+08:00'
+updated_at: '2026-08-17T13:04:35.942171Z'
 ---
 
 ## 研究问题
