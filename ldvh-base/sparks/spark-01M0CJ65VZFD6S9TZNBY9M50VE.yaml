@@ -1,0 +1,16 @@
+title: LDVH 前置流程与任务规模的比例失调——过度合规削弱用户信任
+status: open
+priority: P1
+intent: 分析 session-bd08dcff 中暴露的 LDVH 前置流程与用户实际任务规模之间的比例失调问题，找出当 AI 将「修改一段话」解释为「触发完整规范修订流程」时，过度合规如何消耗用户耐心、掩盖进展透明性并在关键时刻因 token 预算不足导致交付失败。后续需要判断：是否应该引入轻量编辑与全量规范修订的触发阈值区分、前置流程的透明沟通要求、以及 max-tokens 降级/分步输出机制。
+summary: "## 问题\n\nsession-bd08dcff 记录了用户意图——逐字逐句修改 00 规范第 1 段——与 AI 实际执行之间的严重断裂：\n\n1. **过度合规**：用户说「我要改这段话」，AI 触发完整的 LDVH 规范修订流程（找环境接入面、定位 CLI、读模板候选、召回 ADR、召回 Pitfall、读规范 01），花了 10+ 轮工具调用。\n2. **无透明沟通**：AI 在 reasoning 中知道自己在做什么，但从未告诉用户「我要先做前置工作，大约需要 X 轮」。用户看到一连串 glob/grep/bash，完全不知道在干什么。\n3. **前置产出与任务无关**：ADR/Pitfall 全量召回后结论是「不匹配当前行动」——做了大量无用功。\n4. **max-tokens 截断致命**：用户最终给出明确修改方向后，AI 思考了 290+ 行 reasoning（多方案对比、结构分析），但输出被 max-tokens 截断，用户收到空消息。\n\n## 根本原因\n\n- 薄 Skill 路由纪律未区分「改一句话」和「改整个规范」的规模差异\n- AI 在 reasoning 里想得很清楚，但未向用户透明沟通\n- token 预算管理缺失：思考太细挤占了输出空间\n- 无 max-tokens 降级机制：一次截断导致全部内容丢失\n\n## 待判断方向\n\n- 是否应引入轻量编辑 vs 全量规范修订的触发阈值？\n- 前置流程是否应增加「透明沟通」步骤（告知用户预计轮数和目的）？\n- 关键时刻的 max-tokens 降级/分步输出机制如何设计？\n- 是否允许 AI 对「小修改」跳过非必要的 ADR/Pitfall 召回？"
+change_log:
+- signature:
+    product_name: deepseek-harness
+    model_name: deepseek-v4-flash
+  at: '2026-08-19T08:28:44.344058Z'
+  summary: 从 session-bd08dcff 的完整 3246 行事件日志中提取五类摩擦模式，形成 Spark 入口
+object_uid: 01a01923-177f-7b4d-94eb-f55f9342836e
+object_id: spark-01M0CJ65VZFD6S9TZNBY9M50VE
+fact_type_key: spark
+created_at: '2026-08-19T08:28:44.344058Z'
+updated_at: '2026-08-19T08:28:44.344058Z'
