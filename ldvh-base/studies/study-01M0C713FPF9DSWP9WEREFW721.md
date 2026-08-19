@@ -10,7 +10,7 @@ object_id: study-01M0C713FPF9DSWP9WEREFW721
 object_uid: 01a01870-8df6-7a5b-9e59-3c761cfe1c41
 fact_type_key: study
 created_at: '2026-08-19T06:00:00+08:00'
-updated_at: '2026-08-19T07:00:00+08:00'
+updated_at: '2026-08-19T08:30:00+08:00'
 urls:
 - ref: https://github.com/yhlooo/dsh-bridges
   title: yhlooo/dsh-bridges
@@ -29,6 +29,11 @@ change_log:
     model_name: kimi-k3
   at: '2026-08-19T07:00:00+08:00'
   summary: 补充视角三署名五环保证链与 Git Gate 比 Stop gate 更稳健的根因
+- signature:
+    product_name: Cindy
+    model_name: kimi-k3
+  at: '2026-08-19T08:30:00+08:00'
+  summary: 补充视角五（法律基线/源码改动/跨产品移植）——LDVH 接入面不存在环境 Hook 层；P1/P2/P3 源码改动清单
 ---
 
 ## 研究问题
@@ -137,6 +142,28 @@ Hook 机制对 LDVH 的生产过程保障（ADR/Pitfall 召回、WorkCase 状态
 4. **ADR/Pitfall 召回增强**：新增 `.ldvh-recall-state/<sid>.json` 标记 + SessionStart 拉卡写标记 + Stop 比指纹拦缺失/stale，fail-open。
 5. **Git Gate 不可 hook 注入署名**：保持 P4 显式署名不注入；PreToolUse 只做"缺失即阻塞"防御纵深，复用 validation.py 同一核心。
 6. **Skill 路由必须保留**：Hook 与 Skill 正交互补，删除任一都会破坏生产过程的不同保障维度。
+
+### 视角五：LDVH 接入面不存在「环境 Hook 层」——法律基线与源码改动分析
+
+**法律基线（specs/09 §5.1）**：LDVH 接入面不存在"环境 Hook 层"。所谓 SessionStart/PreToolUse/Stop 实为**宿主原生生命周期事件**，由 LDVH 机械核心消费。这些机械核心法律上只允许输出 allow/block/decision/reason，被明确禁止做语义判断（specs/09 §5.7/§5.8）。这把"Hook vs Skill 正交"从思辨变成了规范约束：Hook 是机械闸门，Skill 是语义路由，二者职责不可互替。
+
+**Hook 与 Skill 的关系（三视角共识）**：
+- Hook 替代"纪律的启动时机与执行"（召回自动拉、phase 自动拦、交还自动挡、署名自动验）
+- Skill 保留"领域识别/适用性判断/WorkCase 上下文装载/Human Gate 识别/语义遵从"——这五处机械门在法律上被禁止承担
+- 只有 Skill 无 Hook：交还纪律、召回启动、phase 校验、Git 署名全部退化为自律（劝告级），丧失 fail-closed 锚点
+- 一句话：Hook 是生命周期事件层上不可绕过的机械闸门（保障纪律可执行性）；Skill 是落入领域后的语义路由与判断层（保障方向正确性）；hook 是 Skill 的触发器与兜底，不是替代品
+
+**LDVH 需要新增的源码改动（按优先级，视角三共识）**：
+- **P1 — SessionStart recall gate（新，复用度最高）**：2 个新文件（`code/ldvh/hooks/recall_start.py` + `.claude/hooks/ldvh-session-start.py` wrapper）；无需新 op；复用 `find-fact-object-candidates` + `context_recovery` 的分页/指纹逻辑；改 `settings.json`/`gitignore`/tests。**关键坑**：`context_recovery.py` 只处理 F1 ADR/WorkCase，`_compact_card` 拒绝非 adr/workcase、`_fact_request` 硬编码 `card_layer:"F1"`——Pitfall F2 召回逻辑尚不存在，是 P1 唯一真正新增的逻辑。
+- **P2 — Worker Stop gate binding（新机制，近零新代码）**：`.claude/settings.json` 的 Stop 条目 + wrapper 已随 commit 提交，每个 worktree checkout 即拥有；缺口仅是 binding 识别——Worker 的 cuid session_id 永不命中 `.ldvh-stop-bindings/<sid>.json`。解法：新增 op `set-current-workcase-marker` 写到 `<git-common-dir>/.ldvh-current-workcase.json`（必须 common-dir 而非 worktree，才能跨 linked worktree 共享且不污染事实源），100% 复用 `workcase_stop.py` 的 fail-open。
+- **P3 — PreToolUse phase gate（新，设计面最大）**：2 个新文件 + 扩展 `check-workcase-handoff` 返回（不新命名 op）+ 在 `workcase_projection.py` 加 `phase→tool_categories` 映射（policy 必须进 spec）。**单一真相源**：PreToolUse 必须直接消费 `check-workcase-handoff` 已返回的 phase 字段，不重算。
+
+**跨产品移植（视角二共识）**：
+- 统一 CLI 入口：推荐"共享 `code/ldvh/hooks/` 实现层 + 每事件独立薄 wrapper"，不合并成单命令（宿主契约/失败语义/fail-open 阈值各异）
+- 各产品适配：Claude Code 仅补 `settings.json` 两键（零语义风险）；Codex 同法但需先核验 SessionStart/PreToolUse 是否被 `hooks.json` 支持；Pi 写 `pi.on()` 扩展桥接 `ldvh` CLI；Cindy 只能 Ghost soft-warning（无 block）；DSH 的 dsh-bridges 自动桥接是**未验证假设**（09.Att.05 明确 DSH 宿主 Stop 事件未定位）
+- session_id：现有 `.ldvh-stop-bindings/<id>.json` 字符校验已兼容 UUID 与 cuid；建议加统一兜底 env `LDVH_SESSION_ID`，wrapper 做多源解析
+- 部署边界：环境 Hook 以"项目级树内文件"为边界（worktree 自动继承），与 Git Gate 的 common-dir 单部署机制相反但精神一致
+- 三大未验证风险（动手前必测）：Codex 事件支持、DSH 是否消费 CC hooks、Cindy 无 block 能力
 
 ## 后续分流
 
